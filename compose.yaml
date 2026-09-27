@@ -16,7 +16,10 @@ services:
       timeout: 3s
       retries: 20
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      additional_contexts:
+        shared: ./shared
     env_file: .env
     environment:
       POSTGRES_HOST: postgres

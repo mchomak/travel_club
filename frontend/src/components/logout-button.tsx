@@ -14,7 +14,7 @@ export function LogoutButton() {
     catch { setError("Не удалось выйти. Попробуйте ещё раз."); }
     finally { setPending(false); }
   }
-  return <div><button onClick={logout} disabled={pending} className="flex min-h-11 items-center gap-2 rounded px-3 text-sm">
+  return <div><button data-leave-editor onClick={logout} disabled={pending} className="flex min-h-11 items-center gap-2 rounded px-3 text-sm">
     <LogOut size={16} aria-hidden />{pending ? "Выходим…" : "Выйти"}
   </button>{error && <p role="alert" className="max-w-60 text-sm text-red-800">{error}</p>}</div>;
 }

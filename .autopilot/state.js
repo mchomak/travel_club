@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-09-26T12:32:55+03:00",
-  "updatedAt": "2026-09-27T15:37:37+03:00",
+  "updatedAt": "2026-09-27T17:21:02+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,13 +47,14 @@ window.STATE =
     {
       "id": "build",
       "status": "active",
-      "startedAt": "2026-09-26T13:07:41+03:00"
+      "startedAt": "2026-09-26T13:07:41+03:00",
+      "note": "1/4 complete; backend and frontend in progress"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-26T22:11:32+03:00",
-      "note": "Foundation review while container checks finish"
+      "note": "T01 reviewed; two concerns retained for final integration"
     },
     {
       "id": "final",
@@ -62,8 +63,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 577,
-    "done": 0,
-    "inTicket": 577,
+    "done": 30,
+    "inTicket": 547,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -228,12 +229,12 @@ window.STATE =
         "README.md",
         "scripts/"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 1,
       "repairs": 0,
       "handoffs": 0,
       "startedAt": "2026-09-26T13:07:41+03:00",
-      "note": "Resumed existing executor after usage limit; PostgreSQL healthy, foundation files preserved.",
+      "note": "Foundation validated in Docker and browser",
       "concerns": [
         "backend/app/auth.py:88 ? validate normalized login length before SQL (120 U+0130 expands to 240); reproduce and resolve in final integration.",
         "backend/app/schemas.py:169,176 ? Pydantic groups/by_type completeness differs from TypeScript Record; verify and align with pricing implementation."
@@ -242,6 +243,12 @@ window.STATE =
         "manifest": "clean",
         "spec": "clean",
         "craft": "two non-blocking findings; final triage"
+      },
+      "finishedAt": "2026-09-27T15:49:48+03:00",
+      "commit": "4ad56a2",
+      "tests": {
+        "passed": 10,
+        "failed": 0
       }
     },
     {
@@ -554,10 +561,21 @@ window.STATE =
         "backend/",
         "shared/pricing-vectors.json"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 1,
+      "startedAt": "2026-09-27T15:49:48+03:00",
+      "note": "Repair 1 green: aggregate read consistency; 38 backend tests; re-review pending",
+      "tests": {
+        "passed": 38,
+        "failed": 0
+      },
+      "reviews": {
+        "craft": "blocking: concurrent GET can mix parent and children versions",
+        "manifest": "pending",
+        "spec": "pending"
+      }
     },
     {
       "id": "03",
@@ -909,10 +927,16 @@ window.STATE =
       "zone": [
         "frontend/"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 1,
+      "startedAt": "2026-09-27T15:49:48+03:00",
+      "note": "Full UI delivered; 7 browser scenarios pass; independent reviews pending",
+      "tests": {
+        "passed": 12,
+        "failed": 0
+      }
     },
     {
       "id": "04",
@@ -1517,7 +1541,10 @@ window.STATE =
     }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": {
+    "passed": 50,
+    "failed": 0
+  },
   "debt": {
     "placeholders": [],
     "assumptions": [
