@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface: #f6f5ef;
+  --color-paper: #fffefa;
+  --color-ink: #29352f;
+  --color-muted: #5d6861;
+  --color-line: #dce0d7;
+  --color-accent: #225740;
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--color-surface); color: var(--color-ink); font-family: var(--font-sans); line-height: 1.5; }
+button, input { font: inherit; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .65; }
+:focus-visible { outline: 3px solid #579e79; outline-offset: 4px; }
+input { width: 100%; border: 1px solid #aeb9af; background: #fffefa; border-radius: 8px; min-height: 48px; padding: 10px 13px; }
+.primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 10px; min-height: 48px; background: var(--color-accent); color: white; border: 1px solid transparent; border-radius: 8px; padding: 11px 20px; font-weight: 600; text-decoration: none; }
+.primary-button:hover { background: #173f2d; }
+.text-link { color: var(--color-accent); text-underline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

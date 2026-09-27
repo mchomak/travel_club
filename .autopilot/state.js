@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-09-26T12:32:55+03:00",
-  "updatedAt": "2026-09-26T13:07:41+03:00",
+  "updatedAt": "2026-09-27T15:37:37+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -51,7 +51,9 @@ window.STATE =
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-09-26T22:11:32+03:00",
+      "note": "Foundation review while container checks finish"
     },
     {
       "id": "final",
@@ -227,10 +229,20 @@ window.STATE =
         "scripts/"
       ],
       "status": "in-progress",
-      "retries": 0,
+      "retries": 1,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-09-26T13:07:41+03:00"
+      "startedAt": "2026-09-26T13:07:41+03:00",
+      "note": "Resumed existing executor after usage limit; PostgreSQL healthy, foundation files preserved.",
+      "concerns": [
+        "backend/app/auth.py:88 ? validate normalized login length before SQL (120 U+0130 expands to 240); reproduce and resolve in final integration.",
+        "backend/app/schemas.py:169,176 ? Pydantic groups/by_type completeness differs from TypeScript Record; verify and align with pricing implementation."
+      ],
+      "reviews": {
+        "manifest": "clean",
+        "spec": "clean",
+        "craft": "two non-blocking findings; final triage"
+      }
     },
     {
       "id": "02",
@@ -1527,10 +1539,13 @@ window.STATE =
     "deferred": 0,
     "notes": "G2 recheck PASS"
   },
-  "concerns": [],
+  "concerns": [
+    "backend/app/auth.py:88 ? validate normalized login length before SQL (120 U+0130 expands to 240); reproduce and resolve in final integration.",
+    "backend/app/schemas.py:169,176 ? Pydantic groups/by_type completeness differs from TypeScript Record; verify and align with pricing implementation."
+  ],
   "reviewers": {
     "manifestSpec": "/root/spec_coverage",
-    "craft": null
+    "craft": "/root/foundation"
   },
   "blind": null
 }

@@ -23,6 +23,9 @@
 
 ## Критерии приёмки
 
+- [ ] T01 Craft concern: нормализованный login повторно проверяется по длине до SQL; 120 символов U+0130 не вызывают ошибку VARCHAR(120). Воспроизвести и исправить, не ослабляя проверки.
+- [ ] T01 Craft concern: Python Calculation гарантирует такие же полные ключи groups/by_type, как TypeScript Record, либо оба контракта честно согласованы; проверить на реальном pricing output и пустой поездке.
+
 - [ ] Docker Compose build и up здоровы, production Next обслуживает полный working flow; clean migration проходит.
 - [ ] Все 27 критериев §34 покрыты проверкой через API или браузер, ключевой путь реальным браузером, результаты зафиксированы.
 - [ ] Backend tests, frontend tests, lint, types, production build green; нет секретов/debug/mock leftovers.

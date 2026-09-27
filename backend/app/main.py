@@ -1,0 +1,61 @@
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
+
+from app.auth import router as auth_router
+from app.config import get_settings
+
+
+def create_app() -> FastAPI:
+    application = FastAPI(title="Travel Club", docs_url=None, redoc_url=None)
+    application.include_router(auth_router)
+
+    @application.middleware("http")
+    async def csrf_guard(request: Request, call_next):
+        if request.method not in {"GET", "HEAD", "OPTIONS"}:
+            origin = request.headers.get("origin")
+            if request.headers.get("x-requested-with") != "TravelClub" or (
+                origin is not None and origin != get_settings().allowed_origin
+            ):
+                return JSONResponse(
+                    {"code": "CSRF_REJECTED", "message": "Обновите страницу и повторите действие"},
+                    status_code=403,
+                )
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
+    @application.get("/api/health")
+    def health():
+        return {"status": "ok"}
+
+    @application.exception_handler(HTTPException)
+    async def http_error(request: Request, exc: HTTPException):
+        detail = exc.detail
+        body = (
+            detail
+            if isinstance(detail, dict)
+            else {"code": f"HTTP_{exc.status_code}", "message": str(detail)}
+        )
+        return JSONResponse(body, status_code=exc.status_code, headers=exc.headers)
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            {
+                "code": "VALIDATION_ERROR",
+                "message": "Проверьте заполненные поля",
+                "details": [
+                    {"field": ".".join(map(str, e["loc"])), "message": e["msg"]}
+                    for e in exc.errors()
+                ],
+            },
+            status_code=422,
+        )
+
+    return application
+
+
+app = create_app()

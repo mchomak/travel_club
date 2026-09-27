@@ -1,0 +1,16 @@
+{
+  "description": "Each case has a complete TripInput and independently calculated expected totals. Extend in task 02; run the same cases in Python and TypeScript.",
+  "cases": [
+    {
+      "name": "flight_35000_three_people",
+      "input": {
+        "internal_title": "Контрольный пример", "client_title": "", "start_date": "2026-10-01", "end_date": "2026-10-01", "participants": 3,
+        "base_currency": "RUB", "internal_note": "", "client_note": "", "status": "draft", "pricing_mode": "markup", "pricing_percent": "0",
+        "days": [{"id": "00000000-0000-4000-8000-000000000001", "date": "2026-10-01", "country": "", "city": "", "place": "", "title": "", "internal_note": "", "client_note": ""}],
+        "rates": [],
+        "items": [{"id": "00000000-0000-4000-8000-000000000002", "day_id": "00000000-0000-4000-8000-000000000001", "position": 0, "type": "flight", "calculation_mode": "per_person", "title": "Перелёт", "description": "", "location": "", "start_time": null, "end_time": null, "internal_note": "", "client_note": "", "included": true, "currency": "RUB", "unit_price": "35000.00", "quantity": "1", "participants_override": null, "capacity": null, "rooms_override": null, "duration_days": 1, "check_in": null, "check_out": null}]
+      },
+      "expected": {"cost_total": "105000.00", "cost_per_person": "35000.00", "client_price": "105000.00", "profit": "0.00", "actual_margin_percent": "0", "general_total": "0.00"}
+    }
+  ]
+}

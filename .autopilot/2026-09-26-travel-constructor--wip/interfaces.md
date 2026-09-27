@@ -26,3 +26,19 @@
 
 Швы тестов: чистый calculate_trip и тот же контракт через calculateTrip; HTTP API с реальной PostgreSQL; браузерные пользовательские сценарии.
 
+## Из таска 01 — проверенные интерфейсы
+
+- `backend/app/schemas.py`: TripCreate, TripInput(days,items,rates), TripUpdate(+version), TripDocument(+id,version,created_by,created_at,updated_at,items:ItemDocument[],calculation), Calculation, ClientPreview.
+- `frontend/src/lib/contracts.ts`: те же transport types; деньги/количество/курсы/проценты — JSON строки.
+- `Calculation`: items[{id,original_amount,rate_used,normalized_amount}], days[{day_id,date,groups,total}], by_type, general_total, cost_total, cost_per_person, client_price, profit, actual_margin_percent.
+- `app.db`: get_db()->Generator[Session], SessionLocal; `app.auth`: require_admin(request,db)->User и Admin annotated dependency.
+- `/api/auth/login` POST {login,password}->UserInfo{id,login}; `/api/auth/logout` POST->204; `/api/auth/me` GET->UserInfo.
+- Cookie `travel_session`; unsafe header `X-Requested-With: TravelClub`.
+- `frontend/src/lib/api.ts`: apiRequest<T>(path,options?:RequestInit):Promise<T>; authApi.login/logout/me; ApiError(status,code,message,details).
+- `frontend/src/lib/server-auth.ts`: requireAdmin():Promise<UserInfo>.
+- Env names: POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, APP_ENV, ALLOWED_ORIGIN, COOKIE_SECURE; frontend BACKEND_URL. Root .env ignored; `scripts/init_env.py` создаёт локальную конфигурацию без вывода секрета и не должен перезаписывать существующую.
+- Pricing functions и trip routes создаёт T02, frontend calculateTrip/editor — T03; отсутствующие пока endpoints не являются mock.
+- Проверки из новых процессов: `docker compose exec -T backend pytest -q` (7 passed), `.venv/Scripts/ruff.exe check .` из backend; `npm.cmd test` из frontend (1 passed), lint/typecheck/build PASS. `npm.cmd run test:e2e` (2 passed) проверил запущенный Docker сайт. Alembic revision `512ed4d25bb7` head, schema check clean; все три Compose сервиса запущены.
+- Docker proxy использует build-time `BACKEND_URL=http://backend:8000`. npm lockfile проверен через Linux npm ci, используется BuildKit cache/prefer-offline/maxsockets5 из-за нестабильной сети.
+- При reverse proxy лимит по IP общий для кабинета; отдельный лимит по login продолжает действовать. Не доверять произвольному X-Forwarded-For.
+
