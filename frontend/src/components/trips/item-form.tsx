@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
@@ -7,24 +7,26 @@ import { currencies, defaultModes, formatDate, formatMoney, itemLabels, modeLabe
 import { ErrorNotice, Field } from "./ui";
 
 const nullableInteger = (v: string | number | null | undefined) => v === "" || v === null || v === undefined ? null : Number(v);
-export function ItemForm({ initial, trip, onSubmit, onCancel }: { initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void }) {
-  const { register, handleSubmit, setValue, control, formState: { errors } } = useForm<ItemInput>({ defaultValues: initial });
+export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange }: { initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+  const { register, handleSubmit, setValue, control, formState: { errors, isDirty } } = useForm<ItemInput>({ defaultValues: initial });
   const item = useWatch({ control }) as ItemInput;
   const [error, setError] = useState<unknown>(null);
-  const [rate, setRate] = useState(trip.rates.find(r => r.currency === initial.currency)?.rate ?? "");
+  const [initialRate] = useState(() => trip.rates.find(r => r.currency === initial.currency)?.rate ?? "");
+  const [rate, setRate] = useState(initialRate);
+  useEffect(() => { onDirtyChange?.(isDirty || rate !== initialRate); }, [isDirty, rate, initialRate, onDirtyChange]);
   const mode = item.calculation_mode;
   const foreign = item.currency !== trip.base_currency;
   const rates = foreign && rate ? [...trip.rates.filter(r => r.currency !== item.currency), { currency: item.currency, rate }] : trip.rates;
   let amount: string | null = null;
   try { amount = calculateTrip({ ...trip, rates, items: [item] }).items[0].normalized_amount; } catch { /* Incomplete form has no trustworthy estimate. */ }
-  function changeType(type: ItemType) { setValue("type", type); setValue("calculation_mode", defaultModes[type]); if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4); if (type === "hotel") { const date = trip.days.find(d => d.id === item.day_id)?.date ?? trip.start_date; setValue("check_in", date); setValue("check_out", nextDate(date)); } }
+  function changeType(type: ItemType) { setValue("type", type, { shouldDirty: true }); setValue("calculation_mode", defaultModes[type], { shouldDirty: true }); if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true }); if (type === "hotel") { const date = trip.days.find(d => d.id === item.day_id)?.date ?? trip.start_date; setValue("check_in", date, { shouldDirty: true }); setValue("check_out", nextDate(date), { shouldDirty: true }); } }
   return <form onSubmit={handleSubmit(values => { try { const candidate = { ...trip, rates, items: [...trip.items.filter(i => i.id !== values.id), values] }; calculateTrip(candidate); onSubmit(values, foreign && rate ? { currency: values.currency, rate } : undefined); } catch (e) { setError(e); } })} className="trip-form">
     <div className="form-grid"><Field label="Тип элемента"><select {...register("type")} onChange={e => changeType(e.target.value as ItemType)}>{Object.entries(itemLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="День маршрута"><select {...register("day_id", { setValueAs: v => v || null })}><option value="">Общие расходы</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field>
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus {...register("title", { required: "Укажите название", maxLength: 200 })} /></Field>
       <Field label="Начало по местному времени"><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Окончание по местному времени" hint={item.start_time && item.end_time && item.end_time < item.start_time ? "На следующий день" : undefined}><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
       <Field label="Место" wide><input {...register("location", { maxLength: 200 })} /></Field><Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
     </div><section className="form-section"><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" wide><select {...register("calculation_mode")}>{Object.entries(modeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-      <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : "Цена за единицу"}><input inputMode="decimal" {...register("unit_price", { required: true })} /></Field><Field label="Валюта цены"><input list="item-currencies" maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id="item-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
+      <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : "Цена за единицу"}><input inputMode="decimal" {...register("unit_price", { required: true })} /></Field><Field label="Валюта цены"><input list="item-currencies" maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code, { shouldDirty: true }); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id="item-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
       {foreign && <Field label={`Курс ${item.currency || "валюты"}`} hint={`1 ${item.currency || "единица"} = указанная сумма в ${trip.base_currency}`} wide><input value={rate} onChange={e => setRate(e.target.value)} inputMode="decimal" required /></Field>}
       {mode !== "manual" && mode !== "hotel" && <Field label="Количество" hint="Например, число билетов на человека или повторений услуги"><input inputMode="decimal" {...register("quantity")} /></Field>}
       {(mode === "capacity" || mode === "hotel") && <Field label={mode === "hotel" ? "Гостей в номере" : "Вместимость одной машины / группы"} hint="Количество единиц округляем вверх"><input type="number" min="1" {...register("capacity", { setValueAs: nullableInteger })} /></Field>}

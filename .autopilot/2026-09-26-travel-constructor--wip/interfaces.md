@@ -70,3 +70,11 @@ T02 зона расширена на `compose.yaml` только backend.build: 
 
 Transport/REST/calculateTrip/DraftSession интерфейсы сохранены. Saved summary всегда использует server Calculation. Сокращение дат перечисляет затронутые дни, отмена сохраняет данные; hotel-range error предлагает восстановить прежние даты без потери других правок. После подтверждения conflict reload нет второго beforeunload. Финальные проверки автора: unit5, Playwright7 (2 до таска, 3 на handoff), lint/typecheck/production build и Docker build/restart PASS. Четыре дополнительные browser регрессии выполнены red→green. Изменения finishing: `components/trips/trip-editor.tsx`, `e2e/constructor.spec.ts`.
 
+## T03 repair 1 — защита локальных форм
+
+`TripForm`, `DayForm`, `RatesForm` принимают опциональный `onDirtyChange(dirty: boolean)`; editor учитывает их флаги наряду с DraftSession и ItemForm при beforeunload. New-trip имеет собственную защиту. Save/Cancel/Revert сбрасывают предупреждение. Из RatesForm можно удалить курс, не используемый статьями; для валют сохранённых статей курс остаётся обязательным. Browser fixture использует одну временную session cookie на worker, чтобы регрессии проверяли UI, не срабатывая на штатный login throttle. Автор: unit5, Playwright12 (было7), lint/typecheck/build и Docker frontend rebuild/restart PASS. Wire/REST/financial formulas не менялись.
+
+## T03 repair 2 — выход и фактическая dirty-форма пункта
+
+New-trip logout action проверяет несохранённый ввод до прекращения session; cancel оставляет данные и `/auth/me` доступным. `ItemForm` принимает опциональный `onDirtyChange(dirty: boolean)`; открытие без изменения или полный revert не вызывает предупреждения, реальный edit вызывает, Save/Cancel сбрасывают. API/financial rules прежние. Автор подтвердил red→green browser regressions, frontend unit5, Playwright14 (было12), lint/typecheck/build и Docker rebuild/restart PASS; changed frontend/e2e/constructor.spec.ts и components/trips/{item-form,new-trip,trip-editor}.
+

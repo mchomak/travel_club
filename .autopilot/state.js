@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-09-26T12:32:55+03:00",
-  "updatedAt": "2026-09-27T17:21:02+03:00",
+  "updatedAt": "2026-09-28T09:47:39+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -48,13 +48,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-26T13:07:41+03:00",
-      "note": "1/4 complete; backend and frontend in progress"
+      "note": "3/4 complete; integration acceptance pending"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-26T22:11:32+03:00",
-      "note": "T01 reviewed; two concerns retained for final integration"
+      "note": "T01/T02/T03 reviewed; T03 repaired and clean"
     },
     {
       "id": "final",
@@ -63,8 +63,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 577,
-    "done": 30,
-    "inTicket": 547,
+    "done": 403,
+    "inTicket": 174,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -561,21 +561,23 @@ window.STATE =
         "backend/",
         "shared/pricing-vectors.json"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 1,
       "handoffs": 1,
       "startedAt": "2026-09-27T15:49:48+03:00",
-      "note": "Repair 1 green: aggregate read consistency; 38 backend tests; re-review pending",
+      "note": "Backend reviewed; parent snapshot repair verified; user integration commit includes this ticket",
       "tests": {
         "passed": 38,
         "failed": 0
       },
       "reviews": {
-        "craft": "blocking: concurrent GET can mix parent and children versions",
-        "manifest": "pending",
-        "spec": "pending"
-      }
+        "manifest": "clean",
+        "spec": "clean",
+        "craft": "clean after repair 1"
+      },
+      "finishedAt": "2026-09-28T02:16:17+03:00",
+      "commit": "ff71816"
     },
     {
       "id": "03",
@@ -927,16 +929,22 @@ window.STATE =
       "zone": [
         "frontend/"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 2,
       "handoffs": 1,
       "startedAt": "2026-09-27T15:49:48+03:00",
-      "note": "Full UI delivered; 7 browser scenarios pass; independent reviews pending",
+      "note": "Full UI reviewed clean after two repairs; 14 browser tests; final acceptance pending",
       "tests": {
-        "passed": 12,
+        "passed": 19,
         "failed": 0
-      }
+      },
+      "reviews": {
+        "manifest": "clean after repair 2",
+        "spec": "clean after repair 2",
+        "craft": "clean after repair 2"
+      },
+      "finishedAt": "2026-09-28T09:47:39+03:00"
     },
     {
       "id": "04",
@@ -1542,7 +1550,7 @@ window.STATE =
   ],
   "singlePass": null,
   "tests": {
-    "passed": 50,
+    "passed": 57,
     "failed": 0
   },
   "debt": {

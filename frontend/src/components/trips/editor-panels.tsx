@@ -1,20 +1,24 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { Calculation, CurrencyRateInput, DayInput, TripInput } from "@/lib/contracts";
 import { calculateTrip } from "@/lib/pricing";
 import { currencies, formatMoney, itemLabels } from "@/lib/trip-ui";
 import { ErrorNotice, Field } from "./ui";
 
-export function DayForm({ day, onSave, onCancel }: { day: DayInput; onSave: (day: DayInput) => void; onCancel: () => void }) {
-  const { register, handleSubmit } = useForm<DayInput>({ defaultValues: day });
+export function DayForm({ day, onSave, onCancel, onDirtyChange }: { day: DayInput; onSave: (day: DayInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+  const { register, handleSubmit, formState: { isDirty } } = useForm<DayInput>({ defaultValues: day });
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
   return <form className="trip-form" onSubmit={handleSubmit(onSave)}><div className="form-grid"><Field label="Название дня" wide><input autoFocus maxLength={200} {...register("title")} placeholder="Например, знакомство с Киото" /></Field><Field label="Страна"><input maxLength={120} {...register("country")} /></Field><Field label="Город"><input maxLength={120} {...register("city")} /></Field><Field label="Место" wide><input maxLength={200} {...register("place")} /></Field><Field label="Заметка для клиента" wide><textarea rows={3} maxLength={10000} {...register("client_note")} /></Field><Field label="Внутренняя заметка" hint="Видна только команде" wide><textarea rows={3} maxLength={10000} {...register("internal_note")} /></Field></div><div className="form-actions"><button type="button" className="secondary-button" onClick={onCancel}>Отмена</button><button className="primary-button">Сохранить день</button></div></form>;
 }
-export function RatesForm({ trip, onSave, onCancel }: { trip: TripInput; onSave: (rates: CurrencyRateInput[]) => void; onCancel: () => void }) {
+export function RatesForm({ trip, onSave, onCancel, onDirtyChange }: { trip: TripInput; onSave: (rates: CurrencyRateInput[]) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const codes = [...new Set([...trip.rates.map(r => r.currency), ...trip.items.map(i => i.currency)])].filter(c => c !== trip.base_currency);
-  const [rates, setRates] = useState(codes.map(currency => ({ currency, rate: trip.rates.find(r => r.currency === currency)?.rate ?? "" })));
+  const requiredCodes = [...new Set(trip.items.map(item => item.currency))].filter(currency => currency !== trip.base_currency);
+  const [initialRates] = useState(() => codes.map(currency => ({ currency, rate: trip.rates.find(r => r.currency === currency)?.rate ?? "" })));
+  const [rates, setRates] = useState(initialRates);
   const [code, setCode] = useState(""), [error, setError] = useState<unknown>(null);
-  return <form className="trip-form" onSubmit={e => { e.preventDefault(); try { calculateTrip({ ...trip, items: [], rates }); const missing = codes.filter(c => !rates.some(r => r.currency === c)); if (missing.length) throw new Error(`Нужен курс ${missing.join(", ")}`); onSave(rates); } catch (err) { setError(err); } }}><p className="mb-6 text-muted">Введите стоимость одной единицы иностранной валюты в {trip.base_currency}. Например, 1 EUR = 96,20 RUB. Курс базовой валюты всегда 1.</p>
+  useEffect(() => { onDirtyChange?.(code !== "" || JSON.stringify(rates) !== JSON.stringify(initialRates)); }, [code, rates, initialRates, onDirtyChange]);
+  return <form className="trip-form" onSubmit={e => { e.preventDefault(); try { calculateTrip({ ...trip, items: [], rates }); const missing = requiredCodes.filter(currency => !rates.some(rate => rate.currency === currency)); if (missing.length) throw new Error(`Нужен курс ${missing.join(", ")}`); onSave(rates); } catch (err) { setError(err); } }}><p className="mb-6 text-muted">Введите стоимость одной единицы иностранной валюты в {trip.base_currency}. Например, 1 EUR = 96,20 RUB. Курс базовой валюты всегда 1.</p>
     <div className="space-y-4">{rates.map((rate, i) => <div className="rate-row" key={rate.currency}><Field label={`1 ${rate.currency} в ${trip.base_currency}`}><input value={rate.rate} inputMode="decimal" required onChange={e => setRates(rates.map((r, j) => i === j ? { ...r, rate: e.target.value } : r))} /></Field><button type="button" className="subtle-button text-danger" aria-label={`Удалить курс ${rate.currency}`} onClick={() => setRates(rates.filter((_, j) => i !== j))}>Удалить</button></div>)}</div>
     <div className="rate-row mt-6"><Field label="Добавить валюту" hint="Три латинские буквы"><input list="rate-currencies" maxLength={3} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="EUR" /><datalist id="rate-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field><button type="button" className="secondary-button" disabled={!/^[A-Z]{3}$/.test(code) || code === trip.base_currency || rates.some(r => r.currency === code)} onClick={() => { setRates([...rates, { currency: code, rate: "" }]); setCode(""); }}>Добавить</button></div>{!!error && <ErrorNotice error={error} />}<div className="form-actions"><button type="button" className="secondary-button" onClick={onCancel}>Отмена</button><button className="primary-button">Применить курсы</button></div></form>;
 }

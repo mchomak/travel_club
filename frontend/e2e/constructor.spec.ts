@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
@@ -9,21 +9,37 @@ import { tripInput } from "../src/lib/trips";
 const login = `fixture-constructor-${Date.now()}-${randomBytes(4).toString("hex")}`;
 const password = randomBytes(32).toString("base64url");
 const project = path.resolve(import.meta.dirname, "../..");
+const apiHeaders = { "X-Requested-With": "TravelClub" };
+let authCookies: Awaited<ReturnType<APIRequestContext["storageState"]>>["cookies"] = [];
 function database(code: string, input: object) {
   return execFileSync("docker", ["compose", "exec", "-T", "backend", "python", "-c", code], { cwd: project, input: JSON.stringify(input), encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
 }
-test.beforeAll(() => {
+test.beforeAll(async ({ playwright }) => {
   database("import json,sys; from app.db import SessionLocal; from app.bootstrap import create_admin; p=json.load(sys.stdin); db=SessionLocal(); create_admin(db,p['login'],p['password']); db.close()", { login, password });
+  const context = await playwright.request.newContext({ baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000" });
+  try {
+    const response = await context.post("/api/auth/login", { headers: apiHeaders, data: { login, password } });
+    expect(response.ok()).toBe(true);
+    authCookies = (await context.storageState()).cookies.filter(cookie => cookie.name === "travel_session");
+    expect(authCookies).toHaveLength(1);
+  } finally {
+    await context.dispose();
+  }
 });
 test.afterAll(() => {
   // Only this run's random fixture identity and its owned trips are removed.
   database("import json,sys; from sqlalchemy import select,delete; from app.db import SessionLocal; from app.models import User,Trip,LoginAttempt; p=json.load(sys.stdin); db=SessionLocal(); user=db.scalar(select(User).where(User.login==p['login'])); db.execute(delete(Trip).where(Trip.created_by==user.id)) if user else None; db.delete(user) if user else None; db.execute(delete(LoginAttempt).where(LoginAttempt.login==p['login'])); db.commit(); db.close()", { login });
 });
 async function saved(page: Page) { await expect(page.locator(".save-status")).toHaveText("Сохранено", { timeout: 15000 }); }
-const apiHeaders = { "X-Requested-With": "TravelClub" };
+async function unloadWouldWarn(page: Page) {
+  return page.evaluate(() => {
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+}
 async function fixtureTrip(page: Page) {
-  const auth = await page.request.post("/api/auth/login", { headers: apiHeaders, data: { login, password } });
-  expect(auth.ok()).toBe(true);
+  await page.context().addCookies(authCookies);
   const response = await page.request.post("/api/trips", { headers: apiHeaders, data: { ...newTrip(), internal_title: "Проверка сохранения", start_date: "2026-10-01", end_date: "2026-10-05" } });
   expect(response.ok()).toBe(true);
   return await response.json() as TripDocument;
@@ -33,6 +49,152 @@ async function updateFixture(page: Page, trip: TripDocument) {
   expect(response.ok()).toBe(true);
   return await response.json() as TripDocument;
 }
+
+test("day form protects entered notes and clears the warning on cancel or saved submit", async ({ page }) => {
+  const trip = await fixtureTrip(page);
+  await page.goto(`/admin/trips/${trip.id}`);
+  await expect(page.getByRole("heading", { name: "Проверка сохранения", exact: true })).toBeVisible();
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await page.getByRole("button", { name: "Изменить день" }).click();
+  const modal = page.getByRole("dialog");
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await modal.getByLabel("Заметка для клиента").fill("Заполненная заметка дня");
+  expect(await unloadWouldWarn(page)).toBe(true);
+  await modal.getByRole("button", { name: "Отмена", exact: true }).click();
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await page.getByRole("button", { name: "Изменить день" }).click();
+  await page.getByRole("dialog").getByLabel("Заметка для клиента").fill("Сохранённая заметка дня");
+  await page.getByRole("dialog").getByRole("button", { name: "Сохранить день" }).click();
+  await saved(page);
+  expect(await unloadWouldWarn(page)).toBe(false);
+});
+
+test("trip settings protect unsaved edits and clear the warning after cancel or save", async ({ page }) => {
+  const trip = await fixtureTrip(page);
+  await page.goto(`/admin/trips/${trip.id}`);
+  await expect(page.getByRole("heading", { name: "Проверка сохранения", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Параметры", exact: true }).click();
+  let modal = page.getByRole("dialog");
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await modal.getByLabel("Название поездки", { exact: true }).fill("Несохранённое название");
+  expect(await unloadWouldWarn(page)).toBe(true);
+  await modal.getByRole("button", { name: "Отмена", exact: true }).click();
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await page.getByRole("button", { name: "Параметры", exact: true }).click();
+  modal = page.getByRole("dialog");
+  await modal.getByLabel("Название поездки", { exact: true }).fill("Сохранённое название");
+  await modal.getByRole("button", { name: "Применить изменения" }).click();
+  await saved(page);
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await expect(page.getByRole("heading", { name: "Сохранённое название", exact: true })).toBeVisible();
+});
+
+test("rate form protects local changes and clears the warning after cancel or save", async ({ page }) => {
+  let trip = await fixtureTrip(page);
+  trip.rates = [{ currency: "EUR", rate: "96" }];
+  trip = await updateFixture(page, trip);
+  await page.goto(`/admin/trips/${trip.id}`);
+  await expect(page.getByRole("heading", { name: "Проверка сохранения", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Валюты и курсы" }).click();
+  let modal = page.getByRole("dialog");
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await modal.getByLabel("1 EUR в RUB").fill("97");
+  expect(await unloadWouldWarn(page)).toBe(true);
+  await modal.getByRole("button", { name: "Отмена", exact: true }).click();
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await page.getByRole("button", { name: "Валюты и курсы" }).click();
+  modal = page.getByRole("dialog");
+  await expect(modal.getByLabel("1 EUR в RUB")).toHaveValue(/^96(?:\.0+)?$/);
+  await modal.getByLabel("1 EUR в RUB").fill("97");
+  await modal.getByRole("button", { name: "Применить курсы" }).click();
+  await saved(page);
+  expect(await unloadWouldWarn(page)).toBe(false);
+});
+
+test("unused rate can be removed while a currency used by an item remains required", async ({ page }) => {
+  let trip = await fixtureTrip(page);
+  trip.rates = [{ currency: "EUR", rate: "96" }];
+  trip = await updateFixture(page, trip);
+  await page.goto(`/admin/trips/${trip.id}`);
+  await page.getByRole("button", { name: "Валюты и курсы" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Удалить курс EUR" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Применить курсы" }).click();
+  await saved(page);
+  let response = await page.request.get(`/api/trips/${trip.id}`);
+  trip = await response.json() as TripDocument;
+  expect(trip.rates.some(rate => rate.currency === "EUR")).toBe(false);
+  trip.rates = [{ currency: "EUR", rate: "96" }];
+  trip.items = [{ ...newItem("other", trip.days[0], "EUR", trip.start_date), unit_price: "10", original_amount: "10.00", normalized_amount: "960.00", rate_used: "96" }];
+  await updateFixture(page, trip);
+  await page.reload();
+  await page.getByRole("button", { name: "Валюты и курсы" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Удалить курс EUR" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Применить курсы" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Нужен курс EUR");
+  response = await page.request.get(`/api/trips/${trip.id}`);
+  trip = await response.json() as TripDocument;
+  expect(trip.rates.some(rate => rate.currency === "EUR")).toBe(true);
+});
+
+test("new trip form warns on unsaved input and creates without a false leave warning", async ({ page }) => {
+  await page.context().addCookies(authCookies);
+  await page.goto("/admin/trips/new");
+  const title = page.getByLabel("Название поездки", { exact: true });
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await title.fill("Новая поездка с данными");
+  expect(await unloadWouldWarn(page)).toBe(true);
+  const dialogs: string[] = [];
+  page.on("dialog", async dialog => { dialogs.push(dialog.type()); await dialog.dismiss(); });
+  await page.getByRole("link", { name: "Все поездки" }).click();
+  await expect(page).toHaveURL(/\/admin\/trips\/new$/);
+  expect(dialogs).toEqual(["confirm"]);
+  await title.fill("");
+  await expect.poll(() => unloadWouldWarn(page)).toBe(false);
+  await title.fill("Сохранённая новая поездка");
+  await page.getByRole("button", { name: "Создать поездку", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/trips\/[0-9a-f-]+$/);
+  await saved(page);
+  expect(dialogs).toEqual(["confirm"]);
+  expect(await unloadWouldWarn(page)).toBe(false);
+});
+
+test("cancelled logout keeps a filled new trip and the admin session", async ({ page }) => {
+  await page.context().addCookies(authCookies);
+  await page.goto("/admin/trips/new");
+  await page.getByLabel("Название поездки", { exact: true }).fill("Не потерять перед выходом");
+  const dialogs: string[] = [];
+  page.on("dialog", async dialog => { dialogs.push(dialog.type()); await dialog.dismiss(); });
+  await page.getByRole("button", { name: "Выйти" }).click();
+  await expect(page).toHaveURL(/\/admin\/trips\/new$/);
+  await expect(page.getByLabel("Название поездки", { exact: true })).toHaveValue("Не потерять перед выходом");
+  expect(dialogs).toEqual(["confirm"]);
+  const me = await page.request.get("/api/auth/me");
+  expect(me.status()).toBe(200);
+});
+
+test("unchanged item does not warn; edits warn until reverted, cancelled or saved", async ({ page }) => {
+  let trip = await fixtureTrip(page);
+  trip.items = [{ ...newItem("other", trip.days[0], "RUB", trip.start_date), title: "Проверка элемента", original_amount: "0.00", normalized_amount: "0.00", rate_used: "1" }];
+  trip = await updateFixture(page, trip);
+  await page.goto(`/admin/trips/${trip.id}`);
+  await page.getByRole("button", { name: "Изменить Проверка элемента" }).click();
+  let modal = page.getByRole("dialog");
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await modal.getByLabel("Название элемента").fill("Другое название");
+  expect(await unloadWouldWarn(page)).toBe(true);
+  await modal.getByLabel("Название элемента").fill("Проверка элемента");
+  await expect.poll(() => unloadWouldWarn(page)).toBe(false);
+  await modal.getByLabel("Название элемента").fill("Ещё одна правка");
+  await modal.getByRole("button", { name: "Отмена", exact: true }).click();
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await page.getByRole("button", { name: "Изменить Проверка элемента" }).click();
+  modal = page.getByRole("dialog");
+  await modal.getByLabel("Название элемента").fill("Сохранённый элемент");
+  await modal.getByRole("button", { name: "Сохранить элемент" }).click();
+  await saved(page);
+  expect(await unloadWouldWarn(page)).toBe(false);
+  await expect(page.getByRole("button", { name: "Изменить Сохранённый элемент" })).toBeVisible();
+});
 
 test("saved finances display the server calculation even when the local estimate disagrees", async ({ page }) => {
   let trip = await fixtureTrip(page);
