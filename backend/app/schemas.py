@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
@@ -169,6 +169,12 @@ class DayCalculation(DTO):
     groups: dict[Category, Money]
     total: Money
 
+    @model_validator(mode="after")
+    def complete_groups(self):
+        if set(self.groups) != set(get_args(Category)):
+            raise ValueError("Дневная смета должна содержать все группы расходов")
+        return self
+
 
 class Calculation(DTO):
     items: list[ItemCalculation]
@@ -180,6 +186,12 @@ class Calculation(DTO):
     client_price: Money
     profit: Money
     actual_margin_percent: Percent
+
+    @model_validator(mode="after")
+    def complete_types(self):
+        if set(self.by_type) != set(get_args(ItemType)):
+            raise ValueError("Смета должна содержать все типы расходов")
+        return self
 
 
 class ItemDocument(ItemInput):

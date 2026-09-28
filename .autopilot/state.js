@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-09-26T12:32:55+03:00",
-  "updatedAt": "2026-09-28T09:47:39+03:00",
+  "updatedAt": "2026-09-28T17:03:43+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -46,15 +46,17 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-26T13:07:41+03:00",
-      "note": "3/4 complete; integration acceptance pending"
+      "note": "4/4 tickets implemented; T04 27 criteria covered",
+      "finishedAt": "2026-09-28T17:03:43+03:00"
     },
     {
       "id": "review",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-26T22:11:32+03:00",
-      "note": "T01/T02/T03 reviewed; T03 repaired and clean"
+      "note": "All tickets independently reviewed; two Craft concerns for final triage",
+      "finishedAt": "2026-09-28T17:03:43+03:00"
     },
     {
       "id": "final",
@@ -63,8 +65,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 577,
-    "done": 403,
-    "inTicket": 174,
+    "done": 575,
+    "inTicket": 2,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -944,7 +946,8 @@ window.STATE =
         "spec": "clean after repair 2",
         "craft": "clean after repair 2"
       },
-      "finishedAt": "2026-09-28T09:47:39+03:00"
+      "finishedAt": "2026-09-28T09:47:39+03:00",
+      "commit": "b0ec651"
     },
     {
       "id": "04",
@@ -1542,15 +1545,27 @@ window.STATE =
         "backend/",
         "frontend/"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 1,
+      "startedAt": "2026-09-28T09:49:32+03:00",
+      "note": "27/27 criteria covered, full Compose build/up green; final whole-project pass next",
+      "tests": {
+        "passed": 62,
+        "failed": 0
+      },
+      "reviews": {
+        "manifest": "clean after repair 1",
+        "spec": "clean after repair 1",
+        "craft": "no blocking; two concerns for final triage"
+      },
+      "finishedAt": "2026-09-28T17:03:43+03:00"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 57,
+    "passed": 62,
     "failed": 0
   },
   "debt": {
@@ -1575,8 +1590,8 @@ window.STATE =
     "notes": "G2 recheck PASS"
   },
   "concerns": [
-    "backend/app/auth.py:88 ? validate normalized login length before SQL (120 U+0130 expands to 240); reproduce and resolve in final integration.",
-    "backend/app/schemas.py:169,176 ? Pydantic groups/by_type completeness differs from TypeScript Record; verify and align with pricing implementation."
+    "frontend/e2e/constructor.spec.ts:341 - logout invalidates shared authCookies fixture session; later fixtureTrip can get 401.",
+    "README.md:91 and docs/acceptance.md:3 - all test transactions rollback claim omits committed concurrency transactions in isolated temporary schemas."
   ],
   "reviewers": {
     "manifestSpec": "/root/spec_coverage",

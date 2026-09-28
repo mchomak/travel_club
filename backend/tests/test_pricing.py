@@ -7,9 +7,28 @@ import pytest
 from pydantic import ValidationError
 
 from app.pricing import PricingError, calculate_trip
-from app.schemas import TripInput
+from app.schemas import Calculation, TripInput
 
 VECTORS = Path(__file__).resolve().parents[2] / "shared" / "pricing-vectors.json"
+
+
+def test_calculation_contract_requires_complete_category_and_type_totals():
+    empty = next(
+        case["input"]
+        for case in json.loads(VECTORS.read_text(encoding="utf-8"))["cases"]
+        if case["name"] == "empty"
+    )
+    actual = calculate_trip(TripInput.model_validate(empty)).model_dump(mode="json")
+    assert len(actual["by_type"]) == 9
+    assert all(len(day["groups"]) == 4 for day in actual["days"])
+    missing_type = deepcopy(actual)
+    del missing_type["by_type"]["flight"]
+    with pytest.raises(ValidationError):
+        Calculation.model_validate(missing_type)
+    missing_group = deepcopy(actual)
+    del missing_group["days"][0]["groups"]["transport"]
+    with pytest.raises(ValidationError):
+        Calculation.model_validate(missing_group)
 
 
 def test_shared_pricing_vectors():

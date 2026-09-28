@@ -271,7 +271,8 @@ def test_persisted_recalculation_people_rates_dates_modes_and_order(authenticate
         result = response.json()
         assert result["calculation"]["cost_total"] == expected
         assert client.get(path).json() == result
-        assert client.get("/api/trips").json()[0]["cost_total"] == expected
+        listed = next(row for row in client.get("/api/trips").json() if row["id"] == saved["id"])
+        assert listed["cost_total"] == expected
         payload = editable(result)
         return result
 
