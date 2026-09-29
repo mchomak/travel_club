@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Рабочая карта проекта
 
-Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичные страницы пока заглушки; работающей оплаты нет.
+Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, календарь событий, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичные страницы пока заглушки; работающей оплаты нет. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose.
 
 ### Запуск и проверка (PowerShell, корень репозитория)
 
@@ -352,13 +352,12 @@ docker compose build
 docker compose up -d --wait
 docker compose exec backend python -m app.bootstrap
 docker compose exec -T backend pytest -q
-docker compose exec -T backend pytest -q tests/test_pricing.py
 docker compose exec -T backend ruff check .
 docker compose exec -T backend alembic current
 docker compose exec -T backend alembic check
 ```
 
-`init_env.py` создаёт игнорируемый `.env`, если его нет; bootstrap интерактивно создаёт первого администратора (его нет по умолчанию). Проверены Compose build/up, 40 backend tests, Ruff и чистая Alembic-миграция на временной БД; отдельный `test_pricing.py` — 3 passed.
+`init_env.py` создаёт игнорируемый `.env`, если его нет; bootstrap интерактивно создаёт первого администратора (его нет по умолчанию). Backend перед запуском API выполняет `alembic upgrade head`. Проверены Compose build/up, backend pytest (50 passed), Ruff, `alembic current` на `8b97c412e6af` и `alembic check` без новых операций. Чистый прогон миграций на временной БД проверялся ранее; при новых изменениях схемы повторить его.
 
 ```powershell
 cd frontend
@@ -369,28 +368,28 @@ npm.cmd run build
 npm.cmd run test:e2e
 ```
 
-Frontend unit (5), Playwright (17), ESLint, TypeScript и production build проверены. Playwright требует работающий Compose-сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`); матрица сценариев — `docs/acceptance.md`.
+Проверены frontend unit (23 passed), Playwright (21 passed), lint, typecheck и production build. Playwright требует работающий сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`). Сценарии — `docs/acceptance.md`.
 
 ### Где менять код
 
-- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — три локальных сервиса; backend запускает `alembic upgrade head` до API.
-- `backend/app/main.py`, `auth.py`, `trips.py` — FastAPI, сессии и `/api/trips` (CRUD, calculate, duplicate, preview).
-- `backend/app/schemas.py`, `validation.py`, `pricing.py` — transport DTO, ошибки валидации и окончательный Decimal-расчёт.
-- `backend/app/models.py`, `db.py`, `migrations/` — SQLAlchemy-модель, PostgreSQL и Alembic.
-- `frontend/src/app/admin/`, `frontend/src/components/trips/` — закрытые экраны, формы, таймлайн, сводка и просмотр.
-- `frontend/src/lib/contracts.ts`, `api.ts`, `trips.ts`, `draft-session.ts`, `pricing.ts`, `server-auth.ts` — DTO, запросы, черновик, мгновенный расчёт и серверная проверка входа.
-- `backend/tests/`, `frontend/src/lib/*.test.ts`, `frontend/e2e/`, `shared/pricing-vectors.json` — проверки API/БД, логики UI, браузера и общие финансовые векторы.
+- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — PostgreSQL, backend и frontend; backend-образ получает `shared/pricing-vectors.json` через named build context.
+- `backend/app/main.py`, `auth.py`, `trips.py` — FastAPI, сессии, `/api/trips`: CRUD, расчёт, дублирование, клиентский просмотр, контроль версий и дат.
+- `backend/app/schemas.py`, `validation.py`, `pricing.py` — DTO, проверки и окончательный Decimal-расчёт; `models.py`, `db.py`, `migrations/` — таблицы и Alembic. Поля расписания добавляет `8b97c412e6af_schedule_fields.py`.
+- `frontend/src/app/admin/`, `frontend/src/components/trips/trip-editor.tsx`, `trip-calendar.tsx`, `item-form.tsx`, `editor-panels.tsx`, `ui.tsx` — закрытые экраны, конструктор, календарь, формы и боковая панель редактирования.
+- `frontend/src/lib/calendar.ts` — `buildCalendarEntries`: разрезает события по дням, расставляет пересечения, интервалы отелей и отметки заезда/выезда. `contracts.ts`, `api.ts`, `trips.ts`, `draft-session.ts`, `pricing.ts`, `server-auth.ts` — DTO, запросы, черновик, предварительный расчёт и проверка входа.
+- `backend/tests/`, `frontend/src/lib/*.test.ts`, `frontend/src/components/trips/*.test.tsx`, `frontend/e2e/`, `shared/pricing-vectors.json` — проверки API/БД, календаря и форм, браузерные сценарии и общие финансовые векторы.
 
 ### Поток данных и соглашения
 
-UI вызывает типизированный `/api` через same-origin rewrite Next (`frontend/next.config.ts`) → FastAPI/Pydantic → SQLAlchemy/PostgreSQL. Финансовый источник истины — `backend/app/pricing.py:calculate_trip(TripInput)`; `frontend/src/lib/pricing.ts:calculateTrip` даёт предварительную смету, после сохранения показывается серверная.
-Деньги, курсы, количества и проценты в JSON — строки; backend считает через Decimal, хранит NUMERIC и snapshots исходной суммы, курса и суммы в базовой валюте. Семь режимов расчёта и markup/target margin разделены; общие примеры в `shared/pricing-vectors.json` доступны backend-образу через Compose named build context.
-Поездка хранится нормализованно в `trips`, `trip_days`, `trip_items`, `trip_currency_rates`; `TripUpdate.version` предотвращает потерю параллельных правок, сокращение заполненных дней требует подтверждения. Preview отдаёт клиентские поля без внутренних цен и заметок.
-Next `requireAdmin()` проверяет приватные страницы через `/api/auth/me`; каждый admin API route отдельно требует сессию. Cookie `travel_session` — HttpOnly, SameSite=Lax, Secure в production; БД хранит только digest токена, пароль — Argon2id hash. Изменяющие запросы требуют `X-Requested-With: TravelClub` и допустимый Origin; вход ограничен по логину и IP.
+UI вызывает типизированный `/api` через same-origin rewrite Next (`frontend/next.config.ts`) → FastAPI/Pydantic → SQLAlchemy/PostgreSQL. Финансовый источник истины — `backend/app/pricing.py:calculate_trip(TripInput)`; `frontend/src/lib/pricing.ts:calculateTrip` показывает предварительную смету, сохранённый документ содержит серверную. Деньги, курсы, количества и проценты в JSON — строки; backend считает через Decimal, хранит NUMERIC и снимки исходной суммы, курса и суммы в базовой валюте. Семь режимов стоимости, наценка и целевая маржинальность разделены; многодневные расходы нельзя дублировать в итогах дней.
 
-### Окружение и особенности
+Поездка хранится в `trips`, `trip_days`, `trip_items`, `trip_currency_rates`. `TripUpdate.version` защищает от параллельной перезаписи; сокращение диапазона с заполненными днями или связанным конечным днём требует подтверждения. `DraftSession` удерживает несохранённые изменения и последовательно сохраняет новые редакции. Клиентский preview отдаёт только разрешённые поля без внутренних цен и заметок.
 
-Имена из `.env.example`: `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `COOKIE_SECURE`; дополнительно код читает `POSTGRES_PORT`, Next — `BACKEND_URL`, Playwright — `PLAYWRIGHT_BASE_URL`. Значения и локальный `.env` не сохранять в документации.
-На Windows команды npm запускать как `npm.cmd`; Docker Desktop/Compose и Python нужны для локального старта. Compose публикует 3000/8000/5432 только на loopback; PostgreSQL живёт в named volume, `docker compose down -v` удалит данные.
-Изменение пароля в `.env` не меняет пароль уже созданной PostgreSQL; backend должен дождаться healthy БД. Docker build backend использует отдельный `shared` context для финансовых векторов; при его изменении пересобрать образ.
+День имеет свободный `status`; пункт может иметь `end_day_id`, `external_url`, время начала/окончания; отель — даты и необязательные `check_in_time`/`check_out_time`. Конечный день должен принадлежать той же поездке; при его указании проверяется порядок дат и времени. URL должен быть полным http/https. Форма нового ночного события предлагает следующий день в пределах поездки; ручной выбор конечного дня сохраняется. Времена — местные часы без пересчёта часовых поясов. Сетка времени показывает пункты с началом и окончанием, отели — отдельными полосами и необязательными отметками часов; пункты без времени и общие расходы остаются в списках. Интервал отеля заканчивается в дату выезда, которая не оплачивается. Календарь показывает 7/3/1 дня по ширине экрана; события и отметки открывают форму пункта.
+
+`requireAdmin()` проверяет приватные страницы через `/api/auth/me`; каждый admin API route отдельно требует сессию. Cookie `travel_session` — HttpOnly, SameSite=Lax, Secure в production; БД хранит digest токена, пароль — Argon2id hash. Изменяющие запросы требуют `X-Requested-With: TravelClub` и допустимый Origin; вход ограничен по логину и IP.
+
+### Окружение и подводные камни
+
+Имена из `.env.example`: `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `COOKIE_SECURE`; код дополнительно читает `POSTGRES_PORT`, Next — `BACKEND_URL`, Playwright — `PLAYWRIGHT_BASE_URL`. Значения и локальный `.env` не сохранять в документации. На Windows запускать npm как `npm.cmd`; для локального старта нужны Python и Docker Desktop/Compose. Compose публикует 3000/8000/5432 только на loopback; PostgreSQL живёт в named volume, `docker compose down -v` удалит данные. Изменение пароля в `.env` не меняет пароль уже созданной БД. Backend должен дождаться healthy PostgreSQL. При изменении `shared/pricing-vectors.json` пересобрать backend-образ.
 <!-- autopilot:end -->
