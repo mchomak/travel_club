@@ -28,6 +28,43 @@ test("invalid end time stays editable and blocks saving", async () => {
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ end_day_id: days[1].id, start_time: "18:00", end_time: "17:00" }), undefined);
 });
 
+test("new overnight flight suggests the next trip day and preserves a chosen end day", async () => {
+  const user = userEvent.setup();
+  const days = [emptyDay("2026-10-01"), emptyDay("2026-10-02"), emptyDay("2026-10-03")];
+  const item = newItem("flight", days[0], "RUB", days[0].date);
+  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[2].date, days, items: [], rates: [] };
+  const onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+
+  await user.type(screen.getByLabelText("Начало по местному времени"), "22:00");
+  await user.type(screen.getByLabelText("Окончание по местному времени"), "05:00");
+  expect(screen.getByLabelText("Дата окончания")).toHaveValue(days[1].id);
+  await user.selectOptions(screen.getByLabelText("Дата окончания"), days[2].id);
+  await user.clear(screen.getByLabelText("Окончание по местному времени"));
+  await user.type(screen.getByLabelText("Окончание по местному времени"), "06:00");
+  expect(screen.getByLabelText("Дата окончания")).toHaveValue(days[2].id);
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ end_day_id: days[2].id, start_time: "22:00", end_time: "06:00" }), undefined);
+});
+
+test("new overnight flight beyond the trip keeps entered times for correction", async () => {
+  const user = userEvent.setup();
+  const day = emptyDay("2026-10-01");
+  const removedDay = emptyDay("2026-10-02");
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day, removedDay], items: [], rates: [] };
+  const onSubmit = vi.fn();
+  render(<ItemForm initial={newItem("flight", day, "RUB", day.date)} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+
+  await user.type(screen.getByLabelText("Начало по местному времени"), "22:00");
+  await user.type(screen.getByLabelText("Окончание по местному времени"), "05:00");
+  expect(screen.getByLabelText("Дата окончания")).toHaveValue("");
+  expect(screen.getByText(/2 октября.*за пределами поездки/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Начало по местному времени")).toHaveValue("22:00");
+  expect(screen.getByLabelText("Окончание по местному времени")).toHaveValue("05:00");
+});
+
 test("existing hotel keeps unspecified times until the user chooses them", async () => {
   const user = userEvent.setup();
   const days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];

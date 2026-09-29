@@ -281,7 +281,7 @@ test("date shrink lists the removed days and cancel retains their contents", asy
   await expect(page.locator(".client-note")).toContainText("Не потерять четвёртый день");
 });
 
-test("invalid hotel range offers restoring trip dates without losing other edits", async ({ page }) => {
+test("hotel date shrink can be cancelled or confirmed without losing other edits", async ({ page }) => {
   let trip = await fixtureTrip(page);
   trip.items = [{ ...newItem("hotel", trip.days[0], "RUB", trip.start_date), check_out: "2026-10-05", unit_price: "100", original_amount: "400.00", normalized_amount: "400.00", rate_used: "1" }];
   trip = await updateFixture(page, trip);
@@ -291,8 +291,9 @@ test("invalid hotel range offers restoring trip dates without losing other edits
   await modal.getByLabel("Окончание", { exact: true }).fill("2026-10-03");
   await modal.getByLabel("Название поездки", { exact: true }).fill("Сохранить новое название");
   await modal.getByRole("button", { name: "Применить изменения" }).click();
-  await expect(page.locator(".error-notice")).toContainText("исправьте даты проживания");
-  await page.getByRole("button", { name: "Вернуть прежние даты" }).click();
+  const confirmation = page.getByRole("dialog", { name: "Сократить поездку?" });
+  await expect(confirmation.getByText("4 октября", { exact: true })).toBeVisible();
+  await confirmation.getByRole("button", { name: "Отмена", exact: true }).click();
   await saved(page);
   await page.reload();
   await expect(page.getByRole("heading", { name: "Сохранить новое название", exact: true })).toBeVisible();
@@ -301,6 +302,17 @@ test("invalid hotel range offers restoring trip dates without losing other edits
   await page.getByRole("button", { name: "Изменить Проживание", exact: true }).click();
   await expect(page.getByRole("dialog").getByLabel("Выезд", { exact: false })).toHaveValue("2026-10-05");
   await page.getByRole("dialog").getByRole("button", { name: "Отмена", exact: true }).click();
+  await changeEndDate(page, "2026-10-03");
+  await expect(confirmation.getByText("4 октября", { exact: true })).toBeVisible();
+  await confirmation.getByRole("button", { name: "Удалить дни и сохранить" }).click();
+  await saved(page);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Сохранить новое название", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /День 5/ })).toHaveCount(0);
+  await expect(page.locator(".finance-total")).toHaveText("0,00 RUB");
+  const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
+  expect(persisted.end_date).toBe("2026-10-03");
+  expect(persisted.items).toHaveLength(0);
 });
 
 test("version conflict reload uses one confirmation and fetches the latest saved trip", async ({ page }) => {
@@ -477,6 +489,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
     if (item.label === "Перелёт") {
       await modal.getByLabel("Начало по местному времени").fill("23:00");
       await modal.getByLabel("Окончание по местному времени", { exact: false }).fill("02:00");
+      await expect(modal.getByLabel("Дата окончания")).toHaveValue((await (await page.request.get(`/api/trips/${url.split("/").at(-1)}`)).json() as TripDocument).days[1].id);
       await modal.getByText("Заметки", { exact: true }).click();
       await modal.getByLabel("Заметка для клиента", { exact: true }).fill("Клиентская заметка элемента");
       await modal.getByLabel("Внутренняя заметка", { exact: false }).fill("PRIVATE_ITEM_SECRET");
@@ -500,6 +513,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.getByRole("button", { name: /День 1/ }).click();
   const tripId = url.split("/").at(-1)!;
   let persisted = await (await page.request.get(`/api/trips/${tripId}`)).json() as TripDocument;
+  expect(persisted.items.find(item => item.type === "flight")).toMatchObject({ start_time: "23:00:00", end_time: "02:00:00", end_day_id: persisted.days[1].id });
   expect(persisted.days).toHaveLength(5);
   expect(persisted.days.map(day => [day.country, day.city, day.place])).toEqual(expect.arrayContaining([["Япония", "Токио", ""], ["Италия", "Рим", "Центр"]]));
   expect(persisted.items.map(item => item.calculation_mode)).toEqual(expect.arrayContaining(["per_person", "capacity", "hotel", "fixed", "per_person_per_day", "per_day", "manual"]));
@@ -552,28 +566,60 @@ test("calendar opens overnight travel and hotel from a tablet without page overf
   await page.goto(`/admin/trips/${trip.id}`);
   const calendar = page.getByRole("region", { name: "Календарь поездки" });
   await expect(calendar.getByRole("button", { name: /День вылета/ })).toBeVisible();
-  await expect(calendar.locator(".trip-calendar-event")).toHaveCount(2);
-  await expect(calendar.locator(".trip-calendar-hotel-bar")).toHaveCount(1);
-  await expect(calendar.locator(".trip-calendar-marker")).toHaveCount(2);
-  await calendar.locator(".trip-calendar-event").first().click();
+  const firstDay = calendar.locator('.trip-calendar-day[data-date="2026-10-01"]');
+  const secondDay = calendar.locator('.trip-calendar-day[data-date="2026-10-02"]');
+  const thirdDay = calendar.locator('.trip-calendar-day[data-date="2026-10-03"]');
+  await expect(calendar.locator(".trip-calendar-day-heading")).toContainText([/1 окт/, /2 окт/, /3 окт/]);
+  const departure = firstDay.getByRole("button", { name: "Открыть перелёт Ночной рейс, 2026-10-01, 23:00 — 24:00" });
+  const arrival = secondDay.getByRole("button", { name: "Открыть перелёт Ночной рейс, 2026-10-02, 00:00 — 01:00" });
+  await expect(departure).toContainText("23:00–24:00");
+  await expect(arrival).toContainText("00:00–01:00");
+  const hotelBar = calendar.getByRole("button", { name: "Открыть отель Отель у моря, 2026-10-01 — 2026-10-03" });
+  await expect(hotelBar).toContainText("2026-10-01 — 2026-10-03");
+  const checkIn = firstDay.getByRole("button", { name: "Открыть отель Отель у моря: заезд в 15:00" });
+  const checkOut = thirdDay.getByRole("button", { name: "Открыть отель Отель у моря: выезд в 11:00" });
+  await expect(checkIn).toContainText("Заезд 15:00");
+  await expect(checkOut).toContainText("Выезд 11:00");
+  await departure.click();
   const panel = page.getByRole("dialog");
   await expect(panel).toHaveClass(/modal-panel/);
   await expect(panel.getByLabel("Название элемента")).toHaveValue("Ночной рейс");
-  await expect(panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" })).toHaveAttribute("rel", "noopener noreferrer");
+  const ticketLink = panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" });
+  await expect(ticketLink).toHaveAttribute("href", "https://example.com/ticket");
+  await expect(ticketLink).toHaveAttribute("target", "_blank");
+  await expect(ticketLink).toHaveAttribute("rel", "noopener noreferrer");
+  await panel.getByRole("button", { name: "Отмена", exact: true }).click();
+  await arrival.click();
+  await expect(panel.getByLabel("Название элемента")).toHaveValue("Ночной рейс");
   await panel.getByLabel("Название элемента").fill("Рейс после полуночи");
   await panel.getByRole("button", { name: "Сохранить элемент" }).click();
   await saved(page);
-  await expect(calendar.locator(".trip-calendar-event").first()).toContainText("Рейс после полуночи");
-  await calendar.locator(".trip-calendar-hotel-bar").click();
-  await expect(page.getByRole("dialog").getByLabel("Название элемента")).toHaveValue("Отель у моря");
-  await page.getByRole("dialog").getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(firstDay.getByRole("button", { name: /Рейс после полуночи, 2026-10-01, 23:00 — 24:00/ })).toBeVisible();
+  await hotelBar.click();
+  await expect(panel.getByLabel("Название элемента")).toHaveValue("Отель у моря");
+  await panel.getByRole("button", { name: "Отмена", exact: true }).click();
+  await checkIn.click();
+  await expect(panel.getByLabel("Название элемента")).toHaveValue("Отель у моря");
+  await panel.getByRole("button", { name: "Отмена", exact: true }).click();
+  await checkOut.click();
+  await expect(panel.getByLabel("Название элемента")).toHaveValue("Отель у моря");
+  await expect(panel.getByLabel("Время выселения")).toHaveValue(/^11:00(?::00)?$/);
+  await panel.getByRole("button", { name: "Отмена", exact: true }).click();
+  await page.reload();
+  await secondDay.getByRole("button", { name: "Открыть перелёт Рейс после полуночи, 2026-10-02, 00:00 — 01:00" }).click();
+  await expect(panel.getByLabel("Дата окончания")).toHaveValue(trip.days[1].id);
+  await expect(panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" })).toHaveAttribute("href", "https://example.com/ticket");
+  await panel.getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(page.locator(".unscheduled-section")).toContainText("Общий сбор");
   await expect(page.locator(".finance-total")).toHaveText("6 300,00 RUB");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  const before = await calendar.locator(".trip-calendar-day-heading strong").textContent();
   await calendar.getByRole("button", { name: "Следующие дни" }).click();
   await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  await expect(calendar.locator(".trip-calendar-day-heading strong")).not.toHaveText(before ?? "");
+  await expect(calendar.locator(".trip-calendar-day-heading strong")).toContainText("2 окт");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.locator(".unscheduled-section").getByRole("button", { name: /Общий сбор/ }).click();
   await expect(page.getByRole("dialog")).toHaveClass(/modal-panel/);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
@@ -32,12 +32,26 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange }: {
   };
   const { register, handleSubmit, setValue, setError: setFieldError, clearErrors, control, formState: { errors, isDirty } } = useForm<ItemInput>({ defaultValues: defaults });
   const item = useWatch({ control }) as ItemInput;
+  const chosenEndDay = useRef(false);
+  const suggestedEndDay = useRef<string | null>(null);
+  const endDayField = register("end_day_id", { setValueAs: v => v || null });
   const [error, setError] = useState<unknown>(null);
   const [initialRate] = useState(() => trip.rates.find(r => r.currency === initial.currency)?.rate ?? "");
   const [rate, setRate] = useState(initialRate);
   useEffect(() => { onDirtyChange?.(isDirty || rate !== initialRate); }, [isDirty, rate, initialRate, onDirtyChange]);
   const mode = item.calculation_mode;
   const selectedDay = trip.days.find(day => day.id === item.day_id);
+  const startDate = selectedDay?.date;
+  useEffect(() => {
+    if (!isNew || chosenEndDay.current || !startDate || !item.start_time || !item.end_time) return;
+    const followingDate = nextDate(startDate);
+    const nextDay = followingDate <= trip.end_date ? trip.days.find(day => day.date === followingDate) : undefined;
+    const suggested = item.end_time < item.start_time ? nextDay?.id ?? null : null;
+    if (item.end_day_id === suggestedEndDay.current && item.end_day_id !== suggested) {
+      suggestedEndDay.current = suggested;
+      setValue("end_day_id", suggested, { shouldDirty: true });
+    }
+  }, [isNew, startDate, item.start_time, item.end_time, item.end_day_id, trip.days, trip.end_date, setValue]);
   const overnightOutsideTrip = selectedDay && !item.end_day_id && item.start_time && item.end_time && item.end_time < item.start_time && nextDate(selectedDay.date) > trip.end_date;
   const availableDays = selectedDay ? trip.days.filter(day => day.date >= selectedDay.date && day.date <= trip.end_date).length : 3660;
   const foreign = item.currency !== trip.base_currency;
@@ -77,7 +91,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange }: {
   return <form onSubmit={handleSubmit(save)} className="trip-form">
     <div className="form-grid"><Field label="Тип элемента"><select {...register("type")} onChange={e => changeType(e.target.value as ItemType)}>{Object.entries(itemLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="День маршрута" hint="Дата начала события"><select {...register("day_id", { setValueAs: v => v || null })}><option value="">Общие расходы</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field>
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus {...register("title", { required: "Укажите название", maxLength: 200 })} /></Field>
-      <Field label="Начало по местному времени"><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Дата окончания" error={errors.end_day_id?.message} hint="Пусто — в день начала"><select {...register("end_day_id", { setValueAs: v => v || null })}><option value="">В день начала</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field><Field label="Окончание по местному времени" error={errors.end_time?.message} hint="Часы показываются без пересчёта часовых поясов"><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
+      <Field label="Начало по местному времени"><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Дата окончания" error={errors.end_day_id?.message} hint="Для ночного события предложим следующий день тура"><select {...endDayField} onChange={event => { chosenEndDay.current = true; void endDayField.onChange(event); }}><option value="">В день начала</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field><Field label="Окончание по местному времени" error={errors.end_time?.message} hint="Часы показываются без пересчёта часовых поясов"><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
       {overnightOutsideTrip && <p className="field-hint field-wide">Продолжение {formatDate(nextDate(selectedDay.date))} — за пределами поездки. Чтобы изменить расписание, продлите даты поездки.</p>}
       <Field label="Место" wide><input {...register("location", { maxLength: 200 })} /></Field><Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
       <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
