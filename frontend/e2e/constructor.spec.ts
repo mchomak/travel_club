@@ -314,6 +314,12 @@ test("failed save retains the draft and retry persists it", async ({ page }) => 
 
 test("copy is independent; archive, delete, and logout protect own trips", async ({ page }) => {
   const original = await fixtureTrip(page);
+  // Login rotates any incoming token, so leave the shared fixture session out of this request.
+  await page.context().clearCookies();
+  const isolatedLogin = await page.request.post("/api/auth/login", { headers: apiHeaders, data: { login, password } });
+  expect(isolatedLogin.ok()).toBe(true);
+  const isolatedCookie = (await page.context().storageState()).cookies.find(cookie => cookie.name === "travel_session");
+  expect(isolatedCookie?.value).not.toBe(authCookies[0].value);
   await page.goto("/admin/trips");
   const originalRow = page.locator(".trip-row").filter({ has: page.locator(`a[href="/admin/trips/${original.id}"]`) });
   await originalRow.getByRole("button", { name: "Копировать" }).click();
@@ -343,6 +349,8 @@ test("copy is independent; archive, delete, and logout protect own trips", async
   expect((await page.request.get("/api/trips")).status()).toBe(401);
   await page.goto(`/admin/trips/${copyId}`);
   await expect(page).toHaveURL(/\/admin\/login$/);
+  const afterLogout = await fixtureTrip(page);
+  expect((await page.request.get(`/api/trips/${afterLogout.id}`)).ok()).toBe(true);
 });
 
 test("two separate transfers persist in order and each contributes once", async ({ page }) => {
