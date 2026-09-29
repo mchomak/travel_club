@@ -94,6 +94,25 @@ def calendar(payload: TripInput) -> TripInput:
     return payload.model_copy(update={"days": days})
 
 
+def validate_schedule(payload: TripInput) -> None:
+    days = {day.id: day.date for day in payload.days}
+    for item in payload.items:
+        if item.end_day_id is None:
+            continue
+        if item.day_id is None or item.end_day_id not in days or item.day_id not in days:
+            raise PricingError(f"«{item.title}»: выберите день окончания этой поездки")
+        start_date, end_date = days[item.day_id], days[item.end_day_id]
+        if not payload.start_date <= end_date <= payload.end_date:
+            raise PricingError(f"«{item.title}»: день окончания вне дат поездки")
+        if end_date < start_date or (
+            end_date == start_date
+            and item.start_time is not None
+            and item.end_time is not None
+            and item.end_time <= item.start_time
+        ):
+            raise PricingError(f"«{item.title}»: окончание должно быть позже начала")
+
+
 def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) -> TripInput:
     day_ids = [day.id for day in payload.days]
     day_dates = [day.date for day in payload.days]
@@ -104,10 +123,24 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
         if day.id in existing and day.date != existing[day.id].date:
             raise PricingError("Не меняйте дату существующего дня: измените диапазон поездки")
     all_days = [*original.days, *payload.days]
+    original_day_ids = {day.id for day in original.days}
+    supplied_dates = {day.id: day.date for day in payload.days}
+    for item in payload.items:
+        end_date = supplied_dates.get(item.end_day_id)
+        if (
+            end_date is not None
+            and not payload.start_date <= end_date <= payload.end_date
+            and item.end_day_id not in original_day_ids
+        ):
+            raise PricingError(f"«{item.title}»: день окончания вне дат поездки")
     removed = {
         day.id: day for day in all_days if not payload.start_date <= day.date <= payload.end_date
     }
-    item_days = {item.day_id for item in [*original.items, *payload.items]}
+    item_days = {
+        day_id
+        for item in [*original.items, *payload.items]
+        for day_id in (item.day_id, item.end_day_id)
+    }
     populated = {
         day.date
         for day in all_days
@@ -116,22 +149,18 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
             day.id in item_days
             or any(
                 getattr(day, key)
-                for key in ("country", "city", "place", "title", "internal_note", "client_note")
+                for key in (
+                    "country", "city", "place", "title", "status", "internal_note", "client_note"
+                )
             )
         )
     }
-    for item in payload.items:
+    for item in [*original.items, *payload.items]:
         if item.calculation_mode == "hotel" and item.check_in and item.check_out:
-            if (
-                item.check_in < payload.start_date
-                or item.check_out - timedelta(days=1) > payload.end_date
-            ):
-                raise PricingError(f"«{item.title}»: исправьте даты проживания или удалите элемент")
-    retained_items = {item.id for item in payload.items}
-    for item in original.items:
-        if item.calculation_mode == "hotel" and item.id not in retained_items:
             populated.update(
-                day.date for day in removed.values() if item.check_in <= day.date < item.check_out
+                day.date
+                for day in removed.values()
+                if item.check_in <= day.date < item.check_out
             )
     if populated and not confirmed:
         raise HTTPException(
@@ -148,7 +177,23 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
         payload.model_copy(
             update={
                 "days": list(by_date.values()),
-                "items": [item for item in payload.items if item.day_id not in removed],
+                "items": [
+                    item for item in payload.items
+                    if item.day_id not in removed
+                    and item.end_day_id not in removed
+                    and not (
+                        item.calculation_mode == "hotel"
+                        and item.check_in and item.check_out
+                        and any(
+                            item.check_in <= day.date < item.check_out
+                            for day in removed.values()
+                        )
+                        and (
+                            item.check_in < payload.start_date
+                            or item.check_out - timedelta(days=1) > payload.end_date
+                        )
+                    )
+                ],
             }
         )
     )
@@ -179,6 +224,7 @@ def persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> T
 
 
 def _persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> TripDocument:
+    validate_schedule(payload)
     calculation = calculate_trip(payload)
     if increment_version:
         trip.version += 1
@@ -212,6 +258,7 @@ def _persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> 
 
 @router.post("/calculate", response_model=Calculation)
 def calculate(payload: TripInput, user: Admin):
+    validate_schedule(payload)
     return calculate_trip(payload)
 
 
@@ -298,6 +345,7 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
                     update={
                         "id": uuid4(),
                         "day_id": day_ids.get(item.day_id),
+                        "end_day_id": day_ids.get(item.end_day_id),
                     }
                 )
                 for item in payload.items

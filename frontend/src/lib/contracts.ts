@@ -9,15 +9,15 @@ export type Category = "transport" | "accommodation" | "activities" | "other";
 export interface UserInfo { id: UUID; login: string }
 export interface DayInput {
   id: UUID; date: string; country: string; city: string; place: string; title: string;
-  internal_note: string; client_note: string;
+  status: string; internal_note: string; client_note: string;
 }
 export interface ItemInput {
-  id: UUID; day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
+  id: UUID; day_id: UUID | null; end_day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
-  internal_note: string; client_note: string; included: boolean; currency: string;
+  external_url: string | null; internal_note: string; client_note: string; included: boolean; currency: string;
   unit_price: DecimalString; quantity: DecimalString; participants_override: number | null;
   capacity: number | null; rooms_override: number | null; duration_days: number;
-  check_in: string | null; check_out: string | null;
+  check_in: string | null; check_out: string | null; check_in_time: string | null; check_out_time: string | null;
 }
 export interface CurrencyRateInput { currency: string; rate: DecimalString }
 export interface TripCreate {

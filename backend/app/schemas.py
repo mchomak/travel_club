@@ -1,9 +1,20 @@
 from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Annotated, Literal, get_args
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 ItemType = Literal[
     "flight",
@@ -88,6 +99,7 @@ class DayInput(DTO):
     city: str = Field(default="", max_length=120)
     place: str = Field(default="", max_length=200)
     title: str = Field(default="", max_length=200)
+    status: str = Field(default="", max_length=200)
     internal_note: Note = ""
     client_note: Note = ""
 
@@ -95,6 +107,7 @@ class DayInput(DTO):
 class ItemInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     day_id: UUID | None = None
+    end_day_id: UUID | None = None
     position: int = Field(default=0, ge=0, le=10000, strict=True)
     type: ItemType
     calculation_mode: CalculationMode
@@ -103,6 +116,7 @@ class ItemInput(DTO):
     location: str = Field(default="", max_length=200)
     start_time: time | None = None
     end_time: time | None = None
+    external_url: str | None = Field(default=None, max_length=2048)
     internal_note: Note = ""
     client_note: Note = ""
     included: bool = True
@@ -115,6 +129,28 @@ class ItemInput(DTO):
     duration_days: int = Field(default=1, gt=0, le=3660, strict=True)
     check_in: date | None = None
     check_out: date | None = None
+    check_in_time: time | None = None
+    check_out_time: time | None = None
+
+    @field_validator("external_url")
+    @classmethod
+    def valid_external_url(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        try:
+            parsed = TypeAdapter(AnyHttpUrl).validate_python(value)
+        except ValidationError:
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта") from None
+        parts = urlsplit(value)
+        if (
+            not parts.netloc
+            or not parts.hostname
+            or any(char.isspace() for char in value)
+            or parsed.username
+            or parsed.password
+        ):
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта")
+        return value
 
 
 class CurrencyRateInput(DTO):

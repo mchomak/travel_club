@@ -54,6 +54,145 @@ def editable(document):
     return payload
 
 
+def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(authenticated):
+    client = authenticated
+    trip = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["days"][0]["status"] = "День вылета"
+    payload["days"][1]["status"] = "День прилёта"
+    payload["items"] = [
+        {
+            "id": str(uuid4()), "day_id": trip["days"][0]["id"],
+            "end_day_id": trip["days"][1]["id"], "type": "flight",
+            "calculation_mode": "fixed", "title": "Ночной рейс", "currency": "RUB",
+            "unit_price": "120", "start_time": "23:00", "end_time": "02:00",
+            "external_url": "https://example.com/ticket",
+        },
+        {
+            "id": str(uuid4()), "day_id": trip["days"][1]["id"],
+            "type": "hotel", "calculation_mode": "hotel", "title": "Отель",
+            "currency": "RUB", "unit_price": "100", "capacity": 2,
+            "check_in": "2026-10-02", "check_in_time": "15:00",
+            "check_out": "2026-10-04", "check_out_time": "11:00",
+            "external_url": "https://example.com/hotel",
+        },
+    ]
+    response = client.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert [day["status"] for day in saved["days"][:2]] == ["День вылета", "День прилёта"]
+    flight = next(item for item in saved["items"] if item["type"] == "flight")
+    hotel = next(item for item in saved["items"] if item["type"] == "hotel")
+    assert flight["end_day_id"] == trip["days"][1]["id"]
+    assert flight["external_url"] == "https://example.com/ticket"
+    assert hotel["check_in_time"] == "15:00:00"
+    assert hotel["check_out_time"] == "11:00:00"
+    assert saved["calculation"]["cost_total"] == "720.00"
+    assert client.get(path).json() == saved
+    duplicate = client.post(path + "/duplicate", headers=HEADERS)
+    assert duplicate.status_code == 201, duplicate.text
+    copied = duplicate.json()
+    copied_flight = next(item for item in copied["items"] if item["type"] == "flight")
+    copied_hotel = next(item for item in copied["items"] if item["type"] == "hotel")
+    assert copied_flight["end_day_id"] == copied["days"][1]["id"]
+    assert copied_flight["external_url"] == "https://example.com/ticket"
+    assert copied_hotel["check_in_time"] == "15:00:00"
+    assert copied["calculation"]["cost_total"] == "720.00"
+    preview = client.get(path + "/preview").json()
+    assert "status" not in preview["days"][0]
+    assert "end_day_id" not in preview["days"][0]["items"][0]
+    assert "external_url" not in preview["days"][0]["items"][0]
+
+
+def test_schedule_rejects_invalid_end_day_time_and_link_without_changing_trip(authenticated):
+    client = authenticated
+    trip = create_trip(client)
+    other = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    base = editable(trip)
+    base["items"] = [{
+        "id": str(uuid4()), "day_id": trip["days"][1]["id"],
+        "type": "flight", "calculation_mode": "fixed", "title": "Рейс",
+        "currency": "RUB", "unit_price": "50", "start_time": "18:00",
+        "end_time": "20:00",
+    }]
+    for changes in (
+        {"end_day_id": other["days"][2]["id"]},
+        {"end_day_id": trip["days"][0]["id"]},
+        {"end_day_id": trip["days"][1]["id"], "end_time": "17:00"},
+        {"external_url": "javascript:alert(1)"},
+        {"external_url": "https:///missing-host"},
+        {"external_url": "https://example.com/has space"},
+    ):
+        invalid = deepcopy(base)
+        invalid["items"][0].update(changes)
+        response = client.put(path, headers=HEADERS, json=invalid)
+        assert response.status_code == 422, response.text
+        assert client.get(path).json() == trip
+    # Older overnight records have no end_day_id and remain editable.
+    base["items"][0].update(start_time="23:00", end_time="02:00")
+    accepted = client.put(path, headers=HEADERS, json=base)
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["items"][0]["end_day_id"] is None
+    assert accepted.json()["calculation"]["cost_total"] == "50.00"
+
+
+def test_end_day_outside_trip_range_is_rejected_by_save_and_calculate(authenticated):
+    client = authenticated
+    trip = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    invalid = editable(trip)
+    outside = {**invalid["days"][4], "id": str(uuid4()), "date": "2026-10-06"}
+    invalid["days"].append(outside)
+    invalid["items"] = [{
+        "id": str(uuid4()), "day_id": trip["days"][0]["id"],
+        "end_day_id": outside["id"], "type": "flight", "calculation_mode": "fixed",
+        "title": "Рейс", "currency": "RUB", "unit_price": "50",
+        "start_time": "23:00", "end_time": "02:00",
+    }]
+    saved = client.put(path + "?confirm_date_removal=true", headers=HEADERS, json=invalid)
+    assert saved.status_code == 422, saved.text
+    assert client.get(path).json() == trip
+    calculation = client.post(
+        "/api/trips/calculate", headers=HEADERS,
+        json={key: value for key, value in invalid.items() if key != "version"},
+    )
+    assert calculation.status_code == 422, calculation.text
+    assert "день окончания" in calculation.json()["message"]
+
+
+def test_shortening_trip_confirms_removal_of_end_day_and_crossing_hotel(authenticated):
+    client = authenticated
+    trip = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["items"] = [
+        {"id": str(uuid4()), "day_id": trip["days"][0]["id"],
+         "end_day_id": trip["days"][4]["id"], "type": "flight",
+         "calculation_mode": "fixed", "title": "Рейс", "currency": "RUB",
+         "unit_price": "120", "start_time": "23:00", "end_time": "02:00"},
+        {"id": str(uuid4()), "day_id": trip["days"][1]["id"],
+         "type": "hotel", "calculation_mode": "hotel", "title": "Отель",
+         "currency": "RUB", "unit_price": "100", "capacity": 5,
+         "check_in": "2026-10-02", "check_out": "2026-10-05"},
+    ]
+    saved = client.put(path, headers=HEADERS, json=payload).json()
+    assert saved["calculation"]["cost_total"] == "420.00"
+    shorter = editable(saved)
+    shorter["end_date"] = "2026-10-03"
+    refused = client.put(path, headers=HEADERS, json=shorter)
+    assert refused.status_code == 409
+    assert refused.json()["code"] == "DATE_REMOVAL_REQUIRED"
+    assert refused.json()["details"]["dates"] == ["2026-10-04", "2026-10-05"]
+    assert client.get(path).json() == saved
+    confirmed = client.put(path + "?confirm_date_removal=true", headers=HEADERS, json=shorter)
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["items"] == []
+    assert confirmed.json()["calculation"]["cost_total"] == "0.00"
+    assert client.get(path).json() == confirmed.json()
+
+
 def test_trip_aggregate_crud_duplicate_preview_and_reopen(authenticated):
     client = authenticated
     trip = create_trip(client, internal_note="СЕКРЕТ поездки", client_note="Заметка клиенту")
@@ -428,7 +567,6 @@ def test_invalid_hotel_dates_fx_and_subgroup_never_change_saved_trip(authenticat
         ({"day_id": saved["days"][1]["id"]}, {}),
         ({"capacity": 0}, {}),
         ({}, {"participants": 2}),
-        ({}, {"end_date": "2026-10-03"}),
         ({}, {"rates": []}),
         ({}, {"base_currency": "USD", "rates": []}),
         ({}, {"rates": [{"currency": "EUR", "rate": "0"}]}),
