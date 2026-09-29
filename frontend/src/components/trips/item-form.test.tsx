@@ -93,6 +93,7 @@ test("external link requires http or https and opens safely", async () => {
   render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
 
   await user.type(screen.getByLabelText("Ссылка"), "javascript:alert(1)");
+  expect(screen.queryByRole("link", { name: "Открыть ссылку в новой вкладке" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).not.toHaveBeenCalled();
   expect(screen.getByText("Введите полную ссылку http:// или https:// с адресом сайта")).toBeInTheDocument();
@@ -105,15 +106,31 @@ test("external link requires http or https and opens safely", async () => {
   expect(link).toHaveAttribute("rel", "noopener noreferrer");
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ external_url: "https://example.com/ticket" }), undefined);
+
+  onSubmit.mockClear();
+  await user.clear(screen.getByLabelText("Ссылка"));
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ external_url: null }), undefined);
 });
 
-test("new hotel starts with suggested check-in and check-out times", () => {
+test("new hotel suggests times and submits the edited check-in and check-out hours", async () => {
+  const user = userEvent.setup();
   const day = emptyDay("2026-10-01");
   const item = newItem("hotel", day, "RUB", day.date);
   const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
-  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
+  const onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
   expect(screen.getByLabelText("Время заселения")).toHaveValue("15:00");
   expect(screen.getByLabelText("Время выселения")).toHaveValue("11:00");
+  await user.clear(screen.getByLabelText("Время заселения"));
+  await user.type(screen.getByLabelText("Время заселения"), "14:30");
+  await user.clear(screen.getByLabelText("Время выселения"));
+  await user.type(screen.getByLabelText("Время выселения"), "10:15");
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+    check_in: "2026-10-01", check_in_time: "14:30",
+    check_out: "2026-10-02", check_out_time: "10:15",
+  }), undefined);
 });
 
 test("legacy overnight event on the last trip day saves unrelated edits unchanged", async () => {

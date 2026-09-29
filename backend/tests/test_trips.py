@@ -93,12 +93,21 @@ def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(
     duplicate = client.post(path + "/duplicate", headers=HEADERS)
     assert duplicate.status_code == 201, duplicate.text
     copied = duplicate.json()
+    assert copied["id"] != saved["id"]
+    assert [day["status"] for day in copied["days"]] == [day["status"] for day in saved["days"]]
     copied_flight = next(item for item in copied["items"] if item["type"] == "flight")
     copied_hotel = next(item for item in copied["items"] if item["type"] == "hotel")
     assert copied_flight["end_day_id"] == copied["days"][1]["id"]
+    assert copied_flight["end_day_id"] != flight["end_day_id"]
+    assert copied_flight["start_time"] == "23:00:00"
+    assert copied_flight["end_time"] == "02:00:00"
     assert copied_flight["external_url"] == "https://example.com/ticket"
     assert copied_hotel["check_in_time"] == "15:00:00"
+    assert copied_hotel["check_out_time"] == "11:00:00"
+    assert copied_hotel["external_url"] == "https://example.com/hotel"
     assert copied["calculation"]["cost_total"] == "720.00"
+    assert client.get(f"/api/trips/{copied['id']}").json() == copied
+    assert client.get(path).json() == saved
     preview = client.get(path + "/preview").json()
     assert "status" not in preview["days"][0]
     assert "end_day_id" not in preview["days"][0]["items"][0]
@@ -187,6 +196,42 @@ def test_shortening_trip_confirms_removal_of_end_day_and_crossing_hotel(authenti
     assert refused.json()["details"]["dates"] == ["2026-10-04", "2026-10-05"]
     assert client.get(path).json() == saved
     confirmed = client.put(path + "?confirm_date_removal=true", headers=HEADERS, json=shorter)
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["items"] == []
+    assert confirmed.json()["calculation"]["cost_total"] == "0.00"
+    assert client.get(path).json() == confirmed.json()
+
+
+def test_shortening_trip_requires_confirmation_when_only_event_end_day_is_removed(authenticated):
+    client = authenticated
+    trip = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["items"] = [{
+        "id": str(uuid4()), "day_id": trip["days"][0]["id"],
+        "end_day_id": trip["days"][4]["id"], "type": "flight",
+        "calculation_mode": "fixed", "title": "Night flight", "currency": "RUB",
+        "unit_price": "120", "start_time": "23:00", "end_time": "02:00",
+    }]
+    response = client.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+
+    shortened = editable(saved)
+    shortened["end_date"] = "2026-10-04"
+    refused = client.put(path, headers=HEADERS, json=shortened)
+    assert refused.status_code == 409, refused.text
+    assert refused.json()["code"] == "DATE_REMOVAL_REQUIRED"
+    assert refused.json()["details"]["dates"] == ["2026-10-05"]
+    assert client.get(path).json() == saved
+
+    invalid = deepcopy(shortened)
+    invalid["items"][0]["external_url"] = "javascript:alert(1)"
+    rejected = client.put(path + "?confirm_date_removal=true", headers=HEADERS, json=invalid)
+    assert rejected.status_code == 422, rejected.text
+    assert client.get(path).json() == saved
+
+    confirmed = client.put(path + "?confirm_date_removal=true", headers=HEADERS, json=shortened)
     assert confirmed.status_code == 200, confirmed.text
     assert confirmed.json()["items"] == []
     assert confirmed.json()["calculation"]["cost_total"] == "0.00"
