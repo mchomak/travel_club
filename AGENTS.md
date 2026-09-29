@@ -340,9 +340,57 @@ Priority order when instructions conflict:
 When the current task introduces a durable architectural rule that will matter across future work, update this file only if explicitly asked or if the repository workflow clearly expects it.
 
 <!-- autopilot:start -->
-## Текущая сборка
-Travel Club: закрытый конструктор поездок. Работа ведётся через `/autopilot full`.
-Требования, спецификация и таски: `.autopilot/2026-09-26-travel-constructor--wip/`.
-Состояние: `.autopilot/state.js`; прогресс: `.autopilot/dashboard.html`.
-Требование может снять только пользователь.
+## Рабочая карта проекта
+
+Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичные страницы пока заглушки; работающей оплаты нет.
+
+### Запуск и проверка (PowerShell, корень репозитория)
+
+```powershell
+python scripts/init_env.py
+docker compose build
+docker compose up -d --wait
+docker compose exec backend python -m app.bootstrap
+docker compose exec -T backend pytest -q
+docker compose exec -T backend pytest -q tests/test_pricing.py
+docker compose exec -T backend ruff check .
+docker compose exec -T backend alembic current
+docker compose exec -T backend alembic check
+```
+
+`init_env.py` создаёт игнорируемый `.env`, если его нет; bootstrap интерактивно создаёт первого администратора (его нет по умолчанию). Проверены Compose build/up, 40 backend tests, Ruff и чистая Alembic-миграция на временной БД; отдельный `test_pricing.py` — 3 passed.
+
+```powershell
+cd frontend
+npm.cmd test
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd run test:e2e
+```
+
+Frontend unit (5), Playwright (17), ESLint, TypeScript и production build проверены. Playwright требует работающий Compose-сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`); матрица сценариев — `docs/acceptance.md`.
+
+### Где менять код
+
+- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — три локальных сервиса; backend запускает `alembic upgrade head` до API.
+- `backend/app/main.py`, `auth.py`, `trips.py` — FastAPI, сессии и `/api/trips` (CRUD, calculate, duplicate, preview).
+- `backend/app/schemas.py`, `validation.py`, `pricing.py` — transport DTO, ошибки валидации и окончательный Decimal-расчёт.
+- `backend/app/models.py`, `db.py`, `migrations/` — SQLAlchemy-модель, PostgreSQL и Alembic.
+- `frontend/src/app/admin/`, `frontend/src/components/trips/` — закрытые экраны, формы, таймлайн, сводка и просмотр.
+- `frontend/src/lib/contracts.ts`, `api.ts`, `trips.ts`, `draft-session.ts`, `pricing.ts`, `server-auth.ts` — DTO, запросы, черновик, мгновенный расчёт и серверная проверка входа.
+- `backend/tests/`, `frontend/src/lib/*.test.ts`, `frontend/e2e/`, `shared/pricing-vectors.json` — проверки API/БД, логики UI, браузера и общие финансовые векторы.
+
+### Поток данных и соглашения
+
+UI вызывает типизированный `/api` через same-origin rewrite Next (`frontend/next.config.ts`) → FastAPI/Pydantic → SQLAlchemy/PostgreSQL. Финансовый источник истины — `backend/app/pricing.py:calculate_trip(TripInput)`; `frontend/src/lib/pricing.ts:calculateTrip` даёт предварительную смету, после сохранения показывается серверная.
+Деньги, курсы, количества и проценты в JSON — строки; backend считает через Decimal, хранит NUMERIC и snapshots исходной суммы, курса и суммы в базовой валюте. Семь режимов расчёта и markup/target margin разделены; общие примеры в `shared/pricing-vectors.json` доступны backend-образу через Compose named build context.
+Поездка хранится нормализованно в `trips`, `trip_days`, `trip_items`, `trip_currency_rates`; `TripUpdate.version` предотвращает потерю параллельных правок, сокращение заполненных дней требует подтверждения. Preview отдаёт клиентские поля без внутренних цен и заметок.
+Next `requireAdmin()` проверяет приватные страницы через `/api/auth/me`; каждый admin API route отдельно требует сессию. Cookie `travel_session` — HttpOnly, SameSite=Lax, Secure в production; БД хранит только digest токена, пароль — Argon2id hash. Изменяющие запросы требуют `X-Requested-With: TravelClub` и допустимый Origin; вход ограничен по логину и IP.
+
+### Окружение и особенности
+
+Имена из `.env.example`: `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `COOKIE_SECURE`; дополнительно код читает `POSTGRES_PORT`, Next — `BACKEND_URL`, Playwright — `PLAYWRIGHT_BASE_URL`. Значения и локальный `.env` не сохранять в документации.
+На Windows команды npm запускать как `npm.cmd`; Docker Desktop/Compose и Python нужны для локального старта. Compose публикует 3000/8000/5432 только на loopback; PostgreSQL живёт в named volume, `docker compose down -v` удалит данные.
+Изменение пароля в `.env` не меняет пароль уже созданной PostgreSQL; backend должен дождаться healthy БД. Docker build backend использует отдельный `shared` context для финансовых векторов; при его изменении пересобрать образ.
 <!-- autopilot:end -->

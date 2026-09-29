@@ -90,3 +90,9 @@ New-trip logout action проверяет несохранённый ввод д
 
 `frontend/e2e/constructor.spec.ts` теперь сохраняет два разных transfer, после reopen браузер показывает две карточки, API подтверждает разные UUID/позиции 0/1/суммы 8 000+12 000=20 000 и равенство day/trip totals 20 000 без double count. `docs/acceptance.md` criterion 9 привязан к этому тесту. Product REST/DTO/pricing код не менялся. При полном повторном прогоне обнаружился revoked shared auth cookie после logout; тестовый сценарий получает отдельную session, без ослабления auth. Автор: Playwright17, backend40, unit5, ESLint/typecheck/diff-check PASS; production/Compose build прошли перед test-only repair.
 
+## T05–T06 — финальная приёмка и дневная смета
+
+T05: logout Playwright использует отдельную session и проверяет, что общая fixture session остаётся действительной; `--repeat-each=2` дал 34/34. Обычные backend тесты откатывают транзакции, конкурентные commit тесты работают в отдельных временных PostgreSQL схемах с очисткой; README и acceptance согласованы.
+
+T06: `calculate_trip(TripInput, *, allow_legacy_overflow=False) -> Calculation` распределяет `per_day`/`per_person_per_day` с `day_id` по последовательным датам `duration_days` через безопасное копеечное правило D01. Item без дня остаётся в `general_total`; сумма дневных групп + общие строго равна первичным `cost_total`. Новый ввод, выходящий за конец поездки, получает 422. Старые сохранённые overflow-документы читаются с прежней дневной сметой без изменения snapshots через `allow_legacy_overflow=True`, но следующее сохранение требует исправления. Wire `Calculation` и REST пути не менялись. Shared vectors, backend45, frontend unit6, Playwright18, Ruff/ESLint/typecheck/production build и Compose passed. Независимая G4 повторно подтвердила критерий 16 на живом UI/API.
+

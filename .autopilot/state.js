@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "travel-constructor",
-  "dir": "2026-09-26-travel-constructor--wip",
+  "dir": "2026-09-26-travel-constructor",
   "title": "Travel Club — конструктор поездок",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-09-26T12:32:55+03:00",
-  "updatedAt": "2026-09-28T17:03:43+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-29T11:50:12+03:00",
+  "finishedAt": "2026-09-29T11:50:12+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -48,25 +48,28 @@ window.STATE =
       "id": "build",
       "status": "done",
       "startedAt": "2026-09-26T13:07:41+03:00",
-      "note": "4/4 tickets implemented; T04 27 criteria covered",
-      "finishedAt": "2026-09-28T17:03:43+03:00"
+      "note": "6/6 tickets implemented; full suite green",
+      "finishedAt": "2026-09-29T11:49:23+03:00"
     },
     {
       "id": "review",
       "status": "done",
       "startedAt": "2026-09-26T22:11:32+03:00",
-      "note": "All tickets independently reviewed; two Craft concerns for final triage",
-      "finishedAt": "2026-09-28T17:03:43+03:00"
+      "note": "Manifest/Spec clean; Craft legacy sequential repair concern reported",
+      "finishedAt": "2026-09-29T11:49:23+03:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "done",
+      "note": "G4 27/27 valid-trip criteria, memory/ADR archived, final report ready",
+      "startedAt": "2026-09-29T11:49:23+03:00",
+      "finishedAt": "2026-09-29T11:50:12+03:00"
     }
   ],
   "requirements": {
     "total": 577,
-    "done": 575,
-    "inTicket": 2,
+    "done": 577,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -1560,12 +1563,86 @@ window.STATE =
         "spec": "clean after repair 1",
         "craft": "no blocking; two concerns for final triage"
       },
-      "finishedAt": "2026-09-28T17:03:43+03:00"
+      "finishedAt": "2026-09-28T17:03:43+03:00",
+      "commit": "1ee103f"
+    },
+    {
+      "id": "05",
+      "title": "?????????? Playwright ? ?????? ???????? ??????",
+      "requirements": [
+        "R551",
+        "R574"
+      ],
+      "blockedBy": [
+        "04"
+      ],
+      "wave": 4,
+      "zone": [
+        "frontend/e2e/constructor.spec.ts",
+        "README.md",
+        "docs/acceptance.md"
+      ],
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-09-29T03:00:42+03:00",
+      "finishedAt": "2026-09-29T03:11:52+03:00",
+      "tests": {
+        "passed": 34,
+        "failed": 0
+      },
+      "reviews": {
+        "manifest": "clean",
+        "spec": "clean",
+        "craft": "clean"
+      },
+      "commit": "c3bfc5f"
+    },
+    {
+      "id": "06",
+      "title": "???????????? ??????? ? ??????? ?????",
+      "requirements": [
+        "R253",
+        "R255",
+        "R552"
+      ],
+      "blockedBy": [
+        "05"
+      ],
+      "wave": 5,
+      "zone": [
+        "backend/app/",
+        "backend/tests/",
+        "frontend/src/lib/",
+        "frontend/src/components/trips/",
+        "frontend/e2e/",
+        "shared/pricing-vectors.json",
+        "README.md",
+        "docs/acceptance.md"
+      ],
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-09-29T03:11:52+03:00",
+      "finishedAt": "2026-09-29T11:49:23+03:00",
+      "tests": {
+        "passed": 69,
+        "failed": 0
+      },
+      "reviews": {
+        "manifest": "clean",
+        "spec": "clean",
+        "craft": "nonblocking legacy sequential repair finding"
+      },
+      "commit": "93424f1",
+      "note": "G4 criterion 16 now implemented on valid trips; legacy overflow readable and strict on next save"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 62,
+    "passed": 69,
     "failed": 0
   },
   "debt": {
@@ -1590,12 +1667,29 @@ window.STATE =
     "notes": "G2 recheck PASS"
   },
   "concerns": [
-    "frontend/e2e/constructor.spec.ts:341 - logout invalidates shared authCookies fixture session; later fixtureTrip can get 401.",
-    "README.md:91 and docs/acceptance.md:3 - all test transactions rollback claim omits committed concurrency transactions in isolated temporary schemas."
+    "RESOLVED T05: frontend/e2e/constructor.spec.ts:341 - logout invalidates shared authCookies fixture session; later fixtureTrip can get 401.",
+    "RESOLVED T05: README.md:91 and docs/acceptance.md:3 - all test transactions rollback claim omits committed concurrency transactions in isolated temporary schemas.",
+    "REPORT: frontend/src/lib/pricing.ts:83 + frontend/src/components/trips/item-form.tsx:25 - multiple legacy overflow items cannot be repaired one at a time in ItemForm; extending trip dates first is a workaround. No data loss; no default admin or seeded user data."
   ],
   "reviewers": {
     "manifestSpec": "/root/spec_coverage",
     "craft": "/root/foundation"
   },
-  "blind": null
+  "blind": {
+    "verdict": "27/27 acceptance criteria implemented for valid trips",
+    "firstPass": "26/27; criterion 16 partial",
+    "drift": [
+      "R253",
+      "R552"
+    ],
+    "resolvedBy": "T06, commit 93424f1",
+    "checks": {
+      "backend": 45,
+      "frontendUnit": 6,
+      "playwright": 18,
+      "compose": "healthy",
+      "lintTypesBuild": "passed"
+    },
+    "legacyCaveat": "Pre-existing duration overflow trips remain readable with old single-day allocation until corrected; new saves reject overflow"
+  }
 }
