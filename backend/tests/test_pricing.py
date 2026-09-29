@@ -36,6 +36,15 @@ def test_shared_pricing_vectors():
         result = calculate_trip(TripInput.model_validate(case["input"]))
         for field, expected in case["expected"].items():
             assert getattr(result, field) == Decimal(expected), (case["name"], field)
+        if "day_totals" in case:
+            assert [day.total for day in result.days] == [
+                Decimal(value) for value in case["day_totals"]
+            ], case["name"]
+        if "day_groups" in case:
+            assert [day.groups for day in result.days] == [
+                {key: Decimal(value) for key, value in groups.items()}
+                for groups in case["day_groups"]
+            ], case["name"]
         assert sum(day.total for day in result.days) + result.general_total == result.cost_total
 
 
@@ -102,3 +111,16 @@ def test_distribution_validation_and_extreme_calendar_boundaries():
         calculation_mode="hotel", capacity=2, check_in="9999-12-30", check_out="9999-12-31"
     )
     assert calculate_trip(TripInput.model_validate(value)).cost_total == Decimal("200")
+
+
+def test_multi_day_cost_cannot_extend_beyond_trip_even_when_excluded():
+    value = next(
+        case["input"]
+        for case in json.loads(VECTORS.read_text(encoding="utf-8"))["cases"]
+        if case["name"] == "tiny_multi_day_last_cent"
+    )
+    value = deepcopy(value)
+    value["items"][0]["day_id"] = value["days"][1]["id"]
+    value["items"][0]["included"] = False
+    with pytest.raises(PricingError, match="Малая аренда.*число дней.*пределы поездки"):
+        calculate_trip(TripInput.model_validate(value))

@@ -1,10 +1,11 @@
 import json
 from copy import deepcopy
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
+from app.models import TripItem
 from tests.conftest import FIXTURE_PASSWORD
 from tests.test_auth import HEADERS
 from tests.test_pricing import VECTORS
@@ -111,6 +112,86 @@ def test_trip_aggregate_crud_duplicate_preview_and_reopen(authenticated):
     assert client.get(f"/api/trips/{trip['id']}").json() == saved
     assert client.delete(f"/api/trips/{copy['id']}", headers=HEADERS).status_code == 204
     assert client.get(f"/api/trips/{copy['id']}").status_code == 404
+
+
+def test_multi_day_api_totals_survive_reopen_and_recalculate_without_double_count(authenticated):
+    client = authenticated
+    trip = create_trip(client, participants=5)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["items"] = [
+        {
+            "id": str(uuid4()),
+            "day_id": trip["days"][0]["id"],
+            "type": "insurance",
+            "calculation_mode": "per_person_per_day",
+            "title": "Страховка на три дня",
+            "currency": "RUB",
+            "unit_price": "1.00",
+            "quantity": "2",
+            "duration_days": 3,
+        }
+    ]
+    saved_response = client.put(path, headers=HEADERS, json=payload)
+    assert saved_response.status_code == 200, saved_response.text
+    saved = saved_response.json()
+    assert saved["calculation"]["cost_total"] == "30.00"
+    assert [day["total"] for day in saved["calculation"]["days"]] == [
+        "10.00", "10.00", "10.00", "0.00", "0.00"
+    ]
+    assert client.get(path).json() == saved
+    changed = editable(saved)
+    changed["participants"] = 9
+    grown_response = client.put(path, headers=HEADERS, json=changed)
+    assert grown_response.status_code == 200, grown_response.text
+    grown = grown_response.json()
+    assert grown["calculation"]["cost_total"] == "54.00"
+    assert [day["total"] for day in grown["calculation"]["days"]] == [
+        "18.00", "18.00", "18.00", "0.00", "0.00"
+    ]
+    invalid = editable(grown)
+    invalid["items"][0]["duration_days"] = 6
+    rejected = client.put(path, headers=HEADERS, json=invalid)
+    assert rejected.status_code == 422
+    assert "число дней" in rejected.json()["message"]
+    assert client.get(path).json() == grown
+    shortened = editable(grown)
+    shortened["end_date"] = "2026-10-02"
+    rejected_shrink = client.put(
+        path + "?confirm_date_removal=true", headers=HEADERS, json=shortened
+    )
+    assert rejected_shrink.status_code == 422
+    assert "число дней" in rejected_shrink.json()["message"]
+    assert client.get(path).json() == grown
+
+
+def test_saved_legacy_overflow_stays_readable_until_admin_repairs_it(authenticated, db):
+    client = authenticated
+    trip = create_trip(client)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["items"] = [{
+        "id": str(uuid4()), "day_id": trip["days"][2]["id"], "type": "rental",
+        "calculation_mode": "per_day", "title": "Старый многодневный расход",
+        "currency": "RUB", "unit_price": "1", "quantity": "1", "duration_days": 3,
+    }]
+    saved = client.put(path, headers=HEADERS, json=payload).json()
+    stored = db.get(TripItem, UUID(saved["items"][0]["id"]))
+    stored.day_id = UUID(trip["days"][4]["id"])
+    db.commit()
+    legacy = client.get(path)
+    assert legacy.status_code == 200
+    assert [day["total"] for day in legacy.json()["calculation"]["days"]] == [
+        "0.00", "0.00", "0.00", "0.00", "3.00"
+    ]
+    assert client.put(path, headers=HEADERS, json=editable(legacy.json())).status_code == 422
+    corrected = editable(legacy.json())
+    corrected["items"][0]["day_id"] = trip["days"][2]["id"]
+    repaired = client.put(path, headers=HEADERS, json=corrected)
+    assert repaired.status_code == 200, repaired.text
+    assert [day["total"] for day in repaired.json()["calculation"]["days"]] == [
+        "0.00", "0.00", "1.00", "1.00", "1.00"
+    ]
 
 
 def test_versions_date_removal_and_omitted_days_protect_saved_data(authenticated):

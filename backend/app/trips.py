@@ -60,7 +60,9 @@ def read_input(trip: Trip) -> TripInput:
 
 def document(trip: Trip) -> TripDocument:
     payload = read_input(trip)
-    calculation = calculate_trip(payload)
+    # Old saved documents could exceed the range because prior allocation put the
+    # full item in its anchor day. Keep them readable until an admin repairs them.
+    calculation = calculate_trip(payload, allow_legacy_overflow=True)
     snapshots = {item.id: item for item in trip.items}
     fields = payload.model_dump(exclude={"items"})
     return TripDocument(

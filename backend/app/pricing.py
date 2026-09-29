@@ -40,6 +40,17 @@ def money(value: Decimal) -> Decimal:
     return result
 
 
+def daily_portions(amount: Decimal, count: int) -> list[Decimal]:
+    """Allocate rounded cents, leaving an exact non-negative final remainder."""
+    if count == 1:
+        return [amount]
+    share = min(
+        money(amount / count),
+        (amount / (count - 1)).quantize(CENT, rounding=ROUND_DOWN),
+    )
+    return [share] * (count - 1) + [amount - share * (count - 1)]
+
+
 def validate_structure(trip: TripInput) -> None:
     dates = [day.date for day in trip.days]
     ids = [day.id for day in trip.days]
@@ -62,7 +73,7 @@ def validate_structure(trip: TripInput) -> None:
             raise PricingError("Курс базовой валюты всегда равен 1")
 
 
-def _calculate(trip: TripInput) -> Calculation:
+def _calculate(trip: TripInput, *, allow_legacy_overflow: bool = False) -> Calculation:
     validate_structure(trip)
     rates = {rate.currency: rate.rate for rate in trip.rates}
     rates[trip.base_currency] = Decimal(1)
@@ -84,6 +95,16 @@ def _calculate(trip: TripInput) -> Calculation:
             raise PricingError(f"Укажите курс {item.currency} к {trip.base_currency}")
         people = item.participants_override or trip.participants
         mode = item.calculation_mode
+        legacy_overflow = False
+        if mode in ("per_day", "per_person_per_day") and item.day_id is not None:
+            remaining = (trip.end_date - days[item.day_id].date).days + 1
+            if item.duration_days > remaining:
+                if not allow_legacy_overflow:
+                    raise PricingError(
+                        f"«{item.title}»: число дней выходит за пределы поездки. "
+                        "Уменьшите длительность, выберите более ранний день или продлите поездку"
+                    )
+                legacy_overflow = True
         nights = 0
         if mode == "per_person":
             original = item.unit_price * people * item.quantity
@@ -131,16 +152,15 @@ def _calculate(trip: TripInput) -> Calculation:
         by_type[item.type] += amount
         category = TYPE_CATEGORY[item.type]
         if mode == "hotel":
-            share = money(amount / nights)
-            if nights > 1:
-                # At sub-cent nightly prices ordinary half-up could make the final night negative.
-                share = min(share, (amount / (nights - 1)).quantize(CENT, rounding=ROUND_DOWN))
-            for night in range(nights):
+            for night, portion in enumerate(daily_portions(amount, nights)):
                 day_id = by_date[item.check_in + timedelta(days=night)]
-                portion = amount - share * (nights - 1) if night == nights - 1 else share
                 groups[day_id][category] += portion
         elif item.day_id is None:
             general += amount
+        elif mode in ("per_day", "per_person_per_day") and not legacy_overflow:
+            start = days[item.day_id].date
+            for offset, portion in enumerate(daily_portions(amount, item.duration_days)):
+                groups[by_date[start + timedelta(days=offset)]][category] += portion
         else:
             groups[item.day_id][category] += amount
     percent = trip.pricing_percent / 100
@@ -172,7 +192,7 @@ def _calculate(trip: TripInput) -> Calculation:
     )
 
 
-def calculate_trip(trip: TripInput) -> Calculation:
+def calculate_trip(trip: TripInput, *, allow_legacy_overflow: bool = False) -> Calculation:
     with localcontext() as context:
         context.prec = 50
-        return _calculate(trip)
+        return _calculate(trip, allow_legacy_overflow=allow_legacy_overflow)

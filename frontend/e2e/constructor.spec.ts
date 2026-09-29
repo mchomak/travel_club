@@ -50,6 +50,32 @@ async function updateFixture(page: Page, trip: TripDocument) {
   return await response.json() as TripDocument;
 }
 
+test("multi-day costs appear in each day after reopen and participant changes", async ({ page }) => {
+  let trip = await fixtureTrip(page);
+  const input = tripInput(trip);
+  input.participants = 5;
+  input.items = [{ ...newItem("insurance", trip.days[0], "RUB", trip.start_date), unit_price: "1.00", quantity: "2", duration_days: 3 }];
+  const response = await page.request.put(`/api/trips/${trip.id}`, { headers: apiHeaders, data: { ...input, version: trip.version } });
+  expect(response.ok()).toBe(true);
+  trip = await response.json() as TripDocument;
+  expect(trip.calculation.cost_total).toBe("30.00");
+  await page.goto(`/admin/trips/${trip.id}`);
+  await expect(page.locator(".day-total b")).toHaveText("10,00 RUB");
+  await page.getByRole("button", { name: /День 2/ }).click();
+  await expect(page.locator(".day-total b")).toHaveText("10,00 RUB");
+  await page.reload();
+  await page.getByRole("button", { name: /День 3/ }).click();
+  await expect(page.locator(".day-total b")).toHaveText("10,00 RUB");
+  await page.getByRole("button", { name: "Параметры", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Участники", { exact: true }).fill("9");
+  await page.getByRole("dialog").getByRole("button", { name: "Применить изменения" }).click();
+  await saved(page);
+  await expect(page.locator(".day-total b")).toHaveText("18,00 RUB");
+  await expect(page.locator(".finance-total")).toHaveText("54,00 RUB");
+  const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
+  expect(persisted.calculation.days.map(day => day.total)).toEqual(["18.00", "18.00", "18.00", "0.00", "0.00"]);
+});
+
 test("day form protects entered notes and clears the warning on cancel or saved submit", async ({ page }) => {
   const trip = await fixtureTrip(page);
   await page.goto(`/admin/trips/${trip.id}`);

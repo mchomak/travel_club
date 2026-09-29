@@ -2223,6 +2223,314 @@
         "cost_total": "0.03",
         "general_total": "0.00"
       }
+    },
+    {
+      "name": "multi_day_fx_subgroup_quantity_exclusion",
+      "input": {
+        "internal_title": "Контрольный пример",
+        "client_title": "",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "participants": 3,
+        "base_currency": "RUB",
+        "internal_note": "",
+        "client_note": "",
+        "status": "draft",
+        "pricing_mode": "markup",
+        "pricing_percent": "0",
+        "days": [
+          {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "date": "2026-10-01",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "date": "2026-10-02",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000003",
+            "date": "2026-10-03",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "date": "2026-10-04",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          }
+        ],
+        "rates": [
+          {
+            "currency": "EUR",
+            "rate": "3"
+          }
+        ],
+        "items": [
+          {
+            "id": "00000000-0000-4000-8001-000000000001",
+            "day_id": "00000000-0000-4000-8000-000000000001",
+            "position": 0,
+            "type": "rental",
+            "calculation_mode": "per_day",
+            "title": "Аренда",
+            "description": "",
+            "location": "",
+            "start_time": null,
+            "end_time": null,
+            "internal_note": "",
+            "client_note": "",
+            "included": true,
+            "currency": "EUR",
+            "unit_price": "2.00",
+            "quantity": "1.5",
+            "participants_override": null,
+            "capacity": null,
+            "rooms_override": null,
+            "duration_days": 3,
+            "check_in": null,
+            "check_out": null
+          },
+          {
+            "id": "00000000-0000-4000-8001-000000000002",
+            "day_id": "00000000-0000-4000-8000-000000000002",
+            "position": 0,
+            "type": "insurance",
+            "calculation_mode": "per_person_per_day",
+            "title": "Страховка",
+            "description": "",
+            "location": "",
+            "start_time": null,
+            "end_time": null,
+            "internal_note": "",
+            "client_note": "",
+            "included": true,
+            "currency": "RUB",
+            "unit_price": "1.00",
+            "quantity": "2",
+            "participants_override": 2,
+            "capacity": null,
+            "rooms_override": null,
+            "duration_days": 2,
+            "check_in": null,
+            "check_out": null
+          },
+          {
+            "id": "00000000-0000-4000-8001-000000000003",
+            "day_id": null,
+            "position": 0,
+            "type": "other",
+            "calculation_mode": "fixed",
+            "title": "Общие",
+            "description": "",
+            "location": "",
+            "start_time": null,
+            "end_time": null,
+            "internal_note": "",
+            "client_note": "",
+            "included": true,
+            "currency": "RUB",
+            "unit_price": "5.00",
+            "quantity": "1",
+            "participants_override": null,
+            "capacity": null,
+            "rooms_override": null,
+            "duration_days": 1,
+            "check_in": null,
+            "check_out": null
+          },
+          {
+            "id": "00000000-0000-4000-8001-000000000004",
+            "day_id": "00000000-0000-4000-8000-000000000001",
+            "position": 0,
+            "type": "other",
+            "calculation_mode": "fixed",
+            "title": "Исключено",
+            "description": "",
+            "location": "",
+            "start_time": null,
+            "end_time": null,
+            "internal_note": "",
+            "client_note": "",
+            "included": false,
+            "currency": "RUB",
+            "unit_price": "10.00",
+            "quantity": "1",
+            "participants_override": null,
+            "capacity": null,
+            "rooms_override": null,
+            "duration_days": 1,
+            "check_in": null,
+            "check_out": null
+          }
+        ]
+      },
+      "expected": {
+        "cost_total": "40.00",
+        "general_total": "5.00",
+        "cost_per_person": "13.33"
+      },
+      "day_totals": [
+        "9.00",
+        "13.00",
+        "13.00",
+        "0.00"
+      ],
+      "day_groups": [
+        {
+          "transport": "9.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "0.00"
+        },
+        {
+          "transport": "9.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "4.00"
+        },
+        {
+          "transport": "9.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "4.00"
+        },
+        {
+          "transport": "0.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "0.00"
+        }
+      ]
+    },
+    {
+      "name": "tiny_multi_day_last_cent",
+      "input": {
+        "internal_title": "Контрольный пример",
+        "client_title": "",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-03",
+        "participants": 3,
+        "base_currency": "RUB",
+        "internal_note": "",
+        "client_note": "",
+        "status": "draft",
+        "pricing_mode": "markup",
+        "pricing_percent": "0",
+        "days": [
+          {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "date": "2026-10-01",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "date": "2026-10-02",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000003",
+            "date": "2026-10-03",
+            "country": "",
+            "city": "",
+            "place": "",
+            "title": "",
+            "internal_note": "",
+            "client_note": ""
+          }
+        ],
+        "rates": [
+          {
+            "currency": "EUR",
+            "rate": "0.34"
+          }
+        ],
+        "items": [
+          {
+            "id": "00000000-0000-4000-8001-000000000005",
+            "day_id": "00000000-0000-4000-8000-000000000001",
+            "position": 0,
+            "type": "rental",
+            "calculation_mode": "per_day",
+            "title": "Малая аренда",
+            "description": "",
+            "location": "",
+            "start_time": null,
+            "end_time": null,
+            "internal_note": "",
+            "client_note": "",
+            "included": true,
+            "currency": "EUR",
+            "unit_price": "0.01",
+            "quantity": "1",
+            "participants_override": null,
+            "capacity": null,
+            "rooms_override": null,
+            "duration_days": 3,
+            "check_in": null,
+            "check_out": null
+          }
+        ]
+      },
+      "expected": {
+        "cost_total": "0.01",
+        "general_total": "0.00"
+      },
+      "day_totals": [
+        "0.00",
+        "0.00",
+        "0.01"
+      ],
+      "day_groups": [
+        {
+          "transport": "0.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "0.00"
+        },
+        {
+          "transport": "0.00",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "0.00"
+        },
+        {
+          "transport": "0.01",
+          "accommodation": "0.00",
+          "activities": "0.00",
+          "other": "0.00"
+        }
+      ]
     }
   ]
 }
