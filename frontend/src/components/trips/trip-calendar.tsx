@@ -58,17 +58,23 @@ export function TripCalendar({ days, items, onOpenItem, onSelectDate, selectedDa
     </div>
     <div className="trip-calendar-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: 720 }}>
       <div className="trip-calendar-surface" style={{ minWidth: 48 + visibleDays.length * 128 }}>
+        <div className="trip-calendar-header">
         <div className="trip-calendar-dates" style={gridStyle}>
           <span aria-hidden="true" />
-          {visibleDays.map(day => <button type="button" key={day.id} className="trip-calendar-day-heading" onClick={() => onSelectDate?.(day.id)} aria-current={selectedDayId === day.id ? "date" : undefined} style={{ minHeight: 64, padding: 8, textAlign: "left", color: "inherit", border: "1px solid #395064", background: selectedDayId === day.id ? "#29445c" : "#1c3144" }}>
-            <strong>{dateLabel(day.date)}</strong>{day.status && <small style={{ display: "block" }}>{day.status}</small>}{day.city && <small style={{ display: "block" }}>{day.city}</small>}
-          </button>)}
+          {visibleDays.map(day => {
+            const content = <><strong>{dateLabel(day.date)}</strong>{day.status && <small>{day.status}</small>}{day.city && <small>{day.city}</small>}</>;
+            const style = { padding: 8, textAlign: "left" as const, color: "inherit", border: "1px solid #395064", background: selectedDayId === day.id ? "#29445c" : "#1c3144" };
+            return onSelectDate
+              ? <button type="button" key={day.id} className="trip-calendar-day-heading" onClick={() => onSelectDate(day.id)} aria-current={selectedDayId === day.id ? "date" : undefined} style={style}>{content}</button>
+              : <div key={day.id} className="trip-calendar-day-heading" style={style}>{content}</div>;
+          })}
         </div>
         {entries.hotelBars.length > 0 && <div className="trip-calendar-hotels" aria-label="Проживание">
           {entries.hotelBars.map(bar => <div key={bar.itemId} style={{ ...gridStyle, minHeight: 36 }}><button type="button" className="trip-calendar-hotel-bar" onClick={() => onOpenItem(bar.itemId)} aria-label={`Открыть отель ${bar.title}, ${bar.startDate} — ${bar.endDate}`} style={{ gridColumn: `${bar.startIndex + 2} / ${bar.endIndex + 2}`, margin: "3px 2px", border: "1px solid #80d9c6", borderRadius: 7, background: "#255d58", color: "#fff", textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
             {bar.clippedStart ? "← " : ""}{bar.title} · {bar.startDate} — {bar.endDate}{bar.clippedEnd ? " →" : ""}
           </button></div>)}
         </div>}
+        </div>
         <div className="trip-calendar-body" style={gridStyle}>
           <div className="trip-calendar-hours" aria-hidden="true" style={{ height: 24 * HOUR_HEIGHT, position: "relative", color: "#b6cad9", fontSize: 11 }}>
             {Array.from({ length: 24 }, (_, hour) => <span key={hour} style={{ position: "absolute", top: hour * HOUR_HEIGHT - 7, right: 8 }}>{timeOf(hour * 60)}</span>)}
