@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import type { TripDocument } from "../src/lib/contracts";
 import { newItem, newTrip } from "../src/lib/trip-ui";
+import { calculateTrip } from "../src/lib/pricing";
 import { tripInput } from "../src/lib/trips";
 
 const login = `fixture-constructor-${Date.now()}-${randomBytes(4).toString("hex")}`;
@@ -533,4 +534,89 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.getByRole("dialog").getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toBeVisible();
   expect(pageErrors).toEqual([]);
+});
+
+test("calendar opens overnight travel and hotel from a tablet without page overflow", async ({ page }) => {
+  let trip = await fixtureTrip(page);
+  const input = tripInput(trip);
+  input.days[0].status = "День вылета";
+  input.items = [
+    { ...newItem("flight", trip.days[0], "RUB", trip.start_date), title: "Ночной рейс", start_time: "23:00", end_time: "01:00", end_day_id: trip.days[1].id, external_url: "https://example.com/ticket", unit_price: "1000" },
+    { ...newItem("hotel", trip.days[0], "RUB", trip.start_date), title: "Отель у моря", check_in: trip.days[0].date, check_out: trip.days[2].date, check_in_time: "15:00", check_out_time: "11:00", unit_price: "2000" },
+    { ...newItem("other", null, "RUB", trip.start_date), title: "Общий сбор", unit_price: "300" },
+  ];
+  const response = await page.request.put(`/api/trips/${trip.id}`, { headers: apiHeaders, data: { ...input, version: trip.version } });
+  expect(response.ok(), await response.text()).toBe(true);
+  trip = await response.json() as TripDocument;
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto(`/admin/trips/${trip.id}`);
+  const calendar = page.getByRole("region", { name: "Календарь поездки" });
+  await expect(calendar.getByRole("button", { name: /День вылета/ })).toBeVisible();
+  await expect(calendar.locator(".trip-calendar-event")).toHaveCount(2);
+  await expect(calendar.locator(".trip-calendar-hotel-bar")).toHaveCount(1);
+  await expect(calendar.locator(".trip-calendar-marker")).toHaveCount(2);
+  await calendar.locator(".trip-calendar-event").first().click();
+  const panel = page.getByRole("dialog");
+  await expect(panel).toHaveClass(/modal-panel/);
+  await expect(panel.getByLabel("Название элемента")).toHaveValue("Ночной рейс");
+  await expect(panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" })).toHaveAttribute("rel", "noopener noreferrer");
+  await panel.getByLabel("Название элемента").fill("Рейс после полуночи");
+  await panel.getByRole("button", { name: "Сохранить элемент" }).click();
+  await saved(page);
+  await expect(calendar.locator(".trip-calendar-event").first()).toContainText("Рейс после полуночи");
+  await calendar.locator(".trip-calendar-hotel-bar").click();
+  await expect(page.getByRole("dialog").getByLabel("Название элемента")).toHaveValue("Отель у моря");
+  await page.getByRole("dialog").getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(page.locator(".unscheduled-section")).toContainText("Общий сбор");
+  await expect(page.locator(".finance-total")).toHaveText("6 300,00 RUB");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  await calendar.getByRole("button", { name: "Следующие дни" }).click();
+  await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator(".unscheduled-section").getByRole("button", { name: /Общий сбор/ }).click();
+  await expect(page.getByRole("dialog")).toHaveClass(/modal-panel/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("empty calendar, date navigation and item panel fit tablet and phone", async ({ page }) => {
+  const trip = await fixtureTrip(page);
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto(`/admin/trips/${trip.id}`);
+  const calendar = page.getByRole("region", { name: "Календарь поездки" });
+  await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(3);
+  await expect(calendar).toContainText("Добавьте первое событие ниже");
+  await expect(page.locator(".add-item-section")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/calendar-tablet.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  await calendar.getByRole("button", { name: "Следующие дни" }).click();
+  await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator(".item-type-buttons").getByRole("button", { name: "Перелёт", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveClass(/modal-panel/);
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Сохранить элемент" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/calendar-phone-panel.png", fullPage: true });
+});
+
+test("items without a complete valid time interval stay editable below the calendar", async ({ page }) => {
+  const trip = await fixtureTrip(page);
+  const items = [
+    { ...newItem("activity", trip.days[0], "RUB", trip.start_date), title: "Только начало", start_time: "09:00" },
+    { ...newItem("activity", trip.days[0], "RUB", trip.start_date), title: "Только окончание", end_time: "10:00" },
+    { ...newItem("activity", trip.days[0], "RUB", trip.start_date), title: "Нулевой интервал", start_time: "11:00", end_time: "11:00" },
+  ];
+  const calculation = calculateTrip({ ...tripInput(trip), items });
+  const document = { ...trip, items: items.map(item => ({ ...item, original_amount: "0.00", rate_used: "1.00000000", normalized_amount: "0.00" })), calculation };
+  await page.route(`**/api/trips/${trip.id}`, route => route.request().method() === "GET" ? route.fulfill({ json: document }) : route.continue());
+  await page.goto(`/admin/trips/${trip.id}`);
+  const list = page.locator(".unscheduled-section");
+  for (const title of ["Только начало", "Только окончание", "Нулевой интервал"]) {
+    await expect(list.getByRole("button", { name: new RegExp(title) })).toBeVisible();
+  }
+  await list.getByRole("button", { name: /Только начало/ }).click();
+  await expect(page.getByRole("dialog").getByLabel("Название элемента")).toHaveValue("Только начало");
 });
