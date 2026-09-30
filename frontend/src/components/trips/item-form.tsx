@@ -34,6 +34,8 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   const item = useWatch({ control }) as ItemInput;
   const chosenEndDay = useRef(false);
   const suggestedEndDay = useRef<string | null>(null);
+  const timedSchedule = useRef({ start: defaults.start_time, end: defaults.end_time, endDayId: defaults.end_day_id });
+  const restoreTimedSchedule = useRef(false);
   const endDayField = register("end_day_id", { setValueAs: v => v || null });
   const checkInField = register("check_in", { setValueAs: v => v || null });
   const modeField = register("calculation_mode");
@@ -55,13 +57,43 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       setValue("end_day_id", suggested, { shouldDirty: true });
     }
   }, [isNew, startDate, item.start_time, item.end_time, item.end_day_id, trip.days, trip.end_date, setValue]);
+  useEffect(() => {
+    if (!restoreTimedSchedule.current || item.type === "hotel") return;
+    restoreTimedSchedule.current = false;
+    setValue("start_time", timedSchedule.current.start, { shouldDirty: true });
+    setValue("end_time", timedSchedule.current.end, { shouldDirty: true });
+    setValue("end_day_id", timedSchedule.current.endDayId, { shouldDirty: true });
+  }, [item.type, setValue]);
   const overnightOutsideTrip = selectedDay && !item.end_day_id && item.start_time && item.end_time && item.end_time < item.start_time && nextDate(selectedDay.date) > trip.end_date;
   const availableDays = selectedDay ? trip.days.filter(day => day.date >= selectedDay.date && day.date <= trip.end_date).length : 3660;
   const foreign = item.currency !== trip.base_currency;
   const rates = foreign && rate ? [...trip.rates.filter(r => r.currency !== item.currency), { currency: item.currency, rate }] : trip.rates;
   let amount: string | null = null;
   try { amount = calculateTrip({ ...trip, rates, items: [item] }).items[0].normalized_amount; } catch { /* Incomplete form has no trustworthy estimate. */ }
-  function changeType(type: ItemType) { setTypeChosen(true); if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true }); setValue("type", type, { shouldDirty: true }); setValue("calculation_mode", defaultModes[type], { shouldDirty: true }); if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true }); if (type === "hotel") { const date = trip.days.find(d => d.id === item.day_id)?.date ?? trip.start_date; setValue("start_time", null, { shouldDirty: true }); setValue("end_time", null, { shouldDirty: true }); setValue("end_day_id", null, { shouldDirty: true }); setValue("check_in", date, { shouldDirty: true }); setValue("check_out", nextDate(date), { shouldDirty: true }); setValue("check_in_time", "15:00", { shouldDirty: true }); setValue("check_out_time", "11:00", { shouldDirty: true }); } else { setValue("check_in", null, { shouldDirty: true }); setValue("check_out", null, { shouldDirty: true }); setValue("check_in_time", null, { shouldDirty: true }); setValue("check_out_time", null, { shouldDirty: true }); } }
+  function changeType(type: ItemType) {
+    setTypeChosen(true);
+    if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true });
+    setValue("type", type, { shouldDirty: true });
+    setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
+    if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
+    if (type === "hotel") {
+      const date = trip.days.find(day => day.id === item.day_id)?.date ?? trip.start_date;
+      if (item.type !== "hotel") timedSchedule.current = { start: item.start_time, end: item.end_time, endDayId: item.end_day_id };
+      setValue("start_time", null, { shouldDirty: true });
+      setValue("end_time", null, { shouldDirty: true });
+      setValue("end_day_id", null, { shouldDirty: true });
+      setValue("check_in", date, { shouldDirty: true });
+      setValue("check_out", nextDate(date), { shouldDirty: true });
+      setValue("check_in_time", "15:00", { shouldDirty: true });
+      setValue("check_out_time", "11:00", { shouldDirty: true });
+    } else {
+      if (item.type === "hotel") restoreTimedSchedule.current = true;
+      setValue("check_in", null, { shouldDirty: true });
+      setValue("check_out", null, { shouldDirty: true });
+      setValue("check_in_time", null, { shouldDirty: true });
+      setValue("check_out_time", null, { shouldDirty: true });
+    }
+  }
   function save(values: ItemInput) {
     if (!typeChosen) return;
     setError(null);
