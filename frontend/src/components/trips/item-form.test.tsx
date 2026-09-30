@@ -194,19 +194,19 @@ test("grid creation switched to hotel clears the hidden generic schedule", async
 
 test("grid creation restores its selected interval after switching away from hotel", async () => {
   const user = userEvent.setup();
-  const days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];
-  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[1].date, days, items: [], rates: [] };
-  const item = { ...newItem("other", days[0], "RUB", days[0].date), start_time: "23:15", end_time: "01:45" };
+  const days = [emptyDay("2026-10-01"), emptyDay("2026-10-02"), emptyDay("2026-10-03")];
+  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[2].date, days, items: [], rates: [] };
+  const item = { ...newItem("other", days[0], "RUB", days[0].date), start_time: "23:15", end_time: "01:45", end_day_id: days[2].id };
   const onSubmit = vi.fn();
   render(<ItemForm initial={item} trip={trip} requireTypeChoice onSubmit={onSubmit} onCancel={() => {}} />);
   await user.selectOptions(screen.getByRole("combobox", { name: "Тип события" }), "hotel");
   await user.selectOptions(screen.getByRole("combobox", { name: "Тип события" }), "flight");
   expect(screen.getByLabelText("Вылет по местному времени")).toHaveValue("23:15");
   expect(screen.getByLabelText("Прилёт по местному времени")).toHaveValue("01:45");
-  expect(screen.getByLabelText("Дата окончания")).toHaveValue(days[1].id);
+  expect(screen.getByLabelText("Дата окончания")).toHaveValue(days[2].id);
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
-    type: "flight", start_time: "23:15", end_time: "01:45", end_day_id: days[1].id,
+    type: "flight", start_time: "23:15", end_time: "01:45", end_day_id: days[2].id,
     check_in: null, check_out: null,
   }), undefined);
 });
