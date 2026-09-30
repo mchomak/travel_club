@@ -708,6 +708,36 @@ test("empty calendar, date navigation and item panel fit tablet and phone", asyn
   await page.screenshot({ path: "test-results/calendar-phone-panel.png", fullPage: true });
 });
 
+test("item panel slides fully beyond the right edge and reopens on tablet", async ({ page }) => {
+  const trip = await fixtureTrip(page);
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await page.goto(`/admin/trips/${trip.id}`);
+  const addFlight = page.locator(".item-type-buttons").getByRole("button", { name: "Перелёт", exact: true });
+  await addFlight.click();
+  const panel = page.locator(".modal-panel");
+  await expect(panel).toBeVisible();
+
+  await panel.getByRole("button", { name: "Закрыть" }).click();
+  await expect(panel).toHaveAttribute("data-state", "closed");
+  const exitPosition = await panel.evaluate(element => {
+    const slide = element.getAnimations().find(animation =>
+      (animation.effect as KeyframeEffect | null)?.getKeyframes().some(frame => "transform" in frame),
+    );
+    if (!slide) throw new Error("Panel exit animation is missing");
+    slide.finish();
+    return { left: element.getBoundingClientRect().left, viewport: innerWidth };
+  });
+  expect(exitPosition.left).toBeGreaterThanOrEqual(exitPosition.viewport);
+  await expect(panel).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await addFlight.click();
+  await expect(panel).toBeVisible();
+  const duration = await panel.evaluate(element => parseFloat(getComputedStyle(element).animationDuration));
+  expect(duration).toBeLessThan(0.01);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("items without a complete valid time interval stay editable below the calendar", async ({ page }) => {
   const trip = await fixtureTrip(page);
   const items = [

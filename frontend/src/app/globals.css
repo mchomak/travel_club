@@ -203,8 +203,8 @@ button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
 .modal-panel .modal-header .icon-button { min-width: 44px; min-height: 44px; }
 .item-panel-delete { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 4px 24px 24px; color: var(--danger); font-size: .875rem; }
 .item-panel-delete:focus-visible, .trip-calendar-dates details summary:focus-visible, .trip-calendar-dates > div > button[aria-label^="Изменить день"]:focus-visible { outline: 3px solid #f7d179; outline-offset: 2px; }
-@keyframes panel-enter { from { transform: translateX(28px); opacity: .85; } to { transform: translateX(0); opacity: 1; } }
-@keyframes panel-exit { from { transform: translateX(0); opacity: 1; } to { transform: translateX(28px); opacity: .85; } }
+@keyframes panel-enter { from { transform: translateX(calc(100% + 80px)); } to { transform: translateX(0); } }
+@keyframes panel-exit { from { transform: translateX(0); } to { transform: translateX(calc(100% + 80px)); } }
 @keyframes overlay-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlay-exit { from { opacity: 1; } to { opacity: 0; } }
 .modal-overlay[data-state="open"] { animation: overlay-enter 220ms ease-out both; }
