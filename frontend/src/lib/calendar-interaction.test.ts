@@ -7,7 +7,8 @@ test("selection snaps to quarter hours and a tap creates one hour", () => {
   expect(selectionRange(9 * 60 + 8, 10 * 60 + 2, true)).toEqual({ start: "09:00", end: "10:15" });
   expect(selectionRange(9 * 60 + 8, 9 * 60 + 8, false)).toEqual({ start: "09:00", end: "10:00" });
   expect(selectionRange(1438, 1438, false)).toEqual({ start: "22:45", end: "23:45" });
-  expect(selectionRange(1438, 1438, true)).toEqual({ start: "23:30", end: "23:45" });
+  expect(selectionRange(1438, 1438, true)).toEqual({ start: "23:45", end: "23:59" });
+  expect(selectionRange(23 * 60 + 30, 1438, true)).toEqual({ start: "23:30", end: "23:59" });
 });
 
 test("moving an overnight event preserves duration and rejects a trip overrun", () => {
@@ -16,6 +17,11 @@ test("moving an overnight event preserves duration and rejects a trip overrun", 
   expect(moveEvent(item, days, "day-2", 21 * 60)).toBeNull();
   expect(moveEvent(item, days, "day-0", -15)).toBeNull();
   expect(moveEvent(item, days, "day-0", 1440)).toBeNull();
+});
+
+test("moving a saved event accepts the backend time format with seconds", () => {
+  const item = { day_id: "day-0", end_day_id: null, start_time: "01:00:00", end_time: "02:00:00" };
+  expect(moveEvent(item, days, "day-0", 3 * 60)).toEqual({ dayId: "day-0", endDayId: null, start: "03:00", end: "04:00" });
 });
 
 test("hotel movement preserves nights and allows checkout after the last trip day", () => {

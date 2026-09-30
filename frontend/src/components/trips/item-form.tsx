@@ -61,7 +61,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   const rates = foreign && rate ? [...trip.rates.filter(r => r.currency !== item.currency), { currency: item.currency, rate }] : trip.rates;
   let amount: string | null = null;
   try { amount = calculateTrip({ ...trip, rates, items: [item] }).items[0].normalized_amount; } catch { /* Incomplete form has no trustworthy estimate. */ }
-  function changeType(type: ItemType) { setTypeChosen(true); if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true }); setValue("type", type, { shouldDirty: true }); setValue("calculation_mode", defaultModes[type], { shouldDirty: true }); if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true }); if (type === "hotel") { const date = trip.days.find(d => d.id === item.day_id)?.date ?? trip.start_date; setValue("check_in", date, { shouldDirty: true }); setValue("check_out", nextDate(date), { shouldDirty: true }); setValue("check_in_time", "15:00", { shouldDirty: true }); setValue("check_out_time", "11:00", { shouldDirty: true }); } }
+  function changeType(type: ItemType) { setTypeChosen(true); if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true }); setValue("type", type, { shouldDirty: true }); setValue("calculation_mode", defaultModes[type], { shouldDirty: true }); if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true }); if (type === "hotel") { const date = trip.days.find(d => d.id === item.day_id)?.date ?? trip.start_date; setValue("start_time", null, { shouldDirty: true }); setValue("end_time", null, { shouldDirty: true }); setValue("end_day_id", null, { shouldDirty: true }); setValue("check_in", date, { shouldDirty: true }); setValue("check_out", nextDate(date), { shouldDirty: true }); setValue("check_in_time", "15:00", { shouldDirty: true }); setValue("check_out_time", "11:00", { shouldDirty: true }); } else { setValue("check_in", null, { shouldDirty: true }); setValue("check_out", null, { shouldDirty: true }); setValue("check_in_time", null, { shouldDirty: true }); setValue("check_out_time", null, { shouldDirty: true }); } }
   function save(values: ItemInput) {
     if (!typeChosen) return;
     setError(null);
@@ -72,16 +72,16 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     }
     const startDate = trip.days.find(day => day.id === values.day_id)?.date;
     const endDate = trip.days.find(day => day.id === values.end_day_id)?.date;
-    if (values.end_day_id && (!startDate || !endDate || endDate < startDate || (endDate === startDate && values.start_time && values.end_time && values.end_time <= values.start_time))) {
+    if (values.type !== "hotel" && values.end_day_id && (!startDate || !endDate || endDate < startDate || (endDate === startDate && values.start_time && values.end_time && values.end_time <= values.start_time))) {
       setFieldError("end_day_id", { message: scheduleError });
       return;
     }
-    const unchangedLegacyOvernight = !isNew && !!initialStartDate && nextDate(initialStartDate) > trip.end_date
+    const unchangedLegacyOvernight = values.type !== "hotel" && !isNew && !!initialStartDate && nextDate(initialStartDate) > trip.end_date
       && !initial.end_day_id && !!initial.start_time && !!initial.end_time && initial.end_time < initial.start_time
       && values.day_id === initial.day_id && !values.end_day_id
       && values.start_time?.slice(0, 5) === initial.start_time.slice(0, 5)
       && values.end_time?.slice(0, 5) === initial.end_time.slice(0, 5);
-    if (startDate && !values.end_day_id && values.start_time && values.end_time && values.end_time <= values.start_time && !unchangedLegacyOvernight) {
+    if (values.type !== "hotel" && startDate && !values.end_day_id && values.start_time && values.end_time && values.end_time <= values.start_time && !unchangedLegacyOvernight) {
       setFieldError("end_time", { message: "Выберите дату окончания после даты начала" });
       return;
     }
@@ -92,8 +92,9 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     const urlResult = validUrl(values.external_url);
     if (urlResult !== true) { setFieldError("external_url", { message: urlResult }); return; }
     const normalized = { ...values, external_url: values.external_url || null,
-      start_time: unchangedLegacyOvernight ? initial.start_time : values.start_time,
-      end_time: unchangedLegacyOvernight ? initial.end_time : values.end_time };
+      end_day_id: values.type === "hotel" ? null : values.end_day_id,
+      start_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.start_time : values.start_time,
+      end_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.end_time : values.end_time };
     try { const candidate = { ...trip, rates, items: [...trip.items.filter(i => i.id !== values.id), normalized] }; calculateTrip(candidate); onSubmit(normalized, foreign && rate ? { currency: values.currency, rate } : undefined); } catch (e) { setError(e); }
   }
   const profile: Record<ItemType, { location: string; start: string; end: string; price: string; placeholder: string }> = {

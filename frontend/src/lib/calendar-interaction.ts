@@ -7,7 +7,7 @@ function dateNumber(date: string): number { return Date.parse(`${date}T00:00:00Z
 function dateFromNumber(day: number): string { return new Date(day * 86400000).toISOString().slice(0, 10); }
 export function minuteOfTime(time: string | null): number | null {
   if (!time) return null;
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
+  const match = /^(\d{2}):(\d{2})(?::[0-5]\d)?$/.exec(time);
   if (!match) return null;
   const hour = Number(match[1]), minute = Number(match[2]);
   return hour < 24 && minute < 60 ? hour * 60 + minute : null;
@@ -26,8 +26,9 @@ export function selectionRange(anchor: number, current: number, dragged: boolean
     return { start: timeOfMinute(start), end: timeOfMinute(start + 60) };
   }
   const second = snapMinute(current);
-  const start = Math.min(first, second, lastEnd - QUARTER);
-  const end = Math.min(lastEnd, Math.max(first, second) + QUARTER);
+  const start = Math.min(first, second);
+  // The API stores a local time, so 24:00 is unavailable; use the last valid minute.
+  const end = Math.min(DAY - 1, Math.max(first, second) + QUARTER);
   return { start: timeOfMinute(start), end: timeOfMinute(end) };
 }
 

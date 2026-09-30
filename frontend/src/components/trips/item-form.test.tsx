@@ -176,6 +176,22 @@ test("grid creation requires category before editing and retains the selected in
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: "flight", title: "Перелёт", start_time: "09:15", end_time: "10:45" }), undefined);
 });
 
+test("grid creation switched to hotel clears the hidden generic schedule", async () => {
+  const user = userEvent.setup();
+  const day = emptyDay("2026-10-01");
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  const item = { ...newItem("other", day, "RUB", day.date), start_time: "09:15", end_time: "10:45" };
+  const onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} requireTypeChoice onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Тип события" }), "hotel");
+  expect(screen.queryByLabelText(/Начало по местному времени/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+    type: "hotel", start_time: null, end_time: null, end_day_id: null,
+    check_in: "2026-10-01", check_out: "2026-10-02",
+  }), undefined);
+});
+
 test("hotel uses only check-in and check-out time fields and keeps notes visible", () => {
   const day = emptyDay("2026-10-01");
   const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };

@@ -54,13 +54,14 @@ async function updateFixture(page: Page, trip: TripDocument) {
 test("calendar creates a timed event and closes its editor by clicking outside", async ({ page }) => {
   const trip = await fixtureTrip(page);
   await page.goto(`/admin/trips/${trip.id}`);
+  await page.locator(".trip-calendar-scroll").evaluate(element => element.scrollIntoView({ block: "start" }));
   const firstDay = page.locator(".trip-calendar-day").first();
   const box = await firstDay.boundingBox();
   expect(box).not.toBeNull();
   const x = box!.x + Math.min(box!.width / 2, 35);
   await page.mouse.move(x, box!.y + 60);
   await page.mouse.down();
-  await page.mouse.move(x, box!.y + 116, { steps: 6 });
+  await page.mouse.move(x, box!.y + 102, { steps: 6 });
   await page.mouse.up();
 
   const panel = page.getByRole("dialog");
@@ -75,6 +76,7 @@ test("calendar creates a timed event and closes its editor by clicking outside",
   await panel.getByLabel("Цена билета").fill("100");
   await panel.getByRole("button", { name: "Сохранить элемент" }).click();
   await saved(page);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
   expect(persisted.items.find(item => item.title === "Рейс из календаря")).toMatchObject({
     type: "flight", start_time: "01:00:00", end_time: "02:00:00",
@@ -82,11 +84,13 @@ test("calendar creates a timed event and closes its editor by clicking outside",
   });
 
   const event = page.getByRole("button", { name: /Открыть перелёт Рейс из календаря/ });
+  await event.scrollIntoViewIfNeeded();
   const eventBox = await event.boundingBox();
   expect(eventBox).not.toBeNull();
   await page.mouse.move(eventBox!.x + eventBox!.width / 2, eventBox!.y + eventBox!.height / 2);
   await page.mouse.down();
   await page.mouse.move(eventBox!.x + eventBox!.width / 2, eventBox!.y + eventBox!.height / 2 + 112, { steps: 6 });
+  await expect(page.getByRole("status", { name: /Новое положение/ })).toBeVisible();
   await page.mouse.up();
   await expect.poll(async () => {
     const current = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
@@ -452,18 +456,18 @@ test("two separate transfers persist in order and each contributes once", async 
   await page.locator(".item-type-buttons").getByRole("button", { name: "Трансфер", exact: true }).click();
   const form = page.getByRole("dialog");
   await form.getByLabel("Название элемента").fill("Трансфер из аэропорта");
-  await form.getByLabel("Цена за единицу").fill("4000");
+  await form.getByLabel("Цена машины").fill("4000");
   await form.getByLabel("Вместимость одной машины / группы").fill("4");
   await form.getByRole("button", { name: "Сохранить элемент" }).click();
   await saved(page);
   await page.locator(".item-type-buttons").getByRole("button", { name: "Трансфер", exact: true }).click();
   await form.getByLabel("Название элемента").fill("Трансфер от вокзала");
-  await form.getByLabel("Цена за единицу").fill("6000");
+  await form.getByLabel("Цена машины").fill("6000");
   await form.getByLabel("Вместимость одной машины / группы").fill("4");
   await form.getByRole("button", { name: "Сохранить элемент" }).click();
   await expect(page.locator(".unscheduled-item")).toHaveCount(2);
-  await expect.poll(async () => (await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument).calculation.cost_total).toBe("20000.00");
   await saved(page);
+  await expect.poll(async () => (await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument).calculation.cost_total).toBe("20000.00");
   await page.reload();
   await expect(page.locator(".unscheduled-item")).toHaveCount(2);
   const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
@@ -516,21 +520,21 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await modal.getByRole("button", { name: "Сохранить день" }).click();
   await page.locator(".trip-calendar-day-heading").first().click();
   const items = [
-    { label: "Перелёт", price: "35000", mode: "per_person" },
-    { label: "Трансфер", price: "4000", mode: "capacity" },
-    { label: "Проживание", price: "10000", mode: "hotel" },
-    { label: "Активность", price: "2000", mode: "per_person", subgroup: "3" },
-    { label: "Экскурсия", price: "15000", mode: "fixed" },
-    { label: "Страховка", price: "100", mode: "per_person_per_day", days: "5" },
-    { label: "Аренда транспорта", price: "1000", mode: "per_day", days: "3", quantity: "2" },
-    { label: "Прочее", price: "750", mode: "manual", general: true },
-    { label: "Прочее", price: "10", mode: "fixed", quantity: "2", currency: "EUR" },
+    { label: "Перелёт", price: "35000", mode: "per_person", priceLabel: "Цена билета" },
+    { label: "Трансфер", price: "4000", mode: "capacity", priceLabel: "Цена машины" },
+    { label: "Проживание", price: "10000", mode: "hotel", priceLabel: "Цена номера за ночь" },
+    { label: "Активность", price: "2000", mode: "per_person", priceLabel: "Цена на человека", subgroup: "3" },
+    { label: "Экскурсия", price: "15000", mode: "fixed", priceLabel: "Цена за единицу" },
+    { label: "Страховка", price: "100", mode: "per_person_per_day", priceLabel: "Цена на человека", days: "5" },
+    { label: "Аренда транспорта", price: "1000", mode: "per_day", priceLabel: "Цена за день", days: "3", quantity: "2" },
+    { label: "Прочее", price: "750", mode: "manual", priceLabel: "Итоговая сумма", general: true },
+    { label: "Прочее", price: "10", mode: "fixed", priceLabel: "Цена за единицу", quantity: "2", currency: "EUR" },
   ];
   for (const item of items) {
     await page.locator(".item-type-buttons").getByRole("button", { name: item.label, exact: true }).click();
     modal = page.getByRole("dialog");
     await modal.getByLabel("Правило расчёта").selectOption(item.mode);
-    await modal.getByLabel(item.mode === "manual" ? "Итоговая сумма" : item.mode === "hotel" ? "Цена номера за ночь" : "Цена за единицу", { exact: true }).fill(item.price);
+    await modal.getByLabel(item.priceLabel, { exact: true }).fill(item.price);
     if (item.mode === "hotel") await modal.getByLabel("Выезд", { exact: false }).fill("2026-10-05");
     if (item.days) await modal.getByLabel("Число дней", { exact: false }).fill(item.days);
     if (item.quantity) await modal.getByLabel("Количество", { exact: false }).fill(item.quantity);
@@ -538,8 +542,8 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
     if (item.general) await modal.getByLabel("День маршрута").selectOption("");
     if (item.currency) { await modal.getByLabel("Валюта цены").fill(item.currency); await modal.getByLabel("Курс EUR", { exact: false }).fill("96.20"); }
     if (item.label === "Перелёт") {
-      await modal.getByLabel("Начало по местному времени").fill("23:00");
-      await modal.getByLabel("Окончание по местному времени", { exact: false }).fill("02:00");
+      await modal.getByLabel("Вылет по местному времени").fill("23:00");
+      await modal.getByLabel("Прилёт по местному времени", { exact: false }).fill("02:00");
       await expect(modal.getByLabel("Дата окончания")).toHaveValue(nextDay!.id);
       await modal.getByText("Заметки", { exact: true }).click();
       await modal.getByLabel("Заметка для клиента", { exact: true }).fill("Клиентская заметка элемента");

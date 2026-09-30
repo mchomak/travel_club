@@ -142,6 +142,15 @@ test("day heading totals unique visible event prices, including excluded and ove
   expect(screen.getAllByText("Стоимость событий")).toHaveLength(2);
 });
 
+test("day heading does not present a false zero when an event price is unavailable", () => {
+  const days = ["2026-10-01", "2026-10-02"].map((date, index) => ({ id: `day-${index}`, date })) as DayInput[];
+  const event = { id: "event", day_id: days[0].id, type: "activity", title: "Прогулка", start_time: "09:00", end_time: "10:00" } as ItemInput;
+  render(<TripCalendar days={days} items={[event]} calculation={null} baseCurrency="RUB" onOpenItem={vi.fn()} />);
+  const headings = document.querySelectorAll(".trip-calendar-dates > div");
+  expect(headings[0]).toHaveTextContent("1 событиеСтоимость событий—");
+  expect(headings[1]).toHaveTextContent("0 событийСтоимость событий0,00 RUB");
+});
+
 test("day heading is only actionable when date selection is available", async () => {
   const day = { id: "day-1", date: "2026-10-01", status: "День вылета" } as DayInput;
   const { rerender } = render(<TripCalendar days={[day]} items={[]} onOpenItem={vi.fn()} />);

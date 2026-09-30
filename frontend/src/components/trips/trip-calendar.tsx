@@ -70,8 +70,11 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
     const ids = new Set([...entries.events.filter(event => event.date === day.date).map(event => event.itemId),
       ...entries.hotelBars.filter(bar => day.date >= bar.startDate && day.date < bar.endDate).map(bar => bar.itemId),
       ...entries.markers.filter(marker => marker.date === day.date).map(marker => marker.itemId)]);
-    const total = [...ids].reduce((sum, id) => sum.plus(prices.get(id) ?? "0"), new Decimal(0));
-    return { dayId: day.id, count: ids.size, total: total.toFixed(2) };
+    const amounts = [...ids].map(id => prices.get(id));
+    const total = amounts.some(amount => amount === undefined)
+      ? null
+      : amounts.reduce((sum, amount) => sum.plus(amount!), new Decimal(0)).toFixed(2);
+    return { dayId: day.id, count: ids.size, total };
   }), [visibleDays, entries, prices]);
   const money = (value: string) => {
     const [whole, fraction = "00"] = value.split(".");
@@ -191,7 +194,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
                 ? <button type="button" className="trip-calendar-day-heading" onClick={() => onSelectDate(day.id)} aria-current={selectedDayId === day.id ? "date" : undefined} style={{ ...style, width: "100%" }}>{content}</button>
                 : <div className="trip-calendar-day-heading" style={style}>{content}</div>}
               {onEditDay && <button type="button" onClick={() => onEditDay(day.id)} aria-label={`Изменить день ${dateLabel(day.date)}`} style={{ margin: "0 8px 6px", color: "inherit", background: "transparent", border: "1px solid #547089", borderRadius: 4 }}>Изменить день</button>}
-              <div style={{ padding: "0 8px 8px", fontSize: 12 }}><span>{eventCount(summary.count)}</span><span style={{ display: "block" }}>Стоимость событий</span><strong>{money(summary.total)}</strong>
+              <div style={{ padding: "0 8px 8px", fontSize: 12 }}><span>{eventCount(summary.count)}</span><span style={{ display: "block" }}>Стоимость событий</span><strong>{summary.total === null ? "—" : money(summary.total)}</strong>
                 <details><summary aria-label="Как считается стоимость событий">ⓘ</summary><span>Многодневное событие видно в каждом занятом дне. Дневные суммы нельзя складывать для получения стоимости всей поездки.</span></details>
               </div>
             </div>;
