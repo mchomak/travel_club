@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Рабочая карта проекта
 
-Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, календарь событий, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичные страницы пока заглушки; работающей оплаты нет. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose.
+Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, календарь событий, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичная главная `/` служит интерактивной витриной для выбора палитры и шрифтов; страницы услуг остаются лёгкими заглушками, работающей оплаты нет. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose.
 
 ### Запуск и проверка (PowerShell, корень репозитория)
 
@@ -368,7 +368,7 @@ npm.cmd run build
 npm.cmd run test:e2e
 ```
 
-Проверены frontend unit (48 passed), Playwright (23 passed), lint, typecheck и production build. Playwright требует работающий сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`). Сценарии — `docs/acceptance.md`.
+Проверены frontend unit (54 passed), Playwright (25 passed), lint, typecheck и production build. Playwright требует работающий сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`). Сценарии — `docs/acceptance.md` и `frontend/e2e/home-style.spec.ts`.
 
 ### Где менять код
 
@@ -376,12 +376,15 @@ npm.cmd run test:e2e
 - `backend/app/main.py`, `auth.py`, `trips.py` — FastAPI, сессии, `/api/trips`: CRUD, расчёт, дублирование, клиентский просмотр, контроль версий и дат.
 - `backend/app/schemas.py`, `validation.py`, `pricing.py` — DTO, проверки и окончательный Decimal-расчёт; `models.py`, `db.py`, `migrations/` — таблицы и Alembic. Поля расписания добавляет `8b97c412e6af_schedule_fields.py`.
 - `frontend/src/app/admin/`, `frontend/src/components/trips/trip-editor.tsx`, `trip-calendar.tsx`, `item-form.tsx`, `editor-panels.tsx`, `ui.tsx` — закрытые экраны; `TripCalendar` показывает сетку и обрабатывает указатель, `TripEditor` владеет черновиком, выделенным днём, панелями и расчётом, `ItemForm` проверяет поля, `Modal` управляет открытием и закрытием панели. Стили календаря и панели — `frontend/src/app/globals.css`.
+- `frontend/src/app/page.tsx`, `frontend/src/components/public-home/` — публичная главная, её стили, мастерская палитры и цветовой круг; `frontend/public/images/` — локальные иллюстративные фото с источниками в `README.md`. Публичные заглушки используют `frontend/src/app/(public)/layout.tsx`.
 - `frontend/src/lib/calendar.ts` — `buildCalendarEntries`: разрезает события по дням, расставляет пересечения, интервалы отелей и отметки заезда/выезда; `calendar-interaction.ts` — выбор интервала и перенос события или отеля в пределах поездки. `contracts.ts`, `api.ts`, `trips.ts`, `draft-session.ts`, `pricing.ts`, `server-auth.ts` — DTO, запросы, черновик, предварительный расчёт и проверка входа.
 - `backend/tests/`, `frontend/src/lib/*.test.ts`, `frontend/src/components/trips/*.test.tsx`, `frontend/e2e/`, `shared/pricing-vectors.json` — проверки API/БД, календаря и форм, браузерные сценарии и общие финансовые векторы.
 
 ### Поток данных и соглашения
 
 UI вызывает типизированный `/api` через same-origin rewrite Next (`frontend/next.config.ts`) → FastAPI/Pydantic → SQLAlchemy/PostgreSQL. Финансовый источник истины — `backend/app/pricing.py:calculate_trip(TripInput)`; `frontend/src/lib/pricing.ts:calculateTrip` показывает предварительную смету, сохранённый документ содержит серверную. Деньги, курсы, количества и проценты в JSON — строки; backend считает через Decimal, хранит NUMERIC и снимки исходной суммы, курса и суммы в базовой валюте. Семь режимов стоимости, наценка и целевая маржинальность разделены; многодневные расходы нельзя дублировать в итогах дней.
+
+На главной пять цветовых ролей и отдельные шрифты заголовков/текста меняются через CSS-переменные корня `.travel-home`. HEX-поля и маркеры круга синхронизированы; выбранный вариант валидируется и хранится только в браузере в `localStorage` (`travel-club-home-style-v1`). Круг меняет оттенок и насыщенность, ползунок — светлоту.
 
 Поездка хранится в `trips`, `trip_days`, `trip_items`, `trip_currency_rates`. `TripUpdate.version` защищает от параллельной перезаписи; сокращение диапазона с заполненными днями или связанным конечным днём требует подтверждения. `DraftSession` удерживает несохранённые изменения и последовательно сохраняет новые редакции. Клиентский preview отдаёт только разрешённые поля без внутренних цен и заметок.
 
@@ -394,4 +397,5 @@ UI вызывает типизированный `/api` через same-origin r
 ### Окружение и подводные камни
 
 Имена из `.env.example`: `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `COOKIE_SECURE`; код дополнительно читает `POSTGRES_PORT`, Next — `BACKEND_URL`, Playwright — `PLAYWRIGHT_BASE_URL`. Значения и локальный `.env` не сохранять в документации. На Windows запускать npm как `npm.cmd`; для локального старта нужны Python и Docker Desktop/Compose. Compose публикует 3000/8000/5432 только на loopback; PostgreSQL живёт в named volume, `docker compose down -v` удалит данные. Изменение пароля в `.env` не меняет пароль уже созданной БД. Backend должен дождаться healthy PostgreSQL. При изменении `shared/pricing-vectors.json` пересобрать backend-образ.
+После изменения `frontend/public/images/` пересобрать frontend-образ: standalone runner получает `public/` отдельным `COPY` из builder.
 <!-- autopilot:end -->
