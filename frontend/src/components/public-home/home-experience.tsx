@@ -2,13 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Compass, Menu, RotateCcw, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, Compass, Menu, RotateCcw, Save, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
 import { ColorWheel } from "./color-wheel";
-import { colorKeys, colorLabels, defaultTheme, fontOptions, foregroundFor, normalizeHex, restoreTheme, type ColorKey, type Theme } from "./theme";
+import recommendedPalettePresets from "./presets/recommended.json";
+import { colorKeys, colorLabels, defaultTheme, fontOptions, foregroundFor, normalizeHex, restoreSavedPresets, restoreTheme, type ColorKey, type SavedPreset, type Theme } from "./theme";
 import "./home.css";
 
 const storageKey = "travel-club-home-style-v1";
+const presetsStorageKey = "travel-club-home-presets-v1";
+const maxSavedPresets = 50;
+
+function themesMatch(left: Theme, right: Theme) {
+  return left.headingFont === right.headingFont && left.bodyFont === right.bodyFont &&
+    colorKeys.every((key) => left.colors[key] === right.colors[key]);
+}
 
 const formatCards = [
   {
@@ -40,6 +48,11 @@ const formatCards = [
 export function HomeExperience() {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [drafts, setDrafts] = useState<Record<ColorKey, string>>(defaultTheme.colors);
+  const [savedPresets, setSavedPresets] = useState<SavedPreset[]>([]);
+  const [saveFormOpen, setSaveFormOpen] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [presetNotice, setPresetNotice] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +77,12 @@ export function HomeExperience() {
         }
       } catch {
         // A damaged browser preference must not break the page.
+      }
+      try {
+        const savedPresets = localStorage.getItem(presetsStorageKey);
+        if (savedPresets) setSavedPresets(restoreSavedPresets(JSON.parse(savedPresets)));
+      } catch {
+        // A damaged preset list must not break the page or its live editor.
       }
       setIsMobile(media.matches);
       if (media.matches) setPanelOpen(false);
@@ -111,6 +130,62 @@ export function HomeExperience() {
     setTheme(defaultTheme);
     setDrafts(defaultTheme.colors);
     setActiveColor("primary");
+  }
+
+  function applyPreset(preset: Pick<SavedPreset, "name" | "theme">) {
+    const restored = restoreTheme(preset.theme);
+    setTheme(restored);
+    setDrafts(restored.colors);
+    setActiveColor("primary");
+    setPresetNotice({ tone: "success", message: "Палитра «" + preset.name + "» применена." });
+    setConfirmDeleteId(null);
+  }
+
+  function saveCurrentPreset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = presetName.trim().replace(/\s+/g, " ").slice(0, 40);
+    if (!name) {
+      setPresetNotice({ tone: "error", message: "Введите название палитры." });
+      return;
+    }
+    if (savedPresets.length >= maxSavedPresets) {
+      setPresetNotice({ tone: "error", message: "В этом браузере уже сохранено 50 палитр." });
+      return;
+    }
+
+    const id = typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : "saved-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+    const preset: SavedPreset = {
+      id,
+      name,
+      theme: { colors: { ...theme.colors }, headingFont: theme.headingFont, bodyFont: theme.bodyFont },
+    };
+    const nextPresets = [preset, ...savedPresets];
+    try {
+      localStorage.setItem(presetsStorageKey, JSON.stringify(nextPresets));
+    } catch {
+      setPresetNotice({ tone: "error", message: "В этом браузере не удалось сохранить палитру. Проверьте настройки хранения сайта и попробуйте ещё раз." });
+      return;
+    }
+    setSavedPresets(nextPresets);
+    setPresetName("");
+    setSaveFormOpen(false);
+    setConfirmDeleteId(null);
+    setPresetNotice({ tone: "success", message: "Палитра «" + name + "» сохранена в этом браузере." });
+  }
+
+  function deleteSavedPreset(id: string) {
+    const nextPresets = savedPresets.filter((preset) => preset.id !== id);
+    try {
+      localStorage.setItem(presetsStorageKey, JSON.stringify(nextPresets));
+    } catch {
+      setPresetNotice({ tone: "error", message: "Браузер не смог обновить список палитр." });
+      return;
+    }
+    setSavedPresets(nextPresets);
+    setConfirmDeleteId(null);
+    setPresetNotice({ tone: "success", message: "Сохранённая палитра удалена." });
   }
 
   function handlePanelKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -270,13 +345,78 @@ export function HomeExperience() {
           <button ref={closeButton} type="button" className="lab-close" aria-label="Закрыть настройки" onClick={() => setPanelOpen(false)}><X size={20} aria-hidden /></button>
         </div>
         <div className="lab-scroll">
-          <p className="lab-intro">Меняйте цвета и шрифт — страница обновится сразу. Вариант сохранится в этом браузере.</p>
-          <div className="lab-section-label"><span>01</span> Типографика</div>
+          <p className="lab-intro">Выберите готовое сочетание или соберите своё. Именованные палитры сохраняются только в этом браузере.</p>
+          <div className="lab-section-label"><span>01</span> Рекомендованные палитры</div>
+          <div className="lab-preset-list" aria-label="Рекомендованные палитры">
+            {recommendedPalettePresets.map((preset) => {
+              const presetTheme = restoreTheme(preset.theme);
+              return (
+                <button
+                  type="button"
+                  key={preset.id}
+                  className={themesMatch(theme, presetTheme) ? "lab-preset-option is-selected" : "lab-preset-option"}
+                  aria-label={"Применить палитру «" + preset.name + "»"}
+                  aria-pressed={themesMatch(theme, presetTheme)}
+                  onClick={() => applyPreset({ name: preset.name, theme: presetTheme })}
+                >
+                  <span className="lab-preset-copy"><strong>{preset.name}{themesMatch(theme, presetTheme) && <Check size={14} aria-hidden />}</strong><small>{preset.description}</small></span>
+                  <span className="lab-preset-swatches" aria-hidden>{colorKeys.map((key) => <i key={key} style={{ backgroundColor: presetTheme.colors[key] }} />)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="lab-section-label"><span>02</span> Мои палитры</div>
+          {savedPresets.length ? (
+            <div className="lab-saved-presets" aria-label="Сохранённые палитры">
+              {savedPresets.map((preset) => (
+                <div className="lab-saved-item" key={preset.id}>
+                  <button
+                    type="button"
+                    className={themesMatch(theme, preset.theme) ? "lab-preset-option is-selected" : "lab-preset-option"}
+                    aria-label={"Применить сохранённую палитру «" + preset.name + "»"}
+                    aria-pressed={themesMatch(theme, preset.theme)}
+                    onClick={() => applyPreset(preset)}
+                  >
+                    <span className="lab-preset-copy"><strong>{preset.name}{themesMatch(theme, preset.theme) && <Check size={14} aria-hidden />}</strong><small>{fontOptions.find((option) => option.id === preset.theme.headingFont)?.label ?? fontOptions[0].label} · {fontOptions.find((option) => option.id === preset.theme.bodyFont)?.label ?? fontOptions[0].label}</small></span>
+                    <span className="lab-preset-swatches" aria-hidden>{colorKeys.map((key) => <i key={key} style={{ backgroundColor: preset.theme.colors[key] }} />)}</span>
+                  </button>
+                  <button type="button" className="lab-delete-trigger" aria-label={"Удалить пресет «" + preset.name + "»"} onClick={() => { setConfirmDeleteId(preset.id); setPresetNotice(null); }}><Trash2 size={16} aria-hidden /></button>
+                  {confirmDeleteId === preset.id && (
+                    <div className="lab-delete-confirm" role="group" aria-label={"Подтверждение удаления пресета «" + preset.name + "»"}>
+                      <span>Удалить «{preset.name}»?</span>
+                      <button type="button" className="lab-inline-button is-danger" onClick={() => deleteSavedPreset(preset.id)}>Удалить</button>
+                      <button type="button" className="lab-inline-button" onClick={() => setConfirmDeleteId(null)}>Оставить</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : <p className="lab-preset-empty">Сохранённые варианты появятся здесь.</p>}
+
+          {saveFormOpen ? (
+            <form className="lab-save-form" onSubmit={saveCurrentPreset}>
+              <label htmlFor="lab-preset-name">Название палитры</label>
+              <div className="lab-preset-name-line">
+                <input id="lab-preset-name" type="text" value={presetName} maxLength={40} autoComplete="off" onChange={(event) => setPresetName(event.target.value)} />
+                <span aria-hidden>{Array.from(presetName).length}/40</span>
+              </div>
+              <div className="lab-save-actions">
+                <button type="button" className="lab-inline-button" onClick={() => { setSaveFormOpen(false); setPresetName(""); }}>Отмена</button>
+                <button type="submit" className="lab-inline-button is-primary" disabled={!presetName.trim()}><Save size={14} aria-hidden /> Сохранить</button>
+              </div>
+            </form>
+          ) : (
+            <button type="button" className="lab-save-trigger" onClick={() => { setSaveFormOpen(true); setPresetNotice(null); }}><Save size={16} aria-hidden /> Сохранить текущую палитру</button>
+          )}
+          {presetNotice && <p className={presetNotice.tone === "error" ? "lab-preset-notice is-error" : "lab-preset-notice"} role="status" aria-live={presetNotice.tone === "error" ? "assertive" : "polite"}>{presetNotice.message}</p>}
+
+          <div className="lab-section-label"><span>03</span> Типографика</div>
           <div className="lab-font-grid">
             <label>Заголовки<select value={theme.headingFont} onChange={(event) => setTheme((current) => ({ ...current, headingFont: event.target.value }))}>{fontOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
             <label>Основной текст<select value={theme.bodyFont} onChange={(event) => setTheme((current) => ({ ...current, bodyFont: event.target.value }))}>{fontOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
           </div>
-          <div className="lab-section-label"><span>02</span> Цвета страницы</div>
+          <div className="lab-section-label"><span>04</span> Цвета страницы</div>
           <div className="lab-color-fields">
             {colorKeys.map((key) => (
               <div className={`lab-color-row ${activeColor === key ? "is-selected" : ""}`} key={key}>
@@ -286,7 +426,7 @@ export function HomeExperience() {
               </div>
             ))}
           </div>
-          <div className="lab-section-label"><span>03</span> Цветовой круг</div>
+          <div className="lab-section-label"><span>05</span> Цветовой круг</div>
           <p className="lab-wheel-hint">Выберите цвет выше, затем нажмите на круг. Точки показывают все цвета палитры.</p>
           <ColorWheel active={activeColor} colors={theme.colors} onActiveChange={setActiveColor} onColorChange={(hex) => setColor(activeColor, hex)} />
           <button type="button" className="lab-reset" onClick={resetTheme}><RotateCcw size={16} aria-hidden /> Вернуть исходный вариант</button>

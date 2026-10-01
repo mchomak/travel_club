@@ -1,0 +1,82 @@
+[
+  {
+    "id": "forest-lake",
+    "name": "Лес и озеро",
+    "description": "Спокойная природная база для клуба и маршрутов",
+    "theme": {
+      "colors": {
+        "background": "#EAF1EE",
+        "text": "#183A3D",
+        "primary": "#285D5B",
+        "accent": "#E8A95D",
+        "surface": "#FFFCF5"
+      },
+      "headingFont": "friendly",
+      "bodyFont": "modern"
+    }
+  },
+  {
+    "id": "salt-cobalt",
+    "name": "Соль и кобальт",
+    "description": "Морской воздух, городской синий и коралловый штрих",
+    "theme": {
+      "colors": {
+        "background": "#EAF0EF",
+        "text": "#1C353C",
+        "primary": "#286879",
+        "accent": "#E37B5B",
+        "surface": "#FCFBF5"
+      },
+      "headingFont": "clear",
+      "bodyFont": "modern"
+    }
+  },
+  {
+    "id": "evening-city",
+    "name": "Вечерний город",
+    "description": "Тёплый свет кафе и насыщенный винный оттенок",
+    "theme": {
+      "colors": {
+        "background": "#F1E9E5",
+        "text": "#37282E",
+        "primary": "#784457",
+        "accent": "#D58B5C",
+        "surface": "#FFF9F5"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "night-route",
+    "name": "Ночной маршрут",
+    "description": "Тёмная кинематографичная палитра для городских историй",
+    "theme": {
+      "colors": {
+        "background": "#17232E",
+        "text": "#F0EEE6",
+        "primary": "#36566B",
+        "accent": "#E7A05A",
+        "surface": "#243542"
+      },
+      "headingFont": "modern",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "route-spark",
+    "name": "Маршрут с искрой",
+    "description": "Кобальтовый акцент и солнечный цвет для живой подачи",
+    "theme": {
+      "colors": {
+        "background": "#EDF0F5",
+        "text": "#18283B",
+        "primary": "#344DA0",
+        "accent": "#EDC647",
+        "surface": "#FFFEF7"
+      },
+      "headingFont": "clear",
+      "bodyFont": "friendly"
+    }
+  }
+]

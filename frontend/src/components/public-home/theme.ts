@@ -6,6 +6,12 @@ export type Theme = {
   bodyFont: string;
 };
 
+export type SavedPreset = {
+  id: string;
+  name: string;
+  theme: Theme;
+};
+
 export const fontOptions = [
   { id: "modern", label: "Современный", stack: '"Segoe UI", Arial, sans-serif' },
   { id: "friendly", label: "Мягкий", stack: '"Trebuchet MS", "Segoe UI", sans-serif' },
@@ -113,4 +119,30 @@ export function restoreTheme(value: unknown): Theme {
     headingFont: fontIds.includes(candidate.headingFont ?? "") ? candidate.headingFont! : defaultTheme.headingFont,
     bodyFont: fontIds.includes(candidate.bodyFont ?? "") ? candidate.bodyFont! : defaultTheme.bodyFont,
   };
+}
+
+export function restoreSavedPresets(value: unknown): SavedPreset[] {
+  if (!Array.isArray(value)) return [];
+
+  const seenIds = new Set<string>();
+  return value.slice(0, 50).flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const candidate = entry as Partial<SavedPreset>;
+    if (
+      typeof candidate.id !== "string" ||
+      !/^[a-zA-Z0-9_-]{1,80}$/.test(candidate.id) ||
+      typeof candidate.name !== "string" ||
+      !candidate.theme ||
+      typeof candidate.theme !== "object" ||
+      seenIds.has(candidate.id)
+    ) return [];
+
+    const name = Array.from(candidate.name, (character) => {
+      const code = character.charCodeAt(0);
+      return code < 32 || code === 127 ? " " : character;
+    }).join("").trim().replace(/\s+/g, " ").slice(0, 40);
+    if (!name) return [];
+    seenIds.add(candidate.id);
+    return [{ id: candidate.id, name, theme: restoreTheme(candidate.theme) }];
+  });
 }
