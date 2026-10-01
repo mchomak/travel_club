@@ -78,5 +78,165 @@
       "headingFont": "clear",
       "bodyFont": "friendly"
     }
+  },
+  {
+    "id": "deep-atlantic",
+    "name": "Deep Atlantic",
+    "description": "Dress Blues 19-4024, All Aboard 17-4140 и Cloud Dancer 11-4201; Phantom 19-4005 задаёт графитовый контраст.",
+    "theme": {
+      "colors": {
+        "background": "#F2F2ED",
+        "text": "#25292F",
+        "primary": "#24364D",
+        "accent": "#0F75A8",
+        "surface": "#DCE3E6"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "deep-green-club",
+    "name": "Deep Green Club",
+    "description": "Deep Forest 19-5413 и Burnt Olive 18-0521; Cloud Dancer и серо-зелёный смягчают тёмную клубную базу.",
+    "theme": {
+      "colors": {
+        "background": "#F1F1E9",
+        "text": "#222923",
+        "primary": "#194536",
+        "accent": "#74744A",
+        "surface": "#E0E8E0"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "modern"
+    }
+  },
+  {
+    "id": "riviera",
+    "name": "Riviera",
+    "description": "All Aboard, Cloud Dancer, navy и песок с тонким красным акцентом — лёгкая средиземноморская подача.",
+    "theme": {
+      "colors": {
+        "background": "#F4F2EC",
+        "text": "#20354B",
+        "primary": "#0F75A8",
+        "accent": "#A94742",
+        "surface": "#E4D7BE"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "friendly"
+    }
+  },
+  {
+    "id": "tobacco-sky",
+    "name": "Tobacco & Sky",
+    "description": "Arabian Spice 19-1245 и Red Mahogany 19-1521 соединены с пыльно-голубым и глубоким navy.",
+    "theme": {
+      "colors": {
+        "background": "#F1EEE6",
+        "text": "#253448",
+        "primary": "#6D3435",
+        "accent": "#8EB5C7",
+        "surface": "#E5D1BE"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "modern"
+    }
+  },
+  {
+    "id": "tropical-modernism",
+    "name": "Tropical Modernism",
+    "description": "Deep forest, Green Envy 16-0541 и короткий лаймовый штрих на Cloud Dancer — тропики в подаче архитектурного журнала.",
+    "theme": {
+      "colors": {
+        "background": "#F3F2E9",
+        "text": "#30291F",
+        "primary": "#20583C",
+        "accent": "#B7D447",
+        "surface": "#E3EBDD"
+      },
+      "headingFont": "modern",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "formula-electric-blue",
+    "name": "Formula Travel — Electric Blue",
+    "description": "Одна спортивная база: navy, белый и графит; единственный цветовой код маршрута — electric blue.",
+    "theme": {
+      "colors": {
+        "background": "#F4F5F4",
+        "text": "#262B32",
+        "primary": "#152E49",
+        "accent": "#2366E8",
+        "surface": "#E5E9ED"
+      },
+      "headingFont": "modern",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "formula-racing-red",
+    "name": "Formula Travel — Racing Red",
+    "description": "Та же спортивная система с одним точным акцентом: racing red.",
+    "theme": {
+      "colors": {
+        "background": "#F4F5F4",
+        "text": "#262B32",
+        "primary": "#152E49",
+        "accent": "#D8343F",
+        "surface": "#E5E9ED"
+      },
+      "headingFont": "modern",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "formula-acid-yellow",
+    "name": "Formula Travel — Acid Yellow",
+    "description": "Та же спортивная система с одним контрастным акцентом: acid yellow.",
+    "theme": {
+      "colors": {
+        "background": "#F4F5F4",
+        "text": "#262B32",
+        "primary": "#152E49",
+        "accent": "#D3DC25",
+        "surface": "#E5E9ED"
+      },
+      "headingFont": "modern",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "burgundy-club",
+    "name": "Burgundy Club",
+    "description": "Oxblood и Red Mahogany 19-1521, шоколадный текст и холодный голубой штрих — fashion-подача вместо ярко-красного.",
+    "theme": {
+      "colors": {
+        "background": "#F2EFEA",
+        "text": "#36272C",
+        "primary": "#642B3F",
+        "accent": "#9CBCCB",
+        "surface": "#FAF7F1"
+      },
+      "headingFont": "editorial",
+      "bodyFont": "clear"
+    }
+  },
+  {
+    "id": "cloud-and-one",
+    "name": "Cloud + One",
+    "description": "Cloud Dancer 11-4201, графит и один акцент для каждого маршрута: cobalt, botanical green, mahogany, olive, burgundy или maritime blue.",
+    "theme": {
+      "colors": {
+        "background": "#F4F3EE",
+        "text": "#26282C",
+        "primary": "#34373C",
+        "accent": "#365CC8",
+        "surface": "#FFFFFF"
+      },
+      "headingFont": "clear",
+      "bodyFont": "modern"
+    }
   }
 ]
