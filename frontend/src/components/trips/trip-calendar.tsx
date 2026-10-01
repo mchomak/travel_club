@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import Decimal from "decimal.js";
+import { Pencil } from "lucide-react";
 import type { Calculation, DayInput, ItemInput, ItemType } from "@/lib/contracts";
 import { buildCalendarEntries } from "@/lib/calendar";
 import { minuteOfTime, moveEvent, moveHotel, selectionRange, timeOfMinute } from "@/lib/calendar-interaction";
@@ -180,7 +181,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
       <button type="button" className="trip-calendar-next" disabled={safeStart + pageSize >= orderedDays.length} onClick={() => setPageStart(safeStart + pageSize)} aria-label="Следующие дни">Вперёд →</button>
       {(onCreateRange || onMoveItem || onMoveHotel) && <button type="button" aria-pressed={touchSelect} onClick={() => setTouchSelect(value => !value)}>{touchSelect ? "Редактирование касанием включено" : "Выбирать и переносить касанием"}</button>}
     </div>
-    <div className="trip-calendar-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: 720 }}>
+    <div className="trip-calendar-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "90vh", minHeight: 740 }}>
       <div ref={surfaceRef} className="trip-calendar-surface" onPointerMove={updateGesture} onPointerUp={finishGesture} onPointerCancel={() => { gestureRef.current = null; setGesture(null); }} style={{ minWidth: 48 + visibleDays.length * 128 }}>
         <div className="trip-calendar-header">
         <div className="trip-calendar-dates" style={gridStyle}>
@@ -190,13 +191,13 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
             const style = { padding: 8, textAlign: "left" as const, color: "inherit", border: "1px solid #395064", background: selectedDayId === day.id ? "#29445c" : "#1c3144" };
             const summary = summaries.find(value => value.dayId === day.id)!;
             return <div key={day.id} style={{ background: selectedDayId === day.id ? "#29445c" : "#1c3144", border: "1px solid #395064" }}>
-              {onSelectDate
-                ? <button type="button" className="trip-calendar-day-heading" onClick={() => onSelectDate(day.id)} aria-current={selectedDayId === day.id ? "date" : undefined} style={{ ...style, width: "100%" }}>{content}</button>
-                : <div className="trip-calendar-day-heading" style={style}>{content}</div>}
-              {onEditDay && <button type="button" onClick={() => onEditDay(day.id)} aria-label={`Изменить день ${dateLabel(day.date)}`} style={{ margin: "0 8px 6px", color: "inherit", background: "transparent", border: "1px solid #547089", borderRadius: 4 }}>Изменить день</button>}
-              <div style={{ padding: "0 8px 8px", fontSize: 12 }}><span>{eventCount(summary.count)}</span><span style={{ display: "block" }}>Стоимость событий</span><strong>{summary.total === null ? "—" : money(summary.total)}</strong>
-                <details><summary aria-label="Как считается стоимость событий">ⓘ</summary><span>Многодневное событие видно в каждом занятом дне. Дневные суммы нельзя складывать для получения стоимости всей поездки.</span></details>
+              <div className="trip-calendar-day-heading-row">
+                {onSelectDate
+                  ? <button type="button" className="trip-calendar-day-heading" onClick={() => onSelectDate(day.id)} aria-current={selectedDayId === day.id ? "date" : undefined} style={{ ...style, flex: 1, minWidth: 0, width: "auto" }}>{content}</button>
+                  : <div className="trip-calendar-day-heading" style={{ ...style, flex: 1, minWidth: 0 }}>{content}</div>}
+                {onEditDay && <button type="button" className="trip-calendar-day-edit" onClick={() => onEditDay(day.id)} aria-label={`Изменить день ${dateLabel(day.date)}`} style={{ minWidth: 44, minHeight: 44, width: 44, alignSelf: "center", padding: 0, color: "inherit", background: "#24394d", border: "1px solid #547089", borderRadius: 8 }}><Pencil aria-hidden="true" size={18} /></button>}
               </div>
+              <div style={{ padding: "0 8px 8px", fontSize: 12 }}><span>{eventCount(summary.count)}</span><span style={{ display: "block" }}>Стоимость событий</span><strong>{summary.total === null ? "—" : money(summary.total)}</strong></div>
             </div>;
           })}
         </div>

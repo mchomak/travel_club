@@ -140,6 +140,37 @@ test("day heading totals unique visible event prices, including excluded and ove
   expect(screen.getAllByText("2 события")).toHaveLength(2);
   expect(screen.getAllByText(/200,00/)).toHaveLength(2);
   expect(screen.getAllByText("Стоимость событий")).toHaveLength(2);
+  expect(screen.queryAllByLabelText("Как считается стоимость событий")).toHaveLength(0);
+  expect(screen.queryByText(/Многодневное событие видно/)).toBeNull();
+});
+
+test("day edit is an accessible icon beside the date and does not select the day", async () => {
+  const day = { id: "day-1", date: "2026-10-01" } as DayInput;
+  const edit = vi.fn();
+  const select = vi.fn();
+  const user = userEvent.setup();
+  render(<TripCalendar days={[day]} items={[]} onOpenItem={vi.fn()} onEditDay={edit} onSelectDate={select} />);
+
+  const editButton = screen.getByRole("button", { name: /Изменить день/ });
+  expect(editButton).toHaveClass("trip-calendar-day-edit");
+  expect(editButton.querySelector("svg")).not.toBeNull();
+  expect(editButton).toHaveStyle({ minWidth: "44px", minHeight: "44px" });
+  await user.click(editButton);
+  expect(edit).toHaveBeenCalledWith("day-1");
+  expect(select).not.toHaveBeenCalled();
+
+  await user.click(document.querySelector<HTMLButtonElement>(".trip-calendar-day-heading")!);
+  expect(select).toHaveBeenCalledWith("day-1");
+});
+
+test("calendar time grid grows on tall windows while retaining full-day scrolling", () => {
+  const day = { id: "day-1", date: "2026-10-01" } as DayInput;
+  const { container } = render(<TripCalendar days={[day]} items={[]} onOpenItem={vi.fn()} />);
+  const scroll = container.querySelector<HTMLElement>(".trip-calendar-scroll")!;
+
+  expect(scroll.style.maxHeight).toBe("90vh");
+  expect(scroll.style.minHeight).toBe("740px");
+  expect(container.querySelectorAll(".trip-calendar-hours > span")).toHaveLength(24);
 });
 
 test("day heading does not present a false zero when an event price is unavailable", () => {

@@ -691,6 +691,22 @@ test("empty calendar, date navigation and item panel fit tablet and phone", asyn
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.goto(`/admin/trips/${trip.id}`);
   const calendar = page.getByRole("region", { name: "Календарь поездки" });
+  const calendarScroll = calendar.locator(".trip-calendar-scroll");
+  await page.setViewportSize({ width: 820, height: 900 });
+  const tallViewport = await calendarScroll.evaluate(element => ({ height: element.getBoundingClientRect().height, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+  expect(tallViewport.height).toBeGreaterThan(720);
+  expect(tallViewport.scrollHeight).toBeGreaterThan(tallViewport.clientHeight);
+  await page.setViewportSize({ width: 820, height: 768 });
+  const shortTablet = await calendarScroll.evaluate(element => {
+    element.scrollTop = element.scrollHeight;
+    const lastHour = element.querySelector<HTMLElement>(".trip-calendar-hours > span:last-child")!.getBoundingClientRect();
+    const viewport = element.getBoundingClientRect();
+    return { height: viewport.height, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight, lastHourVisible: lastHour.top < viewport.bottom && lastHour.bottom > viewport.top };
+  });
+  expect(shortTablet.height).toBeGreaterThanOrEqual(740);
+  expect(shortTablet.scrollHeight).toBeGreaterThan(shortTablet.clientHeight);
+  expect(shortTablet.lastHourVisible).toBe(true);
+  await page.setViewportSize({ width: 820, height: 1180 });
   await expect(calendar.locator(".trip-calendar-day-heading")).toHaveCount(3);
   await expect(calendar).toContainText("Добавьте первое событие ниже");
   await expect(page.locator(".add-item-section")).toBeVisible();
