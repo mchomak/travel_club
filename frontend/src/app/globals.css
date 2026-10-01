@@ -157,16 +157,15 @@ input[aria-invalid=true] { border-color: var(--danger); }
 .trip-calendar-scroll { border: 1px solid #395064; border-radius: 10px; scrollbar-color: #65849c #142333; }
 .trip-calendar-header { position: sticky; top: 0; z-index: 5; }
 .trip-calendar-dates { background: #1c3144; }
+.trip-calendar-day-heading-row { display: flex; align-items: center; gap: 2px; padding: 2px; }
 .trip-calendar-day-heading { min-height: 64px; transition: background 150ms ease-out, box-shadow 150ms ease-out; }
 button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
-.trip-calendar-day-heading strong { display: block; color: #fff; font-size: .875rem; }
+.trip-calendar-day-heading strong { display: block; color: #fff; font-size: .75rem; }
 .trip-calendar-day-heading small { display: block; color: #c2d7e5; font-size: .75rem; white-space: normal; overflow-wrap: anywhere; }
 .trip-calendar-day-heading[aria-current] strong { color: #d9f4e9; }
-.trip-calendar-dates > div > button[aria-label^="Изменить день"] { min-height: 44px; padding-inline: 6px; font-size: .75rem; }
-.trip-calendar-dates details { margin-top: 4px; }
-.trip-calendar-dates details summary { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; cursor: pointer; list-style: none; color: #f7d179; }
-.trip-calendar-dates details summary::-webkit-details-marker { display: none; }
-.trip-calendar-dates details span { display: block; max-width: 26ch; padding: 8px; border: 1px solid #688096; border-radius: 6px; background: #24394d; line-height: 1.35; }
+.trip-calendar-day-edit { display: inline-flex; flex: 0 0 44px; align-items: center; justify-content: center; }
+.trip-calendar-day-edit:hover { background: #35536d !important; border-color: #91aec5 !important; }
+.trip-calendar-day-edit:focus-visible { outline: 3px solid #f7d179; outline-offset: 2px; }
 .trip-calendar-hours span:first-child { transform: translateY(5px); }
 .trip-calendar-hotels { background: #142d37; border-bottom: 1px solid #52716b; }
 .trip-calendar-hotel-bar { min-height: 34px; padding: 4px 9px; font-size: .75rem; font-weight: 650; }
@@ -202,7 +201,7 @@ button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
 .modal-panel .modal-header { position: sticky; top: 0; z-index: 2; background: var(--color-paper); }
 .modal-panel .modal-header .icon-button { min-width: 44px; min-height: 44px; }
 .item-panel-delete { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 4px 24px 24px; color: var(--danger); font-size: .875rem; }
-.item-panel-delete:focus-visible, .trip-calendar-dates details summary:focus-visible, .trip-calendar-dates > div > button[aria-label^="Изменить день"]:focus-visible { outline: 3px solid #f7d179; outline-offset: 2px; }
+.item-panel-delete:focus-visible { outline: 3px solid #f7d179; outline-offset: 2px; }
 @keyframes panel-enter { from { transform: translateX(calc(100% + 80px)); } to { transform: translateX(0); } }
 @keyframes panel-exit { from { transform: translateX(0); } to { transform: translateX(calc(100% + 80px)); } }
 @keyframes overlay-enter { from { opacity: 0; } to { opacity: 1; } }
