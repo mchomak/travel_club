@@ -124,6 +124,9 @@ class TripItem(Base):
     end_day_id: Mapped[UUID | None] = mapped_column(index=True)
     position: Mapped[int] = mapped_column(default=0)
     type: Mapped[str] = mapped_column(String(20))
+    subtype: Mapped[str | None] = mapped_column(String(30))
+    airport_before_minutes: Mapped[int] = mapped_column(default=180)
+    airport_after_minutes: Mapped[int] = mapped_column(default=60)
     calculation_mode: Mapped[str] = mapped_column(String(30))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
@@ -172,8 +175,13 @@ class TripItem(Base):
         CheckConstraint("position >= 0", name="item_position"),
         CheckConstraint(
             "type IN ('flight','train_bus','transfer','hotel','excursion',"
-            "'activity','rental','insurance','other')",
+            "'activity','rental','insurance','meal','other')",
             name="item_type",
+        ),
+        CheckConstraint(
+            "airport_before_minutes BETWEEN 0 AND 1440 AND "
+            "airport_after_minutes BETWEEN 0 AND 1440",
+            name="item_airport_minutes",
         ),
         CheckConstraint(
             "calculation_mode IN ('per_person','fixed','capacity','hotel','per_day',"

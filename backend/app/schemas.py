@@ -25,8 +25,24 @@ ItemType = Literal[
     "activity",
     "rental",
     "insurance",
+    "meal",
     "other",
 ]
+ItemSubtype = Literal[
+    "bus", "train", "taxi", "rental", "water", "restaurant", "cafe", "bar",
+    "street_food", "excursion", "activity", "insurance", "sim", "communication",
+    "visa_fee", "service_fee", "other",
+]
+SUBTYPES_BY_TYPE: dict[str, set[str]] = {
+    "train_bus": {"bus", "train", "other"},
+    "transfer": {"bus", "train", "taxi", "rental", "water", "other"},
+    "rental": {"bus", "train", "taxi", "rental", "water", "other"},
+    "meal": {"restaurant", "cafe", "bar", "street_food", "other"},
+    "excursion": {"excursion", "activity", "other"},
+    "activity": {"excursion", "activity", "other"},
+    "insurance": {"insurance", "other"},
+    "other": {"insurance", "sim", "communication", "visa_fee", "service_fee", "other"},
+}
 CalculationMode = Literal[
     "per_person", "fixed", "capacity", "hotel", "per_day", "per_person_per_day", "manual"
 ]
@@ -110,6 +126,9 @@ class ItemInput(DTO):
     end_day_id: UUID | None = None
     position: int = Field(default=0, ge=0, le=10000, strict=True)
     type: ItemType
+    subtype: ItemSubtype | None = None
+    airport_before_minutes: int = Field(default=180, ge=0, le=1440, strict=True)
+    airport_after_minutes: int = Field(default=60, ge=0, le=1440, strict=True)
     calculation_mode: CalculationMode
     title: Title
     description: Note = ""
@@ -131,6 +150,12 @@ class ItemInput(DTO):
     check_out: date | None = None
     check_in_time: time | None = None
     check_out_time: time | None = None
+
+    @model_validator(mode="after")
+    def valid_subtype(self):
+        if self.subtype is not None and self.subtype not in SUBTYPES_BY_TYPE.get(self.type, set()):
+            raise ValueError("Выберите допустимый подвид для категории пункта")
+        return self
 
     @field_validator("external_url")
     @classmethod
@@ -265,6 +290,7 @@ class TripSummary(DTO):
 class PreviewItem(DTO):
     id: UUID
     type: ItemType
+    subtype: ItemSubtype | None
     title: str
     description: str
     location: str

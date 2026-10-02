@@ -2,8 +2,8 @@ import Decimal from "decimal.js";
 import type { Calculation, Category, ItemType, TripInput } from "./contracts";
 
 const D = Decimal.clone({ precision: 48, rounding: Decimal.ROUND_HALF_UP });
-const types: ItemType[] = ["flight", "train_bus", "transfer", "hotel", "excursion", "activity", "rental", "insurance", "other"];
-const category: Record<ItemType, Category> = { flight: "transport", train_bus: "transport", transfer: "transport", rental: "transport", hotel: "accommodation", excursion: "activities", activity: "activities", insurance: "other", other: "other" };
+const types: ItemType[] = ["flight", "train_bus", "transfer", "hotel", "excursion", "activity", "rental", "insurance", "meal", "other"];
+const category: Record<ItemType, Category> = { flight: "transport", train_bus: "transport", transfer: "transport", rental: "transport", hotel: "accommodation", excursion: "activities", activity: "activities", insurance: "other", meal: "other", other: "other" };
 const money = (value: Decimal) => {
   if (!value.isFinite() || value.isNegative() || value.gt("999999999999999999.99")) throw new Error("Сумма выходит за допустимые пределы");
   return value.toFixed(2);

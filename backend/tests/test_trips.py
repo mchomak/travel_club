@@ -54,6 +54,66 @@ def editable(document):
     return payload
 
 
+def test_meal_subtype_roundtrip_and_client_preview(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    payload["items"] = [{
+        "day_id": trip["days"][0]["id"],
+        "type": "meal", "subtype": "restaurant", "calculation_mode": "per_person",
+        "title": "Ужин", "currency": "RUB", "unit_price": "350",
+    }]
+    response = authenticated.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["type"] == "meal"
+    assert item["subtype"] == "restaurant"
+    assert response.json()["calculation"]["by_type"]["meal"] == "1750.00"
+    assert response.json()["calculation"]["cost_total"] == "1750.00"
+    assert authenticated.get(path).json()["items"][0] == item
+    preview = authenticated.get(path + "/preview").json()["days"][0]["items"][0]
+    assert preview["type"] == "meal"
+    assert preview["subtype"] == "restaurant"
+    assert "unit_price" not in preview
+    assert "normalized_amount" not in preview
+
+
+def test_item_subtype_and_airport_minutes_validation(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    base = editable(trip)
+    base["items"] = [{
+        "day_id": trip["days"][0]["id"], "type": "flight",
+        "calculation_mode": "fixed", "title": "Рейс", "currency": "RUB",
+    }]
+    saved = authenticated.put(path, headers=HEADERS, json=base)
+    assert saved.status_code == 200, saved.text
+    flight = saved.json()["items"][0]
+    assert flight["subtype"] is None
+    assert (flight["airport_before_minutes"], flight["airport_after_minutes"]) == (180, 60)
+
+    for invalid in (
+        {"subtype": "restaurant"},
+        {"airport_before_minutes": -1},
+        {"airport_after_minutes": 1441},
+        {"airport_after_minutes": None},
+    ):
+        payload = editable(saved.json())
+        payload["items"][0].update(invalid)
+        assert authenticated.put(path, headers=HEADERS, json=payload).status_code == 422
+
+    payload = editable(saved.json())
+    payload["items"][0].update({"airport_before_minutes": 0, "airport_after_minutes": 1440})
+    changed = authenticated.put(path, headers=HEADERS, json=payload)
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["items"][0]["airport_before_minutes"] == 0
+    assert changed.json()["items"][0]["airport_after_minutes"] == 1440
+    duplicate = authenticated.post(path + "/duplicate", headers=HEADERS)
+    assert duplicate.status_code == 201, duplicate.text
+    assert duplicate.json()["items"][0]["airport_before_minutes"] == 0
+    assert duplicate.json()["items"][0]["airport_after_minutes"] == 1440
+
+
 def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(authenticated):
     client = authenticated
     trip = create_trip(client)

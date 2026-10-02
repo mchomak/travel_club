@@ -2,10 +2,10 @@ import Decimal from "decimal.js";
 import type { CalculationMode, DayInput, ItemInput, ItemType, TripCreate } from "./contracts";
 import { nextDate } from "./pricing";
 
-export const itemLabels: Record<ItemType, string> = { flight: "Перелёт", train_bus: "Поезд / автобус", transfer: "Трансфер", hotel: "Проживание", excursion: "Экскурсия", activity: "Активность", rental: "Аренда транспорта", insurance: "Страховка", other: "Прочее" };
+export const itemLabels: Record<ItemType, string> = { flight: "Перелёт", train_bus: "Поезд / автобус", transfer: "Трансфер", hotel: "Проживание", excursion: "Экскурсия", activity: "Активность", rental: "Аренда транспорта", insurance: "Страховка", meal: "Еда", other: "Прочее" };
 export const modeLabels: Record<CalculationMode, string> = { per_person: "За человека", fixed: "За всю группу", capacity: "По вместимости", hotel: "Номер за ночь", per_day: "За день", per_person_per_day: "За человека в день", manual: "Итоговая сумма вручную" };
 export const statusLabels = { draft: "Черновик", ready: "Готова", archived: "В архиве" };
-export const defaultModes: Record<ItemType, CalculationMode> = { flight: "per_person", train_bus: "per_person", transfer: "capacity", hotel: "hotel", excursion: "per_person", activity: "per_person", rental: "per_day", insurance: "per_person_per_day", other: "fixed" };
+export const defaultModes: Record<ItemType, CalculationMode> = { flight: "per_person", train_bus: "per_person", transfer: "capacity", hotel: "hotel", excursion: "per_person", activity: "per_person", rental: "per_day", insurance: "per_person_per_day", meal: "per_person", other: "fixed" };
 export const currencies = ["RUB", "USD", "EUR", "CNY", "TRY", "THB"];
 export function formatMoney(value: string, currency: string) {
   const [whole, fraction] = new Decimal(value).toFixed(2).split(".");

@@ -11,13 +11,14 @@ import { minuteOfTime, moveEvent, moveHotel, selectionRange, timeOfMinute } from
 const HOUR_HEIGHT = 56;
 const labels: Record<ItemType, string> = {
   flight: "Перелёт", train_bus: "Поезд или автобус", transfer: "Трансфер", hotel: "Отель",
-  excursion: "Экскурсия", activity: "Занятие", rental: "Аренда", insurance: "Страхование", other: "Событие",
+  excursion: "Экскурсия", activity: "Занятие", rental: "Аренда", insurance: "Страхование", meal: "Еда", other: "Событие",
 };
 const colors: Record<ItemType, { background: string; border: string }> = {
   flight: { background: "#254f77", border: "#70b9ef" }, train_bus: { background: "#35536d", border: "#8db7d6" },
   transfer: { background: "#504672", border: "#b7a1e9" }, hotel: { background: "#255d58", border: "#80d9c6" },
   excursion: { background: "#70523b", border: "#e9b786" }, activity: { background: "#66506b", border: "#d9a5dd" },
   rental: { background: "#555d39", border: "#c5d681" }, insurance: { background: "#4d5763", border: "#b2bfcd" },
+  meal: { background: "#76543c", border: "#ebbd8e" },
   other: { background: "#5d5262", border: "#c9b4d2" },
 };
 

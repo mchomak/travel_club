@@ -138,6 +138,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     activity: { location: "Место встречи", start: "Начало", end: "Окончание", price: "Цена на человека", placeholder: "Где встречаемся" },
     rental: { location: "Место получения", start: "Получение", end: "Возврат", price: "Цена за день", placeholder: "Где получить транспорт" },
     insurance: { location: "Место", start: "Начало действия", end: "Окончание действия", price: "Цена на человека", placeholder: "Необязательно" },
+    meal: { location: "Заведение", start: "Начало", end: "Окончание", price: "Цена на человека", placeholder: "Например, кафе у вокзала" },
     other: { location: "Место", start: "Начало", end: "Окончание", price: "Цена за единицу", placeholder: "Необязательно" },
   };
   const labels = profile[item.type] ?? profile.other;

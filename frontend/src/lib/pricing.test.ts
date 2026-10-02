@@ -17,6 +17,17 @@ test("shared independent pricing vectors match the preview calculator", () => {
   }
 });
 
+test("a meal is priced per person and counted once in the day and trip", () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.items[0] = {
+    ...input.items[0], type: "meal", subtype: "restaurant", title: "Ужин", unit_price: "350",
+  };
+  const result = calculateTrip(input);
+  expect(result.by_type.meal).toBe("1050.00");
+  expect(result.days[0].total).toBe("1050.00");
+  expect(result.cost_total).toBe("1050.00");
+});
+
 test("an explicit base currency rate other than one is rejected", () => {
   const input = structuredClone(vectors.cases[0].input) as TripInput;
   input.rates = [{ currency: "RUB", rate: "2" }];

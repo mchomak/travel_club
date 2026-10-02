@@ -25,6 +25,7 @@ TYPE_CATEGORY = {
     "excursion": "activities",
     "activity": "activities",
     "insurance": "other",
+    "meal": "other",
     "other": "other",
 }
 

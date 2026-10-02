@@ -19,7 +19,7 @@ def test_calculation_contract_requires_complete_category_and_type_totals():
         if case["name"] == "empty"
     )
     actual = calculate_trip(TripInput.model_validate(empty)).model_dump(mode="json")
-    assert len(actual["by_type"]) == 9
+    assert len(actual["by_type"]) == 10
     assert all(len(day["groups"]) == 4 for day in actual["days"])
     missing_type = deepcopy(actual)
     del missing_type["by_type"]["flight"]
