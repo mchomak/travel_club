@@ -186,6 +186,8 @@ button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
 .unscheduled-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .unscheduled-heading h2 { font-size: 1.125rem; font-weight: 650; }
 .unscheduled-heading p, .unscheduled-empty { color: var(--color-muted); font-size: .8125rem; margin-top: 4px; }
+.expense-buttons { margin-top: 16px; }
+.expense-buttons button { min-height: 44px; }
 .unscheduled-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 10px; margin-top: 18px; }
 .unscheduled-item { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 68px; padding: 10px 13px; text-align: left; border: 1px solid var(--color-line); border-radius: 9px; background: #fbfcf8; }
 .unscheduled-item:hover { border-color: #739480; background: var(--soft-green); }

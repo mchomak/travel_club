@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
-import { currencies, defaultModes, formatDate, formatMoney, itemLabels, modeLabels, timeLabel } from "@/lib/trip-ui";
+import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, itemLabels, modeLabels, subtypeOptions, timeLabel } from "@/lib/trip-ui";
 import { ErrorNotice, Field } from "./ui";
 
 const nullableInteger = (v: string | number | null | undefined) => v === "" || v === null || v === undefined ? null : Number(v);
@@ -74,6 +74,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     setTypeChosen(true);
     if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true });
     setValue("type", type, { shouldDirty: true });
+    setValue("subtype", ({ transfer: "bus", meal: "restaurant", activity: "activity", other: "other" } as Partial<Record<ItemType, ItemInput["subtype"]>>)[type] ?? null, { shouldDirty: true });
     setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
     if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
     if (type === "hotel") {
@@ -93,6 +94,14 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       setValue("check_in_time", null, { shouldDirty: true });
       setValue("check_out_time", null, { shouldDirty: true });
     }
+  }
+  function changeSubtype(value: ItemInput["subtype"]) {
+    const category = eventCategory(item.type);
+    const currentLabel = subtypeOptions[category]?.find(option => option.value === displaySubtype(item))?.label;
+    const nextLabel = subtypeOptions[category]?.find(option => option.value === value)?.label;
+    if (nextLabel && (item.title === itemLabels[item.type] || item.title === currentLabel)) setValue("title", nextLabel, { shouldDirty: true });
+    if (["train_bus", "rental", "excursion", "insurance"].includes(item.type)) setValue("type", category, { shouldDirty: true });
+    setValue("subtype", value, { shouldDirty: true });
   }
   function save(values: ItemInput) {
     if (!typeChosen) return;
@@ -142,8 +151,14 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     other: { location: "Место", start: "Начало", end: "Окончание", price: "Цена за единицу", placeholder: "Необязательно" },
   };
   const labels = profile[item.type] ?? profile.other;
+  const category = eventCategory(item.type);
+  const subtypes = subtypeOptions[category];
+  const selectedSubtype = displaySubtype(item);
+  const legacySubtype = item.type === "train_bus" && !selectedSubtype;
+  const expenseWithoutSchedule = (item.type === "other" || item.type === "insurance") && !item.day_id && !item.start_time && !item.end_time;
   return <form onSubmit={handleSubmit(save)} className="trip-form">
-    <Field label="Тип события" wide><select value={typeChosen ? item.type : ""} onChange={event => { if (event.target.value) changeType(event.target.value as ItemType); else setTypeChosen(false); }}><option value="" disabled={!requireTypeChoice}>Выберите тип события</option>{Object.entries(itemLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+    <Field label="Тип события" wide><select value={typeChosen ? category : ""} onChange={event => { if (event.target.value) changeType(event.target.value as ItemType); else setTypeChosen(false); }}><option value="" disabled={!requireTypeChoice}>Выберите тип события</option>{eventCategories.map(({ type, label }) => <option key={type} value={type}>{label}</option>)}{category === "other" && typeChosen && <option value="other">Допрасход</option>}</select></Field>
+    {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...register("title", { required: "Укажите название", maxLength: 200 })} /></Field>
       <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>
@@ -151,13 +166,13 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
       {item.external_url && validUrl(item.external_url) === true && <a className="text-link field-wide" href={item.external_url} target="_blank" rel="noopener noreferrer">Открыть ссылку в новой вкладке</a>}
     </div></fieldset>
-    <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Время" disabled={!typeChosen}><h3>Время</h3><div className="form-grid">
+    {!expenseWithoutSchedule && <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Время" disabled={!typeChosen}><h3>Время</h3><div className="form-grid">
       {item.type === "hotel" ? <><Field label="Заезд — дата"><input type="date" min={trip.start_date} max={trip.end_date} {...checkInField} onChange={event => { void checkInField.onChange(event); setValue("day_id", trip.days.find(day => day.date === event.target.value)?.id ?? null, { shouldDirty: true }); }} /></Field><Field label="Время заселения" hint={!item.check_in_time ? "Не указано. Рекомендуем 15:00" : undefined}><input type="time" {...register("check_in_time", { setValueAs: v => v || null })} /></Field><Field label="Выезд — дата" error={errors.check_out?.message} hint="День выезда не оплачивается"><input type="date" min={trip.start_date} max={nextDate(trip.end_date)} {...register("check_out", { setValueAs: v => v || null })} /></Field><Field label="Время выселения" hint={!item.check_out_time ? "Не указано. Рекомендуем 11:00" : undefined}><input type="time" {...register("check_out_time", { setValueAs: v => v || null })} /></Field>{(!item.check_in_time || !item.check_out_time) && <button type="button" className="secondary-button field-wide" onClick={() => { if (!item.check_in_time) setValue("check_in_time", "15:00", { shouldDirty: true }); if (!item.check_out_time) setValue("check_out_time", "11:00", { shouldDirty: true }); }}>Подставить рекомендуемые часы</button>}</> : <>
         <Field label="День маршрута" hint="Дата начала события"><select {...register("day_id", { setValueAs: v => v || null })}><option value="">Общие расходы</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field>
         <Field label={`${labels.start} по местному времени`}><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Дата окончания" error={errors.end_day_id?.message} hint="Для ночного события предложим следующий день тура"><select {...endDayField} onChange={event => { chosenEndDay.current = true; void endDayField.onChange(event); }}><option value="">В день начала</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field><Field label={`${labels.end} по местному времени`} error={errors.end_time?.message} hint="Часы показываются без пересчёта часовых поясов"><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
         {overnightOutsideTrip && <p className="field-hint field-wide">Продолжение {formatDate(nextDate(selectedDay.date))} — за пределами поездки. Чтобы изменить расписание, продлите даты поездки.</p>}
       </>}
-    </div></fieldset>
+    </div></fieldset>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Стоимость" disabled={!typeChosen}><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" error={errors.calculation_mode?.message} wide><select {...modeField} onChange={event => { void modeField.onChange(event); clearErrors("calculation_mode"); }}>{item.type !== "hotel" && mode === "hotel" && <option value="hotel" disabled>Номер за ночь — недоступен для этого типа</option>}{Object.entries(modeLabels).filter(([value]) => item.type === "hotel" || value !== "hotel").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
       <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : mode === defaultModes[item.type] ? labels.price : "Цена за единицу"}><input inputMode="decimal" {...register("unit_price", { required: true })} /></Field><Field label="Валюта цены"><input list="item-currencies" maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code, { shouldDirty: true }); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id="item-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
       {foreign && <Field label={`Курс ${item.currency || "валюты"}`} hint={`1 ${item.currency || "единица"} = указанная сумма в ${trip.base_currency}`} wide><input value={rate} onChange={e => setRate(e.target.value)} inputMode="decimal" required /></Field>}

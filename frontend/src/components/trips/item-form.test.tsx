@@ -6,6 +6,21 @@ import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 
 afterEach(cleanup);
 
+test("transport subtype is saved and shown again when the item is reopened", async () => {
+  const user = userEvent.setup();
+  const day = emptyDay("2026-10-01");
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  const onSubmit = vi.fn();
+  const item = newItem("transfer", day, "RUB", day.date);
+  const { rerender } = render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Подвид" }), "train");
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: "transfer", subtype: "train" }), undefined);
+  const saved = onSubmit.mock.calls[0][0];
+  rerender(<ItemForm key={saved.id + "-reopen"} initial={saved} trip={{ ...trip, items: [saved] }} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByRole("combobox", { name: "Подвид" })).toHaveValue("train");
+});
+
 test("invalid end time stays editable and blocks saving", async () => {
   const user = userEvent.setup();
   const days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];

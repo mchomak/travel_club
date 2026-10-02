@@ -24,6 +24,41 @@ vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, b
   <button onClick={() => onEditDay(days[1].id)}>Изменить день в календаре</button>
 </div> }));
 
+test("extra expense buttons create an unscheduled per-person item and keep legacy insurance visible", async () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.items = [{ ...newItem("insurance", null, input.base_currency, input.start_date), title: "Старая страховка", unit_price: "80" }];
+  const calculation = calculateTrip(input);
+  const document = { ...input, id: "expenses-trip", version: 1, created_at: "", updated_at: "", created_by: "user", calculation } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const save = vi.spyOn(tripApi, "save").mockImplementation(async (_id, update) => {
+    const updatedCalculation = calculateTrip(update);
+    return { ...document, ...update, version: update.version + 1, calculation: updatedCalculation,
+      items: update.items.map(item => ({ ...item, ...updatedCalculation.items.find(result => result.id === item.id)! })) };
+  });
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id="expenses-trip" /></TripProvider>);
+  const events = await screen.findByRole("region", { name: "Добавить в маршрут" });
+  expect(within(events).getAllByRole("button")).toHaveLength(5);
+  expect(within(events).queryByRole("button", { name: /страховка/i })).not.toBeInTheDocument();
+  const expenses = screen.getByRole("region", { name: "Дополнительные расходы" });
+  expect(within(expenses).getByRole("button", { name: /Старая страховка/ })).toBeInTheDocument();
+  await user.click(within(expenses).getByRole("button", { name: "SIM-карта" }));
+  const panel = screen.getByRole("dialog");
+  expect(within(panel).getByRole("combobox", { name: "Правило расчёта" })).toHaveValue("per_person");
+  expect(within(panel).queryByRole("group", { name: "Время" })).not.toBeInTheDocument();
+  expect(within(panel).getByRole("combobox", { name: "Подвид" })).toHaveValue("sim");
+  await user.clear(within(panel).getByLabelText("Цена за единицу"));
+  await user.type(within(panel).getByLabelText("Цена за единицу"), "10");
+  await user.click(within(panel).getByRole("button", { name: "Сохранить элемент" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
+  await waitFor(() => expect(save).toHaveBeenCalled());
+  const saved = save.mock.calls.at(-1)![1];
+  expect(saved.items.find(item => item.subtype === "sim")).toMatchObject({ type: "other", day_id: null, start_time: null, end_time: null, calculation_mode: "per_person", unit_price: "10" });
+  expect(saved.items.find(item => item.type === "insurance")).toMatchObject({ title: "Старая страховка", unit_price: "80" });
+  expect(calculateTrip(saved).general_total).toBe("270.00");
+});
+
 test("calendar creation opens a type choice and leaves the draft untouched until save", async () => {
   const input = structuredClone(vectors.cases[0].input) as TripInput;
   input.end_date = "2026-10-03";

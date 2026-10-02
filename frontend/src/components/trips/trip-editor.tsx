@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js";
 import { ArrowLeft, ChevronRight, Eye, Plus, Save, Settings2, Trash2 } from "lucide-react";
-import type { Calculation, ItemInput, ItemType, TripDocument, TripInput } from "@/lib/contracts";
+import type { Calculation, ItemInput, ItemSubtype, ItemType, TripDocument, TripInput } from "@/lib/contracts";
 import { ApiError } from "@/lib/api";
 import { DraftSession } from "@/lib/draft-session";
 import { calculateTrip, dateList } from "@/lib/pricing";
 import { buildCalendarEntries } from "@/lib/calendar";
 import { tripApi, tripInput } from "@/lib/trips";
-import { emptyDay, formatDate, formatMoney, itemLabels, newItem, statusLabels } from "@/lib/trip-ui";
+import { emptyDay, eventCategories, extraExpenses, formatDate, formatMoney, itemDisplayLabel, newCategoryItem, newItem, statusLabels } from "@/lib/trip-ui";
 import { Confirm, ErrorNotice, Loading, Modal } from "./ui";
 import { TripForm } from "./trip-form";
 import { ItemForm } from "./item-form";
@@ -61,6 +61,9 @@ function Editor({ document }: { document: TripDocument }) {
   const calendarEntries = buildCalendarEntries(days, trip.items, days.map(value => value.date));
   const placedItemIds = new Set([...calendarEntries.events, ...calendarEntries.hotelBars].map(entry => entry.itemId));
   const unscheduled = trip.items.filter(item => item.day_id === null || !placedItemIds.has(item.id));
+  const isExpense = (item: ItemInput) => item.type === "insurance" || (item.type === "other" && (!item.day_id || !!item.subtype));
+  const expenses = trip.items.filter(isExpense);
+  const eventsWithoutSchedule = unscheduled.filter(item => !isExpense(item));
   const calculation: Calculation | null = state.dirty ? estimate.value : state.document.calculation;
   const error = state.error;
   const dateRemoval = error instanceof ApiError && error.code === "DATE_REMOVAL_REQUIRED" && dismissedDateError !== error;
@@ -73,7 +76,14 @@ function Editor({ document }: { document: TripDocument }) {
   function nextPosition(targetDayId: string | null) { return Math.max(-1, ...trip.items.filter(item => item.day_id === targetDayId).map(item => item.position)) + 1; }
   function openEditor(item: ItemInput, chooseType = false) { setRequireTypeChoice(chooseType); setEditing(item); setItemPanelOpen(true); }
   function closeEditor() { setFormDirty(false); setItemPanelOpen(false); }
-  function add(type: ItemType) { openEditor({ ...newItem(type, day ?? null, trip.base_currency, trip.start_date), position: nextPosition(dayId) }); }
+  function add(type: ItemType) {
+    const subtype = ({ transfer: "bus", meal: "restaurant", activity: "activity" } as Partial<Record<ItemType, ItemSubtype>>)[type] ?? null;
+    openEditor({ ...newCategoryItem(type, subtype, day ?? null, trip.base_currency, trip.start_date), position: nextPosition(dayId) });
+  }
+  function addExpense(subtype: ItemSubtype) {
+    setSelected(null);
+    openEditor({ ...newCategoryItem("other", subtype, null, trip.base_currency, trip.start_date), position: nextPosition(null) });
+  }
   function createRange(targetDayId: string, start: string, end: string) {
     const targetDay = days.find(value => value.id === targetDayId);
     if (!targetDay) return;
@@ -118,11 +128,16 @@ function Editor({ document }: { document: TripDocument }) {
         />
         <section className="add-item-section" aria-label="Добавить в маршрут">
           <div><h2>Добавить в маршрут</h2><p>{day ? `Выбран ${formatDate(day.date)}. Выберите тип события.` : "Выберите тип события. Дату можно указать в форме."}</p></div>
-          <div className="item-type-buttons">{Object.entries(itemLabels).map(([type, label]) => <button key={type} onClick={() => add(type as ItemType)}><Plus size={15} aria-hidden />{label}</button>)}</div>
+          <div className="item-type-buttons">{eventCategories.map(({ type, label }) => <button key={type} onClick={() => add(type)}><Plus size={15} aria-hidden />{label}</button>)}</div>
+        </section>
+        <section className="unscheduled-section" aria-label="Дополнительные расходы">
+          <div className="unscheduled-heading"><div><h2>Дополнительные расходы</h2><p>Выберите расход на всю поездку. По умолчанию цена считается за каждого участника.</p></div></div>
+          <div className="item-type-buttons expense-buttons">{extraExpenses.map(({ subtype, label }) => <button key={subtype} onClick={() => addExpense(subtype)}><Plus size={15} aria-hidden />{label}</button>)}</div>
+          {expenses.length > 0 && <div className="unscheduled-list">{expenses.map(item => { const cost = calculation?.items.find(value => value.id === item.id); return <button key={item.id} className="unscheduled-item" onClick={() => openEditor(item)}><span><small>{itemDisplayLabel(item)} · Вся поездка</small><strong>{item.title}</strong></span><b>{cost ? formatMoney(cost.normalized_amount, trip.base_currency) : "—"}</b><ChevronRight size={18} aria-hidden /></button>; })}</div>}
         </section>
         <section className="unscheduled-section" aria-labelledby="unscheduled-title">
-          <div className="unscheduled-heading"><div><h2 id="unscheduled-title">Без времени и общие расходы</h2><p>Пункты без времени остаются в маршруте и смете. Здесь также доступны расходы на всю поездку.</p></div><button className="secondary-button" onClick={() => { setSelected(null); openEditor({ ...newItem("other", null, trip.base_currency, trip.start_date), position: nextPosition(null) }, true); }}><Plus size={16} aria-hidden />Добавить общий расход</button></div>
-          {unscheduled.length ? <div className="unscheduled-list">{unscheduled.map(item => { const cost = calculation?.items.find(value => value.id === item.id); const itemDay = days.find(value => value.id === item.day_id); return <button key={item.id} className="unscheduled-item" onClick={() => openEditor(item)}><span><small>{item.day_id ? itemDay ? formatDate(itemDay.date, true) : "День вне диапазона" : "Вся поездка"} · {itemLabels[item.type]}</small><strong>{item.title}</strong></span><b>{cost ? formatMoney(cost.normalized_amount, trip.base_currency) : "—"}</b><ChevronRight size={18} aria-hidden /></button>; })}</div> : <p className="unscheduled-empty">Пока нет пунктов без времени или общих расходов.</p>}
+          <div className="unscheduled-heading"><div><h2 id="unscheduled-title">Без времени</h2><p>Пункты маршрута без времени остаются доступными здесь.</p></div></div>
+          {eventsWithoutSchedule.length ? <div className="unscheduled-list">{eventsWithoutSchedule.map(item => { const cost = calculation?.items.find(value => value.id === item.id); const itemDay = days.find(value => value.id === item.day_id); return <button key={item.id} className="unscheduled-item" onClick={() => openEditor(item)}><span><small>{item.day_id ? itemDay ? formatDate(itemDay.date, true) : "День вне диапазона" : "Вся поездка"} · {itemDisplayLabel(item)}</small><strong>{item.title}</strong></span><b>{cost ? formatMoney(cost.normalized_amount, trip.base_currency) : "—"}</b><ChevronRight size={18} aria-hidden /></button>; })}</div> : <p className="unscheduled-empty">Пока нет пунктов маршрута без времени.</p>}
         </section>
       </div>
       <Finances trip={trip} calculation={calculation} error={state.dirty ? estimate.error : null} onChange={change} onRates={() => setDialog("rates")} />
