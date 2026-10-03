@@ -9,7 +9,7 @@ import type { Calculation, ItemInput, ItemSubtype, ItemType, TripDocument, TripI
 import { ApiError } from "@/lib/api";
 import { DraftSession } from "@/lib/draft-session";
 import { calculateTrip, dateList } from "@/lib/pricing";
-import { buildCalendarEntries } from "@/lib/calendar";
+import { buildCalendarEntries, type AirportKind } from "@/lib/calendar";
 import { tripApi, tripInput } from "@/lib/trips";
 import { emptyDay, eventCategories, extraExpenses, formatDate, formatMoney, itemDisplayLabel, newCategoryItem, newItem, statusLabels } from "@/lib/trip-ui";
 import { Confirm, ErrorNotice, Loading, Modal } from "./ui";
@@ -17,6 +17,7 @@ import { TripForm } from "./trip-form";
 import { ItemForm } from "./item-form";
 import { DayForm, Finances, RatesForm } from "./editor-panels";
 import { TripCalendar } from "./trip-calendar";
+import { AirportBlockForm } from "./airport-block-form";
 
 function canonical(value: unknown): unknown {
   if (typeof value === "string" && /^\d+(\.\d+)?$/.test(value)) return new Decimal(value).toString();
@@ -31,6 +32,7 @@ function Editor({ document }: { document: TripDocument }) {
   const [selected, setSelected] = useState<string | null>(document.days[0]?.id ?? null);
   const [dialog, setDialog] = useState<"settings" | "day" | "rates" | null>(null), [editing, setEditing] = useState<ItemInput | null>(null), [deleting, setDeleting] = useState<ItemInput | null>(null);
   const [itemPanelOpen, setItemPanelOpen] = useState(false), [requireTypeChoice, setRequireTypeChoice] = useState(false);
+  const [airportEditing, setAirportEditing] = useState<{ itemId: string; kind: AirportKind } | null>(null), [airportPanelOpen, setAirportPanelOpen] = useState(false);
   const [reloadConfirm, setReloadConfirm] = useState(false), [dismissedDateError, setDismissedDateError] = useState<Error | null>(null), [previewBusy, setPreviewBusy] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
   const confirmedReload = useRef(false);
@@ -107,6 +109,8 @@ function Editor({ document }: { document: TripDocument }) {
     setSelected(targetDayId);
   }
   function openItem(itemId: string) { const item = trip.items.find(candidate => candidate.id === itemId); if (item) openEditor(item); }
+  function openAirport(itemId: string, kind: AirportKind) { setAirportEditing({ itemId, kind }); setAirportPanelOpen(true); }
+  const airportFlight = airportEditing && trip.items.find(item => item.id === airportEditing.itemId && item.type === "flight");
   const saveLabel = { saved: "Сохранено", dirty: "Есть изменения", saving: "Сохранение…", error: "Не удалось сохранить" }[state.status];
   return <><Link href="/admin/trips" className="back-link"><ArrowLeft size={17} aria-hidden />Все поездки</Link><div className="editor-heading"><div className="min-w-0"><span className={`status-badge status-${trip.status}`}>{statusLabels[trip.status]}</span><h1>{trip.internal_title}</h1><p>{formatDate(trip.start_date)} — {formatDate(trip.end_date)} · {days.length} дней · {trip.participants} участников</p><p className="editor-quick-total">Себестоимость <strong>{calculation ? formatMoney(calculation.cost_total, trip.base_currency) : "—"}</strong></p></div><div className="editor-actions"><button className="secondary-button" onClick={() => setDialog("settings")}><Settings2 size={17} aria-hidden />Параметры</button><button className="secondary-button" onClick={() => { void preview(); }} disabled={previewBusy}><Eye size={17} aria-hidden />Клиентский вид</button><button className="primary-button" onClick={() => { void save(); }} disabled={state.status === "saving"}><Save size={17} aria-hidden />Сохранить</button><p role="status" className={`save-status ${state.status === "error" ? "text-danger" : ""}`}>{saveLabel}</p></div></div>
     {error && <ErrorNotice error={error} retry={() => { void save(); }} />}{error instanceof ApiError && error.code === "VERSION_CONFLICT" && <button className="secondary-button mt-3" onClick={() => setReloadConfirm(true)}>Перечитать с сервера</button>}{!parity && <div className="error-notice" role="alert">Предварительный расчёт отличается от сервера. {state.dirty ? "До сохранения показан предварительный расчёт." : "Показана сохранённая серверная смета."} Проверьте условия расчёта.</div>}
@@ -122,6 +126,7 @@ function Editor({ document }: { document: TripDocument }) {
           onSelectDate={setSelected}
           onEditDay={targetDayId => { setSelected(targetDayId); setDialog("day"); }}
           onOpenItem={openItem}
+          onOpenAirport={openAirport}
           onCreateRange={createRange}
           onMoveItem={moveItem}
           onMoveHotel={moveHotel}
@@ -146,6 +151,7 @@ function Editor({ document }: { document: TripDocument }) {
     {dialog === "day" && day && <Modal title="Детали дня" onClose={() => { setFormDirty(false); setDialog(null); }}><DayForm day={day} onDirtyChange={setFormDirty} onCancel={() => { setFormDirty(false); setDialog(null); }} onSave={updated => { change({ days: trip.days.map(d => d.id === updated.id ? updated : d) }); setFormDirty(false); setDialog(null); }} /></Modal>}
     {dialog === "rates" && <Modal title="Валюты и курсы" onClose={() => { setFormDirty(false); setDialog(null); }}><RatesForm trip={trip} onDirtyChange={setFormDirty} onCancel={() => { setFormDirty(false); setDialog(null); }} onSave={rates => { change({ rates }); setFormDirty(false); setDialog(null); }} /></Modal>}
     {editing && <Modal variant="panel" open={itemPanelOpen} title={trip.items.some(i => i.id === editing.id) ? "Редактирование элемента" : "Новый элемент"} onClose={() => { setFormDirty(false); setEditing(null); if (deleteAfterClose.current) { setDeleting(deleteAfterClose.current); deleteAfterClose.current = null; } }}><ItemForm initial={editing} trip={trip} requireTypeChoice={requireTypeChoice} onDirtyChange={setFormDirty} onCancel={closeEditor} onSubmit={(item, rate) => { const moved = item.day_id !== editing.day_id ? { ...item, position: nextPosition(item.day_id) } : item; change({ items: trip.items.some(i => i.id === moved.id) ? trip.items.map(i => i.id === moved.id ? moved : i) : [...trip.items, moved], rates: rate ? [...trip.rates.filter(r => r.currency !== rate.currency), rate] : trip.rates }); closeEditor(); }} />{trip.items.some(i => i.id === editing.id) && <button className="item-panel-delete" onClick={() => { deleteAfterClose.current = editing; closeEditor(); }}><Trash2 size={16} aria-hidden />Удалить элемент</button>}</Modal>}
+    {airportEditing && airportFlight && <Modal variant="panel" open={airportPanelOpen} title={airportEditing.kind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта"} onClose={() => { setFormDirty(false); setAirportEditing(null); }}><AirportBlockForm flight={airportFlight} days={days} kind={airportEditing.kind} onDirtyChange={setFormDirty} onCancel={() => { setFormDirty(false); setAirportPanelOpen(false); }} onSave={duration => { const field = airportEditing.kind === "before" ? "airport_before_minutes" : "airport_after_minutes"; change({ items: trip.items.map(item => item.id === airportFlight.id ? { ...item, [field]: duration } : item) }); setFormDirty(false); setAirportPanelOpen(false); }} /></Modal>}
     {deleting && <Confirm title="Удалить элемент?" action="Удалить элемент" onClose={() => setDeleting(null)} onConfirm={() => { change({ items: trip.items.filter(i => i.id !== deleting.id) }); setDeleting(null); }}>«{deleting.title}» будет удалён из маршрута и сметы.</Confirm>}
     {dateRemoval && <Confirm title="Сократить поездку?" action="Удалить дни и сохранить" onClose={restoreDates} onConfirm={() => { setDismissedDateError(error); void save(true); }}><p>Заполненные дни, которые будут удалены:</p><ul className="my-3 list-disc pl-5">{removedDates.map(date => <li key={date}><time dateTime={date}>{formatDate(date)}</time></li>)}</ul><p>Их элементы и заметки будут удалены. Отмена вернёт прежний диапазон поездки и сохранит содержимое дней.</p></Confirm>}
     {reloadConfirm && <Confirm title="Открыть последнюю версию?" action="Перечитать с сервера" onClose={() => setReloadConfirm(false)} onConfirm={() => { confirmedReload.current = true; window.location.reload(); }}>Поездка изменена в другой вкладке. При перезагрузке ваши несохранённые изменения будут потеряны. Текущий черновик остаётся доступным до подтверждения.</Confirm>}

@@ -8,20 +8,25 @@ import { calculateTrip } from "@/lib/pricing";
 import type { TripDocument, TripInput } from "@/lib/contracts";
 import { vectors } from "../../test-fixtures";
 import { emptyDay, newItem } from "@/lib/trip-ui";
+import { buildCalendarEntries } from "@/lib/calendar";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay }: {
+vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onOpenAirport, onOpenItem }: {
   days: TripInput["days"]; items: TripInput["items"]; calculation: TripDocument["calculation"] | null; baseCurrency: string;
   onCreateRange: (dayId: string, start: string, end: string) => void;
   onMoveItem: (itemId: string, dayId: string, start: string, end: string, endDayId: string | null) => void;
   onMoveHotel: (itemId: string, checkIn: string, checkOut: string, dayId: string) => void;
   onEditDay: (dayId: string) => void;
+  onOpenAirport: (itemId: string, kind: "before" | "after") => void;
+  onOpenItem: (itemId: string) => void;
 }) => <div aria-label="Календарь поездки" data-currency={baseCurrency} data-total={calculation?.cost_total}>
   <button onClick={() => onCreateRange(days[0].id, "09:15", "10:45")}>Создать интервал</button>
   <button onClick={() => onMoveItem(items[0].id, days[1].id, "11:00", "12:00", null)}>Перенести событие</button>
   <button onClick={() => onMoveHotel(items[1].id, days[1].date, days[2].date, days[1].id)}>Перенести отель</button>
   <button onClick={() => onEditDay(days[1].id)}>Изменить день в календаре</button>
+  <button onClick={() => onOpenAirport(items[0].id, "before")}>Настроить приезд в аэропорт</button>
+  <button onClick={() => onOpenItem(items[0].id)}>Открыть первый пункт</button>
 </div> }));
 
 test("extra expense buttons create an unscheduled per-person item and keep legacy insurance visible", async () => {
@@ -109,6 +114,52 @@ test("calendar moves keep other item fields and save through the draft session",
   const hotel = save.mock.calls[1][1].items[1];
   expect(hotel).toMatchObject({ day_id: input.days[1].id, check_in: "2026-10-02", check_out: "2026-10-03", check_in_time: "15:00", check_out_time: "11:00", unit_price: "200" });
   expect(screen.getByLabelText("Календарь поездки")).toHaveAttribute("data-currency", "RUB");
+});
+
+test("airport boundary persists through reopening, follows a moved flight, and disappears with deletion", async () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.end_date = "2026-10-03";
+  input.days = [emptyDay("2026-10-01"), emptyDay("2026-10-02"), emptyDay("2026-10-03")];
+  input.items = [{ ...newItem("flight", input.days[0], "RUB", input.start_date), title: "Ночной рейс", start_time: "23:00", end_time: "01:00", end_day_id: input.days[1].id, unit_price: "100" }];
+  const documentFor = (value: TripInput, version: number): TripDocument => {
+    const calculation = calculateTrip(value);
+    return { ...value, id: "airport-trip", version, created_at: "", updated_at: "", created_by: "user", calculation, items: value.items.map(item => ({ ...item, ...calculation.items.find(result => result.id === item.id)! })) };
+  };
+  let persisted = documentFor(input, 1);
+  vi.spyOn(tripApi, "get").mockImplementation(async () => persisted);
+  const save = vi.spyOn(tripApi, "save").mockImplementation(async (_id, update) => { persisted = documentFor(update, update.version + 1); return persisted; });
+  const user = userEvent.setup();
+  const view = render(<TripProvider><TripEditor id="airport-trip" /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: "Настроить приезд в аэропорт" }));
+  const panel = screen.getByRole("dialog");
+  expect(within(panel).getByLabelText("Время приезда")).toHaveValue("20:00");
+  await user.clear(within(panel).getByLabelText("Время приезда"));
+  await user.type(within(panel).getByLabelText("Время приезда"), "21:30");
+  await user.click(within(panel).getByRole("button", { name: "Сохранить время" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
+  await waitFor(() => expect(persisted.items[0].airport_before_minutes).toBe(90));
+  expect(persisted.items).toHaveLength(1);
+  expect(buildCalendarEntries(persisted.days, persisted.items, persisted.days.map(day => day.date)).airportBlocks.find(block => block.airportKind === "before")).toMatchObject({ startMinute: 1290, endMinute: 1380 });
+  view.unmount();
+
+  render(<TripProvider><TripEditor id="airport-trip-reopen" /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: "Настроить приезд в аэропорт" }));
+  expect(within(screen.getByRole("dialog")).getByLabelText("Время приезда")).toHaveValue("21:30");
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Отмена" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  await user.click(screen.getByRole("button", { name: "Перенести событие" }));
+  await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
+  await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+  const moved = buildCalendarEntries(persisted.days, persisted.items, persisted.days.map(day => day.date));
+  expect(moved.airportBlocks.find(block => block.airportKind === "before")).toMatchObject({ date: "2026-10-02", startMinute: 570, endMinute: 660 });
+  expect(moved.airportBlocks.find(block => block.airportKind === "after")).toMatchObject({ date: "2026-10-02", startMinute: 720, endMinute: 780 });
+  await user.click(screen.getByRole("button", { name: "Открыть первый пункт" }));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Удалить элемент" }));
+  await user.click((await screen.findByText("Удалить элемент?")).closest("[role=dialog]")!.querySelector<HTMLButtonElement>(".danger-button")!);
+  await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
+  await waitFor(() => expect(persisted.items).toHaveLength(0));
+  expect(buildCalendarEntries(persisted.days, persisted.items, persisted.days.map(day => day.date)).airportBlocks).toEqual([]);
 });
 
 test("changing base currency clears previous FX and asks for rates in the new base", async () => {

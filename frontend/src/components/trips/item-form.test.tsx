@@ -1,10 +1,46 @@
 ﻿import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ItemForm } from "./item-form";
 import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 
 afterEach(cleanup);
+
+test("flight form saves and restores custom airport durations, including a hidden block", async () => {
+  const user = userEvent.setup();
+  const day = emptyDay("2026-10-01");
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  const onSubmit = vi.fn();
+  const item = { ...newItem("flight", day, "RUB", day.date), start_time: "09:00", end_time: "11:00" };
+  const view = render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByLabelText("До вылета в аэропорту, минут")).toHaveValue(180);
+  expect(screen.getByLabelText("После прилёта в аэропорту, минут")).toHaveValue(60);
+  await user.clear(screen.getByLabelText("До вылета в аэропорту, минут"));
+  await user.type(screen.getByLabelText("До вылета в аэропорту, минут"), "0");
+  await user.clear(screen.getByLabelText("После прилёта в аэропорту, минут"));
+  await user.type(screen.getByLabelText("После прилёта в аэропорту, минут"), "120");
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ airport_before_minutes: 0, airport_after_minutes: 120 }), undefined);
+  const saved = onSubmit.mock.calls[0][0];
+  view.rerender(<ItemForm key="reopened-flight" initial={saved} trip={{ ...trip, items: [saved] }} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByLabelText("До вылета в аэропорту, минут")).toHaveValue(0);
+  expect(screen.getByLabelText("После прилёта в аэропорту, минут")).toHaveValue(120);
+});
+
+test("invalid post-arrival duration marks the post-arrival field", async () => {
+  const day = emptyDay("2026-10-01");
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  const onSubmit = vi.fn();
+  const { container } = render(<ItemForm initial={newItem("flight", day, "RUB", day.date)} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  const before = screen.getByLabelText("До вылета в аэропорту, минут");
+  const after = screen.getByLabelText("После прилёта в аэропорту, минут");
+  fireEvent.change(after, { target: { value: "1441" } });
+  fireEvent.submit(container.querySelector("form")!);
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(before).toHaveAttribute("aria-invalid", "false");
+  await waitFor(() => expect(after).toHaveAttribute("aria-invalid", "true"));
+  expect(screen.getByRole("alert")).toHaveTextContent("от 0 до 1440");
+});
 
 test("transport subtype is saved and shown again when the item is reopened", async () => {
   const user = userEvent.setup();

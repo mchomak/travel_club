@@ -40,12 +40,23 @@ test("hotel spans visible nights while exact check-in and check-out times become
 });
 
 test("overlapping intervals use separate lanes and incomplete time stays out of the hourly grid", () => {
-  const first = item({ id: "a", end_day_id: null, start_time: "10:00", end_time: "12:00" });
-  const second = item({ id: "b", end_day_id: null, start_time: "11:00", end_time: "13:00" });
-  const incomplete = item({ id: "c", end_day_id: null, start_time: "14:00", end_time: null });
+  const first = item({ id: "a", type: "activity", end_day_id: null, start_time: "10:00", end_time: "12:00" });
+  const second = item({ id: "b", type: "activity", end_day_id: null, start_time: "11:00", end_time: "13:00" });
+  const incomplete = item({ id: "c", type: "activity", end_day_id: null, start_time: "14:00", end_time: null });
   const result = buildCalendarEntries(days, [first, second, incomplete], [dates[0]]);
   expect(result.events.map(({ itemId, lane, laneCount }) => ({ itemId, lane, laneCount }))).toEqual([
     { itemId: "a", lane: 0, laneCount: 2 },
     { itemId: "b", lane: 1, laneCount: 2 },
   ]);
+});
+
+test("flight airport intervals follow both boundaries across midnight and clip to visible trip days", () => {
+  const flight = item({ airport_before_minutes: 180, airport_after_minutes: 60 });
+  const result = buildCalendarEntries(days, [flight], dates);
+  expect(result.airportBlocks.map(({ airportKind, date, startMinute, endMinute }) => ({ airportKind, date, startMinute, endMinute }))).toEqual([
+    { airportKind: "before", date: dates[0], startMinute: 1170, endMinute: 1350 },
+    { airportKind: "after", date: dates[1], startMinute: 75, endMinute: 135 },
+  ]);
+  expect(buildCalendarEntries(days, [flight], [dates[1]]).airportBlocks.map(block => block.airportKind)).toEqual(["after"]);
+  expect(buildCalendarEntries(days, [{ ...flight, airport_before_minutes: 0, airport_after_minutes: 0 }], dates).airportBlocks).toEqual([]);
 });

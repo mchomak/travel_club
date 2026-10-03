@@ -26,6 +26,8 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     ? trip.days.find(day => day.date === nextDate(initialStartDate))?.id ?? null : null;
   const defaults = {
     ...initial,
+    airport_before_minutes: initial.airport_before_minutes ?? 180,
+    airport_after_minutes: initial.airport_after_minutes ?? 60,
     end_day_id: inferredEnd ?? initial.end_day_id,
     check_in_time: isNew && initial.type === "hotel" ? "15:00" : initial.check_in_time,
     check_out_time: isNew && initial.type === "hotel" ? "11:00" : initial.check_out_time,
@@ -106,7 +108,16 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   function save(values: ItemInput) {
     if (!typeChosen) return;
     setError(null);
-    clearErrors(["end_day_id", "end_time", "check_out", "external_url"]);
+    clearErrors(["end_day_id", "end_time", "check_out", "external_url", "airport_before_minutes", "airport_after_minutes"]);
+    if (values.type === "flight") {
+      for (const field of ["airport_before_minutes", "airport_after_minutes"] as const) {
+        const value = values[field];
+        if (!Number.isInteger(value) || value! < 0 || value! > 1440) {
+          setFieldError(field, { message: "Укажите целое число минут от 0 до 1440." });
+          return;
+        }
+      }
+    }
     if (values.type !== "hotel" && values.calculation_mode === "hotel") {
       setFieldError("calculation_mode", { message: "Режим «Номер за ночь» доступен только для проживания. Выберите другое правило расчёта." });
       return;
@@ -171,6 +182,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
         <Field label="День маршрута" hint="Дата начала события"><select {...register("day_id", { setValueAs: v => v || null })}><option value="">Общие расходы</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field>
         <Field label={`${labels.start} по местному времени`}><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Дата окончания" error={errors.end_day_id?.message} hint="Для ночного события предложим следующий день тура"><select {...endDayField} onChange={event => { chosenEndDay.current = true; void endDayField.onChange(event); }}><option value="">В день начала</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field><Field label={`${labels.end} по местному времени`} error={errors.end_time?.message} hint="Часы показываются без пересчёта часовых поясов"><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
         {overnightOutsideTrip && <p className="field-hint field-wide">Продолжение {formatDate(nextDate(selectedDay.date))} — за пределами поездки. Чтобы изменить расписание, продлите даты поездки.</p>}
+        {item.type === "flight" && <><Field label="До вылета в аэропорту, минут" error={errors.airport_before_minutes?.message} hint="По умолчанию 180. Ноль скрывает блок."><input type="number" min="0" max="1440" step="1" {...register("airport_before_minutes", { valueAsNumber: true })} /></Field><Field label="После прилёта в аэропорту, минут" error={errors.airport_after_minutes?.message} hint="По умолчанию 60. Ноль скрывает блок."><input type="number" min="0" max="1440" step="1" {...register("airport_after_minutes", { valueAsNumber: true })} /></Field></>}
       </>}
     </div></fieldset>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Стоимость" disabled={!typeChosen}><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" error={errors.calculation_mode?.message} wide><select {...modeField} onChange={event => { void modeField.onChange(event); clearErrors("calculation_mode"); }}>{item.type !== "hotel" && mode === "hotel" && <option value="hotel" disabled>Номер за ночь — недоступен для этого типа</option>}{Object.entries(modeLabels).filter(([value]) => item.type === "hotel" || value !== "hotel").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>

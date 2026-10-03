@@ -144,6 +144,20 @@ test("day heading totals unique visible event prices, including excluded and ove
   expect(screen.queryByText(/Многодневное событие видно/)).toBeNull();
 });
 
+test("airport blocks open their own settings without adding events or price", async () => {
+  const days = ["2026-10-01", "2026-10-02"].map((date, index) => ({ id: `day-${index}`, date })) as DayInput[];
+  const flight = { id: "flight", day_id: days[0].id, end_day_id: days[1].id, type: "flight", title: "Рейс", start_time: "22:00", end_time: "01:00" } as ItemInput;
+  const openItem = vi.fn(), openAirport = vi.fn();
+  const calculation = { items: [{ id: "flight", normalized_amount: "120.00" }] } as import("@/lib/contracts").Calculation;
+  render(<TripCalendar days={days} items={[flight]} calculation={calculation} baseCurrency="RUB" onOpenItem={openItem} onOpenAirport={openAirport} />);
+  expect(screen.getAllByText("1 событие")).toHaveLength(2);
+  expect(screen.getAllByText(/120,00/)).toHaveLength(2);
+  await userEvent.setup().click(screen.getByRole("button", { name: /Настроить приезд в аэропорт/ }));
+  expect(openAirport).toHaveBeenCalledWith("flight", "before");
+  expect(openItem).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: /Настроить выход из аэропорта/ })).toHaveTextContent("01:00–02:00");
+});
+
 test("day edit is an accessible icon beside the date and does not select the day", async () => {
   const day = { id: "day-1", date: "2026-10-01" } as DayInput;
   const edit = vi.fn();

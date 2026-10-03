@@ -175,7 +175,8 @@ button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
 .trip-calendar-event:hover { filter: brightness(1.25); box-shadow: 0 3px 14px rgb(0 0 0 / .45); z-index: 3 !important; }
 .trip-calendar-event strong { display: block; overflow-wrap: anywhere; }
 .trip-calendar-event span { opacity: .92; }
-.trip-calendar-event:focus-visible, .trip-calendar-marker:focus-visible, .trip-calendar-hotel-bar:focus-visible, .trip-calendar-day-heading:focus-visible, .trip-calendar-navigation button:focus-visible { outline: 3px solid #f7d179; outline-offset: -3px; z-index: 6 !important; }
+.trip-calendar-event:focus-visible, .trip-calendar-airport:focus-visible, .trip-calendar-marker:focus-visible, .trip-calendar-hotel-bar:focus-visible, .trip-calendar-day-heading:focus-visible, .trip-calendar-navigation button:focus-visible { outline: 3px solid #f7d179; outline-offset: -3px; z-index: 6 !important; }
+.trip-calendar-airport:hover { filter: brightness(1.2); z-index: 3 !important; }
 .trip-calendar-hint { padding: 2px 4px; font-size: .875rem; }
 .add-item-section { display: flex; flex-direction: column; gap: 16px; margin: 18px 0 28px; padding: 20px 22px; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 12px; }
 .add-item-section h2 { font-size: 1.125rem; font-weight: 650; margin-bottom: 2px; }

@@ -5,7 +5,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import Decimal from "decimal.js";
 import { Pencil } from "lucide-react";
 import type { Calculation, DayInput, ItemInput, ItemType } from "@/lib/contracts";
-import { buildCalendarEntries } from "@/lib/calendar";
+import { buildCalendarEntries, type AirportKind } from "@/lib/calendar";
 import { minuteOfTime, moveEvent, moveHotel, selectionRange, timeOfMinute } from "@/lib/calendar-interaction";
 
 const HOUR_HEIGHT = 56;
@@ -34,6 +34,7 @@ export interface TripCalendarProps {
   calculation?: Calculation | null;
   baseCurrency?: string;
   onOpenItem: (itemId: string) => void;
+  onOpenAirport?: (itemId: string, kind: AirportKind) => void;
   onCreateRange?: (dayId: string, start: string, end: string) => void;
   onMoveItem?: (itemId: string, dayId: string, start: string, end: string, endDayId: string | null) => void;
   onMoveHotel?: (itemId: string, checkIn: string, checkOut: string, dayId: string) => void;
@@ -47,7 +48,7 @@ type Gesture = { kind: "create" | "event" | "hotel"; pointerId: number; pointerT
 function eventCount(count: number): string { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? "событие" : [2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100) ? "события" : "событий"}`; }
 
 /** Responsive calendar with local wall-clock positioning and date-only hotel spans. */
-export function TripCalendar({ days, items, calculation, baseCurrency, onOpenItem, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onSelectDate, selectedDayId }: TripCalendarProps) {
+export function TripCalendar({ days, items, calculation, baseCurrency, onOpenItem, onOpenAirport, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onSelectDate, selectedDayId }: TripCalendarProps) {
   const orderedDays = useMemo(() => [...days].sort((a, b) => a.date.localeCompare(b.date)), [days]);
   const [pageSize, setPageSize] = useState(7);
   const [pageStart, setPageStart] = useState(0);
@@ -240,6 +241,12 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
                 <strong>{event.title}</strong><span style={{ display: "block" }}>{timeOf(event.startMinute)}–{timeOf(event.endMinute)} · {labels[event.itemType]}</span>
               </button>;
             })}
+            {entries.airportBlocks.filter(block => block.date === day.date).map(block => {
+              const name = block.airportKind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта";
+              return <button type="button" key={`${block.itemId}-${block.airportKind}-${block.date}`} className="trip-calendar-airport" onPointerDown={pointer => pointer.stopPropagation()} onClick={() => onOpenAirport?.(block.itemId, block.airportKind)} aria-label={`Настроить ${name.toLowerCase()}: ${block.title}, ${block.date}, ${timeOf(block.startMinute)} — ${timeOf(block.endMinute)}`} style={{ position: "absolute", top: block.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (block.endMinute - block.startMinute) / 60 * HOUR_HEIGHT), left: `${block.lane / block.laneCount * 100}%`, width: `${100 / block.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#e6f3ff", background: "#24405b", border: "1px dashed #8bb9dc", borderRadius: 5, fontSize: 11 }}>
+                <strong>{name}</strong><span style={{ display: "block" }}>{timeOf(block.startMinute)}–{timeOf(block.endMinute)} · {block.title}</span>
+              </button>;
+            })}
             {entries.markers.filter(marker => marker.date === day.date).map(marker => <button type="button" key={`${marker.itemId}-${marker.kind}`} className={`trip-calendar-marker trip-calendar-${marker.kind}`} onClick={() => open(marker.itemId)} aria-label={`Открыть отель ${marker.title}: ${marker.kind === "check-in" ? "заезд" : "выезд"} в ${timeOf(marker.minute)}`} style={{ position: "absolute", top: marker.minute / 60 * HOUR_HEIGHT, right: 2, zIndex: 2, maxWidth: "95%", padding: "2px 5px", border: "1px solid #80d9c6", borderRadius: 4, background: "#255d58", color: "#fff", fontSize: 11 }}>
               {marker.kind === "check-in" ? "Заезд" : "Выезд"} {timeOf(marker.minute)} · {marker.title}
             </button>)}
@@ -247,6 +254,6 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
         </div>
       </div>
     </div>
-    {!entries.events.length && !entries.hotelBars.length && !entries.markers.length && <p className="trip-calendar-hint" style={{ marginTop: 12, color: "#b6cad9" }}>В эти дни пока нет событий со временем. Добавьте первое событие ниже.</p>}
+    {!entries.events.length && !entries.airportBlocks.length && !entries.hotelBars.length && !entries.markers.length && <p className="trip-calendar-hint" style={{ marginTop: 12, color: "#b6cad9" }}>В эти дни пока нет событий со временем. Добавьте первое событие ниже.</p>}
   </section>;
 }
