@@ -15,7 +15,22 @@
 | `memory-ferry.jpg` | 960 × 1200 | Alimurat Üral | [Пассажиры парома и Галатский мост](https://www.pexels.com/photo/people-sitting-on-vessel-with-galata-bridge-behind-window-17283084/) |
 | `memory-street.jpg` | 802 × 1200 | ibrahim arslan | [Люди на набережной рядом с паромом](https://www.pexels.com/photo/ferry-and-people-by-galata-district-in-istanbul-28869454/) |
 
-Лицензия всех шести фотографий — [Pexels License](https://www.pexels.com/license/). Исходники скачаны 3 октября 2026 года, приведены к разумному размеру без изменения композиции и сохранены как progressive JPEG (quality 84). Суммарный размер фотографий — 828 413 байт, около 809 KiB. Каждый итоговый файл просмотрен визуально.
+Лицензия исходных шести фотографий — [Pexels License](https://www.pexels.com/license/). Исходники скачаны 3 октября 2026 года, приведены к разумному размеру без изменения композиции и сохранены как progressive JPEG (quality 84). Размер этой исходной подборки — 828 413 байт, около 809 KiB. Каждый итоговый файл просмотрен визуально.
+
+Для редакционного редизайна 4 октября добавлены восемь кадров. Istanbul получил чай, небольшую чайную и уличные разговоры; Shanghai — движение на перекрёстке, переулок, кухню и вечернюю улицу. Общий кадр Club не заявляет конкретного города. География городских кадров сверена по страницам источников, фотографии просмотрены перед использованием.
+
+| Файл | Размер | Автор | Источник |
+| --- | --- | --- | --- |
+| `istanbul-tea.jpg` | 1067 × 1600 | Buse Oktar | [Чай в стамбульском кафе](https://www.pexels.com/photo/traditional-turkish-tea-in-istanbul-cafe-31966105/) |
+| `istanbul-cafe.jpg` | 1143 × 1600 | Necip Duman | [Чайная в Арнавуткёе](https://www.pexels.com/photo/tea-shop-by-the-street-13799023/) |
+| `istanbul-people.jpg` | 1067 × 1600 | zahara | [Уличные столики чайной](https://www.pexels.com/photo/people-sitting-at-tea-house-tables-on-a-street-in-istanbul-19771058/) |
+| `shanghai-street.jpg` | 1600 × 1067 | Margo Evardson | [Велосипедисты на перекрёстке](https://www.pexels.com/photo/busy-shanghai-street-with-cyclists-at-crosswalk-37071059/) |
+| `shanghai-alley.jpg` | 1067 × 1600 | Johnny Song | [Шанхайский переулок](https://www.pexels.com/photo/street-scene-in-shanghai-s-urban-alleyway-31552628/) |
+| `shanghai-dumplings.jpg` | 1600 × 1067 | Jonas F | [Сяолунбао](https://www.pexels.com/photo/steamed-dumplings-in-the-bamboo-steamer-6752827/) |
+| `shanghai-evening.jpg` | 1200 × 1600 | Zheng Xia | [Вечерняя улица Шанхая](https://www.pexels.com/photo/people-walking-on-the-street-at-night-4993575/) |
+| `club-evening.jpg` | 1600 × 1067 | DΛVΞ GΛRCIΛ | [Вечерний разговор друзей](https://www.pexels.com/photo/casual-evening-dinner-with-friends-outdoors-38786290/) |
+
+Новые файлы — progressive JPEG, quality 85, максимум 1600px по длинной стороне, с той же лицензией Pexels. Все 14 фотографий занимают 3 156 974 байта (около 3 MiB). `next/image` отдаёт подходящий размер; кроме главного кадра, изображения загружаются лениво. Каталог `images` и галереи `issues[].gallery` в `src/components/test/data.ts` определяют использование фотографий; `manifest.json` документирует источники и реальные размеры.
 
 ## Шрифты
 

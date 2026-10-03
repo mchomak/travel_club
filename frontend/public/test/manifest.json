@@ -67,6 +67,102 @@
       "source": "https://www.pexels.com/photo/ferry-and-people-by-galata-district-in-istanbul-28869454/",
       "license": "https://www.pexels.com/license/",
       "position": "50% 60%"
+    },
+    "istanbulTea": {
+      "path": "/test/istanbul-tea.jpg",
+      "width": 1067,
+      "height": 1600,
+      "bytes": 320010,
+      "alt": "Стакан турецкого чая на столе стамбульского кафе",
+      "author": "Buse Oktar",
+      "source": "https://www.pexels.com/photo/traditional-turkish-tea-in-istanbul-cafe-31966105/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 65%",
+      "downloadedAt": "2026-10-04"
+    },
+    "istanbulCafe": {
+      "path": "/test/istanbul-cafe.jpg",
+      "width": 1143,
+      "height": 1600,
+      "bytes": 191366,
+      "alt": "Витрина небольшой чайной в Арнавуткёе, Стамбул",
+      "author": "Necip Duman",
+      "source": "https://www.pexels.com/photo/tea-shop-by-the-street-13799023/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 50%",
+      "downloadedAt": "2026-10-04"
+    },
+    "istanbulPeople": {
+      "path": "/test/istanbul-people.jpg",
+      "width": 1067,
+      "height": 1600,
+      "bytes": 315516,
+      "alt": "Посетители чайной за столиками на улице в Стамбуле",
+      "author": "zahara",
+      "source": "https://www.pexels.com/photo/people-sitting-at-tea-house-tables-on-a-street-in-istanbul-19771058/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 58%",
+      "downloadedAt": "2026-10-04"
+    },
+    "shanghaiStreet": {
+      "path": "/test/shanghai-street.jpg",
+      "width": 1600,
+      "height": 1067,
+      "bytes": 334214,
+      "alt": "Велосипедисты на перекрёстке Юньнань-роуд в Шанхае",
+      "author": "Margo Evardson",
+      "source": "https://www.pexels.com/photo/busy-shanghai-street-with-cyclists-at-crosswalk-37071059/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 50%",
+      "downloadedAt": "2026-10-04"
+    },
+    "shanghaiAlley": {
+      "path": "/test/shanghai-alley.jpg",
+      "width": 1067,
+      "height": 1600,
+      "bytes": 408949,
+      "alt": "Прохожие в узком шанхайском переулке, чёрно-белый кадр",
+      "author": "Johnny Song",
+      "source": "https://www.pexels.com/photo/street-scene-in-shanghai-s-urban-alleyway-31552628/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 50%",
+      "downloadedAt": "2026-10-04"
+    },
+    "shanghaiFood": {
+      "path": "/test/shanghai-dumplings.jpg",
+      "width": 1600,
+      "height": 1067,
+      "bytes": 137321,
+      "alt": "Сяолунбао в бамбуковой пароварке, шанхайская кухня",
+      "author": "Jonas F",
+      "source": "https://www.pexels.com/photo/steamed-dumplings-in-the-bamboo-steamer-6752827/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 50%",
+      "downloadedAt": "2026-10-04"
+    },
+    "shanghaiEvening": {
+      "path": "/test/shanghai-evening.jpg",
+      "width": 1200,
+      "height": 1600,
+      "bytes": 389486,
+      "alt": "Пешеходы на шанхайской улице Сычуань-роуд в вечернем свете",
+      "author": "Zheng Xia",
+      "source": "https://www.pexels.com/photo/people-walking-on-the-street-at-night-4993575/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 60%",
+      "downloadedAt": "2026-10-04"
+    },
+    "club": {
+      "path": "/test/club-evening.jpg",
+      "width": 1600,
+      "height": 1067,
+      "bytes": 231699,
+      "alt": "Непринуждённый вечерний разговор друзей за столом под тёплым светом ламп",
+      "author": "DΛVΞ GΛRCIΛ",
+      "source": "https://www.pexels.com/photo/casual-evening-dinner-with-friends-outdoors-38786290/",
+      "license": "https://www.pexels.com/license/",
+      "position": "50% 52%",
+      "downloadedAt": "2026-10-04"
     }
   },
   "fonts": [
@@ -136,5 +232,6 @@
       "license": "/test/fonts/Lora-OFL.txt",
       "unicodeRange": "U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116"
     }
-  ]
+  ],
+  "extendedAt": "2026-10-04"
 }

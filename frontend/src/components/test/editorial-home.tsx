@@ -2,134 +2,78 @@
 
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
-import { copy, images, issues, navigation, principles, products, workflow, type EditorialImage, type ProductId } from "./data";
+import { contents, copy, images, issues, navigation, principles, products, workflow, type EditorialImage, type Issue, type ProductId } from "./data";
 import { LeadForm } from "./lead-form";
 import s from "./editorial.module.css";
 
-function Photo({ image, className = "", sizes, preload = false }: { image: EditorialImage; className?: string; sizes: string; preload?: boolean }) {
-  return <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes={sizes} preload={preload} className={`${s.photo} ${className}`} style={{ objectPosition: image.position }} />;
+function Photo({ image, className = "", sizes, preload = false, decorative = false }: { image: EditorialImage; className?: string; sizes: string; preload?: boolean; decorative?: boolean }) {
+  return <Image src={image.src} alt={decorative ? "" : image.alt} width={image.width} height={image.height} sizes={sizes} preload={preload} className={`${s.photo} ${className}`} style={{ objectPosition: image.position }} />;
+}
+function Arrow({ diagonal = true }: { diagonal?: boolean }) { return <span aria-hidden="true">{diagonal ? "↗" : "→"}</span>; }
+function themeFor(issue: Issue): CSSProperties {
+  return { "--issue-bg": issue.theme.background, "--issue-ink": issue.theme.foreground, "--issue-accent": issue.theme.accent, "--issue-muted": issue.theme.muted, "--issue-line": issue.theme.line } as CSSProperties;
 }
 
-function Arrow({ diagonal = true }: { diagonal?: boolean }) {
-  return <span aria-hidden="true">{diagonal ? "↗" : "→"}</span>;
+function IssueFeature({ issue, onEnquire }: { issue: Issue; onEnquire: () => void }) {
+  const istanbul = issue.id === "istanbul";
+  return <article id={`issue-${issue.id}`} className={`${s.issueFeature} ${istanbul ? "" : s.shanghai}`} style={themeFor(issue)} aria-labelledby={`${issue.id}-heading`}><div className={s.container}>
+    <div className={s.issueRunningHead}><span>{issue.label} / {issue.date}</span><span>{issue.coordinates}</span><span>TRAVEL CLUB / {istanbul ? "03" : "04"}</span></div>
+    <div className={s.issueTitleRow}><h2 id={`${issue.id}-heading`}>{issue.destination}</h2><span className={s.bigIssueNumber} aria-hidden="true">{istanbul ? "00" : "01"}</span></div>
+    <div className={s.destinationSpread}>
+      <div className={s.destinationIntro}><span className={s.meta}>{issue.people} / ONE STORY</span><h3>{issue.title}</h3><p>{issue.description}</p><a href="#start" onClick={onEnquire} className={s.issueLink}>Хочу в эту историю <Arrow /></a><span className={s.conceptLabel}>{issue.status}</span></div>
+      <figure className={s.destinationCover}><Photo image={issue.cover} sizes="(max-width: 760px) 92vw, (max-width: 1100px) 60vw, 720px" /><figcaption><span>{issue.mood}</span><span>PHOTO / 01</span></figcaption></figure>
+      <figure className={s.destinationDetail}><Photo image={issue.detail} sizes="(max-width: 760px) 43vw, 230px" /><figcaption>{istanbul ? "BOSPHORUS / Между берегами" : "XIAO LONG BAO / Ещё одну порцию"}</figcaption></figure>
+      <blockquote className={s.destinationQuote}><span className={s.meta}>НА ПОЛЯХ ВЫПУСКА</span><p>«{issue.quote}»</p></blockquote>
+      <div className={s.destinationNotes}>{issue.notes.map((note) => <div key={note.time}><span className={s.noteTime}>{note.time}</span><h4>{note.title}</h4><p>{note.text}</p></div>)}</div>
+      <div className={s.destinationGallery}>{issue.gallery.map((frame, index) => <figure key={frame.image.src} className={s[`galleryFrame${index}`]}><Photo image={frame.image} sizes="(max-width: 760px) 44vw, 380px" /><figcaption>{frame.caption}</figcaption></figure>)}</div>
+    </div>
+    <div className={s.issueEndnote}><span>FIELD NOTES / Эскиз будущей поездки</span><p>Фотографии, часы и заметки передают настроение выпуска. Программа и даты ещё складываются.</p><a href="#memory">Что остаётся после поездки <Arrow diagonal={false} /></a></div>
+  </div></article>;
 }
 
 export function EditorialHome() {
   const [selectedIssue, setSelectedIssue] = useState(0);
   const [product, setProduct] = useState<ProductId>("group");
-  const issue = issues[selectedIssue];
-  const issueStyle = {
-    "--issue-bg": issue.theme.background, "--issue-ink": issue.theme.foreground,
-    "--issue-accent": issue.theme.accent, "--issue-muted": issue.theme.muted, "--issue-line": issue.theme.line,
-  } as CSSProperties;
-
   function chooseFormat(id: ProductId) { setProduct(id); }
-
+  function openIssue(index: number) {
+    setSelectedIssue(index);
+    const id = issues[index].id === "next" ? "next-issue" : `issue-${issues[index].id}`;
+    document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
   return <div className={s.root} id="top">
     <a href="#main" className={s.skipLink}>К содержимому</a>
-    <header className={`${s.header} ${s.container}`}>
-      <a href="#top" className={s.wordmark} aria-label="Travel Club — начало страницы">TRAVEL<br />CLUB<span className={s.wordmarkDot} aria-hidden="true">●</span></a>
-      <span className={s.headerCaption}>Независимая редакция<br />ваших путешествий</span>
-      <nav aria-label="Разделы Travel Club">{navigation.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}</nav>
-      <a href="#start" className={s.headerCta}>Начать историю <Arrow /></a>
-    </header>
-
+    <header className={`${s.header} ${s.container}`}><a href="#top" className={s.wordmark} aria-label="Travel Club — начало страницы">TC<span aria-hidden="true">●</span></a><span className={s.headerCaption}>Независимая редакция<br />ваших путешествий</span><nav aria-label="Разделы Travel Club">{navigation.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}</nav><a href="#start" className={s.headerCta}>Начать историю <Arrow /></a></header>
     <main id="main">
-      <section className={`${s.hero} ${s.container}`} aria-labelledby="hero-title">
-        <div className={s.heroCopy}>
-          <div className={s.heroTopline}><span className={s.meta}>TRAVEL AS A SHARED STORY</span><span className={s.meta}>EST. TOGETHER</span></div>
+      <section className={s.container} aria-labelledby="hero-title">
+        <div className={s.editionLine}><span>INDEPENDENT TRAVEL EDITION</span><span>PEOPLE / PLACES / SHARED STORIES</span><span>VOL. 01 — 2026</span></div><div className={s.masthead} aria-hidden="true">TRAVEL CLUB</div>
+        <div className={s.coverGrid}>
           <h1 id="hero-title"><span>{copy.heroFirst}</span><span className={s.heroSerif}>{copy.heroSecond}</span></h1>
-          <p className={s.heroDescription}>{copy.introduction}</p>
+          <div className={s.heroDeck}><p>{copy.introduction}</p><a className={s.textLink} href="#start">Обсудить поездку <Arrow /></a></div>
           <nav className={s.heroMobileFormats} aria-label="Выбрать формат поездки">{products.map((item) => <a key={item.id} href="#start" onClick={() => chooseFormat(item.id)}><span>{item.number}</span>{item.name}<Arrow /></a>)}</nav>
-          <div className={s.heroActions}><a className={s.primaryButton} href="#start">Обсудить поездку <Arrow /></a><a className={s.textLink} href="#issues">Листать выпуски <Arrow diagonal={false} /></a></div>
-          <p className={s.heroFootnote}>Свой маршрут. Своя компания. Общая история.</p>
+          <div className={s.coverMargin}><span className={s.meta}>COVER STORY / 01</span><p>Не просто место<br />на карте.<br /><em>Место за<br />общим столом.</em></p><a href="#issues">Листать выпуски <Arrow diagonal={false} /></a><span className={s.coverPage}>01—02</span></div>
+          <figure className={s.heroFigure}><Photo image={images.hero} sizes="(max-width: 760px) 92vw, 75vw" preload /><figcaption><span>PEOPLE &gt; PLACES</span><span>ISTANBUL / AT THE TABLE</span></figcaption></figure>
+          <figure className={s.coverInset}><Photo image={images.ferry} sizes="(max-width: 760px) 32vw, 200px" /><figcaption>Другой берег.<br />Те же люди.</figcaption><span className={s.verticalLabel}>A PLACE. A FEW PEOPLE. A STORY.</span></figure>
         </div>
-        <figure className={s.heroFigure}>
-          <div className={s.heroImageWrap}><Photo image={images.hero} sizes="(max-width: 760px) 92vw, (max-width: 1100px) 44vw, 560px" preload /><span className={s.imageLabel}>PEOPLE &gt; PLACES</span></div>
-          <figcaption><span>Не просто место на карте.</span><span>Место за общим столом.</span></figcaption>
-          <a href="#next-issue" className={s.nextStamp}><span className={s.meta}>NEXT ISSUE</span><span>Место — ?<br />Люди — свои.</span><Arrow /></a>
-        </figure>
+        <div className={s.coverBottom}><span>СВОЙ МАРШРУТ. СВОЯ КОМПАНИЯ. ОБЩАЯ ИСТОРИЯ.</span><a href="#next-issue">NEXT ISSUE / Место — ? Люди — свои. <Arrow /></a></div>
       </section>
-
-      <section id="formats" className={`${s.formats} ${s.container}`} aria-label="Три формата путешествий">
-        <div className={s.formatsLabel}><span className={s.meta}>ТРИ СПОСОБА<br />НАЧАТЬ ИСТОРИЮ</span><span className={s.formatsCount} aria-hidden="true">03</span></div>
-        {products.map((item) => <a key={item.id} href="#start" onClick={() => chooseFormat(item.id)} className={s.productLink}>
-          <div className={s.productMeta}><span>{item.number} / {item.phrase}</span><Arrow /></div>
-          <h2>{item.name}</h2><p>{item.description}</p>
-        </a>)}
-      </section>
-
+      <div className={`${s.contentsSpread} ${s.container}`}>
+        <aside className={s.contentsIndex} aria-label="Содержание выпуска"><span className={s.meta}>INDEX / 01</span><h2>В этом<br /><em>выпуске.</em></h2><ol>{contents.map((item) => <li key={item.number}><a href={item.href}><span>{item.number}</span><span>{item.label}<small>{item.title}</small></span><Arrow diagonal={false} /></a></li>)}</ol><span className={s.meta}>READ IT. THEN LIVE IT.</span></aside>
+        <section id="formats" className={s.formats} aria-label="Три формата путешествий"><div className={s.formatsHeading}><span className={s.meta}>THREE WAYS IN</span><p>Три способа<br />начать историю.</p></div>{products.map((item) => <a key={item.id} href="#start" onClick={() => chooseFormat(item.id)} className={s.productLink}><span className={s.productNumber}>{item.number}</span><div><span className={s.meta}>{item.phrase}</span><h2>{item.name}</h2></div><p>{item.description}</p><Arrow /></a>)}</section>
+      </div>
       <div className={s.container}><LeadForm product={product} onProductChange={setProduct} /></div>
-
-      <section className={`${s.archiveIntro} ${s.container}`} aria-labelledby="archive-heading">
-        <div><span className={s.meta}>THE ISSUES</span><h2 id="archive-heading">Каждая поездка —<br /><span>отдельный выпуск.</span></h2></div>
-        <div className={s.archiveIntroText}><p>{copy.archiveTitle}</p><p>Люди, места и случайные моменты складываются в историю. Мы собираем её вместе.</p><small>{copy.archiveNote}</small></div>
+      <section id="issues" className={s.archive} style={themeFor(issues[selectedIssue])} aria-label="Выпуски Travel Club">
+        <div className={`${s.archiveIntro} ${s.container}`}><div><span className={s.meta}>THE ISSUES / EDITORIAL ARCHIVE</span><h2>Один клуб.<br /><em>Разные миры.</em></h2></div><div className={s.archiveIntroText}><p>{copy.archiveTitle}</p><small>{copy.archiveNote}</small></div><span className={s.archiveCount}>00—02</span></div>
+        <div className={`${s.archiveIndex} ${s.container}`} role="group" aria-label="Выбрать выпуск">{issues.map((item, index) => <button key={item.id} type="button" aria-label={`${item.label} / ${item.destination}`} aria-pressed={selectedIssue === index} aria-controls={item.id === "next" ? "next-issue" : `issue-${item.id}`} onClick={() => openIssue(index)} className={`${s.archiveEntry} ${s[`archiveEntry${index}`]} ${selectedIssue === index ? s.activeIssue : ""}`}><span className={s.archiveEntryMeta}>{item.label}<Arrow /></span>{item.id !== "next" ? <div className={s.archiveEntryImage}><Photo image={item.cover} decorative sizes="(max-width: 760px) 85vw, 45vw" /><span className={s.archiveEntryCity}>{item.destination}</span>{item.id === "istanbul" && <Photo image={images.istanbulTea} decorative className={s.archiveInset} sizes="(max-width: 760px) 25vw, 130px" />}</div> : <div className={s.archiveUnknown}><span>?</span><span>UNKNOWN</span></div>}<span className={s.archiveEntryBottom}>{item.id === "next" ? "BUILDING / THE STORY IS OPEN" : `${item.date} / ${item.people}`}</span><span className={s.archiveEntryDeck}>{item.title}</span></button>)}</div>
+        <div className={`${s.archiveSelection} ${s.container}`}><span>СЕЙЧАС ЛИСТАЕМ / {issues[selectedIssue].destination}</span><span>КОНЦЕПЦИИ ПОЕЗДОК / 2026</span></div>
+        {issues.filter((item) => item.id !== "next").map((item) => <IssueFeature key={item.id} issue={item} onEnquire={() => chooseFormat("group")} />)}
+        <article id="next-issue" className={s.nextBridge} style={themeFor(issues[2])} aria-labelledby="next-heading"><div className={`${s.nextContent} ${s.container}`}><div className={s.nextIndex}><span className={s.meta}>NEXT ISSUE / 02</span><span aria-hidden="true">?</span></div><div className={s.nextCopy}><span className={s.meta}>В разработке</span><h2 id="next-heading">UNKNOWN</h2><h3>Следующая история<br />ещё не написана.</h3><p>Направление и даты пока открыты.<br />Можно оставить интерес и начать разговор.</p></div><div className={s.nextDetails}><dl><div><dt>DESTINATION</dt><dd>?</dd></div><div><dt>DATE</dt><dd>?</dd></div><div><dt>PEOPLE</dt><dd>6–9 <span>в концепции</span></dd></div><div><dt>STATUS</dt><dd>BUILDING</dd></div></dl><a className={s.textLink} href="#start" onClick={() => chooseFormat("group")}>Узнать первым <Arrow /></a></div></div></article>
       </section>
-
-      <section id="issues" className={s.archive} style={issueStyle} aria-label="Выпуски Travel Club">
-        <div className={s.container}>
-          <div className={s.archiveBar}><span className={s.meta}>FIELD NOTES / SELECT AN ISSUE</span><span className={s.meta}>КОНЦЕПЦИИ ПОЕЗДОК</span></div>
-          <div className={s.issueTabs} role="group" aria-label="Выбрать выпуск">{issues.map((item, index) => <button key={item.id} type="button" aria-pressed={selectedIssue === index} onClick={() => setSelectedIssue(index)} className={selectedIssue === index ? s.activeIssue : ""}>{item.label} / {item.destination}<span aria-hidden="true">{selectedIssue === index ? "↙" : "↗"}</span></button>)}</div>
-          <div className={s.issueSpread} key={issue.id}>
-            <div className={s.issueText}>
-              <span className={s.issueNumber}>{issue.label}</span>
-              <h2>{issue.destination}</h2>
-              <div className={s.issueMetadata}><span>{issue.date}</span><span>{issue.people}</span><span>ONE STORY</span></div>
-              <h3>{issue.title}</h3><p>{issue.description}</p>
-              <div className={s.issueStatus}><span className={s.statusDot} aria-hidden="true" />{issue.status}</div>
-              {issue.id === "next" ? <a href="#start" onClick={() => chooseFormat("group")} className={s.issueLink}>Узнать первым <Arrow /></a> : <a href="#memory" className={s.issueLink}>Что остаётся после поездки <Arrow diagonal={false} /></a>}
-              <span className={s.coordinates}>{issue.coordinates}</span>
-            </div>
-            <figure className={s.issueCover}><Photo image={issue.cover} sizes="(max-width: 760px) 65vw, (max-width: 1100px) 36vw, 500px" /><figcaption><span>{issue.mood}</span><span>TC / {issue.id === "next" ? "02" : issue.label.slice(-2)}</span></figcaption></figure>
-            <div className={s.issueAside}><Photo image={issue.detail} sizes="(max-width: 760px) 24vw, 180px" /><span className={s.issueAsideNote}>Между строк<br />маршрута.</span><span className={s.issueVertical}>A PLACE. A FEW PEOPLE. A STORY.</span></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="next-issue" className={`${s.nextBridge} ${s.container}`} aria-labelledby="next-heading">
-        <div className={s.nextIndex}><span className={s.meta}>NEXT ISSUE</span><span>02<span aria-hidden="true">↗</span></span></div>
-        <div className={s.nextCopy}><span className={s.meta}>В РАЗРАБОТКЕ</span><h2 id="next-heading">Следующая история<br />ещё не написана.</h2><p>Направление и даты пока открыты.<br />Можно оставить интерес и начать разговор.</p></div>
-        <div className={s.nextDetails}><dl><div><dt>DESTINATION</dt><dd>?</dd></div><div><dt>DATE</dt><dd>?</dd></div><div><dt>PEOPLE</dt><dd>6–9 <span>в концепции</span></dd></div><div><dt>STATUS</dt><dd>BUILDING</dd></div></dl><a className={s.primaryButton} href="#start" onClick={() => chooseFormat("group")}>Узнать первым <Arrow /></a></div>
-      </section>
-
-      <section className={`${s.culture} ${s.container}`} aria-labelledby="culture-heading">
-        <div className={s.sectionSide}><span className={s.meta}>OUR POINT OF VIEW</span><h2 id="culture-heading">Не всё.<br />Но <em>своё.</em></h2><p>Четыре вещи, которые<br />для нас меняют поездку.</p></div>
-        <div className={s.principleGrid}>{principles.map((item) => <article key={item.number} className={s.principle}><div><span>{item.number}</span><span className={s.meta}>{item.phrase}</span></div><h3>{item.title}</h3><p>{item.text}</p></article>)}</div>
-      </section>
-
-      <section id="memory" className={s.memory} aria-labelledby="memory-heading">
-        <div className={s.container}>
-          <div className={s.memoryHeading}><span className={s.meta}>THE STORY STAYS</span><h2 id="memory-heading">{copy.memoryTitle}</h2><p>{copy.memoryText}</p></div>
-          <div className={s.memorySpread}>
-            <figure className={s.memoryMain}><Photo image={images.dinner} sizes="(max-width: 760px) 85vw, 680px" /><figcaption>22:48 / РАЗГОВОРЫ, КОТОРЫЕ НЕ ХОЧЕТСЯ ЗАКАНЧИВАТЬ</figcaption></figure>
-            <figure className={s.memoryPortrait}><Photo image={images.waterfront} sizes="(max-width: 760px) 42vw, 280px" /><figcaption>На полях поездки.</figcaption></figure>
-            <div className={s.ticket} aria-label="Образец билета из книги воспоминаний"><div><span>TRAVEL CLUB</span><span>THE BOOK / 00</span></div><strong>8 PEOPLE<br />7 DAYS<br /><em>1 STORY</em></strong><div className={s.ticketRule} /><span>41°00′ N / 28°58′ E</span><p>«Давай ещё один чай.<br />Паром подождёт».</p><span className={s.ticketSample}>Образец заметки для будущей книги</span><div className={s.barcode} aria-hidden="true" /><span>NOT A TICKET. A MEMORY.</span></div>
-            <span className={s.memoryAnnotation}>Сохранить этот момент.</span>
-          </div>
-          <div className={s.memoryBottom}><p>Книга поездки — идея, которую мы хотим развивать.</p><span>Иллюстративные фото и образец композиции. Это не отзывы участников.</span></div>
-        </div>
-      </section>
-
-      <section id="club" className={`${s.club} ${s.container}`} aria-labelledby="club-heading">
-        <div className={s.clubPhoto}><Photo image={images.ferry} sizes="(max-width: 760px) 35vw, 330px" /><span className={s.meta}>THE WAY BACK IS STILL PART OF THE STORY</span></div>
-        <div className={s.clubCopy}><span className={s.meta}>ONCE YOU’RE IN, YOU’RE IN.</span><h2 id="club-heading">{copy.clubTitle}</h2><p>{copy.clubText}</p><p className={s.clubFuture}>{copy.clubFuture}</p><a href="#start" className={s.textLink} onClick={() => chooseFormat("group")}>Хочу в компанию <Arrow /></a></div>
-      </section>
-
-      <section className={`${s.work} ${s.container}`} aria-labelledby="work-heading">
-        <div className={s.workHeading}><span className={s.meta}>ОТ РАЗГОВОРА ДО ДОРОГИ</span><h2 id="work-heading">Всё начинается просто.</h2></div>
-        <ol className={s.workSteps}>{workflow.map((step) => <li key={step.number}><span>{step.number}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>
-        <div className={s.outcomes}>{products.map((item) => <div key={item.id}><span className={s.meta}>{item.name}</span><p>{item.outcome}</p></div>)}</div>
-        <div className={s.trust}><span className={s.meta}>ДО ОПЛАТЫ</span><p>Обсуждаем бюджет. Фиксируем состав услуги.<br />Показываем, из чего складывается стоимость.</p><details><summary>Условия и документы <span aria-hidden="true">+</span></summary><p>Здесь появятся условия работы и документы перед запуском услуг. Сейчас это тестовая дизайнерская страница — оплата и отправка заявок не подключены.</p></details></div>
-      </section>
-
-      <section className={s.finalCta} aria-labelledby="final-heading"><div className={s.container}><span className={s.meta}>WHAT’S YOUR NEXT STORY?</span><h2 id="final-heading">{copy.finalTitle}</h2><div className={s.finalBottom}><p>Можно начать с города.<br />Можно — с «хочу куда-нибудь».</p><a className={s.lightButton} href="#start">Давайте обсудим <Arrow /></a></div></div></section>
+      <section id="point-of-view" className={`${s.culture} ${s.container}`} aria-labelledby="culture-heading"><div className={s.cultureHeading}><span className={s.meta}>OUR POINT OF VIEW / CULTURAL CODE</span><h2 id="culture-heading">Не всё. <em>Но своё.</em></h2><p>Четыре вещи, которые<br />для нас меняют поездку.</p></div><div className={s.cultureBody}><figure className={s.culturePhoto}><Photo image={images.istanbulPeople} sizes="(max-width: 760px) 44vw, 380px" /><figcaption>THE EVERYDAY / Жизнь между точками маршрута</figcaption></figure>{principles.map((item, index) => <article key={item.number} className={`${s.principle} ${s[`principle${index}`]}`}><div className={s.principleMeta}><span>{item.number}</span><span className={s.meta}>{item.phrase}</span></div><h3>{item.title}</h3><p>{item.text}</p></article>)}<figure className={s.cultureDetail}><Photo image={images.istanbulTea} sizes="(max-width: 760px) 38vw, 180px" /><figcaption>GOOD TASTE / В простых вещах</figcaption></figure></div></section>
+      <section id="memory" className={s.memory} aria-labelledby="memory-heading"><div className={s.container}><div className={s.memoryHeading}><div><span className={s.meta}>FIELD NOTES / THE BOOK</span><h2 id="memory-heading">{copy.memoryTitle}</h2></div><p>{copy.memoryText}</p><span className={s.memoryPage}>05</span></div><div className={s.memorySpread}><figure className={s.memoryMain}><Photo image={images.dinner} sizes="(max-width: 760px) 92vw, 65vw" /><figcaption><span>22:48 / THE STORY STAYS</span><span>Разговоры, которые не хочется заканчивать</span></figcaption></figure><figure className={s.memoryPortrait}><Photo image={images.waterfront} sizes="(max-width: 760px) 43vw, 230px" /><figcaption>На полях поездки.<br />Один день у воды.</figcaption></figure><div className={s.ferryTicket}><span className={s.meta}>TC / FIELD NOTE 003</span><strong>KARAKÖY <span>→</span> KADIKÖY</strong><div><span>17:40 / BOSPHORUS</span><span>ONE WAY</span></div><svg viewBox="0 0 260 35" aria-hidden="true"><path d="M5 25H60L90 10H165L200 25H255" /><circle cx="5" cy="25" r="3" /><circle cx="255" cy="25" r="3" /></svg><small>Образец маршрутной заметки</small></div><div className={s.ticket} aria-label="Образец страницы из книги воспоминаний"><div><span>TRAVEL CLUB</span><span>THE BOOK / 00</span></div><strong>8 PEOPLE<br />7 DAYS<br /><em>1 STORY</em></strong><div className={s.ticketRule} /><span>41°00′ N / 28°58′ E</span><p>«Давай ещё один чай.<br />Паром подождёт».</p><span className={s.ticketSample}>Образец заметки для будущей книги</span><div className={s.bookPageNumber}>— 028 —</div><span>NOT A TICKET. A MEMORY.</span></div><blockquote className={s.memoryAnnotation}>Некоторые адреса<br />хочется сохранить.<br /><em>Некоторые вечера — тоже.</em></blockquote><span className={s.memoryVertical}>COLLECT MOMENTS / NOT CHECKPOINTS</span></div><div className={s.memoryBottom}><p>Книга поездки — идея, которую мы хотим развивать.</p><span>Иллюстративные фото и образец композиции. Это не отзывы участников.</span></div></div></section>
+      <section id="club" className={`${s.club} ${s.container}`} aria-labelledby="club-heading"><div className={s.clubRunningHead}><span>THE CLUB / PEOPLE</span><span>ONCE YOU’RE IN, YOU’RE IN.</span></div><figure className={s.clubPhoto}><Photo image={images.club} sizes="(max-width: 760px) 92vw, 65vw" /><figcaption><span>AT THE TABLE / Место найдётся</span><span>Иллюстративный кадр</span></figcaption></figure><div className={s.clubCopy}><span className={s.meta}>ЗНАКОМСТВО ПРОДОЛЖАЕТСЯ</span><h2 id="club-heading">{copy.clubTitle}</h2><p>{copy.clubText}</p><p className={s.clubFuture}>{copy.clubFuture}</p><a href="#start" className={s.textLink} onClick={() => chooseFormat("group")}>Хочу в компанию <Arrow /></a></div><figure className={s.clubInset}><Photo image={images.hero} sizes="(max-width: 760px) 40vw, 240px" /><figcaption>THE WAY BACK IS STILL<br />PART OF THE STORY</figcaption></figure></section>
+      <section className={`${s.work} ${s.container}`} aria-labelledby="work-heading"><div className={s.workHeading}><span className={s.meta}>SERVICE INDEX / ПРАКТИЧЕСКИЕ СТРАНИЦЫ</span><h2 id="work-heading">От разговора до дороги.</h2><span className={s.meta}>01 → 04</span></div><ol className={s.workSteps}>{workflow.map((step) => <li key={step.number}><span>{step.number}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol><div className={s.outcomes}>{products.map((item) => <div key={item.id}><span className={s.meta}>{item.name}</span><p>{item.outcome}</p></div>)}</div><div className={s.trust}><span className={s.meta}>ДО ОПЛАТЫ</span><p>Обсуждаем бюджет. Фиксируем состав услуги.<br />Показываем, из чего складывается стоимость.</p><details><summary>Условия и документы <span aria-hidden="true">+</span></summary><p>Здесь появятся условия работы и документы перед запуском услуг. Сейчас это тестовая дизайнерская страница — оплата и отправка заявок не подключены.</p></details></div></section>
+      <section className={s.finalCta} aria-labelledby="final-heading"><div className={s.container}><div className={s.finalRunningHead}><span>WHAT’S YOUR NEXT STORY?</span><span>TO BE CONTINUED / ↗</span></div><h2 id="final-heading">{copy.finalTitle}</h2><div className={s.finalBottom}><p>Можно начать с города.<br />Можно — с «хочу куда-нибудь».</p><a className={s.lightButton} href="#start">Давайте обсудим <Arrow /></a></div></div></section>
     </main>
-
-    <footer className={`${s.footer} ${s.container}`}>
-      <a href="#top" className={s.footerBrand}>TRAVEL CLUB</a>
-      <div className={s.footerSocial}><span>Telegram <small>скоро</small></span><span>Instagram <small>скоро</small></span><a href="#start">Контакт <Arrow /></a></div>
-      <details className={s.footerDocuments}><summary>Документы <span aria-hidden="true">+</span></summary><p>Условия работы и политика обработки данных появятся здесь перед публичным запуском. В этой версии форма не передаёт данные.</p></details>
-      <div className={s.footerBottom}><span>© 2026 TRAVEL CLUB</span><span>DESIGN EDITION / 01</span><a href="#top">Наверх ↑</a></div>
-    </footer>
+    <footer className={`${s.footer} ${s.container}`}><a href="#top" className={s.footerBrand}>TRAVEL CLUB</a><div className={s.colophon}><span className={s.meta}>EDITORIAL DIRECTION</span><p>Независимая редакция<br />ваших путешествий.</p><span className={s.meta}>ISTANBUL / SHANGHAI / NEXT</span></div><div className={s.footerSocial}><span className={s.meta}>CONTACT</span><a href="#start">Начать разговор <Arrow /></a><span>Telegram <small>скоро</small></span><span>Instagram <small>скоро</small></span></div><details className={s.footerDocuments}><summary>Документы <span aria-hidden="true">+</span></summary><p>Условия работы и политика обработки данных появятся здесь перед публичным запуском. В этой версии форма не передаёт данные.</p></details><div className={s.footerBottom}><span>© 2026 TRAVEL CLUB</span><span>DESIGN EDITION / 01 — COLOPHON</span><a href="#top">Наверх ↑</a></div></footer>
   </div>;
 }
