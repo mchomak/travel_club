@@ -1,0 +1,110 @@
+"use client";
+
+import Image from "next/image";
+import { useEffect, useRef } from "react";
+import { livingIssue as issue } from "./issue-content";
+import s from "./living-issue.module.css";
+
+function ease(value: number) {
+  const clamped = Math.max(0, Math.min(1, value));
+  return clamped * clamped * (3 - 2 * clamped);
+}
+
+export function LivingIssue() {
+  const sceneRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    let visible = true;
+    let top = scene.getBoundingClientRect().top + window.scrollY;
+    let distance = window.innerHeight * 0.56;
+
+    function update() {
+      frame = 0;
+      if (!scene || motion.matches) return;
+      const progress = Math.max(0, Math.min(1, (window.scrollY - top) / distance));
+      scene.style.setProperty("--open", String(ease((progress - 0.04) / 0.65)));
+      scene.style.setProperty("--enter", String(ease((progress - 0.64) / 0.36)));
+      scene.style.setProperty("--chrome", String(1 - ease((progress - 0.015) / 0.2)));
+    }
+    function schedule() {
+      if (visible && !motion.matches && !frame) frame = requestAnimationFrame(update);
+    }
+    function measure() {
+      top = scene!.getBoundingClientRect().top + window.scrollY;
+      // Match the stable small viewport used by CSS; mobile browser chrome won't change the journey.
+      distance = scene!.offsetHeight / 1.4 * 0.56;
+      schedule();
+    }
+    function changeMotion() {
+      scene!.style.removeProperty("--open");
+      scene!.style.removeProperty("--enter");
+      scene!.style.removeProperty("--chrome");
+      measure();
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      if (visible) measure();
+    });
+    observer.observe(scene);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", measure, { passive: true });
+    motion.addEventListener("change", changeMotion);
+    measure();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", measure);
+      motion.removeEventListener("change", changeMotion);
+    };
+  }, []);
+
+  return <section ref={sceneRef} className={s.journey} aria-labelledby="living-issue-heading">
+    <div className={s.viewport}>
+      <div className={s.deskHead}>
+        <span className={s.deskBrand}>TC<span aria-hidden="true">●</span></span>
+        <span>Независимая редакция ваших путешествий</span>
+        <a className={s.skip} href="#start">К сайту <span aria-hidden="true">↗</span></a>
+      </div>
+      <div className={s.marginalia}><span>{issue.label}</span><p>{issue.statement}</p><span>PEOPLE &gt; PLACES</span></div>
+      <div className={s.editionMark} aria-hidden="true"><span>{issue.edition}</span><span>01</span></div>
+      <div className={s.stage}>
+        <div className={s.publication}>
+          <div className={s.spread} aria-hidden="true">
+            <div className={s.leftPage}>
+              <div className={s.runningHead}><span>ISSUE / {issue.spread.number}</span><span>{issue.spread.destination}</span></div>
+              <span className={s.people}>{issue.spread.people}</span>
+              <p className={s.spreadHeadline}>{issue.spread.headline}</p>
+              <p className={s.spreadNote}>{issue.spread.note}</p>
+              <div className={s.fieldNote}>
+                <Image src={issue.spread.detailImage.src} alt="" width={issue.spread.detailImage.width} height={issue.spread.detailImage.height} sizes="(max-width: 760px) 80px, 140px" className={s.detailPhoto} />
+                <div><span>{issue.spread.number}</span><p>Ещё один чай.<br />Ещё одна история.</p></div>
+              </div>
+              <span className={s.pageNumber}>TC / EDITORIAL DESK <span>001</span></span>
+            </div>
+            <div className={s.rightPage}>
+              <div className={s.runningHead}><span>{issue.spread.coordinates}</span><span>FIELD NOTES</span></div>
+              <Image src={issue.spread.image.src} alt="" width={issue.spread.image.width} height={issue.spread.image.height} sizes="(max-width: 760px) 92vw, 720px" className={s.spreadPhoto} />
+              <p className={s.spreadCaption}>{issue.spread.caption}</p>
+              <div className={s.pageNumber}><span>{issue.spread.footnote}</span><span>002</span></div>
+            </div>
+          </div>
+          <article className={s.cover}>
+            <div className={s.coverMeta}><span>{issue.edition}</span><span>{issue.date}</span></div>
+            <h2 id="living-issue-heading" className={s.coverMasthead}>{issue.title.split(" ").map(word => <span key={word}>{word}</span>)}</h2>
+            <div className={s.coverImage}>
+              <Image src={issue.coverImage.src} alt={issue.coverImage.alt} width={issue.coverImage.width} height={issue.coverImage.height} sizes="(max-width: 760px) 90vw, 460px" loading="eager" fetchPriority="high" className={s.photo} />
+              <span className={s.imageLabel}>{issue.label}</span>
+            </div>
+            <div className={s.coverFoot}><p>{issue.coverLine}</p><div><span>{issue.coverCaption}</span><span>01</span></div></div>
+          </article>
+        </div>
+      </div>
+      <div className={s.deskFoot}><span>Не просто маршрут. История.</span><a href="#start" className={s.open}>Листайте, чтобы открыть <span aria-hidden="true">↓</span></a><span>TRAVEL CLUB / 2026</span></div>
+    </div>
+  </section>;
+}

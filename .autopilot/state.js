@@ -1,67 +1,70 @@
 window.STATE =
 {
-  "slug": "editorial-test-home",
-  "dir": "2026-10-03-editorial-test-home",
-  "title": "Travel Club — редакционная главная /test",
+  "slug": "living-issue",
+  "dir": "2026-10-04-living-issue",
+  "title": "Travel Club - Living Issue /test_2",
   "mode": "full",
   "depth": "normal",
   "polish": null,
   "tier": "T0",
-  "briefFile": "2026-10-03-brief.md",
+  "briefFile": "2026-10-04-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
-  "startedAt": "2026-10-03T15:49:13+03:00",
-  "updatedAt": "2026-10-03T19:24:17+03:00",
-  "finishedAt": "2026-10-03T19:24:17+03:00",
+  "startedAt": "2026-10-04T02:59:53+03:00",
+  "updatedAt": "2026-10-04T04:45:50+03:00",
+  "finishedAt": null,
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-10-03T15:49:13+03:00",
-      "finishedAt": "2026-10-03T16:11:48+03:00"
+      "startedAt": "2026-10-04T02:59:53+03:00",
+      "finishedAt": "2026-10-04T03:21:27+03:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "finishedAt": "2026-10-03T16:11:48+03:00"
+      "startedAt": "2026-10-04T02:59:53+03:00",
+      "finishedAt": "2026-10-04T03:21:27+03:00"
     },
     {
       "id": "briefing",
       "status": "skipped",
-      "note": "full: self-briefing"
+      "note": "Full brief; routine choices resolved within the authorized scope."
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-10-03T16:11:48+03:00",
-      "finishedAt": "2026-10-03T16:31:32+03:00"
+      "startedAt": "2026-10-04T03:21:27+03:00",
+      "finishedAt": "2026-10-04T03:23:58+03:00"
     },
     {
       "id": "plan",
       "status": "skipped",
-      "note": "T0: one coherent page, single fresh executor"
+      "note": "T0: one isolated frontend surface."
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-10-03T16:31:32+03:00",
-      "finishedAt": "2026-10-03T18:46:47+03:00"
+      "startedAt": "2026-10-04T03:23:58+03:00",
+      "note": "Safe copy verified before intro; final production build passed.",
+      "finishedAt": "2026-10-04T04:45:50+03:00"
     },
     {
       "id": "review",
       "status": "done",
-      "finishedAt": "2026-10-03T18:46:47+03:00"
+      "startedAt": "2026-10-04T04:13:48+03:00",
+      "note": "Independent acceptance and craft findings fixed and rechecked.",
+      "finishedAt": "2026-10-04T04:45:50+03:00"
     },
     {
       "id": "final",
-      "status": "done",
-      "startedAt": "2026-10-03T18:46:47+03:00",
-      "finishedAt": "2026-10-03T19:24:17+03:00"
+      "status": "active",
+      "startedAt": "2026-10-04T04:45:50+03:00"
     }
   ],
   "requirements": {
-    "total": 59,
-    "done": 59,
+    "total": 56,
+    "done": 56,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
@@ -70,76 +73,65 @@ window.STATE =
   },
   "tickets": [],
   "singlePass": {
-    "status": "done",
+    "startedAt": "2026-10-04T03:23:58+03:00",
+    "finishedAt": "2026-10-04T04:45:50+03:00",
     "files": [
-      "frontend/src/app/test/page.tsx",
-      "frontend/src/components/test/",
-      "frontend/public/test/",
-      "frontend/e2e/test-home.spec.ts"
+      "frontend/src/app/test_2/page.tsx",
+      "frontend/src/components/test_2/README.md",
+      "frontend/src/components/test_2/editorial-home.tsx",
+      "frontend/src/components/test_2/issue-content.ts",
+      "frontend/src/components/test_2/lead-form.tsx",
+      "frontend/src/components/test_2/living-issue.module.css",
+      "frontend/src/components/test_2/living-issue.tsx",
+      "frontend/e2e/living-issue.spec.ts"
     ],
-    "tests": {
-      "unit": 65,
-      "browser": 9,
-      "lint": "passed",
-      "typecheck": "passed",
-      "build": "passed"
-    },
-    "commit": "b8e3f2b",
-    "startedAt": "2026-10-03T16:31:32+03:00",
-    "finishedAt": "2026-10-03T18:46:47+03:00"
+    "tests": "65 unit tests; 40 e2e tests; lint, typecheck, production Docker build passed",
+    "commit": null
   },
   "tests": {
-    "baselineFrontend": 65,
-    "frontendUnit": 65,
-    "productionBrowser": 9,
+    "unitPassed": 65,
+    "e2ePassed": 40,
+    "failed": 0,
     "lint": "passed",
     "typecheck": "passed",
-    "build": "passed",
-    "dockerFrontend": "passed",
-    "responsiveWidths": [
-      1440,
-      1024,
-      390
-    ],
-    "existingRouteSmoke": "passed",
-    "finalCtaFocusContrast": 8.36
+    "build": "passed"
   },
   "debt": {
-    "placeholders": [
-      "Concept issues, dates and photos",
-      "Demo form without transmission",
-      "Social contacts and legal documents"
-    ],
+    "placeholders": [],
     "assumptions": [
-      "One isolated route with scoped CSS",
-      "Local Golos Text and Lora fonts",
-      "Archive themes change locally"
+      "Reuse local baseline photographs; experiment form anchor is #story because #start is reserved for original hero."
     ],
     "emptyEnv": []
   },
   "additions": [],
   "coverage": {
-    "found": 0,
-    "fixed": 0,
-    "deferred": 0,
-    "source": "Independent original 38-section user prompt versus spec; original conversation used while archive copy is being written"
+    "found": 4,
+    "fixed": 4,
+    "deferred": 0
   },
   "concerns": [],
   "reviewers": {
-    "manifestSpec": "root T0 inline",
-    "craft": "/root/final_review",
-    "blind": "/root/test_home_blind",
-    "memory": "/root/test_home_memory",
-    "memoryResult": "One source-verified /test note in AGENTS.md; paths checked."
+    "manifestSpec": "/root/spec_coverage",
+    "craft": "/root/living_craft",
+    "blind": "/root/living_acceptance",
+    "memory": "/root/living_memory"
   },
   "blind": {
-    "checked": 37,
-    "matched": 37,
-    "mismatches": [],
-    "reviewer": "/root/test_home_blind",
-    "runtime": "passed",
-    "source": "acceptance.md",
-    "note": "All 38 brief sections read. Functional sections 1-37 accepted; section 38 delivery report prepared by root in report.md and final response."
+    "status": "clean",
+    "agent": "/root/living_acceptance",
+    "findingsFixed": [
+      "Inherited skip link positioning and keyboard focus target."
+    ],
+    "outstanding": [],
+    "evidence": "visual-qa.md; production Playwright suite: 40 passed"
   },
-  "reportFile": "report.md"
+  "craft": {
+    "status": "clean",
+    "agent": "/root/living_craft",
+    "findingsFixed": [
+      "Short landscape cover photograph collapsed.",
+      "Small portrait spread text clipped."
+    ],
+    "outstanding": []
+  }
 }
