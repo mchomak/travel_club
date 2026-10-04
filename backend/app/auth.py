@@ -86,6 +86,8 @@ def record_login_attempt(db: Session, login: str, ip: str) -> None:
 def login(payload: LoginInput, response: Response, request: Request, db: Database):
     settings = get_settings()
     normalized = normalize_login(payload.login)
+    if not normalized or len(normalized) > 120:
+        raise HTTPException(422, "Логин должен содержать от 1 до 120 символов после нормализации")
     record_login_attempt(db, normalized, request.client.host if request.client else "unknown")
     user = db.scalar(select(User).where(User.login == normalized))
     try:

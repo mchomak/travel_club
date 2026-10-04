@@ -340,9 +340,68 @@ Priority order when instructions conflict:
 When the current task introduces a durable architectural rule that will matter across future work, update this file only if explicitly asked or if the repository workflow clearly expects it.
 
 <!-- autopilot:start -->
-## Текущая сборка
-Travel Club: закрытый конструктор поездок. Работа ведётся через `/autopilot full`.
-Требования, спецификация и таски: `.autopilot/2026-09-26-travel-constructor--wip/`.
-Состояние: `.autopilot/state.js`; прогресс: `.autopilot/dashboard.html`.
-Требование может снять только пользователь.
+## Рабочая карта проекта
+
+Travel Club сейчас — закрытый конструктор поездок для администратора: маршрут по дням, календарь событий, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичная главная `/` служит интерактивной витриной для выбора палитры и шрифтов; страницы услуг остаются лёгкими заглушками, работающей оплаты нет. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose.
+
+### Запуск и проверка (PowerShell, корень репозитория)
+
+```powershell
+python scripts/init_env.py
+docker compose build
+docker compose up -d --wait
+docker compose exec backend python -m app.bootstrap
+docker compose exec -T backend pytest -q
+docker compose exec -T backend ruff check .
+docker compose exec -T backend alembic current
+docker compose exec -T backend alembic check
+```
+
+`init_env.py` создаёт игнорируемый `.env`, если его нет; bootstrap интерактивно создаёт первого администратора (его нет по умолчанию). Backend перед запуском API выполняет `alembic upgrade head`. Проверены Compose build/up, backend pytest (52 passed), Ruff и `alembic check` без новых операций. После изменения схемы проверять миграции на чистой временной БД.
+
+```powershell
+cd frontend
+npm.cmd test
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd run test:e2e
+```
+
+Проверены frontend unit (65 passed), Playwright (26 passed), lint, typecheck и production build. Playwright требует работающий сайт на `localhost:3000` и установленный Chromium (`npx.cmd playwright install chromium`). Браузерные сценарии — `frontend/e2e/`, включая `constructor.spec.ts`; приёмочные сценарии — `docs/acceptance.md`.
+
+### Где менять код
+
+- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — PostgreSQL, backend и frontend; backend-образ получает `shared/pricing-vectors.json` через named build context.
+- `backend/app/main.py`, `auth.py`, `trips.py` — FastAPI, сессии, `/api/trips`: CRUD, расчёт, дублирование, клиентский просмотр, контроль версий и дат.
+- `backend/app/schemas.py`, `validation.py`, `pricing.py` — DTO, проверки и окончательный Decimal-расчёт; `models.py`, `db.py`, `migrations/` — таблицы и Alembic. Поля расписания добавляет `8b97c412e6af_schedule_fields.py`, подвиды пунктов и длительности аэропорта — `f64a81e0c9d2_item_categories_airport_minutes.py`.
+- `frontend/src/app/admin/`, `frontend/src/components/trips/trip-editor.tsx`, `trip-calendar.tsx`, `item-form.tsx`, `airport-block-form.tsx`, `editor-panels.tsx`, `ui.tsx` — закрытые экраны; `TripCalendar` показывает сетку и обрабатывает указатель, `TripEditor` владеет черновиком, выделенным днём, панелями и расчётом, `ItemForm` проверяет поля, `AirportBlockForm` меняет время приезда/выхода, `Modal` управляет панелью. Стили календаря и панели — `frontend/src/app/globals.css`.
+- `frontend/src/app/page.tsx`, `frontend/src/components/public-home/home-experience.tsx`, `theme.ts`, `color-wheel.tsx`, `home.css`, `presets/recommended.json` — публичная главная, редактор цветов и шрифтов, цветовой круг и каталог рекомендованных вариантов; пользовательские пресеты хранятся в localStorage текущего браузера (`travel-club-home-presets-v1`), активная тема — в существующем ключе `travel-club-home-style-v1`. `frontend/public/images/` — локальные иллюстративные фото с источниками в `README.md`. Публичные заглушки используют `frontend/src/app/(public)/layout.tsx`.
+- `frontend/src/app/test/page.tsx`, `frontend/src/components/test/` — изолированная редакционная витрина `/test`: `data.ts` хранит контент и цветовые токены выпусков, `editorial-home.tsx` — выбор выпуска и формата, `editorial.module.css` — scoped стили; локальные фото и WOFF2 Golos/Lora — `frontend/public/test/`. `lead.ts`/`lead-form.tsx` валидируют заявку через `SubmitLead`, по умолчанию demo без передачи и хранения данных; браузерные проверки — `frontend/e2e/test-home.spec.ts`.
+- `frontend/src/app/test_2/page.tsx`, `frontend/src/components/test_2/` — изолированный Living Issue `/test_2`: `issue-content.ts` задаёт контент обложки и разворота, `living-issue.tsx` управляет прокруткой через rAF и CSS-переменные, `living-issue.module.css` — раскрытием журнала, адаптацией и reduced motion. Копии `editorial-home.tsx`/`lead-form.tsx` сохраняют интерактивную витрину после вступления: `#start` ведёт к её hero, `#story` — к demo-форме. Данные, стили, локальные фото и шрифты переиспользуются из `/test`; эталон `/test` не менять ради этого эксперимента. Браузерные проверки — `frontend/e2e/living-issue.spec.ts`.
+- `frontend/src/lib/trip-ui.ts` — пять категорий событий, подвиды и отдельный список допрасходов. `calendar.ts` — `buildCalendarEntries`: разрезает события по дням, расставляет пересечения, интервалы отелей, отметки заезда/выезда и производные аэропортовые блоки; `calendar-interaction.ts` — выбор интервала и перенос события или отеля в пределах поездки. `contracts.ts`, `api.ts`, `trips.ts`, `draft-session.ts`, `pricing.ts`, `server-auth.ts` — DTO, запросы, черновик, предварительный расчёт и проверка входа.
+- `backend/tests/`, `frontend/src/lib/*.test.ts`, `frontend/src/components/trips/*.test.tsx`, `frontend/e2e/`, `shared/pricing-vectors.json` — проверки API/БД, календаря и форм, браузерные сценарии и общие финансовые векторы.
+
+### Поток данных и соглашения
+
+UI вызывает типизированный `/api` через same-origin rewrite Next (`frontend/next.config.ts`) → FastAPI/Pydantic → SQLAlchemy/PostgreSQL. Финансовый источник истины — `backend/app/pricing.py:calculate_trip(TripInput)`; `frontend/src/lib/pricing.ts:calculateTrip` показывает предварительную смету, сохранённый документ содержит серверную. Деньги, курсы, количества и проценты в JSON — строки; backend считает через Decimal, хранит NUMERIC и снимки исходной суммы, курса и суммы в базовой валюте. Семь режимов стоимости, наценка и целевая маржинальность разделены; многодневные расходы нельзя дублировать в итогах дней.
+
+На главной пять цветовых ролей и отдельные шрифты заголовков/текста меняются через CSS-переменные корня `.travel-home`. HEX-поля и маркеры круга синхронизированы; выбранный вариант валидируется и хранится только в браузере в `localStorage` (`travel-club-home-style-v1`). Круг меняет оттенок и насыщенность, ползунок — светлоту.
+
+Поездка хранится в `trips`, `trip_days`, `trip_items`, `trip_currency_rates`. `TripUpdate.version` защищает от параллельной перезаписи; сокращение диапазона с заполненными днями или связанным конечным днём требует подтверждения. `DraftSession` удерживает несохранённые изменения и последовательно сохраняет новые редакции. Клиентский preview отдаёт только разрешённые поля без внутренних цен и заметок.
+
+День имеет свободный `status`; пункт может иметь `end_day_id`, `external_url`, время начала/окончания; отель — даты и необязательные `check_in_time`/`check_out_time`. Конечный день должен принадлежать той же поездке; при его указании проверяется порядок дат и времени. URL должен быть полным http/https. Форма нового ночного события предлагает следующий день в пределах поездки; ручной выбор конечного дня сохраняется. Времена — местные часы города без пересчёта часовых поясов. Сетка показывает пункты с началом и окончанием, отели — отдельными полосами и необязательными отметками часов; пункты без времени и общие расходы остаются в списке. Интервал отеля заканчивается в дату выезда, которая не оплачивается. Календарь показывает 7/3/1 дня по ширине экрана: щелчок по пустой ячейке создаёт часовой интервал, протягивание выбирает четверти часа, перетаскивание переносит событие с сохранением длительности или отель с сохранением числа ночей; перенос за границы поездки отклоняется. Для переноса касанием есть отдельный переключатель. Создание из сетки открывает панель с обязательным выбором типа; обычное добавление уже задаёт тип. Изменения существующих пунктов проходят через `session.change` и автосохранение; панель целиком выезжает справа и уходит обратно за 220 мс, оставаясь смонтированной до конца закрытия.
+
+Основные категории добавления: перелёт, транспорт, проживание, еда, впечатления. Подвиды транспорта: автобус, поезд, такси, аренда, водный транспорт; еды: ресторан, кафе, бар, уличная еда; впечатлений: экскурсия, активность. Под календарём отдельные допрасходы без времени: страховка, SIM-карта, связь, визовый и сервисный сборы, другое. Старые типы `train_bus`, `rental`, `excursion`, `insurance` остаются читаемыми; страховка из нового списка создаётся как `other` с подвидом `insurance`. Выбор подвида и длительности аэропорта хранится в пункте поездки и проходит через `tripInput(TripDocument)` при повторном сохранении.
+
+У перелёта с часами вылета и прилёта календарь выводит связанные с ним блоки «Приезд в аэропорт» и «Выход из аэропорта»: по умолчанию 180 минут до вылета и 60 минут после прилёта. Это производные отображения по `itemId`, а не отдельные пункты или затраты: перенос и удаление рейса автоматически меняют или убирают блоки. По нажатию на блок можно изменить дату и время его свободного края в пределах 0–24 часов от рейса; длительность сохраняется в `airport_before_minutes` или `airport_after_minutes` самого рейса, ноль скрывает блок. Ночные интервалы режутся по дням и показываются только в пределах дат поездки. Время остаётся местным, без преобразования часовых поясов.
+
+Заголовок дня показывает число и сумму **видимых событий** по `Calculation.items[].normalized_amount`; многодневный пункт может показываться в нескольких днях, поэтому эти суммы нельзя складывать как себестоимость поездки. Итог поездки и дневная смета остаются данными `Calculation`.
+
+`requireAdmin()` проверяет приватные страницы через `/api/auth/me`; каждый admin API route отдельно требует сессию. Cookie `travel_session` — HttpOnly, SameSite=Lax, Secure в production; БД хранит digest токена, пароль — Argon2id hash. Изменяющие запросы требуют `X-Requested-With: TravelClub` и допустимый Origin; вход ограничен по логину и IP.
+
+### Окружение и подводные камни
+
+Имена из `.env.example`: `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `COOKIE_SECURE`; код дополнительно читает `POSTGRES_PORT`, Next — `BACKEND_URL`, Playwright — `PLAYWRIGHT_BASE_URL`. Значения и локальный `.env` не сохранять в документации. На Windows запускать npm как `npm.cmd`; для локального старта нужны Python и Docker Desktop/Compose. Compose публикует 3000/8000/5432 только на loopback; PostgreSQL живёт в named volume, `docker compose down -v` удалит данные. Изменение пароля в `.env` не меняет пароль уже созданной БД. Backend должен дождаться healthy PostgreSQL. При изменении `shared/pricing-vectors.json` пересобрать backend-образ.
+После изменения `frontend/public/images/` пересобрать frontend-образ: standalone runner получает `public/` отдельным `COPY` из builder.
 <!-- autopilot:end -->

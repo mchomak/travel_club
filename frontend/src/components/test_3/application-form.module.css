@@ -1,0 +1,39 @@
+.form, .success { color: var(--sh-paper, #f2f1ed); }
+.demo { padding: 17px 0 24px; border-bottom: 1px solid #505159; color: #b8bdc8; font-size: 13px; line-height: 1.65; max-width: 60ch; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 34px 30px; margin: 35px 0 43px; }
+.field { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.field label, .choiceGroup legend { font-size: 16px; font-weight: 500; }
+.field input { border: 0; border-bottom: 1px solid #717680; border-radius: 0; padding: 13px 0; width: 100%; min-height: 48px; background: transparent; color: var(--sh-paper); font-size: 16px; }
+.field input::placeholder { color: #a4a8b2; opacity: 1; font-size: 14px; }
+.field input:focus { border-bottom-color: var(--sh-paper); }
+.field input[aria-invalid=true] { border-bottom-color: #f5a7a1; }
+.choiceGroup { border: 0; padding: 0; margin: 0 0 35px; min-width: 0; }
+.choiceGroup legend { margin-bottom: 14px; padding: 0; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice { position: relative; display: flex; align-items: center; cursor: pointer; }
+.choice input { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; }
+.choice span { display: flex; align-items: center; justify-content: center; min-height: 45px; padding: 10px 16px; border: 1px solid #656973; font-size: 14px; color: var(--sh-paper); transition: background-color 160ms, border-color 160ms; }
+.choice input:checked + span { border-color: var(--sh-cobalt); background: var(--sh-cobalt); color: #fff; }
+.choice input:focus-visible + span { outline: 2px solid #fff; outline-offset: 3px; }
+.choice:hover span { border-color: #d2d5de; }
+.hint { color: #adb2bd; font-size: 12px; margin: -4px 0 15px; }
+.error { display: block; color: #f5a7a1; font-size: 12px; line-height: 1.55; margin-top: 3px; }
+.submitRow { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid #555961; margin-top: 39px; padding-top: 27px; }
+.submitRow p { color: #adb2bd; font-size: 11px; line-height: 1.6; }
+.submitButton, .editButton { display: flex; justify-content: space-between; align-items: center; gap: 30px; border: 0; border-radius: 0; min-height: 58px; padding: 17px 22px; background: var(--sh-cobalt); color: #fff; font-size: 15px; font-weight: 500; }
+.submitButton:hover, .editButton:hover { background: #345fff; }
+.submitButton span { font-size: 24px; line-height: 1; }
+.summary { color: #f5a7a1; margin-top: 20px; font-size: 13px; }
+.success { min-height: 530px; padding: 45px 0; }
+.successMark { font-size: 90px; line-height: 1; color: #92abff; }
+.meta { margin-top: 24px; color: #c1c6d1; font-size: 11px; letter-spacing: .03em; }
+.success h3 { font-size: clamp(34px, 4vw, 55px); line-height: 1.15; letter-spacing: -.05em; margin: 24px 0; font-weight: 500; }
+.success > p:not(.meta) { color: #c1c6d1; max-width: 38ch; line-height: 1.7; }
+.editButton { margin-top: 35px; }
+@media (max-width: 600px) {
+  .fields { grid-template-columns: 1fr; gap: 25px; margin-top: 28px; }
+  .choice span { padding: 9px 13px; font-size: 13px; }
+  .submitRow { align-items: stretch; flex-direction: column; gap: 22px; }
+  .submitButton { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .choice span { transition: none; } }

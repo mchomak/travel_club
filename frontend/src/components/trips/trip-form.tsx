@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,8 +9,9 @@ import { Field, ErrorNotice } from "./ui";
 
 const schema = z.object({ internal_title: z.string().trim().min(1, "Укажите название").max(200), client_title: z.string().max(200), start_date: z.string().min(1, "Укажите дату"), end_date: z.string().min(1, "Укажите дату"), participants: z.number().int().min(1, "Нужен хотя бы один участник").max(10000), base_currency: z.string().regex(/^[A-Z]{3}$/, "Три латинские буквы, например RUB"), internal_note: z.string().max(10000), client_note: z.string().max(10000), status: z.enum(["draft", "ready", "archived"]), pricing_mode: z.enum(["markup", "target_margin"]), pricing_percent: z.string().regex(/^\d+(\.\d{1,4})?$/, "Введите неотрицательный процент") }).refine(t => t.end_date >= t.start_date, { path: ["end_date"], message: "Окончание не может быть раньше начала" });
 
-export function TripForm({ initial, onSubmit, action, onCancel }: { initial: TripCreate; onSubmit: (values: TripCreate) => Promise<void> | void; action: string; onCancel?: () => void }) {
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<TripCreate>({ defaultValues: initial, resolver: zodResolver(schema) });
+export function TripForm({ initial, onSubmit, action, onCancel, onDirtyChange }: { initial: TripCreate; onSubmit: (values: TripCreate) => Promise<void> | void; action: string; onCancel?: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+  const { register, handleSubmit, control, formState: { errors, isSubmitting, isDirty } } = useForm<TripCreate>({ defaultValues: initial, resolver: zodResolver(schema) });
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
   const base = useWatch({ control, name: "base_currency" });
   const [error, setError] = useState<unknown>(null);
   return <form onSubmit={handleSubmit(async values => { setError(null); try { await onSubmit(values); } catch (e) { setError(e); } })} className="trip-form">

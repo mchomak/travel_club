@@ -107,6 +107,7 @@ class TripDay(Base):
     city: Mapped[str] = mapped_column(String(120), default="")
     place: Mapped[str] = mapped_column(String(200), default="")
     title: Mapped[str] = mapped_column(String(200), default="")
+    status: Mapped[str] = mapped_column(String(200), default="")
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")
     __table_args__ = (
@@ -120,14 +121,19 @@ class TripItem(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id", ondelete="CASCADE"), index=True)
     day_id: Mapped[UUID | None] = mapped_column(index=True)
+    end_day_id: Mapped[UUID | None] = mapped_column(index=True)
     position: Mapped[int] = mapped_column(default=0)
     type: Mapped[str] = mapped_column(String(20))
+    subtype: Mapped[str | None] = mapped_column(String(30))
+    airport_before_minutes: Mapped[int] = mapped_column(default=180)
+    airport_after_minutes: Mapped[int] = mapped_column(default=60)
     calculation_mode: Mapped[str] = mapped_column(String(30))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
     location: Mapped[str] = mapped_column(String(200), default="")
     start_time: Mapped[time | None]
     end_time: Mapped[time | None]
+    external_url: Mapped[str | None] = mapped_column(String(2048))
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")
     included: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -140,6 +146,8 @@ class TripItem(Base):
     duration_days: Mapped[int] = mapped_column(default=1)
     check_in: Mapped[date | None]
     check_out: Mapped[date | None]
+    check_in_time: Mapped[time | None]
+    check_out_time: Mapped[time | None]
     original_amount: Mapped[Decimal] = mapped_column(MONEY)
     rate_used: Mapped[Decimal] = mapped_column(RATE)
     normalized_amount: Mapped[Decimal] = mapped_column(MONEY)
@@ -148,6 +156,12 @@ class TripItem(Base):
             ["trip_id", "day_id"],
             ["trip_days.trip_id", "trip_days.id"],
             name="fk_item_day_same_trip",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["trip_id", "end_day_id"],
+            ["trip_days.trip_id", "trip_days.id"],
+            name="fk_item_end_day_same_trip",
             ondelete="CASCADE",
         ),
         CheckConstraint(
@@ -161,8 +175,13 @@ class TripItem(Base):
         CheckConstraint("position >= 0", name="item_position"),
         CheckConstraint(
             "type IN ('flight','train_bus','transfer','hotel','excursion',"
-            "'activity','rental','insurance','other')",
+            "'activity','rental','insurance','meal','other')",
             name="item_type",
+        ),
+        CheckConstraint(
+            "airport_before_minutes BETWEEN 0 AND 1440 AND "
+            "airport_after_minutes BETWEEN 0 AND 1440",
+            name="item_airport_minutes",
         ),
         CheckConstraint(
             "calculation_mode IN ('per_person','fixed','capacity','hotel','per_day',"

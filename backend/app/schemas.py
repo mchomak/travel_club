@@ -1,9 +1,20 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 ItemType = Literal[
     "flight",
@@ -14,8 +25,24 @@ ItemType = Literal[
     "activity",
     "rental",
     "insurance",
+    "meal",
     "other",
 ]
+ItemSubtype = Literal[
+    "bus", "train", "taxi", "rental", "water", "restaurant", "cafe", "bar",
+    "street_food", "excursion", "activity", "insurance", "sim", "communication",
+    "visa_fee", "service_fee", "other",
+]
+SUBTYPES_BY_TYPE: dict[str, set[str]] = {
+    "train_bus": {"bus", "train", "other"},
+    "transfer": {"bus", "train", "taxi", "rental", "water", "other"},
+    "rental": {"bus", "train", "taxi", "rental", "water", "other"},
+    "meal": {"restaurant", "cafe", "bar", "street_food", "other"},
+    "excursion": {"excursion", "activity", "other"},
+    "activity": {"excursion", "activity", "other"},
+    "insurance": {"insurance", "other"},
+    "other": {"insurance", "sim", "communication", "visa_fee", "service_fee", "other"},
+}
 CalculationMode = Literal[
     "per_person", "fixed", "capacity", "hotel", "per_day", "per_person_per_day", "manual"
 ]
@@ -88,6 +115,7 @@ class DayInput(DTO):
     city: str = Field(default="", max_length=120)
     place: str = Field(default="", max_length=200)
     title: str = Field(default="", max_length=200)
+    status: str = Field(default="", max_length=200)
     internal_note: Note = ""
     client_note: Note = ""
 
@@ -95,14 +123,19 @@ class DayInput(DTO):
 class ItemInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     day_id: UUID | None = None
+    end_day_id: UUID | None = None
     position: int = Field(default=0, ge=0, le=10000, strict=True)
     type: ItemType
+    subtype: ItemSubtype | None = None
+    airport_before_minutes: int = Field(default=180, ge=0, le=1440, strict=True)
+    airport_after_minutes: int = Field(default=60, ge=0, le=1440, strict=True)
     calculation_mode: CalculationMode
     title: Title
     description: Note = ""
     location: str = Field(default="", max_length=200)
     start_time: time | None = None
     end_time: time | None = None
+    external_url: str | None = Field(default=None, max_length=2048)
     internal_note: Note = ""
     client_note: Note = ""
     included: bool = True
@@ -115,6 +148,34 @@ class ItemInput(DTO):
     duration_days: int = Field(default=1, gt=0, le=3660, strict=True)
     check_in: date | None = None
     check_out: date | None = None
+    check_in_time: time | None = None
+    check_out_time: time | None = None
+
+    @model_validator(mode="after")
+    def valid_subtype(self):
+        if self.subtype is not None and self.subtype not in SUBTYPES_BY_TYPE.get(self.type, set()):
+            raise ValueError("Выберите допустимый подвид для категории пункта")
+        return self
+
+    @field_validator("external_url")
+    @classmethod
+    def valid_external_url(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        try:
+            parsed = TypeAdapter(AnyHttpUrl).validate_python(value)
+        except ValidationError:
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта") from None
+        parts = urlsplit(value)
+        if (
+            not parts.netloc
+            or not parts.hostname
+            or any(char.isspace() for char in value)
+            or parsed.username
+            or parsed.password
+        ):
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта")
+        return value
 
 
 class CurrencyRateInput(DTO):
@@ -169,6 +230,12 @@ class DayCalculation(DTO):
     groups: dict[Category, Money]
     total: Money
 
+    @model_validator(mode="after")
+    def complete_groups(self):
+        if set(self.groups) != set(get_args(Category)):
+            raise ValueError("Дневная смета должна содержать все группы расходов")
+        return self
+
 
 class Calculation(DTO):
     items: list[ItemCalculation]
@@ -180,6 +247,12 @@ class Calculation(DTO):
     client_price: Money
     profit: Money
     actual_margin_percent: Percent
+
+    @model_validator(mode="after")
+    def complete_types(self):
+        if set(self.by_type) != set(get_args(ItemType)):
+            raise ValueError("Смета должна содержать все типы расходов")
+        return self
 
 
 class ItemDocument(ItemInput):
@@ -217,6 +290,7 @@ class TripSummary(DTO):
 class PreviewItem(DTO):
     id: UUID
     type: ItemType
+    subtype: ItemSubtype | None
     title: str
     description: str
     location: str

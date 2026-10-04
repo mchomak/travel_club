@@ -2,8 +2,8 @@ import Decimal from "decimal.js";
 import type { Calculation, Category, ItemType, TripInput } from "./contracts";
 
 const D = Decimal.clone({ precision: 48, rounding: Decimal.ROUND_HALF_UP });
-const types: ItemType[] = ["flight", "train_bus", "transfer", "hotel", "excursion", "activity", "rental", "insurance", "other"];
-const category: Record<ItemType, Category> = { flight: "transport", train_bus: "transport", transfer: "transport", rental: "transport", hotel: "accommodation", excursion: "activities", activity: "activities", insurance: "other", other: "other" };
+const types: ItemType[] = ["flight", "train_bus", "transfer", "hotel", "excursion", "activity", "rental", "insurance", "meal", "other"];
+const category: Record<ItemType, Category> = { flight: "transport", train_bus: "transport", transfer: "transport", rental: "transport", hotel: "accommodation", excursion: "activities", activity: "activities", insurance: "other", meal: "other", other: "other" };
 const money = (value: Decimal) => {
   if (!value.isFinite() || value.isNegative() || value.gt("999999999999999999.99")) throw new Error("Сумма выходит за допустимые пределы");
   return value.toFixed(2);
@@ -25,6 +25,12 @@ export function dateList(start: string, end: string): string[] {
   return Array.from({ length: (last - first) / 86400000 + 1 }, (_, i) => new Date(first + i * 86400000).toISOString().slice(0, 10));
 }
 export function nextDate(date: string) { return new Date(Date.parse(`${date}T00:00:00Z`) + 86400000).toISOString().slice(0, 10); }
+
+function dailyPortions(amount: Decimal, count: number): Decimal[] {
+  if (count === 1) return [amount];
+  const equal = D.min(amount.div(count).toDecimalPlaces(2), amount.div(count - 1).toDecimalPlaces(2, Decimal.ROUND_DOWN));
+  return Array.from({ length: count }, (_, index) => index === count - 1 ? amount.minus(equal.mul(count - 1)) : equal);
+}
 
 /** Local estimate only. The persisted server calculation remains authoritative. */
 export function calculateTrip(trip: TripInput): Calculation {
@@ -71,16 +77,24 @@ export function calculateTrip(trip: TripInput): Calculation {
     const rate = rates.get(item.currency)!;
     const normalized = amount.mul(rate).toDecimalPlaces(2);
     const snapshot = { id: item.id, original_amount: money(amount), rate_used: rate.toString(), normalized_amount: money(normalized) };
+    if ((item.calculation_mode === "per_day" || item.calculation_mode === "per_person_per_day") && item.day_id) {
+      const start = days.findIndex(day => day.day_id === item.day_id);
+      if (start < 0) throw new Error(`${item.title}: день находится вне поездки`);
+      if (start + item.duration_days > days.length) throw new Error(`${item.title}: число дней выходит за пределы поездки. Уменьшите длительность, выберите более ранний день или продлите поездку`);
+    }
     if (!item.included) return snapshot;
     cost = cost.plus(normalized); byType[item.type] = byType[item.type].plus(normalized);
     const addDay = (day: typeof days[number], share: Decimal) => { day.total = day.total.plus(share); day.groups[category[item.type]] = day.groups[category[item.type]].plus(share); };
     if (nights.length) {
-      const equal = nights.length === 1 ? normalized : D.min(normalized.div(nights.length).toDecimalPlaces(2), normalized.div(nights.length - 1).toDecimalPlaces(2, Decimal.ROUND_DOWN));
+      const portions = dailyPortions(normalized, nights.length);
       nights.forEach((night, i) => {
         const day = days.find(d => d.date === night);
         if (!day) throw new Error("Не найдены дни проживания. Сохраните даты поездки.");
-        addDay(day, i === nights.length - 1 ? normalized.minus(equal.mul(nights.length - 1)) : equal);
+        addDay(day, portions[i]);
       });
+    } else if ((item.calculation_mode === "per_day" || item.calculation_mode === "per_person_per_day") && item.day_id) {
+      const start = days.findIndex(day => day.day_id === item.day_id);
+      dailyPortions(normalized, item.duration_days).forEach((portion, offset) => addDay(days[start + offset], portion));
     } else if (item.day_id) {
       const day = days.find(d => d.day_id === item.day_id);
       if (!day) throw new Error(`${item.title}: день находится вне поездки`);

@@ -14,7 +14,6 @@ HEADERS = {"X-Requested-With": "TravelClub", "Origin": "http://localhost:3000"}
 
 def test_login_session_and_logout(client, admin):
     assert client.get("/api/auth/me").status_code == 401
-
     response = client.post(
         "/api/auth/login",
         headers=HEADERS,
@@ -29,6 +28,16 @@ def test_login_session_and_logout(client, admin):
     assert client.post("/api/auth/logout", headers=HEADERS).status_code == 204
     client.cookies.set("travel_session", token)
     assert client.get("/api/auth/me").status_code == 401
+
+
+def test_normalized_login_length_is_rejected_before_database_access(client):
+    response = client.post(
+        "/api/auth/login",
+        headers=HEADERS,
+        json={"login": "İ" * 120, "password": "fictional-wrong"},
+    )
+    assert response.status_code == 422
+    assert "логин" in response.json()["message"].lower()
 
 
 def test_csrf_rejects_missing_header_and_foreign_origin(client, admin):
