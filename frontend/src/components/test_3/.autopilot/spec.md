@@ -1,0 +1,38 @@
+# Shanghai Open Call /test_3
+
+## Scope and self-briefing
+Full mode, normal depth. The original brief is authoritative, including its complete supplied copy. All 13 sections appear in order. Source code, tests, assets and working records are ONLY in app/test_3, components/test_3 and public/test_3. No dependencies, backend, routes, global styles, shared component edits or repository-wide memory changes. The user's isolation rule overrides the skill's root .autopilot, git commits and root memory workflow. No price, confirmed hotel, seat occupancy, legal terms or transmission of personal data is invented. Demo is disclosed near the application and planned inclusions.
+
+## Design plan
+Palette variables: paper #F2F1ED, graphite #101114, cobalt #174BFF, steel #9DA5B2, red #E34B44 (one tiny registration/status accent). Local Golos Text for Russian and body, tightly tracked condensed Latin display for the poster, locally hosted with license. Cold almost architectural daylight evolves to grey and graphite at route day 5; cobalt serves navigation and CTA.
+
+Hero composition is a single-width SHANGHAI masthead, an asymmetric night street crop below it with metadata rail, Russian thesis overlapping into a lower white column, then a cobalt dates/people/nights band. Not 50/50. Image proportions alternate panorama, portrait, food closeup and people. Use real stock photos with local manifests and attribution; 30% city, 30% people, 20% details, 20% atmosphere approximately across distinct assets. Avoid China decor and postcard imagery.
+
+The plan is large Russian type + four numbered rule rows. Residence is streets/people photograph + schematic central Shanghai map, approximate district coordinates, no asserted hotel location. Route is an open 8-row editorial timeline: oversize day number, date, English headline, complete Russian copy, one photo per day, desktop sticky date navigation with aria-current; no accordion. Day 7 explicitly highlights the supplied freedom quote. Images do not hide content without JavaScript.
+
+NOT A CHECKLIST is a broad typographic interruption. The CITY/FOOD/NIGHT/PEOPLE/SPACE section is a photo-led varied grid, 1–2 images with a short caption per category. Group positioning uses the supplied headline and full compatibility thought/list. Two columns for fit/not fit. Planned inclusions and exclusions retain all supplied entries, FLIGHTS — TBD. PRICE / CALCULATING. and supplied price explanation link to the application. Eight seats are eight editorial slots, first YOU?, rest ?. Final is a full-width strong night image with huge SEE YOU / IN SHANGHAI?, trip metadata and a working application anchor.
+
+## Behaviour and accessibility
+Day → Night uses passive scroll listener throttled with requestAnimationFrame, local CSS variables derived from element-relative route progress, with complete cleanup. No document/body styling, no scroll hijacking. The route gradually shifts through paper/steel to graphite by ART / FOOD / NIGHT; lower sections are night. Static CSS provides a coherent fallback. Maintain high contrast at intermediate backgrounds; avoid text becoming invisible during transitions. Reduced motion disables animation/smooth motion while static tonal sequence remains. Navigable #anchors, skip link, one h1, semantic section headings, captioned images with useful accurate Russian alt text. Sticky date index hidden or simplified at mobile.
+
+## Application boundary
+ApplicationForm() is a self-contained client component exported from application-form.tsx, its CSS module independent from landing styles. It owns data, validation, error focus and demo success state. Five identity/travel fields: Имя, Возраст, Telegram, Откуда летишь?, Едешь один / с кем-то. All three preference groups with exact listed choices, interests multiselect; selecting всё вместе selects the catchall exclusively rather than contradicting individual choices. No unstated adult-only business eligibility: age accepts a positive whole number in a sane 1–120 range. Telegram accepts a username or t.me URL and normalizes it locally, field-specific actionable errors. Required choices initially unselected (no submitted defaults). Use native labels/fieldset/legend/input controls, keyboard focus, described errors and focus first invalid field. Error leaves values intact. Frontend validation only; no fetch, API, localStorage, cookies, analytics or persistence of personal data. Success explicitly says demo, not sent, not booking and can edit/return without fake contact promises. Clearly disclose demo before submit. New page starts empty; refresh clears state. Double submit cannot create duplicates since there is no external submission.
+
+## Implementation boundaries
+content.ts owns all trip dates, route copy, principles, editorial captions, fit/inclusion/group copy and image paths/alt/crop metadata. ShanghaiLanding() renders all sections, local scroll state and imports ApplicationForm(). page.tsx is a server route with meaningful metadata and renders ShanghaiLanding. Assets agent owns public/test_3 images/fonts and manifest plus attribution. Landing agent owns all remaining components except the application files. Form agent owns only application-form.tsx, application-form.module.css and optional scoped validation/tests. Interface signatures: ApplicationForm() → JSX.Element; all image paths begin /test_3/. Tests exercise user behaviour, no new test framework.
+
+## Verification
+Independent source/brief review, Playwright on the running page at 1440×900, 1024px, 390×844 (also smallest widths if helpful), no horizontal overflow, all photos load, correct dates/day index, every CTA reaches application, form invalid and valid paths with no data transmission, reduced motion. At least one screenshot-driven refinement pass after first implementation. Frontend lint/typecheck/build and existing unit tests. Build sequential with typecheck because .next type files may be generated; no production deployment. Preserve initially untracked user files. Prove changed files are restricted to three directories. README records editable locations and evidence.
+
+Performance acceptance: local responsive compressed photos, eager/preloaded hero only, lazy lower images, explicit image sizes to limit layout shifts; no large library or render loop at idle. Inspect browser load failures, total assets, scroll work and page errors. Final report covers all nine requested items explicitly: created files, skills/tools, content location, photos location, palette location, Day → Night mechanism, form behaviour, build/typecheck/lint evidence, and 2–3 design choices to discuss after viewing.
+
+## User stories and acceptance
+As a visitor I immediately understand destination, dates, 8 people, 7 nights and open applications (hero).
+As a visitor I can read all eight days without extra interaction (route), including the intentional free day.
+As a visitor I understand provisional residence, format, group compatibility and planned costs before applying (sections 2–11).
+As an interested traveller I fill all requested fields and choices and get readable local errors or explicit demo success (section 12).
+As a mobile/keyboard/reduced-motion visitor I can use navigation and application with full content and no overflow (all sections).
+As owner I can replace photos, copy and palette locally without affecting any other route (scope/data/assets).
+
+## Open places
+Photography is temporary stock. Commercial price, flights, hotel and actual application submission remain the placeholders requested by the brief. No external dependencies or account credentials needed. No added capabilities.
