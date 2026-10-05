@@ -20,7 +20,7 @@ export const images: Record<string, EditorialImage> = {
   dinner: { src: "/test/memory-dinner.jpg", alt: "Друзья разговаривают за ужином при свете свечей", width: 1200, height: 800 },
   ferry: { src: "/test/memory-ferry.jpg", alt: "Силуэты пассажиров стамбульского парома у окна с видом на Галатский мост", width: 960, height: 1200, position: "50% 55%" },
   waterfront: { src: "/test/memory-street.jpg", alt: "Люди сидят у воды рядом с паромом, на другом берегу видна Галатская башня", width: 802, height: 1200, position: "50% 60%" },
-  istanbulTea: { src: "/test/istanbul-tea.jpg", alt: "Стакан турецкого чая на столе стамбульского кафе", width: 1067, height: 1600, position: "50% 65%" },
+  istanbulTea: { src: "/test_2/istanbul-tea-kubra.jpg", alt: "Два стакана турецкого чая на деревянном столе стамбульского кафе", width: 1800, height: 1358, position: "50% 65%" },
   istanbulCafe: { src: "/test/istanbul-cafe.jpg", alt: "Витрина небольшой чайной в Арнавуткёе, Стамбул", width: 1143, height: 1600 },
   istanbulPeople: { src: "/test/istanbul-people.jpg", alt: "Посетители чайной за столиками на улице в Стамбуле", width: 1067, height: 1600, position: "50% 58%" },
   shanghaiStreet: { src: "/test/shanghai-street.jpg", alt: "Велосипедисты на перекрёстке Юньнань-роуд в Шанхае", width: 1600, height: 1067 },

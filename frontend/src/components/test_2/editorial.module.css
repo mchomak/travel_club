@@ -584,3 +584,175 @@
   .success h3 { font-size: 32px; }
 }
 @media (max-width: 360px) { .formatOptions { flex-direction: column; } }
+
+/* The second edition uses a larger reading scale throughout the page. */
+.root { font-size: 17px; }
+.root .meta { font-size: 14px; line-height: 1.45; letter-spacing: .035em; }
+.root figcaption { font-size: 14px; line-height: 1.5; }
+.headerCaption, .header nav, .headerCta, .editionLine, .coverBottom,
+.issueRunningHead, .clubRunningHead, .finalRunningHead { font-size: 14px; }
+.coverMargin a, .heroFigure figcaption, .verticalLabel, .contentsIndex small,
+.archiveIntroText small, .archiveEntryMeta, .archiveEntryBottom,
+.archiveSelection, .issueEndnote, .conceptLabel, .memoryVertical,
+.memoryBottom, .footerBottom, .footerSocial small { font-size: 14px; }
+.contentsIndex a { font-size: 15px; grid-template-columns: 25px minmax(0, 1fr) 18px; }
+.contentsIndex small { line-height: 1.45; }
+.contentsIndex { grid-column: 1 / 5; padding-right: 32px; }
+.formats { grid-column: 5 / 13; }
+.productLink { grid-template-columns: 75px minmax(0, 1.2fr) minmax(0, 1fr) 24px; gap: 18px; min-height: 150px; }
+.productLink p { font-size: 17px; max-width: 290px; line-height: 1.5; }
+.primaryButton, .lightButton, .textLink, .issueLink { font-size: 15px; }
+.archiveIntroText { grid-column: 7 / 11; }
+.archiveEntry0, .archiveEntry1 { grid-column: span 5; }
+.archiveEntry0 .archiveEntryImage, .archiveEntry1 .archiveEntryImage { height: 390px; }
+.archiveEntryDeck { font-size: 23px; }
+.archiveEntry2 .archiveEntryDeck { font-size: 19px; }
+.archiveUnknown { height: 390px; }
+.destinationIntro p { font-size: 19px; }
+.destinationNotes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.destinationNotes p { font-size: 16px; }
+.destinationNotes h4 { font-size: 21px; }
+.destinationGallery figcaption, .destinationCover figcaption,
+.destinationDetail figcaption, .issueEndnote p { font-size: 14px; }
+.nextCopy p, .nextDetails dl div, .nextDetails dd span { font-size: 15px; }
+.cultureHeading > p { font-size: 17px; }
+.principle p, .memoryHeading > p, .clubCopy > p,
+.workSteps p, .outcomes p, .trust > p, .trust details,
+.footerDocuments, .trust details p, .footerDocuments p,
+.finalBottom p, .colophon p { font-size: 17px; }
+.clubCopy .clubFuture { font-size: 16px; }
+.footerSocial { font-size: 16px; }
+.memoryMain figcaption, .memoryBottom p { font-size: 14px; }
+.ticket, .ticket > div:first-child, .ticketSample,
+.bookPageNumber, .ferryTicket small { font-size: 14px; }
+.lead { grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); gap: 42px; }
+.leadIntro p, .formatPicker legend, .formatOptions label,
+.formFields label, .root .formFields input, .requiredText,
+.fieldError, .formBottom p, .formBottom .lightButton,
+.success p { font-size: 15px; }
+.root .formFields input { min-height: 46px; }
+.formatOptions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.formatOptions label { min-width: 0; min-height: 66px; padding: 10px; line-height: 1.25; }
+.formBottom p { line-height: 1.45; }
+
+/* Three formats have their own marks and surface treatments. */
+.formatMotif { display: inline-grid; place-items: center; flex: 0 0 auto; width: 34px; height: 34px; margin-bottom: 8px; color: var(--tc-blue); }
+.formatMotif svg { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.formatMotifPlan { border-bottom: 2px dashed currentColor; transform: rotate(-5deg); }
+.formatMotifTurnkey { border: 1px solid currentColor; transform: rotate(4deg); }
+.formatMotifGroup { border: 2px solid currentColor; border-radius: 50%; }
+.productLink.formatPlan { background: repeating-linear-gradient(0deg, transparent 0 30px, color-mix(in srgb, var(--tc-blue) 9%, transparent) 31px 32px); }
+.productLink.formatTurnkey { box-shadow: inset 0 1px var(--tc-blue); }
+.productLink.formatGroup { background: radial-gradient(circle at 60px 50%, color-mix(in srgb, var(--tc-blue) 11%, transparent) 0 58px, transparent 59px); }
+.formatOptions label.formatPlan { border-style: dashed; }
+.formatOptions label.formatTurnkey { border-width: 2px; }
+.formatOptions label.formatGroup { border-radius: 50% 50% 0 0 / 12px 12px 0 0; }
+.formatOptions .formatMotif { width: 22px; height: 22px; margin: 0; color: inherit; }
+.formatOptions .formatMotif svg { width: 19px; height: 19px; }
+
+/* Paper photos sit on top of the magazine grid without becoming content cards. */
+.printedPhoto { position: relative; z-index: 1; align-self: start; min-width: 0; padding: 10px 10px 15px; background: #f9f6ec; color: #26302c; box-shadow: 2px 10px 22px #11182732, 0 1px 2px #11182728; }
+.printedPhoto .photo { width: 100%; height: 220px; object-fit: cover; }
+.printedPhoto figcaption { font-family: var(--tc-editorial); font-style: italic; font-size: 15px; line-height: 1.35; margin-top: 10px; }
+.printedPhotoPin { position: absolute; top: -10px; left: 50%; width: 18px; height: 18px; transform: translateX(-50%); border: 3px solid #f1ede1; border-radius: 50%; background: #6683a1; box-shadow: 0 2px 5px #141a2080; z-index: 2; }
+.printedPhotoShanghai { grid-column: 9 / 13; grid-row: 5; transform: rotate(3deg); margin: 12px 6px 15px 18px !important; }
+.printedPhotoCulture { grid-column: 9 / 13; grid-row: 3; transform: rotate(-4deg); margin: -6px 12px 18px 0 !important; }
+.printedPhotoCulture .photo { height: 250px; }
+.shanghai .destinationDetail { grid-column: 9 / 13; }
+.shanghai .destinationDetail .photo { height: 245px; }
+.shanghai .destinationGallery { grid-row: 2 / 6; }
+.shanghai .galleryFrame2 { grid-column: 1 / 9; grid-row: 2; }
+.shanghai .galleryFrame2 .photo { height: 235px; }
+.memoryNote { border-block: 1px solid #9ca89a; padding: 18px 0; }
+.memoryNote strong { display: block; font-family: var(--tc-editorial); font-size: 23px; font-weight: 500; line-height: 1.2; margin-block: 12px; }
+.memoryNote p { font-family: var(--tc-editorial); font-size: 17px; line-height: 1.55; }
+.memoryNote small { display: block; margin-top: 14px; font-size: 14px; line-height: 1.5; }
+.clubPhoto { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 510px; }
+.clubPhoto .photo { height: 100%; min-height: 0; object-position: 50% 50% !important; }
+
+@media (max-width: 1100px) {
+  .contentsIndex { grid-column: 1 / 5; }
+  .formats { grid-column: 5 / 13; padding-left: 0; }
+  .productLink { grid-template-columns: 64px minmax(0, 1fr) 20px; }
+  .productLink p { grid-column: 2; grid-row: 2; max-width: 520px; }
+  .productLink > span:last-child { grid-column: 3; grid-row: 1; }
+  .archiveEntry0 .archiveEntryImage, .archiveEntry1 .archiveEntryImage, .archiveUnknown { height: 310px; }
+  .destinationNotes { grid-template-columns: 1fr; }
+  .lead { grid-template-columns: minmax(0, .85fr) minmax(0, 1.5fr); }
+  .formatOptions label { font-size: 13px; }
+}
+
+@media (max-width: 760px) {
+  .root { font-size: 16px; }
+  .root .meta { font-size: 12px; }
+  .root figcaption { font-size: 12px; }
+  .header nav, .headerCta, .editionLine, .coverBottom,
+  .issueRunningHead, .clubRunningHead, .finalRunningHead { font-size: 12px; }
+  .heroDeck p, .archiveIntroText p, .destinationIntro p { font-size: 16px; }
+  .contentsIndex { grid-column: 1; padding: 0; }
+  .contentsIndex a { font-size: 12px; grid-template-columns: 17px minmax(0, 1fr) 14px; }
+  .contentsIndex small { display: block; font-size: 11px; }
+  .contentsIndex > .meta:last-child { padding-top: 155px; font-size: 12px; }
+  .formats { grid-column: 1; }
+  .productLink { grid-template-columns: 55px minmax(0, 1fr) 18px; }
+  .productLink p { font-size: 14px; }
+  .productLink.formatTurnkey { box-shadow: inset 0 1px var(--tc-blue); }
+  .formatMotif { width: 30px; height: 30px; margin-bottom: 6px; }
+  .archiveIntro > div:first-child { grid-column: 1 / 7; grid-row: 1; }
+  .archiveIntroText { grid-column: 1 / 5; grid-row: 2; }
+  .archiveCount { grid-column: 5 / 7; grid-row: 2; align-self: start; font-size: 28px; }
+  .archiveIndex { gap: 20px 12px; }
+  .archiveEntry0 { grid-column: 1 / 4; }
+  .archiveEntry1 { grid-column: 4 / 7; padding-top: 0; }
+  .archiveEntry2 { grid-column: 1 / 7; padding-top: 0; }
+  .archiveEntry0 .archiveEntryImage, .archiveEntry1 .archiveEntryImage { height: 245px; }
+  .archiveUnknown { height: 100px; }
+  .archiveEntryCity, .archiveEntry1 .archiveEntryCity { font-size: clamp(23px, 6vw, 34px); left: 8px; bottom: 10px; }
+  .archiveEntryDeck, .archiveEntry1 .archiveEntryDeck { font-size: 17px; }
+  .archiveEntryMeta, .archiveEntryBottom, .archiveSelection { font-size: 12px; }
+  .destinationNotes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .destinationNotes p, .principle p, .clubCopy > p,
+  .workSteps p, .outcomes p { font-size: 14px; }
+  .destinationGallery figcaption, .destinationCover figcaption,
+  .destinationDetail figcaption, .issueEndnote p { font-size: 12px; }
+  .shanghai .destinationDetail { grid-column: 1 / 5; }
+  .shanghai .destinationDetail .photo { height: 210px; }
+  .shanghai .destinationGallery { grid-row: 5; }
+  .shanghai .galleryFrame2 { grid-column: 1 / 4; grid-row: auto; }
+  .shanghai .galleryFrame2 .photo { height: 180px; }
+  .printedPhotoShanghai { grid-column: 3 / 7; grid-row: 6; margin: -35px 0 20px 0 !important; }
+  .printedPhotoCulture { grid-column: 2 / 7; grid-row: 5; margin: 5px 10px 15px 0 !important; }
+  .printedPhoto .photo, .printedPhotoCulture .photo { height: 190px; }
+  .printedPhoto figcaption { font-size: 13px; }
+  .cultureHeading > p br { display: revert; }
+  .memoryNote { grid-column: 1 / 4; grid-row: 2; align-self: start; }
+  .memoryNote strong { font-size: 17px; }
+  .memoryNote p { font-size: 14px; }
+  .memoryNote small { font-size: 12px; }
+  .memoryBottom, .memoryBottom p { font-size: 12px; }
+  .clubPhoto { min-height: 0; }
+  .clubPhoto .photo { height: 320px; }
+  .lead { grid-template-columns: minmax(0, 1fr); }
+  .leadIntro p, .formFields label, .formBottom p, .success p { font-size: 14px; }
+  .formatPicker legend, .formatOptions label { font-size: 12px; }
+  .formatOptions label { min-height: 76px; flex-wrap: wrap; align-content: center; }
+  .formatOptions .formatMotif { width: 19px; }
+  .formatOptions .formatMotif svg { width: 17px; height: 17px; }
+  .root .formFields input { font-size: 16px; }
+}
+
+@media (max-width: 360px) {
+  .archiveEntry0 .archiveEntryImage, .archiveEntry1 .archiveEntryImage { height: 205px; }
+  .archiveEntryCity, .archiveEntry1 .archiveEntryCity { font-size: 21px; }
+  .formatOptions { grid-template-columns: 1fr; }
+  .formatOptions label { min-height: 52px; }
+  .root .formFields input::placeholder { font-size: 13px; }
+  .destinationNotes { grid-template-columns: 1fr; }
+  .printedPhotoShanghai { grid-column: 2 / 7; }
+}
+
+@media (min-width: 761px) {
+  .coverMargin p { font-size: clamp(16px, 1.2vw, 18px); }
+  .heroDeck p { font-size: clamp(18px, 1.32vw, 20px); }
+  .archiveIntroText > p { font-size: clamp(19px, 1.32vw, 20px); }
+}
