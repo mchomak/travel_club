@@ -1,0 +1,34 @@
+[
+  {
+    "path": "baseline-1280x800-reduced.png",
+    "sha256": "5da64064ffac5863145d1cc2fa0c2ce3d659390b07a8e36fc7322653e5d85b1f"
+  },
+  {
+    "path": "baseline-1440x900-normal-opening.png",
+    "sha256": "7de401022de53f5afc7efe62a0e01bb22b519d6778905b0ffe330cbf6e1e5328"
+  },
+  {
+    "path": "baseline-1440x900-reduced.png",
+    "sha256": "ec899e4c5738ce12b751a2b4538fd526c85890cceab8571b58874b626ac3d34d"
+  },
+  {
+    "path": "baseline-390x844-reduced.png",
+    "sha256": "5f67eff47f50efe006a8cc6249345344fb5f350d033dfadab42855843be76ddb"
+  },
+  {
+    "path": "copy-1280x800-reduced.png",
+    "sha256": "5da64064ffac5863145d1cc2fa0c2ce3d659390b07a8e36fc7322653e5d85b1f"
+  },
+  {
+    "path": "copy-1440x900-normal-opening.png",
+    "sha256": "7de401022de53f5afc7efe62a0e01bb22b519d6778905b0ffe330cbf6e1e5328"
+  },
+  {
+    "path": "copy-1440x900-reduced.png",
+    "sha256": "ec899e4c5738ce12b751a2b4538fd526c85890cceab8571b58874b626ac3d34d"
+  },
+  {
+    "path": "copy-390x844-reduced.png",
+    "sha256": "5f67eff47f50efe006a8cc6249345344fb5f350d033dfadab42855843be76ddb"
+  }
+]

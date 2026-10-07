@@ -1,0 +1,62 @@
+[
+  {
+    "source": "frontend/src/components/test_2/data.ts",
+    "copy": "frontend/src/components/test_4/data.ts",
+    "equal": true,
+    "sha256": "72aad97b31c5f268f19e888fd908473d47e6a41d4d7586420a0b0c97292535f0"
+  },
+  {
+    "source": "frontend/src/components/test_2/editorial-home.tsx",
+    "copy": "frontend/src/components/test_4/editorial-home.tsx",
+    "equal": true,
+    "sha256": "3db189f586ddb32b912f690e88410c0350bbeae9d270d39f3e942d2c36d21ad9"
+  },
+  {
+    "source": "frontend/src/components/test_2/editorial.module.css",
+    "copy": "frontend/src/components/test_4/editorial.module.css",
+    "equal": true,
+    "sha256": "ff8d596b7c5b6bcdc3ec409d53a831776cd37b995bd9d31c0e89eb085dfb69f8"
+  },
+  {
+    "source": "frontend/src/components/test_2/format-motif.tsx",
+    "copy": "frontend/src/components/test_4/format-motif.tsx",
+    "equal": true,
+    "sha256": "e6c089e5b4aa895a96ea21e8cb3b85546df4677d4e09ba2321cf582901bb1a13"
+  },
+  {
+    "source": "frontend/src/components/test_2/issue-content.ts",
+    "copy": "frontend/src/components/test_4/issue-content.ts",
+    "equal": true,
+    "sha256": "637907385827983ce2e7c36b1b413915e3e398788482f31ebd050d20699d6177"
+  },
+  {
+    "source": "frontend/src/components/test_2/lead-form.tsx",
+    "copy": "frontend/src/components/test_4/lead-form.tsx",
+    "equal": true,
+    "sha256": "625d5c261239bbf2fb25c83ae326b509d23b64168ea58f69f1669cfc0db49742"
+  },
+  {
+    "source": "frontend/src/components/test_2/living-issue.module.css",
+    "copy": "frontend/src/components/test_4/living-issue.module.css",
+    "equal": true,
+    "sha256": "762a924a77872793975e346ab8123d08d00e1a5ba69b14e935b9c39aab242772"
+  },
+  {
+    "source": "frontend/src/components/test_2/living-issue.tsx",
+    "copy": "frontend/src/components/test_4/living-issue.tsx",
+    "equal": true,
+    "sha256": "e992c76a8ef8fa8cd8976b6a46c5a61f97e5e255276f280e64c55ffd9001f3ba"
+  },
+  {
+    "source": "frontend/src/components/test_2/README.md",
+    "copy": "frontend/src/components/test_4/README.md",
+    "equal": true,
+    "sha256": "3861ce1c3cde49f469ccabd59dc22c8ecab31b7971a190c811846a13381af558"
+  },
+  {
+    "source": "frontend/src/app/test_2/page.tsx",
+    "copy": "frontend/src/app/test_4/page.tsx",
+    "equalAfterImportSubstitution": true,
+    "sha256": "7a018a248f2411a6aa36ca16c7a28ad50dffbfd92baee0dc064f909b29a46bfa"
+  }
+]
