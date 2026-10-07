@@ -13,7 +13,7 @@ test("the experiment deep link opens the original hero, while baseline keeps its
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/#main$/);
   await expect(page.getByRole("heading", { name: "Куда — важно. С кем — важнее." })).toBeVisible();
-  await page.getByRole("link", { name: "Начать историю" }).click();
+  await page.getByRole("banner").getByRole("link", { name: "Начать историю" }).click();
   await expect(page).toHaveURL(/#story$/);
   await expect(page.locator("#story").getByRole("textbox", { name: /Ваш контакт/ })).toBeVisible();
   await page.goto("/test#start");
@@ -25,7 +25,7 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 667, height: 375 }
     await page.setViewportSize(viewport);
     await page.goto("/test_2");
     const scene = page.getByRole("region", { name: "TRAVEL CLUB", exact: true });
-    const photo = scene.getByRole("img");
+    const photo = scene.getByRole("article").getByRole("img");
     expect((await photo.boundingBox())!.height).toBeGreaterThan(70);
     await page.evaluate(() => window.scrollTo(0, innerHeight * 0.38));
     const headline = scene.getByText("Место за общим столом.", { exact: true });
@@ -75,6 +75,8 @@ test("reduced motion stays static and does not add an empty scroll journey", asy
   const scene = page.getByRole("region", { name: "TRAVEL CLUB", exact: true });
   const cover = scene.getByRole("article");
   expect(await cover.evaluate(e => getComputedStyle(e).transform)).toBe("none");
+  await expect(scene.getByRole("heading", { name: "Место за общим столом." })).toBeVisible();
+  await expect(scene.getByRole("paragraph").filter({ hasText: "У каждой поездки — свои люди, места и истории." })).toBeVisible();
   const viewport = await page.evaluate(() => innerHeight);
   expect((await scene.boundingBox())!.height).toBe(viewport);
   await page.mouse.wheel(0, viewport * 0.3);
@@ -96,16 +98,19 @@ test("without JavaScript the cover, skip and original content remain accessible"
   await context.close();
 });
 
-test("baseline and experiment keep the same editorial content and form behavior", async ({ page }) => {
+test("experiment uses Russian editorial content and keeps the format and form flow", async ({ page }) => {
   await page.goto("/test");
-  const baseline = await page.locator("#top").innerText();
+  await expect(page.locator("#top")).toContainText("ISSUE 00");
   await page.goto("/test_2#start");
-  expect(await page.locator("#top").innerText()).toBe(baseline);
+  const editorialText = (await page.locator("#top").innerText()).replace(/travel club/gi, "");
+  expect(editorialText).not.toMatch(/[a-z]/i);
+  await expect(page.locator("#memory")).toContainText("Страница из книги поездки");
+  expect(await page.locator("#top [data-printed-photo]").count()).toBeGreaterThanOrEqual(2);
   await page.getByRole("link").filter({ has: page.getByRole("heading", { name: "Под ключ", exact: true }) }).click();
   const form = page.locator("#story");
   await expect(form.getByRole("radio", { name: "Хочу под ключ", exact: true })).toBeChecked();
   await form.getByRole("button", { name: "Обсудить поездку", exact: true }).click();
-  await expect(form.getByRole("alert")).toHaveText("Оставьте Telegram, телефон или email.");
+  await expect(form.getByRole("alert")).toHaveText("Оставьте телеграм, телефон или электронную почту.");
   await expect(form.getByRole("textbox", { name: /Ваш контакт/ })).toBeFocused();
   const ids = await page.locator("[id]").evaluateAll(elements => elements.map(e => e.id));
   expect(new Set(ids).size).toBe(ids.length);

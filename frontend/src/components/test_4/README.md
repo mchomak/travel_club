@@ -1,0 +1,17 @@
+# FIELD NOTES — эксперимент /test_4
+
+Открыть `http://localhost:3000/test_4`. Это изолированная копия `/test_2`: исходные маршруты, стили и фотографии не редактируются. `#start` пропускает журнал, `#story` ведёт к сохранённой demo-форме.
+
+- `data.ts`: сохранённые продукты, Hero, Point of View, Club и Process; `fieldNotes` — происхождение и поездки 2026; `archiveStories` — три истории 2025, их точные маршруты и состав. FIELD NOTES относятся к поездкам друзей до запуска. NEXT ISSUE означает будущую официальную поездку.
+- `field-notes.tsx`: происхождение, определения FIELD NOTES/ISSUES, Thailand, China, архив и NEXT ISSUE. Thailand использует самый большой асимметричный разворот; у архивных историй три разных композиции с пунктирным следом.
+- `issue-content.ts`: тексты вступления China ’26 и ссылки на слоты. `living-issue.tsx` сохраняет исходную механику нативной прокрутки, rAF и reduced motion.
+- `editorial.module.css`: исходные Golos/Lora, deep blue, сетка и добавленные локальные секции. Thailand — `#24483b`, `#f0eee5`, `#819486`: зелень и тёплая бумага соединяют острова, дорогу и город без курортного оформления. China — `#232831`, `#3763eb`, `#f1f0ec`, `#c3c9d1`. `living-issue.module.css` содержит геометрию журнала и China palette.
+- `photo-slots.ts`: единственный реестр fallback/src/alt/aspectRatio/position. Каждый из 30 кадров имеет собственный стабильный ID, даже при повторном использовании одного снимка. Соотношение сторон одинаково на desktop/mobile; размер нового файла не меняет сетку. Для постоянной замены изменить fallback и alt этого слота; новые stock файлы лежат в `public/test_4`.
+- `editable-image.tsx` и `image-editor.tsx`: ПКМ по фото либо кнопка «Фото» открывают замену/сброс. Cropper `react-easy-crop` использует ratio слота; drag и zoom меняют кадр, Save экспортирует cropped Blob. Escape/Cancel сохраняют предыдущий кадр.
+- `photo-store.ts`: отдельная IndexedDB `travel-club-test-4-photos`, keyed by slotId, без backend upload. Замены сохраняются только в этом браузере и origin; другой порт/origin имеет свои данные. Reset удаляет Blob и возвращает fallback. Storage/decode ошибки показываются в редакторе.
+
+Источники новых иллюстраций, авторы, реальные размеры и лицензии: [public/test_4/manifest.json](../../../public/test_4/manifest.json), [README](../../../public/test_4/README.md). Сохранённые фото и локальные Golos/Lora читаются из `public/test` и `public/test_2`; их источники описаны в `public/test/README.md`. Фотографии иллюстративные, не доказательство конкретной остановки и не снимки участников Travel Club. Общий ужин в Thailand не приписан городу.
+
+Форма продолжает использовать существующую валидацию/demo-адаптер из `../test/lead`; заявки никуда не отправляются. Memory удалён только из рендера/ссылок этой версии.
+
+Проверки: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test`, `npm.cmd run build`; `npm.cmd exec playwright test e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts`. Для dev-порта: `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:3001'`. При изменении `public` пересобрать только frontend Docker service, без изменения backend/DB.
