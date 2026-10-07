@@ -19,3 +19,24 @@ PhotoStore exposes `loadPhoto(slotId): Promise<Blob|undefined>`, `savePhoto(slot
 ## Артефакты проверки
 
 `.autopilot/<run>/qa/` содержит hash baseline и screenshots. Скрипты одноразового capture можно создать здесь исполнителю по явному поручению, но не менять state/manifest/spec.
+
+## Из таска 01
+
+- Safe copy проверена до content edits: all225SHA unchanged, PNG3viewports identical.
+- Local Next dev 127.0.0.1:3001 (session88423), browser capture scripts in qa.
+- /test_4/page.tsx imports local EditorialHome + LivingIssue + living CSS.
+
+## Из таска 02
+
+- `photoSlots: Record<string, PhotoSlot>`; `PhotoSlot = { src, alt, aspectRatio, position? }`; 30 стабильных уникальных ID, один ratio для desktop/mobile.
+- `FieldNotes()`; `fieldNotes`; `archiveStories`; `livingIssue`. Новые данные и открытия только в test_4.
+- Assets: 9 JPEG в public/test_4, manifest.json + README с источниками/лицензиями. Сохранённые photos в public/test читаются без изменений.
+- Local route требует EditableImage/ImageEditorProvider из T03; T03 требует registry из T02. Из-за интеграции T02/T03 сохраняются одним рабочим reviewed checkpoint, без временных stubs.
+
+## Из таска 03
+
+- `EditableImage({slotId,className?,sizes?,preload?,decorative?})`; `ImageEditorProvider({children})`.
+- `loadPhoto(slotId): Promise<Blob|undefined>`; `savePhoto(slotId,blob): Promise<void>`; `resetPhoto(slotId): Promise<void>`.
+- `cropPhoto(source,CropArea): Promise<Blob>` — высококачественный WebP, максимум 2400px; IndexedDB сохраняет cropped Blob.
+- react-easy-crop 6.2.4 (единственная новая direct dependency), normalize-wheel 1.0.1 transitive; старые package-lock entries сохранены.
+- Browser editor tests 4/4 + desktop/mobile preview/export pixel match. При смене optimized Next Image на Blob новый React key сбрасывает density-corrected naturalWidth.

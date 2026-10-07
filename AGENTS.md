@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Рабочая карта проекта
 
-Travel Club — закрытый конструктор поездок для администратора: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Публичная `/` — витрина палитр и шрифтов; `/test` и `/test_2` — отдельные редакционные эксперименты, формы заявок в них демонстрационные. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose.
+Travel Club — закрытый конструктор поездок: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose. Публичная `/` — витрина палитр и шрифтов; `/test` и `/test_2` — редакционные эксперименты, `/test_3` — экспериментальный анонс Shanghai, `/test_4` — FIELD NOTES и локальный фоторедактор. Публичные формы демонстрационные.
 
 ### Запуск и проверка (PowerShell)
 
@@ -356,7 +356,7 @@ docker compose exec -T backend pytest -q
 docker compose exec -T backend ruff check .
 ```
 
-`scripts/init_env.py` создаёт локальный `.env` из `.env.example`, если файла ещё нет; `bootstrap` создаёт первого администратора интерактивно. Backend при запуске применяет миграции. Последний `docker compose up -d --build --wait` завершился успешно: три сервиса запущены, PostgreSQL и backend healthy; сборка frontend-образа выполнила `npm ci`.
+`init_env.py` создаёт локальный `.env` из `.env.example`, не перезаписывая существующий; `bootstrap` интерактивно создаёт первого администратора. Backend при запуске применяет миграции.
 
 Для frontend из корня:
 
@@ -366,26 +366,28 @@ npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd test -- --run
 npm.cmd run build
+npm.cmd exec playwright test e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts -- --workers=3
 ```
 
-Последняя проверка: lint, typecheck и build прошли; Vitest — 67 passed. Браузерные сценарии лежат в `frontend/e2e/` и требуют работающий сайт и Chromium.
+Playwright требует работающий сайт и Chromium: `npx.cmd playwright install chromium`; адрес по умолчанию `http://localhost:3000`, другой задаётся через `PLAYWRIGHT_BASE_URL`. Все браузерные сценарии: `npm.cmd run test:e2e`.
 
-### Структура
+Проверено 7 октября 2026 для `/test_4`: lint, typecheck и build прошли; Vitest — 67 passed в 14 файлах; указанные Playwright-сценарии — 15 passed (2 editorial, 4 photo editor, 9 living issue). Из корня `docker compose up -d --no-deps --build --wait frontend` успешно пересобрал и запустил только frontend; backend/admin проверки в этой итерации не повторялись. Новых env-переменных нет.
 
-- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — локальные PostgreSQL, API и сайт.
-- `backend/app/`, `backend/migrations/`, `backend/tests/` — API, модели, Alembic, окончательный Decimal-расчёт и проверки backend.
-- `frontend/src/app/admin/`, `frontend/src/lib/` — закрытые экраны, клиентские модели, API и предварительный расчёт; финансовый источник истины — `backend/app/pricing.py`, общие примеры — `shared/pricing-vectors.json`.
-- `frontend/src/app/page.tsx` — публичная главная; `frontend/src/app/test/page.tsx` и `frontend/src/components/test/` — контрольная редакционная версия `/test`.
-- `frontend/src/app/test_2/page.tsx`, `frontend/src/components/test_2/` — `/test_2`: `living-issue.tsx` и `living-issue.module.css` открывают журнал при прокрутке, с адаптацией и статичным режимом reduced motion; `issue-content.ts` содержит вступление. После него `editorial-home.tsx` показывает русскую редакционную страницу из собственного `data.ts` и `editorial.module.css`; `format-motif.tsx` рисует три знака форматов, `lead-form.tsx` ведёт к demo-заявке.
-- `frontend/public/test/` — общие фото и шрифты редакционных страниц; `frontend/public/test_2/istanbul-tea-kubra.jpg` — локальная фотография `/test_2`; `frontend/e2e/living-issue.spec.ts` — браузерный сценарий эксперимента.
+### Основные пути
+
+- `compose.yaml`, `backend/Dockerfile`, `frontend/Dockerfile` — локальные PostgreSQL, API и сайт. `backend/app/`, `backend/migrations/`, `backend/tests/` — backend; финансовый источник истины — `backend/app/pricing.py`, общие примеры — `shared/pricing-vectors.json`.
+- `frontend/src/app/admin/`, `frontend/src/lib/` — закрытые экраны, API и предварительный расчёт. `frontend/src/app/page.tsx` — главная; `frontend/src/app/test/page.tsx`, `frontend/src/app/test_2/page.tsx`, `frontend/src/app/test_3/page.tsx` и одноимённые каталоги компонентов — публичные эксперименты.
+- `frontend/src/app/test_4/page.tsx` оборачивает локальные `LivingIssue` и `EditorialHome` в `ImageEditorProvider`. Все компоненты версии находятся в `frontend/src/components/test_4/`; их рабочая карта — `README.md` в этом каталоге.
+- В `/test_4` `data.ts` содержит `copy`, продукты, `fieldNotes` и `archiveStories`; `issue-content.ts` — вступление China ’26. `field-notes.tsx` рисует происхождение клуба, Thailand/China ’26, архив ’25 и NEXT ISSUE. FIELD NOTES — поездки друзей до запуска; NEXT ISSUE — будущая официальная поездка. `editorial.module.css` оформляет страницу; `living-issue.tsx` и `living-issue.module.css` сохраняют открытие журнала нативной прокруткой/rAF и статичный reduced motion.
+- `photo-slots.ts` — 30 стабильных ID с fallback/src/alt/aspectRatio/position. Для постоянной замены менять слот и alt; ratio одинаков на desktop/mobile. Девять новых JPEG лежат в `frontend/public/test_4/`; `manifest.json` и `README.md` там фиксируют источники, авторов, размеры и лицензии. Stock-фото иллюстративные.
+- `editable-image.tsx`, `image-editor.tsx` и `image-editor.module.css` — ПКМ/кнопка «Фото», замена и сброс, общий crop-dialog. `react-easy-crop` 6.2.4 использует ratio слота; `crop-photo.ts` экспортирует WebP до 2400 px по длинной стороне; `photo-store.ts` сохраняет Blob по slotId в IndexedDB `travel-club-test-4-photos`.
 
 ### Подводные камни
 
-- `/test_2` не делит контент и CSS редакционной страницы с `/test`: правки `data.ts` и `editorial.module.css` каждой версии независимы. Вступление `/test_2` пока импортирует изображения из `test/data.ts`, форма использует общую валидацию и demo-адаптер из `test/lead.ts`; фото и шрифты в основном лежат в `/test`.
-- На `/test_2` `#start` ведёт к hero после журнала, `#story` — к форме; на `/test` якоря имеют исходное назначение. Новое открытие журнала управляется нативной прокруткой через rAF/CSS-переменные и отключается при reduced motion.
-- На Windows запускать npm как `npm.cmd`. `.env` хранить локально; PostgreSQL использует named volume, поэтому `docker compose down -v` удаляет данные. После изменения `frontend/public/` пересобрать frontend-образ: standalone runner копирует `public/` при сборке.
+- `/test_4` изолирован от прежних версий: тексты, компоненты и CSS локальны. Общие фото/шрифты читаются из `frontend/public/test/` и `frontend/public/test_2/`; demo-валидация/адаптер — из `frontend/src/components/test/lead.ts`. Не менять их ради новой версии. Memory убран из рендера `/test_4`.
+- Замены фото существуют только в текущем браузере и origin; другой порт имеет своё хранилище. Backend upload отсутствует. Сброс возвращает fallback; отмена/Escape сохраняют прежний кадр. Для общего постоянного результата менять исходный слот/asset в репозитории.
+- В `/test_2` и `/test_4` `#start` ведёт к hero после журнала, `#story` — к форме. NEXT ISSUE в `/test_4` выбирает групповой формат.
+- На Windows использовать `npm.cmd`. После изменения `frontend/public/` пересобрать frontend: standalone-образ копирует assets при сборке. `.env` локальный; `docker compose down -v` удалит данные PostgreSQL.
 
-### Как здесь работает Autopilot
-
-Этот блок описывает текущий код; история отдельных запусков лежит в `.autopilot/`. Обновлять только текст между маркерами, проверяя команды и пути по репозиторию.
+Обновлять только текст между маркерами, проверяя команды и пути по репозиторию.
 <!-- autopilot:end -->

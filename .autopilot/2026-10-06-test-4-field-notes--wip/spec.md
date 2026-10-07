@@ -68,6 +68,8 @@ EditorialData владеет FIELD NOTES/архивом/текстом. PhotoSlo
 EditableImage exposes `EditableImage({slotId, className?, sizes?, preload?, decorative?})`, className задаёт внешний размер frame, внутреннее фото fill/cover. ImageEditorProvider wraps весь test_4; общие menu/file input/dialog и storage скрыты внутри. Одно место управления состоянием вместо dialog на каждую фотографию. Компонент импортируется только в test_4.
 PhotoStore exposes `loadPhoto(slotId): Promise<Blob|undefined>`, `savePhoto(slotId, blob): Promise<void>`, `resetPhoto(slotId): Promise<void>`; прячет IDB transactions. Crop export скрывает canvas и decode, вход image source/pixel area, выход Blob. Главный test seam — browser EditableImage публичные действия, без тестов внутренних implementation details.
 
+D01 (интеграция T02/T03): route/content использует editor, editor использует slot registry. Ownership и review раздельные, финальный совместный код фиксируется одним runnable integration checkpoint; исходная копия T01 остаётся отдельным rollback point.
+
 ## Вне рамок и открытые места
 
 Отложенных требований нет. Backend, auth, other routes, real form delivery, Memory page и новые бизнес-функции вне задачи. Stock photos временные по явному требованию пользователя. Никаких credential/services не нужно.

@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-06T23:16:49+03:00",
-  "updatedAt": "2026-10-07T00:08:23+03:00",
+  "updatedAt": "2026-10-07T15:46:15+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,11 +47,14 @@ window.STATE =
     {
       "id": "build",
       "status": "active",
-      "startedAt": "2026-10-07T00:08:23+03:00"
+      "startedAt": "2026-10-07T00:08:23+03:00",
+      "note": "Свежие lint/typecheck/Vitest 67/build прошли; frontend Docker обновляется для runtime QA"
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-10-07T06:54:19+03:00",
+      "note": "Manifest/Spec и Craft clean по T02/T03 и последним правкам; ожидается production browser verification"
     },
     {
       "id": "final",
@@ -60,8 +63,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 50,
-    "done": 0,
-    "inTicket": 50,
+    "done": 6,
+    "inTicket": 44,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -85,11 +88,17 @@ window.STATE =
         "test_4 initial copy",
         "qa baseline"
       ],
-      "status": "in-progress",
+      "status": "done",
       "startedAt": "2026-10-07T00:08:23+03:00",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-10-07T06:54:19+03:00",
+      "commit": "7fe6cb6",
+      "tests": {
+        "passed": 67,
+        "failed": 0
+      }
     },
     {
       "id": "02",
@@ -138,10 +147,24 @@ window.STATE =
         "photo-slots",
         "public/test_4"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-10-07T06:54:19+03:00",
+      "tests": {
+        "passed": 68,
+        "failed": 0
+      },
+      "files": [
+        "frontend/src/app/test_4",
+        "frontend/src/components/test_4 content",
+        "frontend/public/test_4",
+        "frontend/e2e/test-4-editorial.spec.ts"
+      ],
+      "repairFindings": [
+        "NEXT ISSUE CTA должен сохранять прежний выборgroup: callback восстановлен, publicscenario ждёт productionendpoint"
+      ]
     },
     {
       "id": "03",
@@ -171,17 +194,37 @@ window.STATE =
         "package/lock",
         "e2e editor"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-10-07T06:54:19+03:00",
+      "tests": {
+        "passed": 71,
+        "failed": 0
+      },
+      "repairFindings": [
+        "Послеunmount savecompletion не создаётBlobURL",
+        "Public pixelassert должен отличать сдвинутыйcrop отцентрированного"
+      ]
     }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": {
+    "passed": 67,
+    "failed": 0,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "browser": "production verification pending"
+  },
   "debt": {
     "placeholders": [],
-    "assumptions": [],
+    "assumptions": [
+      "Временные stock images иллюстрируют места, не изображают реальных участников",
+      "Существующая форма остаётся демонстрационной",
+      "Фото сохраняются только в браузере и origin пользователя"
+    ],
     "emptyEnv": []
   },
   "additions": [],
@@ -191,10 +234,12 @@ window.STATE =
     "deferred": 0,
     "note": "G2: все требования покрыты; дополнительные детали — R.n реализации и проверки"
   },
-  "concerns": [],
+  "concerns": [
+    "D01: T02/T03 сохраняются одним рабочим integration checkpoint из-за взаимного контракта registry/editor; user scope unchanged"
+  ],
   "reviewers": {
     "manifestSpec": "/root/spec_coverage",
-    "craft": null
+    "craft": "/root/craft_final"
   },
   "blind": null
 }
