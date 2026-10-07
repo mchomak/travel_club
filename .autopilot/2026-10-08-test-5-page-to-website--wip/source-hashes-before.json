@@ -1,0 +1,750 @@
+﻿[
+    {
+        "path":  "frontend/src/test-fixtures.ts",
+        "sha256":  "7d77ab5a133179857fe832c176bfdfec5455032560d2bc17a66ba2e4ca1e7289"
+    },
+    {
+        "path":  "frontend/src/test-setup.ts",
+        "sha256":  "9b328c4843431fa76d8de00008fc159e95f99a840211085ff3b8f25e53d14409"
+    },
+    {
+        "path":  "frontend/src/app/globals.css",
+        "sha256":  "903effe9bd340a6626e7d92fdb69d8e6c87c9509f24f2d38c6887f8b977624ad"
+    },
+    {
+        "path":  "frontend/src/app/layout.tsx",
+        "sha256":  "49e60abc05be6e092101afe21d1a963e219106bd0b53e00ede4e919567e42317"
+    },
+    {
+        "path":  "frontend/src/app/page.tsx",
+        "sha256":  "5fc99014c329fa9f28ba602808ad37f82b0be698cdf0e693d729e4460b535faf"
+    },
+    {
+        "path":  "frontend/src/app/(public)/layout.tsx",
+        "sha256":  "1f1bf85d1c2f623f68b865fe292b6329c9fa2e919b07986f60a6bd899668de66"
+    },
+    {
+        "path":  "frontend/src/app/(public)/payment/page.tsx",
+        "sha256":  "df8db4ba08da2e9b528f6339d20ea520bda5e3a197c826b3a9087f86cb1fdccb"
+    },
+    {
+        "path":  "frontend/src/app/(public)/services/route/page.tsx",
+        "sha256":  "02876b16e6137d037d0c4960b36100d67f53c4fd72b117d4a17a4f2acbfa40f9"
+    },
+    {
+        "path":  "frontend/src/app/(public)/services/turnkey/page.tsx",
+        "sha256":  "d6b52f5dc98e707fa3dacb7bcce3285371bd80213ddd7ff27445f9008fd83d4c"
+    },
+    {
+        "path":  "frontend/src/app/(public)/tours/page.tsx",
+        "sha256":  "fc69e24db27f9aadd1ed63506900970c7052a2aad01bade64ec9f0005b760765"
+    },
+    {
+        "path":  "frontend/src/app/admin/error.tsx",
+        "sha256":  "e9e45d9c9e005bf6b7b8370680b4908f2b9d1f061ae3c17d4df97623c37dd504"
+    },
+    {
+        "path":  "frontend/src/app/admin/(private)/layout.tsx",
+        "sha256":  "429bebca7fa6dbee2dd3f3964ed96a53f97d018e6a009e4dc306426a1bf751f2"
+    },
+    {
+        "path":  "frontend/src/app/admin/(private)/trips/page.tsx",
+        "sha256":  "90c29af58c20137020e820837323d3abef068da3c4912d8a928cfba6d7c77c9d"
+    },
+    {
+        "path":  "frontend/src/app/admin/(private)/trips/new/page.tsx",
+        "sha256":  "5fc8d80aaee1e9eb34c6603d2af0ab6f4493c276bea37599fb9b114cf3e72e7e"
+    },
+    {
+        "path":  "frontend/src/app/admin/(private)/trips/[id]/page.tsx",
+        "sha256":  "24dc28c27ee485ebac69d376158d03234fdaddb13e781b68da55a18b4368e35f"
+    },
+    {
+        "path":  "frontend/src/app/admin/(private)/trips/[id]/preview/page.tsx",
+        "sha256":  "ed73e1b955078da35767b846a51f7f33dab7d6c0bd79c069a86fa122031b2fda"
+    },
+    {
+        "path":  "frontend/src/app/admin/login/page.tsx",
+        "sha256":  "824cc2b9b85739e791e5e609af4e616db6ab8129eb3b30d875073ba1b40cd99e"
+    },
+    {
+        "path":  "frontend/src/app/test/page.tsx",
+        "sha256":  "3f4c7706f13add24b70f473dc876cc276f1433424b35d3305653c403373060b0"
+    },
+    {
+        "path":  "frontend/src/app/test_2/page.tsx",
+        "sha256":  "fe8e79b86faac7d746989f04cfa43e17eb50aafb08cfd24d97c90e420ee13720"
+    },
+    {
+        "path":  "frontend/src/app/test_3/icon.svg",
+        "sha256":  "9798335428d7c62cb01bc821038831a8d8a373bbd1101c489f8acaa9f58f80a4"
+    },
+    {
+        "path":  "frontend/src/app/test_3/page.tsx",
+        "sha256":  "9305c2fb14cb247f3eb28289942edd50956f0b49097a543d0e423271420e2e6f"
+    },
+    {
+        "path":  "frontend/src/app/test_4/page.tsx",
+        "sha256":  "56c1516ee71f1301c731bfccd784a9fe1e137ef924969227b92f7b8c14bd4337"
+    },
+    {
+        "path":  "frontend/src/components/login-form.test.tsx",
+        "sha256":  "d2a7149dccdd6698cb08e0d5e0843b507971098ddd4f430adc98bdd4a83dd42b"
+    },
+    {
+        "path":  "frontend/src/components/login-form.tsx",
+        "sha256":  "40bb3391d036507a3bfbd4a38bbb86ee992cb1c6a0c9d023847f455bb9b0a578"
+    },
+    {
+        "path":  "frontend/src/components/logout-button.tsx",
+        "sha256":  "8d2e5b69a2908bcd26b54e4fb10ff94d6c01dee03a2fb1e5a81ef0a452630df2"
+    },
+    {
+        "path":  "frontend/src/components/public-placeholder.tsx",
+        "sha256":  "dac017e83e37b3cfef8ce3b03df9c78b4677b2ff7489bfe75d6146c17d329db5"
+    },
+    {
+        "path":  "frontend/src/components/public-home/color-wheel.tsx",
+        "sha256":  "9b7b0277d1b26abc6fa5fdb5504f272c43e7abe9550238250a8a934faf6a2dbb"
+    },
+    {
+        "path":  "frontend/src/components/public-home/home-experience.tsx",
+        "sha256":  "09909289948241c7ac0d63d5a9b8121dafaa3c6fb7724daf27252f42bbde6b7c"
+    },
+    {
+        "path":  "frontend/src/components/public-home/home.css",
+        "sha256":  "b1c42a39f049e5f5da98146d4511b45889b215bcf20bf943e69b7ee1f45bf8d2"
+    },
+    {
+        "path":  "frontend/src/components/public-home/theme.test.ts",
+        "sha256":  "d12aeefce25e6a27a50c46251d63f592057950ac69eb786082123e69aa1e760d"
+    },
+    {
+        "path":  "frontend/src/components/public-home/theme.ts",
+        "sha256":  "28f32d1e6cd04c95906935f3a5a5ef853a90da7f7fbb898c1c8388f05f3b4746"
+    },
+    {
+        "path":  "frontend/src/components/public-home/presets/recommended.json",
+        "sha256":  "e0a1d8b8b785c70dfc9e2407c4c385ab1a18738d097b6f2d0cf214000abfb64d"
+    },
+    {
+        "path":  "frontend/src/components/test/data.ts",
+        "sha256":  "65d9e844149b9598d2e209c4145e7810aaf239bceee8833397c9aff9faa79813"
+    },
+    {
+        "path":  "frontend/src/components/test/editorial-home.tsx",
+        "sha256":  "e17045083624f7cdb6fd159f1839f9d016a7d899f2cdf25f8d9050f0d681af65"
+    },
+    {
+        "path":  "frontend/src/components/test/editorial.module.css",
+        "sha256":  "4d7532d1df7e8abfab680b7c5d06eeb818b790cf78b7a46b0cb962503ceebe88"
+    },
+    {
+        "path":  "frontend/src/components/test/lead-form.tsx",
+        "sha256":  "a07edef0d4d3f609b3d1f6f684828f30efa4a8f6e3306135691bd36efc257fe7"
+    },
+    {
+        "path":  "frontend/src/components/test/lead.ts",
+        "sha256":  "e64fcfbc136118fcd5e0b357e270563354c5a241b0360a4efcd2125007191a84"
+    },
+    {
+        "path":  "frontend/src/components/test/README.md",
+        "sha256":  "269fd52b682371e350692fd60068c85d76bffb276b0f1d1a1c360c73207daafc"
+    },
+    {
+        "path":  "frontend/src/components/test_2/data.ts",
+        "sha256":  "72aad97b31c5f268f19e888fd908473d47e6a41d4d7586420a0b0c97292535f0"
+    },
+    {
+        "path":  "frontend/src/components/test_2/editorial-home.tsx",
+        "sha256":  "3db189f586ddb32b912f690e88410c0350bbeae9d270d39f3e942d2c36d21ad9"
+    },
+    {
+        "path":  "frontend/src/components/test_2/editorial.module.css",
+        "sha256":  "ff8d596b7c5b6bcdc3ec409d53a831776cd37b995bd9d31c0e89eb085dfb69f8"
+    },
+    {
+        "path":  "frontend/src/components/test_2/format-motif.tsx",
+        "sha256":  "e6c089e5b4aa895a96ea21e8cb3b85546df4677d4e09ba2321cf582901bb1a13"
+    },
+    {
+        "path":  "frontend/src/components/test_2/issue-content.ts",
+        "sha256":  "637907385827983ce2e7c36b1b413915e3e398788482f31ebd050d20699d6177"
+    },
+    {
+        "path":  "frontend/src/components/test_2/lead-form.tsx",
+        "sha256":  "625d5c261239bbf2fb25c83ae326b509d23b64168ea58f69f1669cfc0db49742"
+    },
+    {
+        "path":  "frontend/src/components/test_2/living-issue.module.css",
+        "sha256":  "762a924a77872793975e346ab8123d08d00e1a5ba69b14e935b9c39aab242772"
+    },
+    {
+        "path":  "frontend/src/components/test_2/living-issue.tsx",
+        "sha256":  "e992c76a8ef8fa8cd8976b6a46c5a61f97e5e255276f280e64c55ffd9001f3ba"
+    },
+    {
+        "path":  "frontend/src/components/test_2/README.md",
+        "sha256":  "3861ce1c3cde49f469ccabd59dc22c8ecab31b7971a190c811846a13381af558"
+    },
+    {
+        "path":  "frontend/src/components/test_3/application-form.module.css",
+        "sha256":  "2595b4915d640525246d47a27c1eba3c481a979882c4f940866dba0d61266269"
+    },
+    {
+        "path":  "frontend/src/components/test_3/application-form.test.tsx",
+        "sha256":  "b63e4229c5d3c79f1d7d5b6db9accaf75647b689df1cdb75b58d90bd09228ab0"
+    },
+    {
+        "path":  "frontend/src/components/test_3/application-form.tsx",
+        "sha256":  "eb85f24b75f24313a3ddd67c239f0ba5b69e9a3dba26a26e18941a26096bb032"
+    },
+    {
+        "path":  "frontend/src/components/test_3/content.ts",
+        "sha256":  "e82b8b64dc354b3a06f61dcfa7e14184792cf56dca903eaa5c082a2c424caef8"
+    },
+    {
+        "path":  "frontend/src/components/test_3/README.md",
+        "sha256":  "a0072a5a18136be12f18c23cf8e74f5e13f4fa9309a4e2e14151fa62e58ab3bf"
+    },
+    {
+        "path":  "frontend/src/components/test_3/shanghai-landing.tsx",
+        "sha256":  "929de2ce9d7492476462c201795f13ddef27f2e914f456301425fd537cfacb9e"
+    },
+    {
+        "path":  "frontend/src/components/test_3/shanghai.module.css",
+        "sha256":  "ff6431c9a687706d70221e66b1f9272a62133d4e588d4ab43217c88514f2d522"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/2026-10-04-brief.md",
+        "sha256":  "1f2bdb9eb6af3e8a1ee208921464e11b9f0eda387bcb2bc21e2fed12d74cc738"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/blind-acceptance.md",
+        "sha256":  "013480aa0b9f1757ebe1f4c9a696a5d0f40bd6214574674546ccf06a1c624d48"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/build-check.log",
+        "sha256":  "ef13bc867ee471d5fdddf159c6ccaaa71f1a747f0753104baf79e9bfb0c96e29"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/dashboard.html",
+        "sha256":  "1a8684231a1f700dde3dfe3e653d65565286dec49eac6b8fecf167abd11cd845"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/desktop-first.png",
+        "sha256":  "7d29b5e94e6621553b1e6891ec3c59ef17e58a554a6832bb70da2f66110570af"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/desktop-full.png",
+        "sha256":  "9f8ac6f0db27d0749e1a253717494eb9c00ba77b1f1cf3ef901fc498d7ec58ee"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/desktop-production.png",
+        "sha256":  "f19b24c058df3868a6b3d32274270c5c36fc93bb4327236a998d681068526343"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/desktop-refined.png",
+        "sha256":  "943ebdc055390c625b371918dbc054719f1b7b72cecaeef4bcfa0b3b74da2765"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/docker-build.log",
+        "sha256":  "5d590501142eb1be4ec9b8bd97971934b67f59fe34a0d73757571440515693af"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/final-first.png",
+        "sha256":  "b04fc818298f386ddefd58c6bb841a60d4c7110ec5ab883abde7a096ffd93c42"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/index.html",
+        "sha256":  "613437700b42d60a12380c0d8d8e1b40fd097a235cee679dc551b4234b2fe20b"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/interfaces.md",
+        "sha256":  "8c9cd0ada5656bc1cd4941187fd7e2abe0def74fac1102d8ef8836b65848ca71"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/lint-check.log",
+        "sha256":  "3b32a3f188be517084437fc6a175575fafb27e528fea4096f3c04c82985c929c"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/manifest.md",
+        "sha256":  "a0aca82b1977f03fb8573b038b95d6438ee67aa5f01c47ac3927dd5c909c3c58"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/mobile-first.png",
+        "sha256":  "0fa039f2453be59fb55cd4a8834405ef41e6b1eeb7d44a15a5c2db2d9005516a"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/mobile-form.png",
+        "sha256":  "eb792952ce257b811e5ca9199eb07edea2551290b86ffb82d2def698c497e3c3"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/mobile-production.png",
+        "sha256":  "66891c64b8b0c913471533fc3f4d2d42230e92978d06f1cd9898d4ce74033333"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/mobile-refined.png",
+        "sha256":  "f37d702f0cc46b5aac9d233d9433e4a2eefd036f6f8529b74b2efbea435e0318"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/qa.md",
+        "sha256":  "7c17f32f6dc9287c35d313e272e45a757e36a8b02ccf4d97d16d2d76eade5ab5"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/route-first.png",
+        "sha256":  "6c051b83ce548bca172e5248627b4d8945b4447806399112c53233c766226014"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/spec.md",
+        "sha256":  "d441f964b410d7e314dd7e1373e50a3364d7899617f86c5b67f29a2299294cee"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/state.js",
+        "sha256":  "54c8008af17c289ad926a134ad9549478489e205bba1521017f59b9cbd745cc0"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/sync.py",
+        "sha256":  "4213a0aa368132a52b6437966fa3e3be9690688882a1ba3bd72b3c7682b33700"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/tablet-production.png",
+        "sha256":  "5df1ca3f8270b848c255b1eb73c8041e010597b516e5713333a64f7c4d5c8925"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/typecheck.log",
+        "sha256":  "7db3990251e2c42d19cc63711784c4d3842b8fe4f41aaf06cb9f96448c98bf2e"
+    },
+    {
+        "path":  "frontend/src/components/test_3/.autopilot/unit-check.log",
+        "sha256":  "d9a6f47af88c3aa10589d05fa69d527d6c2ab0aa4340fce9a5257ca181d4de4c"
+    },
+    {
+        "path":  "frontend/src/components/test_4/crop-photo.ts",
+        "sha256":  "8a30bdcc9e1e32739a15f8e19f83104b76a4ee692f35eb0592f5cb1d3791f63a"
+    },
+    {
+        "path":  "frontend/src/components/test_4/data.ts",
+        "sha256":  "375eec5d1c358dedee1ca561e3d6358333fd067d8523b103a9aa333b50666021"
+    },
+    {
+        "path":  "frontend/src/components/test_4/editable-image.tsx",
+        "sha256":  "b4caab9db3ded40a1035c095f7ad7f4c7f675c115f885d68d251aeeb9f5b2ef3"
+    },
+    {
+        "path":  "frontend/src/components/test_4/editorial-home.tsx",
+        "sha256":  "75ff7937f98c4f3d7c1b5674ddb7d676bb27b789e347a6a9f0e6eb8b3cc10b9c"
+    },
+    {
+        "path":  "frontend/src/components/test_4/editorial.module.css",
+        "sha256":  "365b18f257e608081a04ac5b9d4b997da7893b0158e64148b52ffba9c84ffbe7"
+    },
+    {
+        "path":  "frontend/src/components/test_4/field-notes.tsx",
+        "sha256":  "0fa57730cf8d2aadfa27ea4a29dac78d86004b96fd917ea00dfb8a5cc718daad"
+    },
+    {
+        "path":  "frontend/src/components/test_4/format-motif.tsx",
+        "sha256":  "e6c089e5b4aa895a96ea21e8cb3b85546df4677d4e09ba2321cf582901bb1a13"
+    },
+    {
+        "path":  "frontend/src/components/test_4/image-editor.module.css",
+        "sha256":  "5944536d821707e9d3a65ddfe2cdd652b8fae86a32c47f997e61fdbfcba2459d"
+    },
+    {
+        "path":  "frontend/src/components/test_4/image-editor.tsx",
+        "sha256":  "d8fe2bdcaf0fbbc6ef91001e21f2213b1c82cbca9dd1c0bd608ff84fb405ecdc"
+    },
+    {
+        "path":  "frontend/src/components/test_4/issue-content.ts",
+        "sha256":  "140640bc0303219f27d28d29e1d58b10f4b5ca002602e2c0e778d5bc90e70dd4"
+    },
+    {
+        "path":  "frontend/src/components/test_4/lead-form.tsx",
+        "sha256":  "625d5c261239bbf2fb25c83ae326b509d23b64168ea58f69f1669cfc0db49742"
+    },
+    {
+        "path":  "frontend/src/components/test_4/living-issue.module.css",
+        "sha256":  "78daf876e3075ec01ad7c3eb685e8a042466924b58b643781ad38f91af8b890b"
+    },
+    {
+        "path":  "frontend/src/components/test_4/living-issue.tsx",
+        "sha256":  "0c75023c9e8d7e93100259dfbd682a1c184e1b1a121c47113001531b1caddb5e"
+    },
+    {
+        "path":  "frontend/src/components/test_4/photo-slots.ts",
+        "sha256":  "8418c832093af03fb551242bccc91385ef6b21cee997a56f5cee0249f65e782e"
+    },
+    {
+        "path":  "frontend/src/components/test_4/photo-store.ts",
+        "sha256":  "7b50d945511b14680beff65e4ce14ce18c0872904dbc889cb27e3d1b589c94fd"
+    },
+    {
+        "path":  "frontend/src/components/test_4/README.md",
+        "sha256":  "65b1d742827673f553f4fdb7b725fc743f8dee1c12c71376a3ddc1cdcfb9bae3"
+    },
+    {
+        "path":  "frontend/src/components/trips/airport-block-form.test.tsx",
+        "sha256":  "b50de80f12b61350e22a33dccce2dc32a55feaa196ac0666df1514983c3e349a"
+    },
+    {
+        "path":  "frontend/src/components/trips/airport-block-form.tsx",
+        "sha256":  "3b7d2131d9e5778b5b54b0106873127c17783a22cc0929910776fafb84b875d6"
+    },
+    {
+        "path":  "frontend/src/components/trips/editor-panels.test.tsx",
+        "sha256":  "af0fc912729babff9d15991eb45eb045c69c7115b8e7b3d9939854ad1ab4cecc"
+    },
+    {
+        "path":  "frontend/src/components/trips/editor-panels.tsx",
+        "sha256":  "6071266ef5ebf6054a21423f8e6ba3c795ee7826aaf192fce42606d65945e97d"
+    },
+    {
+        "path":  "frontend/src/components/trips/item-form.test.tsx",
+        "sha256":  "10637e8dbd67962451936f75b2214a3775f21fd9fc87cc80d56dd68668729406"
+    },
+    {
+        "path":  "frontend/src/components/trips/item-form.tsx",
+        "sha256":  "9071c68a06f44b5da52b6bdad0e82c02d65d026aa53bdaf7510c586937843340"
+    },
+    {
+        "path":  "frontend/src/components/trips/new-trip.tsx",
+        "sha256":  "b04d0fbbc95d1c5b052b63d80d649e2ea8b2065b621c963ede9260780a213714"
+    },
+    {
+        "path":  "frontend/src/components/trips/preview.tsx",
+        "sha256":  "8d288f7266058dd4defd3e8bdca787992c9c480a33be0fe3b737a2664864fd87"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-calendar.test.tsx",
+        "sha256":  "77065046ab56d3eb7ec30b325077af5a4769e7a9f594ba21b0ab0a92e4e3e695"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-calendar.tsx",
+        "sha256":  "133fa604a671274918b62e1bd0cf0aba964f9ae73263d4bd96ca23ff30c3f0c9"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-editor.test.tsx",
+        "sha256":  "482a1c010ee9b056a55e79470c85bc2a7f4672761e5fead15ddeb7f91639fa96"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-editor.tsx",
+        "sha256":  "29da225fbec1c46b85610795708c994117b183400e3dcb5581f00a64f8c4e1f4"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-form.tsx",
+        "sha256":  "88eeff6b27cd1b3fc14dccd84b3264dc216b4d61f11183605c27c052e68e6eb0"
+    },
+    {
+        "path":  "frontend/src/components/trips/trip-list.tsx",
+        "sha256":  "4f43bf51ce3ac40c6c9ae63406c8b02585ef2f7f299ca9f52c47611345bf43f7"
+    },
+    {
+        "path":  "frontend/src/components/trips/ui.test.tsx",
+        "sha256":  "b3b1520a41b80efef72f828da1c8a664679afb24582e07538e2b7fe00a1af87b"
+    },
+    {
+        "path":  "frontend/src/components/trips/ui.tsx",
+        "sha256":  "969bdb49586968b2949dcae9ec387d4ac57177bec65cbc5d039392a271310381"
+    },
+    {
+        "path":  "frontend/src/lib/api.ts",
+        "sha256":  "4eb2796bc3b9e14a8f53d782d7bca65d91da0e3a69093422e1a3ddc98b6237e4"
+    },
+    {
+        "path":  "frontend/src/lib/calendar-interaction.test.ts",
+        "sha256":  "1f36809c88acdefe989b6a3d40602e3f297fa6bcd43089f8626615da7dcf89a6"
+    },
+    {
+        "path":  "frontend/src/lib/calendar-interaction.ts",
+        "sha256":  "50ac89894f20ef3e9f0d7675e1f45588fec0ac9c69449d7895ff8be24024b4b9"
+    },
+    {
+        "path":  "frontend/src/lib/calendar.test.ts",
+        "sha256":  "befdf33eb2af4357be2620d4f4580c182df407d1bfbf2de1ff50d8c36440d1c8"
+    },
+    {
+        "path":  "frontend/src/lib/calendar.ts",
+        "sha256":  "3560402bc302123a545d2f33b6c88a258dca766feb8162b82d5109569d50c1df"
+    },
+    {
+        "path":  "frontend/src/lib/contracts.ts",
+        "sha256":  "792d3b8befd1cd6921904b6d67dcab3d91da602e99b438b98a2aaf1841225145"
+    },
+    {
+        "path":  "frontend/src/lib/draft-session.test.ts",
+        "sha256":  "62ba944cfc20fa65d240c74542b0a3de68c4516f5b7dc126a4b894dd518be551"
+    },
+    {
+        "path":  "frontend/src/lib/draft-session.ts",
+        "sha256":  "be7427e40800a8f081bc40e61252ca532216f0ed2b181f04bb774e54d2057128"
+    },
+    {
+        "path":  "frontend/src/lib/pricing.test.ts",
+        "sha256":  "a3fcbe5ee073298353466a230e9af03d36257d9a8b2c1edb3215b57046c0fd94"
+    },
+    {
+        "path":  "frontend/src/lib/pricing.ts",
+        "sha256":  "c77506f9b83cdd713e438f5802801074dec0a87b771047047d6ce6fe6ee4d7c6"
+    },
+    {
+        "path":  "frontend/src/lib/server-auth.ts",
+        "sha256":  "eb9cc53982281dcd2e1fa1947160f38fe4a4e47ec42d2d2f61dc2286c49d2976"
+    },
+    {
+        "path":  "frontend/src/lib/trip-ui.ts",
+        "sha256":  "4980e3fc0a751b33cc0a462e71ef7de58e5005d4c80f59bf9440449b3ceb5e6c"
+    },
+    {
+        "path":  "frontend/src/lib/trips.test.ts",
+        "sha256":  "f59ba6ed10b802daa8eee57878b934cb9fdb92eb4aac15d8490b06957bf67efd"
+    },
+    {
+        "path":  "frontend/src/lib/trips.ts",
+        "sha256":  "92cdbc1c32e13f4b13f117af3232a3da12dc3e59cd98f213f76471f1fdc88339"
+    },
+    {
+        "path":  "frontend/public/images/coast.jpg",
+        "sha256":  "3e4bffd5b722900356bcbad3006ee1c908403a3a2ca96ddd8e762599d28d3767"
+    },
+    {
+        "path":  "frontend/public/images/lake.jpg",
+        "sha256":  "cbcc2e7be0595ba2cf30e5f4060b4d8d6d276e3ed33604dc78de599cab707ba8"
+    },
+    {
+        "path":  "frontend/public/images/README.md",
+        "sha256":  "b34aa99c258b7831de3b713c9e35429c3812c110c829c7653d2eb2c4ac1f033e"
+    },
+    {
+        "path":  "frontend/public/test/club-evening.jpg",
+        "sha256":  "80bfa6916352cac9619a16346731f63dd6de08a175ca80bab91db39c08212e24"
+    },
+    {
+        "path":  "frontend/public/test/hero-table.jpg",
+        "sha256":  "c3c17e40e062b728d9be445b20bc84dd11b1b6e2954a0f5230f71cc68550ac86"
+    },
+    {
+        "path":  "frontend/public/test/istanbul-cafe.jpg",
+        "sha256":  "f2e6c452595b2061ff94ebfb592994cae9584c61189881af242ce373b4f02c74"
+    },
+    {
+        "path":  "frontend/public/test/istanbul-people.jpg",
+        "sha256":  "6cb044e68d876a875abe9812dc09356bef5949c737b7601f0a8755b609afba22"
+    },
+    {
+        "path":  "frontend/public/test/istanbul-street.jpg",
+        "sha256":  "6e4f082aa69ff4216aee1ea7a5e679a459fab4817b7a2d8d86da66a1fdefb69a"
+    },
+    {
+        "path":  "frontend/public/test/istanbul-tea.jpg",
+        "sha256":  "df48f30fa334e0094bbb1d1903529d5d14ea7c085835df99a5f337a5eec14b30"
+    },
+    {
+        "path":  "frontend/public/test/manifest.json",
+        "sha256":  "9655e7594c136818a30e5ad0b04b2fcbd732a82777f81b1bc3ed5f7aa5fb911b"
+    },
+    {
+        "path":  "frontend/public/test/memory-dinner.jpg",
+        "sha256":  "d65df6a5fac02d26f94e577840bcdaa0dcb5b29341bc34b1a6feeeb42e5b9901"
+    },
+    {
+        "path":  "frontend/public/test/memory-ferry.jpg",
+        "sha256":  "0c77879f647af3c18d20ea398e7166195c5a6debf616edcb69dc2c35ba4e0ff1"
+    },
+    {
+        "path":  "frontend/public/test/memory-street.jpg",
+        "sha256":  "b280c958c1b713ecf14174017fa2e8a454d1deee1ceb5147d9bbc38c47442d18"
+    },
+    {
+        "path":  "frontend/public/test/README.md",
+        "sha256":  "9d5d2172ad7b10e089aa624c80078795e1bc938f813e9f2f603d69829c796eb9"
+    },
+    {
+        "path":  "frontend/public/test/shanghai-alley.jpg",
+        "sha256":  "c5e630715c31b67ee931f0e5d5b1ba039bcff9a82bcd40f75bb55495554f7772"
+    },
+    {
+        "path":  "frontend/public/test/shanghai-dumplings.jpg",
+        "sha256":  "ff69fdc070b7df6534bfbb91caeb427a9611284f1998e55dd988de10ca332b67"
+    },
+    {
+        "path":  "frontend/public/test/shanghai-evening.jpg",
+        "sha256":  "24cf3932867a6879adfb8aff4afb97e305ff7d05a5e1ff5b6c8e8c8c76d151cd"
+    },
+    {
+        "path":  "frontend/public/test/shanghai-night.jpg",
+        "sha256":  "97589c83e9bef39a9c3df451f5e01345d5ec3f57937f295225ce6a265631864f"
+    },
+    {
+        "path":  "frontend/public/test/shanghai-street.jpg",
+        "sha256":  "e4314a39cf0f6888345c3e661dabea0157395931bad329be1f21f5e1d40dd841"
+    },
+    {
+        "path":  "frontend/public/test/fonts/golos-text-cyrillic.woff2",
+        "sha256":  "17d048ca05cb1218af3c0d6dcdf882989e6d1cc5dcb598ea50eaf54850ff7229"
+    },
+    {
+        "path":  "frontend/public/test/fonts/golos-text-latin.woff2",
+        "sha256":  "9a69d0aa4734c4022224c002a3d944a702e0204972a49d892789f5668b922c2a"
+    },
+    {
+        "path":  "frontend/public/test/fonts/Golos-Text-OFL.txt",
+        "sha256":  "c297dc35f0589d211d1c5ca02e0c0309a8dff1b433a606a0e281593b172e2fa1"
+    },
+    {
+        "path":  "frontend/public/test/fonts/lora-italic-cyrillic.woff2",
+        "sha256":  "405b30a5bea8b70446e08e40e5d70b7bf5262ef3c4a9e4f3e4672e079a01a4cd"
+    },
+    {
+        "path":  "frontend/public/test/fonts/lora-italic-latin.woff2",
+        "sha256":  "d824d807d4d832d12c87932d0b8ec1314dcfd502157a56dee6bb04cf8a3768ae"
+    },
+    {
+        "path":  "frontend/public/test/fonts/Lora-OFL.txt",
+        "sha256":  "dbb965f4564a8a75bd563ce3773962517deeaf0c2929ba89690d89f8418af911"
+    },
+    {
+        "path":  "frontend/public/test/fonts/lora-regular-cyrillic.woff2",
+        "sha256":  "c57d9ca3bd42e6bc093badc7744dd2059a78f66a3a4dc6ca40574480c870f553"
+    },
+    {
+        "path":  "frontend/public/test/fonts/lora-regular-latin.woff2",
+        "sha256":  "ddb8c66035104e233fc024669183aad3738b6daa16deee2ebb1241bd0f98ace1"
+    },
+    {
+        "path":  "frontend/public/test_2/istanbul-tea-kubra.jpg",
+        "sha256":  "3566be3559056fd1a62eb190f15271aa9d4fbfd5cb5da5a7535d273a98178500"
+    },
+    {
+        "path":  "frontend/public/test_3/club-evening.jpg",
+        "sha256":  "80bfa6916352cac9619a16346731f63dd6de08a175ca80bab91db39c08212e24"
+    },
+    {
+        "path":  "frontend/public/test_3/coffee.jpg",
+        "sha256":  "75b52c5dbfb34ea84f066d7d686da597444f058a45c74fecfe50416511b9feec"
+    },
+    {
+        "path":  "frontend/public/test_3/manifest.json",
+        "sha256":  "54cb138b08d3be1aab9cc40402aed6f2daef849a52d9384817c24a58bbbe9dcf"
+    },
+    {
+        "path":  "frontend/public/test_3/memory-dinner.jpg",
+        "sha256":  "d65df6a5fac02d26f94e577840bcdaa0dcb5b29341bc34b1a6feeeb42e5b9901"
+    },
+    {
+        "path":  "frontend/public/test_3/README.md",
+        "sha256":  "190fa8690e48ff40b638c403b95d0452e5e3f1a4d6cbfacf63d8f830cf1cd3be"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-alley.jpg",
+        "sha256":  "c5e630715c31b67ee931f0e5d5b1ba039bcff9a82bcd40f75bb55495554f7772"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-blue-alley.jpg",
+        "sha256":  "110d41c9197d792845b8ef120ff3ce1a16f86fbe14b55eee7c6d30525879f7a1"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-dumplings.jpg",
+        "sha256":  "ff69fdc070b7df6534bfbb91caeb427a9611284f1998e55dd988de10ca332b67"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-evening.jpg",
+        "sha256":  "24cf3932867a6879adfb8aff4afb97e305ff7d05a5e1ff5b6c8e8c8c76d151cd"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-glass.jpg",
+        "sha256":  "7626ff0e5f067eda66c21b7cd6813ababc8e40b936d3d0eedb562cf3f0c56ff5"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-metro.jpg",
+        "sha256":  "bf602b242b5b41dbc927a27ae9f6265b8103456c74a57cdbb7ffd819442a9604"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-night-street.jpg",
+        "sha256":  "a19cf1847edb2a8a7304cfe1d56034fe22f9626a6e57802f3cf7def39ae445e9"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-night.jpg",
+        "sha256":  "97589c83e9bef39a9c3df451f5e01345d5ec3f57937f295225ce6a265631864f"
+    },
+    {
+        "path":  "frontend/public/test_3/shanghai-street.jpg",
+        "sha256":  "e4314a39cf0f6888345c3e661dabea0157395931bad329be1f21f5e1d40dd841"
+    },
+    {
+        "path":  "frontend/public/test_3/zhujiajiao-canal.jpg",
+        "sha256":  "e54e94429c5ed56c214139847777c559b1758b4438b301a7484c299886fa3b23"
+    },
+    {
+        "path":  "frontend/public/test_3/fonts/Barlow-Condensed-OFL.txt",
+        "sha256":  "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f"
+    },
+    {
+        "path":  "frontend/public/test_3/fonts/barlow-condensed.ttf",
+        "sha256":  "0d85af813fc3ed87db0c6265515689b2eef5cbaf7aab17922528dfc95a2cd73f"
+    },
+    {
+        "path":  "frontend/public/test_3/fonts/golos-text-cyrillic.woff2",
+        "sha256":  "17d048ca05cb1218af3c0d6dcdf882989e6d1cc5dcb598ea50eaf54850ff7229"
+    },
+    {
+        "path":  "frontend/public/test_3/fonts/golos-text-latin.woff2",
+        "sha256":  "9a69d0aa4734c4022224c002a3d944a702e0204972a49d892789f5668b922c2a"
+    },
+    {
+        "path":  "frontend/public/test_3/fonts/Golos-Text-OFL.txt",
+        "sha256":  "c297dc35f0589d211d1c5ca02e0c0309a8dff1b433a606a0e281593b172e2fa1"
+    },
+    {
+        "path":  "frontend/public/test_4/bangkok-food.jpg",
+        "sha256":  "981a649fcef5dc6ab7a65ef8d47b89a2588f1af171a26b870904a3cf473dcf79"
+    },
+    {
+        "path":  "frontend/public/test_4/bangkok-night.jpg",
+        "sha256":  "2c80d8b0ec78c4d8d404612721e5fa9865c49a6a840759518430fe5156479609"
+    },
+    {
+        "path":  "frontend/public/test_4/beijing-hutong.jpg",
+        "sha256":  "7d80c3699291f745935c6635e27620540bad611dff46633179b3dfd978ed3f02"
+    },
+    {
+        "path":  "frontend/public/test_4/madagascar-baobabs.jpg",
+        "sha256":  "2f1489b445862ee8052ce704ce7061ecbd98bda48695380bbb6bd6e04d29b16c"
+    },
+    {
+        "path":  "frontend/public/test_4/madagascar-lemur.jpg",
+        "sha256":  "240102f8f5a7467d4b71556c9f7c894305961872398d1a9d6b10373371e6731c"
+    },
+    {
+        "path":  "frontend/public/test_4/madagascar-sunset.jpg",
+        "sha256":  "c87de42c73566ce45037e5580e937cacef4b7e7623000c807ea2056974c6840a"
+    },
+    {
+        "path":  "frontend/public/test_4/manifest.json",
+        "sha256":  "b48798ea9869fc746886e1f6ed572183436c809fcbb51671aaf0ee355080554d"
+    },
+    {
+        "path":  "frontend/public/test_4/README.md",
+        "sha256":  "11b7025d62e1853d1ae92abd371bd9202ce82fa6481e3b7d4369e1e65766dd11"
+    },
+    {
+        "path":  "frontend/public/test_4/thailand-boat.jpg",
+        "sha256":  "1a02ab1d21f393cb6cffd870a2584e09a4cf3b359874b2430eca22218ae9b7e1"
+    },
+    {
+        "path":  "frontend/public/test_4/thailand-islands.jpg",
+        "sha256":  "23321ef285d01fa3ebcfba27b2f2adc8fbe423bd415443f734d075cbdf834c86"
+    },
+    {
+        "path":  "frontend/public/test_4/thailand-road.jpg",
+        "sha256":  "177ef34568e8f10de70258a8a5858b3d8a9c4fb67d23efb790055b084df79d9c"
+    },
+    {
+        "path":  "frontend/package.json",
+        "sha256":  "4759e20ac464675728a92a3a364d5b841b94211cac6a2dd1107180f05e0a604b"
+    },
+    {
+        "path":  "frontend/package-lock.json",
+        "sha256":  "990f442d57e2d41e73ff6cafcaa54c5b7669979f052f52771bb9df1f39b1213e"
+    }
+]
