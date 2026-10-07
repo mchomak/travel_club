@@ -2,7 +2,7 @@ export type ProductId = "plan" | "turnkey" | "group";
 
 export const navigation = [
   { label: "Форматы", href: "#formats" },
-  { label: "Выпуски", href: "#issues" },
+  { label: "Выпуски", href: "#field-notes" },
   { label: "О клубе", href: "#club" },
 ];
 
@@ -32,66 +32,35 @@ export const images: Record<string, EditorialImage> = {
 
 export const contents = [
   { number: "01", title: "Три способа начать", label: "ФОРМАТЫ", href: "#formats" },
-  { number: "02", title: "Города как выпуски", label: "ВЫПУСКИ", href: "#issues" },
-  { number: "03", title: "Наш культурный код", label: "НАШ ВЗГЛЯД", href: "#point-of-view" },
-  { number: "04", title: "То, что остаётся", label: "ЗАМЕТКИ", href: "#memory" },
+  { number: "02", title: "Среди своих, до начала клуба", label: "FIELD NOTES", href: "#field-notes" },
+  { number: "03", title: "Предыдущие страницы", label: "АРХИВ / 2025", href: "#from-the-archive" },
+  { number: "04", title: "Наш культурный код", label: "НАШ ВЗГЛЯД", href: "#point-of-view" },
   { number: "05", title: "Люди, а не список", label: "КЛУБ", href: "#club" },
-  { number: "06", title: "Ваша история", label: "НАЧАТЬ ИСТОРИЮ", href: "#start" },
+  { number: "06", title: "Ваша история", label: "НАЧАТЬ ИСТОРИЮ", href: "#story" },
 ];
 
-export type Issue = {
-  id: string; label: string; destination: string; title: string; description: string;
-  date: string; people: string; mood: string; coordinates: string; status: string;
-  cover: EditorialImage; detail: EditorialImage;
-  gallery: { image: EditorialImage; caption: string }[];
-  notes: { time: string; title: string; text: string }[];
-  quote: string;
-  theme: { background: string; foreground: string; accent: string; muted: string; line: string };
+export const fieldNotes = {
+  origin: "Друзья, маршруты, поиск мест. Иногда планы менялись, а мы сохраняли то, что хотелось повторить. Из этих поездок вырастает Travel Club.",
+  thailand: "Четверо. От островов до Бангкока. В заметках — два разных ритма одной поездки.",
+  china: "Четверо прилетели из Москвы. Двое друзей ждали нас в Пекине. Дальше история собиралась сама.",
 };
 
-export const issues: Issue[] = [
-  {
-    id: "istanbul", label: "ВЫПУСК 00", destination: "СТАМБУЛ", title: "Между двумя берегами.",
-    description: "Паром вместо такси. Длинный завтрак. Ещё один чай. Город, в котором лучше иногда свернуть не туда.",
-    date: "МАЙ / КОНЦЕПЦИЯ", people: "8 ЧЕЛОВЕК", mood: "НЕСПЕШНОЕ УТРО, ДОЛГИЙ ВЕЧЕР", coordinates: "41°00′ с. ш. / 28°58′ в. д.", status: "Концептуальный выпуск",
-    cover: images.istanbul, detail: images.ferry,
-    gallery: [
-      { image: images.istanbulPeople, caption: "УЛИЧНАЯ ЖИЗНЬ / За соседним столиком" },
-      { image: images.istanbulTea, caption: "ЕЩЁ ОДИН ЧАЙ / Без спешки" },
-      { image: images.istanbulCafe, caption: "АРНАВУТКЁЙ / Адрес на полях" },
-    ],
-    notes: [
-      { time: "09:10", title: "Утро без списка.", text: "Чай, что-то к чаю. И время посмотреть, как город просыпается." },
-      { time: "17:40", title: "На другой берег.", text: "У окна парома маршрут на несколько минут перестаёт быть важным." },
-    ],
-    quote: "Иногда лучший план — ещё немного здесь побыть.",
-    theme: { background: "#ede8de", foreground: "#572d34", accent: "#713b43", muted: "#6e5654", line: "#bba6a2" },
-  },
-  {
-    id: "shanghai", label: "ВЫПУСК 01", destination: "ШАНХАЙ", title: "После заката — сначала.",
-    description: "Шумные улицы и тихие переулки. Ужин, который затянулся. Последнее метро. Другой ритм, который постепенно становится своим.",
-    date: "ОКТЯБРЬ / КОНЦЕПЦИЯ", people: "8 ЧЕЛОВЕК", mood: "ОГНИ ГОРОДА, НОВЫЙ РИТМ", coordinates: "31°14′ с. ш. / 121°28′ в. д.", status: "Концептуальный выпуск",
-    cover: images.shanghai, detail: images.shanghaiFood,
-    gallery: [
-      { image: images.shanghaiStreet, caption: "УЛИЦА ЮНЬНАНЬ / Город в движении" },
-      { image: images.shanghaiAlley, caption: "ПЕРЕУЛКИ / Другой масштаб города" },
-      { image: images.shanghaiEvening, caption: "УЛИЦА СЫЧУАНЬ / Ещё немного пройтись" },
-    ],
-    notes: [
-      { time: "18:30", title: "Свернуть с проспекта.", text: "За большим городом — маленькие улицы. За новым поворотом — другой ритм." },
-      { time: "23:15", title: "Ужин ещё не закончен.", text: "Заказать ещё одну порцию. Обсудить завтрашний день. Или пока не обсуждать." },
-    ],
-    quote: "Город громкий. Свой разговор всё равно слышно.",
-    theme: { background: "#232831", foreground: "#f1f0ec", accent: "#3763eb", muted: "#c3c9d1", line: "#66717e" },
-  },
-  {
-    id: "next", label: "СЛЕДУЮЩИЙ ВЫПУСК", destination: "ПОКА ТАЙНА", title: "Место пока неизвестно. Компания уже важна.",
-    description: "Следующий выпуск ещё складывается. Оставьте интерес — начнём разговор о том, куда и с кем хочется ехать.",
-    date: "ДАТА / УТОЧНЯЕТСЯ", people: "6–9 / КОНЦЕПЦИЯ", mood: "ИСТОРИЯ ОТКРЫТА", coordinates: "КООРДИНАТЫ / ?", status: "В разработке",
-    cover: images.waterfront, detail: images.ferry,
-    gallery: [], notes: [], quote: "Следующая история ещё не написана.",
-    theme: { background: "#e8eced", foreground: "#172f50", accent: "#172f50", muted: "#4c5e70", line: "#a5b1bc" },
-  },
+export const archiveStories = [
+  { id: "archive-china", destination: "CHINA", route: "BEIJING → SHANGHAI → SUZHOU → SANYA", people: "5 PEOPLE", composition: "traceChina", trace: "M 35 5 C 30 110, 370 90, 350 215 S 25 270, 60 380 S 355 420, 370 625", phrase: "Четыре города. Одна компания.", frames: [
+    { slot: "archive-china-street", caption: "Город в движении" },
+    { slot: "archive-china-alley", caption: "Другой масштаб" },
+    { slot: "archive-china-night", caption: "Вечерний свет" },
+  ] },
+  { id: "archive-madagascar", destination: "MADAGASCAR", route: "", people: "2 PEOPLE", composition: "traceMadagascar", trace: "M 195 5 C 175 110, 190 175, 225 235 S 380 315, 300 380 S 45 465, 125 625", phrase: "Двое. Большой остров.", frames: [
+    { slot: "archive-madagascar-baobabs", caption: "Новый горизонт" },
+    { slot: "archive-madagascar-lemur", caption: "Среди зелени" },
+    { slot: "archive-madagascar-sunset", caption: "Свет и простор" },
+  ] },
+  { id: "archive-thailand", destination: "THAILAND", route: "ISLANDS → BANGKOK", people: "SMALL COMPANY", composition: "traceThailand", trace: "M 335 5 C 345 130, 20 125, 70 265 S 345 305, 305 415 S 120 480, 80 625", phrase: "От островов к большому городу.", frames: [
+    { slot: "archive-thailand-islands", caption: "Острова" },
+    { slot: "archive-thailand-food", caption: "Городской ритм" },
+    { slot: "archive-thailand-boat", caption: "У воды" },
+  ] },
 ];
 
 export const principles = [

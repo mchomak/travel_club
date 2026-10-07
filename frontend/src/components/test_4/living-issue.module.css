@@ -3,7 +3,7 @@
 .site a[href="#main"] { opacity: 0; pointer-events: none; }
 .site a[href="#main"]:focus { opacity: 1; pointer-events: auto; }
 .journey {
-  --paper: #f3f2ee; --ink: #20211f; --blue: #172f50; --line: #c2c4bd;
+  --paper: #f1f0ec; --ink: #232831; --blue: #232831; --line: #c3c9d1;
   --open: 0; --enter: 0; --chrome: 1;
   height: 140svh; background: var(--paper); color: var(--blue);
   font-family: "TC Golos", "Segoe UI", sans-serif; isolation: isolate;
@@ -67,10 +67,10 @@
 .coverMeta { padding-bottom: 10px; border-bottom: 1px solid var(--blue); }
 .coverMasthead { font-size: clamp(40px, 4.8vw, 72px); line-height: .94; font-weight: 700; letter-spacing: -.04em; padding: 14px 0 18px; }
 .coverMasthead > span { display: block; }
-.coverImage { flex: 1; min-height: 0; position: relative; background: var(--blue); }
-.photo { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; }
+.coverImage { min-height: 0; position: relative; background: var(--blue); }
+.photo { display: block; width: 100%; height: auto; object-fit: cover; object-position: 50% 58%; }
 .imageLabel { position: absolute; left: 12px; bottom: 12px; background: var(--paper); color: var(--blue); padding: 5px 8px; font-size: 10px; letter-spacing: .06em; }
-.coverFoot { padding-top: 15px; }
+.coverFoot { padding-top: 15px; margin-top: auto; }
 .coverFoot > p { font-family: "TC Lora", Georgia, serif; font-size: clamp(22px, 2.1vw, 31px); line-height: 1.2; }
 .coverFoot > div { display: flex; justify-content: space-between; gap: 12px; padding-top: 11px; font-size: 10px; }
 .coverFoot > div > span:last-child { font-size: 18px; line-height: 1; }
@@ -80,18 +80,18 @@
   background: linear-gradient(90deg, rgb(0 0 0 / 12%), rgb(0 0 0 / 4%) 40%, rgb(255 255 255 / 30%) 55%, transparent);
 }
 .leftPage, .rightPage { padding: 26px 28px 20px; min-width: 0; display: flex; flex-direction: column; }
-.leftPage { background: var(--blue); color: var(--paper); }
+.leftPage { background: var(--ink); color: var(--paper); }
 .rightPage { background: var(--paper); border: 1px solid #d4d6cf; border-left: 0; }
 .runningHead { padding-bottom: 12px; border-bottom: 1px solid currentColor; }
 .people { font-size: 10px; letter-spacing: .05em; margin-top: 32px; }
 .spreadHeadline { font-family: "TC Lora", Georgia, serif; font-size: clamp(28px, 3.8vw, 54px); line-height: 1.12; letter-spacing: -.035em; margin-top: 16px !important; text-wrap: balance; }
 .spreadNote { font-size: 13px; line-height: 1.55; margin-top: 20px !important; max-width: 290px; }
 .fieldNote { display: flex; align-items: end; gap: 24px; margin-top: auto; padding-top: 24px; }
-.detailPhoto { width: 30%; height: 145px; object-fit: cover; object-position: 50% 65%; }
+.detailPhoto { width: 30%; height: auto; object-fit: cover; object-position: 50% 65%; }
 .fieldNote > div > span { font-size: 68px; line-height: 1; letter-spacing: -.04em; }
 .fieldNote p { font-size: 11px; line-height: 1.5; margin-top: 10px; }
 .pageNumber { display: flex; justify-content: space-between; gap: 12px; font-size: 9px; margin-top: 18px; }
-.spreadPhoto { width: 100%; min-height: 0; flex: 1; object-fit: cover; object-position: 50% 43%; margin-top: 16px; }
+.spreadPhoto { width: 100%; min-height: 0; flex: none; object-fit: cover; object-position: 50% 43%; margin-top: 16px; }
 .spreadCaption { font-family: "TC Lora", Georgia, serif; font-size: clamp(20px, 2.1vw, 30px); line-height: 1.2; margin-top: 18px !important; }
 .rightPage .pageNumber { margin-top: 14px; }
 
@@ -104,7 +104,7 @@
   .leftPage, .rightPage { padding: 22px; }
   .people { margin-top: 22px; }
   .spreadNote { font-size: 12px; }
-  .detailPhoto { height: 125px; }
+  .detailPhoto { height: auto; }
 }
 @media (max-width: 760px) {
   .deskHead, .deskFoot { left: 20px; right: 20px; font-size: 10px; gap: 14px; }
@@ -203,3 +203,9 @@
   .cover, .spread { width: 100%; height: max(300px, min(65svh, 400px)); flex: none; }
   .deskFoot { position: relative; inset: auto; margin-top: 20px; }
 }
+
+/* Stable crop frames sit inside the unchanged book geometry. */
+.spreadPhoto { margin-bottom: auto; }
+.leftPage .people { line-height: 1.65; }
+.leftPage .people::first-line { color: #c3c9d1; }
+.editionMark > span:last-child { color: #3763eb; }

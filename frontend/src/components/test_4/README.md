@@ -1,14 +1,17 @@
-# Living Issue — эксперимент /test_2
+# FIELD NOTES — эксперимент /test_4
 
-Открыть `http://localhost:3000/test_2`. `#start` пропускает журнал и ведёт к шапке редакционной страницы; `#story` — к demo-форме. Контрольный `/test` сохраняет свои якоря и поведение.
+Открыть `http://localhost:3000/test_4`. Это изолированная копия `/test_2`: исходные маршруты, стили и фотографии не редактируются. `#start` пропускает журнал, `#story` ведёт к сохранённой demo-форме.
 
-- `issue-content.ts`: тексты и выбор кадров вступления; объекты изображений импортируются из `../test/data`. Обложка использует `/test/memory-ferry.jpg`, разворот — общий стол и кадр чая из `/test`.
-- `living-issue.tsx`: семантическая обложка и декоративный разворот, lifecycle нативной прокрутки. Passive scroll/resize + rAF обновляют три CSS-переменные без React renders. IntersectionObserver выключает расчёт за пределами сцены.
-- `living-issue.module.css`: scoped композиция, глубина и адаптация открытия. Обёртка занимает 140svh; sticky viewport — 100svh. После разворота обычная прокрутка ведёт к редакционному hero.
-- `editorial-home.tsx`, `lead-form.tsx`, `format-motif.tsx`: отдельная русская версия страницы с тремя мотивами форматов и печатными фото-вставками. Контент хранится в собственном `data.ts`, стили — в собственном `editorial.module.css`; изменения `/test` не обновляют их автоматически. Из `../test/lead` используются только валидация и demo-адаптер заявки.
+- `data.ts`: сохранённые продукты, Hero, Point of View, Club и Process; `fieldNotes` — происхождение и поездки 2026; `archiveStories` — три истории 2025, их точные маршруты и состав. FIELD NOTES относятся к поездкам друзей до запуска. NEXT ISSUE означает будущую официальную поездку.
+- `field-notes.tsx`: происхождение, определения FIELD NOTES/ISSUES, Thailand, China, архив и NEXT ISSUE. Thailand использует самый большой асимметричный разворот; у архивных историй три разных композиции с пунктирным следом.
+- `issue-content.ts`: тексты вступления China ’26 и ссылки на слоты. `living-issue.tsx` сохраняет исходную механику нативной прокрутки, rAF и reduced motion.
+- `editorial.module.css`: исходные Golos/Lora, deep blue, сетка и добавленные локальные секции. Thailand — `#24483b`, `#f0eee5`, `#819486`: зелень и тёплая бумага соединяют острова, дорогу и город без курортного оформления. China — `#232831`, `#3763eb`, `#f1f0ec`, `#c3c9d1`. `living-issue.module.css` содержит геометрию журнала и China palette.
+- `photo-slots.ts`: единственный реестр fallback/src/alt/aspectRatio/position. Каждый из 30 кадров имеет собственный стабильный ID, даже при повторном использовании одного снимка. Соотношение сторон одинаково на desktop/mobile; размер нового файла не меняет сетку. Для постоянной замены изменить fallback и alt этого слота; новые stock файлы лежат в `public/test_4`.
+- `editable-image.tsx` и `image-editor.tsx`: ПКМ по фото либо кнопка «Фото» открывают замену/сброс. Cropper `react-easy-crop` использует ratio слота; drag и zoom меняют кадр, Save экспортирует cropped Blob. Escape/Cancel сохраняют предыдущий кадр.
+- `photo-store.ts`: отдельная IndexedDB `travel-club-test-4-photos`, keyed by slotId, без backend upload. Замены сохраняются только в этом браузере и origin; другой порт/origin имеет свои данные. Reset удаляет Blob и возвращает fallback. Storage/decode ошибки показываются в редакторе.
 
-Большинство фото обеих версий лежит в `frontend/public/test/`, включая кадры вступления `/test_2`; локальный кадр чая для редакционной страницы — `frontend/public/test_2/istanbul-tea-kubra.jpg`. CSS `/test_2` загружает общие шрифты Golos/Lora из `/test/fonts/`.
+Источники новых иллюстраций, авторы, реальные размеры и лицензии: [public/test_4/manifest.json](../../../public/test_4/manifest.json), [README](../../../public/test_4/README.md). Сохранённые фото и локальные Golos/Lora читаются из `public/test` и `public/test_2`; их источники описаны в `public/test/README.md`. Фотографии иллюстративные, не доказательство конкретной остановки и не снимки участников Travel Club. Общий ужин в Thailand не приписан городу.
 
-Desktop раскрывает обложку с умеренным rotateY. Телефон раскрывает её вверх и показывает вертикальный разворот с естественной высотой текста. Короткий landscape использует горизонтальную композицию без 3D. Reduced motion показывает статичную обложку и обычную прокрутку, без дополнительного пустого пути. Контент и anchors работают без JS. Клавиатурный пропуск переводит focus к содержимому; следующий skip-link остаётся внутри основного сайта.
+Форма продолжает использовать существующую валидацию/demo-адаптер из `../test/lead`; заявки никуда не отправляются. Memory удалён только из рендера/ссылок этой версии.
 
-Проверки: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run build`; `npx.cmd playwright test e2e/living-issue.spec.ts e2e/test-home.spec.ts`. Для проверки на другом dev-порту задать `PLAYWRIGHT_BASE_URL`. Финальная production-версия доступна через существующий frontend Docker service на 3000.
+Проверки: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test`, `npm.cmd run build`; `npm.cmd exec playwright test e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts`. Для dev-порта: `$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:3001'`. При изменении `public` пересобрать только frontend Docker service, без изменения backend/DB.

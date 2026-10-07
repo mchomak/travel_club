@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { EditableImage } from "./editable-image";
 import { useEffect, useRef } from "react";
 import { livingIssue as issue } from "./issue-content";
 import s from "./living-issue.module.css";
@@ -79,7 +79,7 @@ export function LivingIssue() {
               <div className={s.coverMeta}><span>{issue.edition}</span><span>{issue.date}</span></div>
               <h2 id="living-issue-heading" className={s.coverMasthead}>{issue.title.split(" ").map(word => <span key={word}>{word}</span>)}</h2>
               <div className={s.coverImage}>
-                <Image src={issue.coverImage.src} alt={issue.coverImage.alt} width={issue.coverImage.width} height={issue.coverImage.height} sizes="(max-width: 760px) 90vw, 460px" loading="eager" fetchPriority="high" className={s.photo} />
+                <EditableImage slotId={issue.coverSlot} sizes="(max-width: 760px) 90vw, 460px" preload className={s.photo} />
                 <span className={s.imageLabel}>{issue.label}</span>
               </div>
               <div className={s.coverFoot}><p>{issue.coverLine}</p><div><span>{issue.coverCaption}</span><span>01</span></div></div>
@@ -88,19 +88,19 @@ export function LivingIssue() {
           </article>
           <div className={s.spread} role="group" aria-label="Разворот выпуска">
             <div className={s.leftPage}>
-              <div className={s.runningHead}><span>ВЫПУСК / {issue.spread.number}</span><span>{issue.spread.destination}</span></div>
-              <span className={s.people}>{issue.spread.people}</span>
+              <div className={s.runningHead}><span>{issue.edition}</span><span>{issue.spread.destination}</span></div>
+              <span className={s.people}>{issue.spread.people}<br />{issue.spread.extraPeople}</span>
               <h3 className={s.spreadHeadline}>{issue.spread.headline}</h3>
               <p className={s.spreadNote}>{issue.spread.note}</p>
               <div className={s.fieldNote}>
-                <Image src={issue.spread.detailImage.src} alt={issue.spread.detailImage.alt} width={issue.spread.detailImage.width} height={issue.spread.detailImage.height} sizes="(max-width: 760px) 80px, 140px" className={s.detailPhoto} />
-                <div><span>{issue.spread.number}</span><p>Ещё один чай.<br />Ещё одна история.</p></div>
+                <EditableImage slotId={issue.spread.detailSlot} sizes="(max-width: 760px) 80px, 140px" className={s.detailPhoto} />
+                <div><span>{issue.spread.number}</span><p>Город. Еда.<br />Своя компания.</p></div>
               </div>
               <span className={s.pageNumber}>Travel Club / РЕДАКЦИЯ <span>001</span></span>
             </div>
             <div className={s.rightPage}>
-              <div className={s.runningHead}><span>{issue.spread.coordinates}</span><span>ПОЛЕВЫЕ ЗАМЕТКИ</span></div>
-              <Image src={issue.spread.image.src} alt={issue.spread.image.alt} width={issue.spread.image.width} height={issue.spread.image.height} sizes="(max-width: 760px) 92vw, 720px" className={s.spreadPhoto} />
+              <div className={s.runningHead}><span>{issue.spread.route}</span><span>ПОЛЕВЫЕ ЗАМЕТКИ</span></div>
+              <EditableImage slotId={issue.spread.imageSlot} sizes="(max-width: 760px) 92vw, 720px" className={s.spreadPhoto} />
               <p className={s.spreadCaption}>{issue.spread.caption}</p>
               <div className={s.pageNumber}><span>{issue.spread.footnote}</span><span>002</span></div>
             </div>
