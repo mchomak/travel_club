@@ -53,7 +53,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     let viewportHeight = 1;
     let pageX = 0, pageY = 0, pageWidth = 1, pageHeight = 1, publicationWidth = 1;
     let viewportWidth = 1, publicationX = 0, publicationY = 0;
-    let heroHeight = 1;
+    let heroHeight = 1, continuationHeight = 1;
     let targetProgress = 0, renderedProgress = 0, lastTime = 0;
     let active = true;
     const skipped = location.hash === "#start";
@@ -80,10 +80,11 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       const open = ease((progress - TIMELINE.openStart) / (TIMELINE.openEnd - TIMELINE.openStart));
       const focus = focusEase((progress - TIMELINE.focusStart) / (TIMELINE.focusEnd - TIMELINE.focusStart));
       const mobile = viewportWidth <= 760;
-      // Contain the real header and complete hero in the page, including its photos.
-      // Narrow screens need height fitting as well as width fitting.
+      // Desktop fits the real header, hero, Contents, formats, and lead form.
+      // Narrow screens keep the existing hero-only camera adaptation.
       const pageScale = pageWidth / viewportWidth;
-      const initialScale = Math.min(pageScale, pageHeight / heroHeight);
+      const fitHeight = mobile ? heroHeight : continuationHeight;
+      const initialScale = Math.min(pageScale, pageHeight / fitHeight);
       const scale = initialScale + (1 - initialScale) * focus;
       const zoom = 1 + (1 / pageScale - 1) * focus;
       const openingShift = mobile ? 0 : -publicationWidth * .25 * (1 - open);
@@ -99,7 +100,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       surface.style.setProperty("--site-x", `${x + (pageWidth - viewportWidth * initialScale) / 2 * (1 - focus)}px`);
       surface.style.setProperty("--site-y", `${y}px`);
       surface.style.setProperty("--site-scale", String(scale));
-      surface.style.setProperty("--clip-height", `${heroHeight + (viewportHeight - heroHeight) * focus}px`);
+      surface.style.setProperty("--clip-height", `${fitHeight + (viewportHeight - fitHeight) * focus}px`);
       camera.dataset.complete = String(progress >= 1);
       site.inert = progress < 1;
       scene.inert = progress >= 1;
@@ -160,8 +161,10 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       site.style.setProperty("--site-height", `${surface.offsetHeight}px`);
       // offset geometry is untransformed and read only on resize, never on scroll.
       const hero = site.querySelector<HTMLElement>("[data-page-hero]");
-      if (!hero) return;
+      const continuationEnd = site.querySelector<HTMLElement>("[data-page-continuation-end]");
+      if (!hero || !continuationEnd) return;
       heroHeight = hero.offsetTop + hero.offsetHeight;
+      continuationHeight = continuationEnd.offsetTop + continuationEnd.offsetHeight;
       reset();
     }
     function changeMotion() {
@@ -172,6 +175,8 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     observer.observe(camera);
     const hero = site.querySelector<HTMLElement>("[data-page-hero]");
     if (hero) observer.observe(hero);
+    const continuationEnd = site.querySelector<HTMLElement>("[data-page-continuation-end]");
+    if (continuationEnd) observer.observe(continuationEnd);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
     motion.addEventListener("change", changeMotion);

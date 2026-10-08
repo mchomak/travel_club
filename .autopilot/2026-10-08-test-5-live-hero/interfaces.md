@@ -6,3 +6,7 @@
 - Root owns git, .autopilot and Docker production rebuild. Executor can use dev3001 and must report session/process for root cleanup. No package installs/new dependencies or backend/database operations.
 
 - Follow-up contract: outer site reserves measured untransformed content height; its one live inner surface uses viewport-fixed coordinates during opening, then releases into the same normal flow at the endpoint. Browser native scroll must not shift the right page between JS frames. The editorial left content is the hinged cover reverse itself and remains after opening, with no stationary duplicate.
+
+## From Ticket 03
+- Existing form wrapper exposes `data-page-continuation-end`, the stable end boundary for the reduced introduction shown on the right page. `LivingIssue` measures the same live site via offset geometry; no component prop or duplicate content interface was added.
+- Desktop camera fitting uses the measured continuation end after hero + contents/form. Narrow/mobile camera keeps its existing hero-fit adaptation; the same full homepage returns to normal flow at completion.

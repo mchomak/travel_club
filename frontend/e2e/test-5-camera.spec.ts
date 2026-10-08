@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
 const captures = "test-results/test-5-opening-stability/captures";
+const continuationEvidence = "test-results/test-5-page-continuation";
 const screenshotStyle = "nextjs-portal { display: none !important; }";
 
 async function settle(page: Page, progress: number) {
@@ -98,6 +99,58 @@ test("the open right page contains the actual complete hero instead of a China p
     return exposed;
   })).toBe(true);
   await expect(page.locator("#hero-title")).toHaveCount(1);
+});
+
+test("the open right page continues through Contents, all formats, and the lead form", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
+  const camera = page.locator("[data-animated='true']");
+  await page.evaluate(() => window.scrollTo({ top: innerHeight * 1.25 * .47, behavior: "instant" }));
+  await expect.poll(() => camera.evaluate(e => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - .47))).toBeLessThan(.002);
+  await expect(camera).toHaveAttribute("data-motion", "idle");
+
+  const contents = page.locator('aside[aria-label="Содержание выпуска"]');
+  const formats = page.locator("#formats");
+  const lead = page.locator("#story");
+  await expect(contents).toHaveCount(1);
+  await expect(formats).toHaveCount(1);
+  await expect(formats.locator("a[data-format]")).toHaveCount(3);
+  await expect(lead.locator("form")).toHaveCount(1);
+  await expect(page.locator("#hero-title")).toHaveCount(1);
+
+  await mkdir(continuationEvidence, { recursive: true });
+  await page.screenshot({ path: `${continuationEvidence}/1440-open-spread.png`, style: screenshotStyle });
+  const geometry = await page.evaluate(() => {
+    const paper = document.querySelector<HTMLElement>('[aria-label="Разворот выпуска"] [class*="rightPage"]')!;
+    const site = document.querySelector<HTMLElement>("#top")!.closest<HTMLElement>("[inert]")!;
+    const contents = document.querySelector<HTMLElement>('aside[aria-label="Содержание выпуска"]')!;
+    const formats = document.querySelector<HTMLElement>("#formats")!;
+    const lead = document.querySelector<HTMLElement>("#story")!;
+    const targets = [
+      contents.querySelector("h2")!,
+      ...Array.from(formats.querySelectorAll<HTMLElement>("a[data-format]")),
+      lead.querySelector<HTMLInputElement>('input[name="contact"]')!,
+    ];
+    const rect = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
+    };
+    site.inert = false;
+    const hits = targets.map(element => {
+      const box = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return Boolean(hit && element.contains(hit));
+    });
+    site.inert = true;
+    return { paper: rect(paper), regions: [contents, formats, lead].map(rect), hits };
+  });
+  const contained = geometry.regions.every(region =>
+    region.left >= geometry.paper.left - 1 && region.right <= geometry.paper.right + 1 &&
+    region.top >= geometry.paper.top - 1 && region.bottom <= geometry.paper.bottom + 1,
+  );
+  expect(contained, `homepage continuation must fit inside the open paper: ${JSON.stringify(geometry)}`).toBe(true);
+  expect(geometry.hits, "Contents, each format card, and the contact field must receive hit tests").toEqual([true, true, true, true, true]);
 });
 
 test("the camera eases across multiple frames, settles at rest and releases native flow at the boundary", async ({ page }) => {
