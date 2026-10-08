@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
-const captures = "test-results/test-5-live-hero/captures";
+const captures = "test-results/test-5-opening-stability/captures";
 const screenshotStyle = "nextjs-portal { display: none !important; }";
 
 async function settle(page: Page, progress: number) {
@@ -10,6 +10,65 @@ async function settle(page: Page, progress: number) {
   await expect.poll(() => camera.evaluate((e, p) => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - p), progress)).toBeLessThan(.002);
   await expect(camera).toHaveAttribute("data-motion", "idle");
 }
+
+test("the editorial left surface unfolds with the cover and remains the same page", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
+  const left = page.getByText("Города разные. Люди — свои.", { exact: true }).locator("..");
+  expect(await left.evaluate(e => {
+    const heading = e.querySelector("h3")!;
+    const r = heading.getBoundingClientRect();
+    return heading.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+  })).toBe(false);
+  const samples: { x: number; width: number; exposed: boolean }[] = [];
+  for (const progress of [.3, .36, .43, .47]) {
+    await page.evaluate(p => window.scrollTo(0, innerHeight * 1.25 * p), progress);
+    await settle(page, progress);
+    samples.push(await left.evaluate(e => {
+      const r = e.getBoundingClientRect();
+      const heading = e.querySelector("h3")!;
+      const h = heading.getBoundingClientRect();
+      return { x: r.x, width: r.width, exposed: heading.contains(document.elementFromPoint(h.x + h.width / 2, h.y + h.height / 2)) };
+    }));
+  }
+  // A turning printed surface starts narrow, expands around the spine, and
+  // remains exposed when the cover reaches its final flat position.
+  expect(samples[0].width).toBeLessThan(samples[3].width * .8);
+  expect(samples[1].width).toBeGreaterThan(samples[0].width);
+  expect(samples[2].width).toBeGreaterThan(samples[1].width);
+  expect(samples[3].exposed).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, innerHeight * 1.25 * .3));
+  await settle(page, .3);
+  expect((await left.boundingBox())!.width).toBeCloseTo(samples[0].width, 0);
+  await expect(page.getByText("Города разные. Люди — свои.", { exact: true })).toHaveCount(1);
+});
+
+test("native wheel frames keep the live homepage aligned with the right page", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
+  for (const [progress, wheel] of [[.35, 90], [.65, 60], [.86, 45], [.86, -45], [.65, -60], [.35, -90]]) {
+    await page.evaluate(p => window.scrollTo(0, innerHeight * 1.25 * p), progress);
+    await settle(page, progress);
+    const frames = page.evaluate(async () => {
+      const right = document.querySelector<HTMLElement>("[class*='rightPage']")!;
+      const header = document.querySelector<HTMLElement>("#start")!;
+      const samples: { scroll: number; gap: number }[] = [];
+      for (let frame = 0; frame < 24; frame++) {
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+        samples.push({ scroll: scrollY, gap: header.getBoundingClientRect().top - right.getBoundingClientRect().top });
+      }
+      return samples;
+    });
+    await page.mouse.wheel(0, wheel);
+    const samples = await frames;
+    // These are rendered rectangles during real wheel/compositor frames, including
+    // the first scroll frame, rather than only the camera's eventual settled state.
+    expect(Math.max(...samples.map(sample => sample.scroll)) - Math.min(...samples.map(sample => sample.scroll))).toBeGreaterThan(10);
+    expect(Math.max(...samples.map(sample => Math.abs(sample.gap)))).toBeLessThan(2);
+  }
+});
 
 test("the open right page contains the actual complete hero instead of a China panel", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -100,7 +159,7 @@ for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 90
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await page.screenshot({ path: `${captures}/${viewport.width}-${name}.png`, style: screenshotStyle });
     };
-    for (const [name, progress] of [["cover", 0], ["opening", .3], ["spread", .47], ["focus", .65], ["merge", .8], ["late-merge", .93], ["hero", 1]] as const) {
+    for (const [name, progress] of [["cover", 0], ["opening-early", .23], ["opening", .3], ["opening-late", .36], ["open", .43], ["spread", .47], ["focus", .65], ["merge", .8], ["late-merge", .93], ["hero", 1]] as const) {
       await page.evaluate(p => window.scrollTo(0, innerHeight * 1.25 * p), progress);
       await capture(name, progress);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

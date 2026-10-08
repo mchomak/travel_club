@@ -25,4 +25,4 @@
 
 | 2026-10-08 | `2026-10-08-test-5-page-to-website` | сдан | /test_5: правая страница Living Issue становится живой homepage; source сохранён, visual QA и 30 browser / 67 unit tests прошли. |
 
-| 2026-10-08 | `2026-10-08-test-5-live-hero` | сдан | /test_5: полный живой hero на правой странице и плавное приближение; 43 browser / 73 unit tests, push main и frontend Docker выполнены. |
+| 2026-10-08 | `2026-10-08-test-5-live-hero` | сдан | /test_5: живой hero, постепенное раскрытие левого листа и стабильная правая страница; 45 browser / 73 unit tests, production Docker обновлён. |

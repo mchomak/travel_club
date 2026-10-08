@@ -26,6 +26,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
   const sceneRef = useRef<HTMLElement>(null);
   const publicationRef = useRef<HTMLDivElement>(null);
   const siteRef = useRef<HTMLDivElement>(null);
+  const surfaceRef = useRef<HTMLDivElement>(null);
   const pendingSkipFocusRef = useRef(false);
 
   function skip(event: MouseEvent<HTMLAnchorElement>) {
@@ -44,13 +45,14 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     const scene = sceneRef.current;
     const publication = publicationRef.current;
     const site = siteRef.current;
-    if (!camera || !scene || !publication || !site) return;
+    const surface = surfaceRef.current;
+    if (!camera || !scene || !publication || !site || !surface) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
     let distance = 1;
     let viewportHeight = 1;
     let pageX = 0, pageY = 0, pageWidth = 1, pageHeight = 1, publicationWidth = 1;
-    let viewportWidth = 1, siteTop = 0, publicationX = 0, publicationY = 0;
+    let viewportWidth = 1, publicationX = 0, publicationY = 0;
     let heroHeight = 1;
     let targetProgress = 0, renderedProgress = 0, lastTime = 0;
     let active = true;
@@ -67,7 +69,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     }
 
     function render(progress: number) {
-      if (!active || !camera || !scene || !publication || !site) return;
+      if (!active || !camera || !scene || !publication || !site || !surface) return;
       if (skipped || motion.matches) {
         camera.dataset.complete = "true";
         site.inert = false;
@@ -92,10 +94,12 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       camera.style.setProperty("--focus", String(focus));
       // The book and the one live website share this measured top-left camera matrix.
       publication.style.transform = `translate(${x - publicationX - (mobile ? 0 : pageWidth * zoom)}px, ${y - publicationY}px) scale(${zoom})`;
-      site.style.setProperty("--site-x", `${x + (pageWidth - viewportWidth * initialScale) / 2 * (1 - focus)}px`);
-      site.style.setProperty("--site-y", `${Math.min(window.scrollY, distance) - siteTop + y}px`);
-      site.style.setProperty("--site-scale", String(scale));
-      site.style.setProperty("--clip-height", `${heroHeight + (viewportHeight - heroHeight) * focus}px`);
+      // Both surfaces use viewport coordinates. Native compositor scrolling must
+      // never move the live page before a later JS frame compensates for it.
+      surface.style.setProperty("--site-x", `${x + (pageWidth - viewportWidth * initialScale) / 2 * (1 - focus)}px`);
+      surface.style.setProperty("--site-y", `${y}px`);
+      surface.style.setProperty("--site-scale", String(scale));
+      surface.style.setProperty("--clip-height", `${heroHeight + (viewportHeight - heroHeight) * focus}px`);
       camera.dataset.complete = String(progress >= 1);
       site.inert = progress < 1;
       scene.inert = progress >= 1;
@@ -134,7 +138,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       render(renderedProgress);
     }
     function measure() {
-      if (!active || !camera || !scene || !publication || !site || !camera.isConnected) return;
+      if (!active || !camera || !scene || !publication || !site || !surface || !camera.isConnected) return;
       if (skipped || motion.matches) { reset(); return; }
       const stage = publication.parentElement;
       const viewport = scene.querySelector<HTMLElement>(`.${s.viewport}`);
@@ -151,7 +155,9 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       pageHeight = publication.offsetHeight;
       pageX = publicationX + (mobile ? 0 : pageWidth);
       pageY = publicationY;
-      siteTop = site.offsetTop;
+      // Retain the full document's scroll range while its one live surface is
+      // fixed. At completion the same surface returns to this ordinary flow slot.
+      site.style.setProperty("--site-height", `${surface.offsetHeight}px`);
       // offset geometry is untransformed and read only on resize, never on scroll.
       const hero = site.querySelector<HTMLElement>("[data-page-hero]");
       if (!hero) return;
@@ -204,10 +210,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
               </div>
               <div className={s.coverFoot}><p>{issue.coverLine}</p><div><span>{issue.coverCaption}</span><span>01</span></div></div>
             </div>
-            <div className={s.coverBack} aria-hidden="true"><span>Travel Club</span><span>Внутри выпуска</span></div>
-          </article>
-          <div className={s.spread} role="group" aria-label="Разворот выпуска">
-            <div className={s.leftPage}>
+            <div className={`${s.coverBack} ${s.leftPage}`}>
               <div className={s.runningHead}><span>{issue.edition}</span><span>{issue.spread.destination}</span></div>
               <span className={s.people}>{issue.spread.people}<br />{issue.spread.extraPeople}</span>
               <h3 className={s.spreadHeadline}>{issue.spread.headline}</h3>
@@ -218,6 +221,8 @@ export function LivingIssue({ children }: { children: ReactNode }) {
               </div>
               <span className={s.pageNumber}>Travel Club / РЕДАКЦИЯ <span>001</span></span>
             </div>
+          </article>
+          <div className={s.spread} role="group" aria-label="Разворот выпуска">
             <div className={s.rightPage} aria-hidden="true" />
           </div>
         </div>
@@ -226,7 +231,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     </div>
     </section>
     <div ref={siteRef} className={s.site}>
-      {children}
+      <div ref={surfaceRef} className={s.siteSurface}>{children}</div>
     </div>
   </div>;
 }

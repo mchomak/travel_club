@@ -39,8 +39,7 @@
 .cover {
   position: absolute; inset: 0 0 0 50%; transform-style: preserve-3d; z-index: 1;
   transform-origin: left center;
-  transform: translateZ(3px) rotateY(calc(var(--open) * -178deg)) rotateZ(calc(var(--open) * -1deg));
-  opacity: clamp(0, calc((.9 - var(--open)) * 10), 1);
+  transform: rotateY(calc(var(--open) * -180deg));
 }
 .coverFront, .coverBack {
   position: absolute; inset: 0; backface-visibility: hidden; border: 1px solid #d4d6cf;
@@ -54,15 +53,12 @@
   background: linear-gradient(90deg, rgb(23 47 80 / 23%), transparent 12%, transparent 75%, rgb(255 255 255 / 24%));
 }
 .coverBack {
-  transform: rotateY(180deg) translateZ(1px); background: linear-gradient(90deg, #e9e8e2, #f8f7f2 18%, #efeee8 80%, #d8d8d2);
-  color: var(--blue); display: flex; flex-direction: column; justify-content: space-between;
-  padding: 24px; font-family: "TC Lora", Georgia, serif; font-size: 21px;
+  transform: rotateY(180deg) translateZ(1px);
 }
 .coverBack::before {
   content: ""; position: absolute; inset-block: 0; right: 0; width: 20px; pointer-events: none;
   background: linear-gradient(90deg, transparent, rgb(23 47 80 / 16%));
 }
-.coverBack > span:last-child { font-family: "TC Golos", "Segoe UI", sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .coverMeta, .runningHead { display: flex; justify-content: space-between; gap: 12px; font-size: 10px; letter-spacing: .05em; }
 .coverMeta { padding-bottom: 10px; border-bottom: 1px solid var(--blue); }
 .coverMasthead { font-size: clamp(40px, 4.8vw, 72px); line-height: .94; font-weight: 700; letter-spacing: -.04em; padding: 14px 0 18px; }
@@ -81,7 +77,7 @@
 }
 .leftPage, .rightPage { padding: 26px 28px 20px; min-width: 0; display: flex; flex-direction: column; }
 .leftPage { background: var(--ink); color: var(--paper); }
-.rightPage { background: var(--paper); border: 1px solid #d4d6cf; border-left: 0; }
+.rightPage { grid-column: 2; background: var(--paper); border: 1px solid #d4d6cf; border-left: 0; }
 .runningHead { padding-bottom: 12px; border-bottom: 1px solid currentColor; }
 .people { font-size: 10px; letter-spacing: .05em; margin-top: 32px; }
 .spreadHeadline { font-family: "TC Lora", Georgia, serif; font-size: clamp(28px, 3.8vw, 54px); line-height: 1.12; letter-spacing: -.035em; margin-top: 16px !important; text-wrap: balance; }
@@ -214,25 +210,31 @@
 .camera { position: relative; overflow: clip; --open: 0; --focus: 0; --chrome: 1; background: #f3f2ee; }
 .camera .journey { height: 225svh; isolation: auto; --open: inherit; --chrome: inherit; }
 .camera .viewport { z-index: 3; pointer-events: none; perspective: none; }
-.camera .viewport a, .camera .coverFront { pointer-events: auto; }
+.camera .viewport a, .camera .coverFront, .camera .coverBack { pointer-events: auto; }
 .camera .deskHead .skip { opacity: calc(1 - var(--focus)); }
 .camera .deskHead .skip:focus-visible { opacity: 1; }
 .camera .stage { perspective: none; }
 .camera .publication { transform-origin: top left; transform-style: flat; }
-.camera .spread { box-shadow: 3px 10px 28px rgb(23 47 80 / calc(.08 * (1 - var(--focus)))); }
+.camera .spread { box-shadow: none; }
 .camera .spread::after { opacity: calc(1 - var(--focus)); }
-.camera .rightPage { background: transparent; border-color: rgb(212 214 207 / calc(1 - var(--focus))); }
+.camera .rightPage {
+  background: transparent; border-color: rgb(212 214 207 / calc(1 - var(--focus)));
+  box-shadow: 3px 10px 28px rgb(23 47 80 / calc(.08 * (1 - var(--focus))));
+}
 .camera .site {
   z-index: 2; margin-top: -100svh; transform-origin: top left;
 }
-.camera[data-animated="true"] .site {
-  transform: translate(var(--site-x, 50vw), var(--site-y, -100svh)) scale(var(--site-scale, .33));
+.camera[data-animated="true"][data-complete="false"] .site { height: var(--site-height); }
+.camera[data-animated="true"] .siteSurface {
+  position: fixed; top: 0; left: 0; width: 100%; transform-origin: top left;
+  transform: translate(var(--site-x, 50vw), var(--site-y, 0px)) scale(var(--site-scale, .33));
   clip-path: inset(0 0 max(0px, calc(100% - var(--clip-height, 1800px))) 0);
 }
-.camera[data-animated="true"][data-complete="true"] .site { transform: none; clip-path: none; }
+.camera[data-animated="true"][data-complete="true"] .siteSurface { position: relative; transform: none; clip-path: none; }
 .camera[data-complete="true"] .viewport { visibility: hidden; }
 .camera[data-skip="true"] .journey { display: none; }
-.camera[data-animated="true"][data-skip="true"] .site { margin-top: 0; transform: none; clip-path: none; }
+.camera[data-animated="true"][data-skip="true"] .site { margin-top: 0; height: auto; }
+.camera[data-animated="true"][data-skip="true"] .siteSurface { position: relative; transform: none; clip-path: none; }
 /* The browser resolves :target before hydration, so a direct hero URL never
    paints the magazine. The layout effect preserves that state on client entry. */
 .camera:not([data-ready="true"]):has([id="start"]:target) .journey { display: none; }
@@ -240,9 +242,10 @@
 @media (max-width: 760px) {
   .camera .spread { grid-template-columns: 1fr; grid-template-rows: 1fr; }
   .camera .leftPage { display: none; }
-  .camera .rightPage { border: 1px solid rgb(212 214 207 / calc(1 - var(--focus))); }
+  .camera .rightPage { grid-column: 1; border: 1px solid rgb(212 214 207 / calc(1 - var(--focus))); }
 }
 @media (prefers-reduced-motion: reduce) {
   .camera .journey { display: none; }
-  .camera .site, .camera[data-animated="true"] .site { margin-top: 0; transform: none; clip-path: none; }
+  .camera .site, .camera[data-animated="true"] .site { margin-top: 0; height: auto; }
+  .camera .siteSurface, .camera[data-animated="true"] .siteSurface { position: relative; transform: none; clip-path: none; }
 }

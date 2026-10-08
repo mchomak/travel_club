@@ -367,7 +367,7 @@ npm.cmd run typecheck
 npm.cmd test -- --run --testTimeout=15000
 npm.cmd run build
 npm.cmd exec playwright test e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts -- --workers=3
-npm.cmd exec playwright test e2e/test-5-camera.spec.ts e2e/test-5-photo-editor.spec.ts e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3 --output=test-results/test-5-live-hero/production
+npm.cmd exec playwright test e2e/test-5-camera.spec.ts e2e/test-5-photo-editor.spec.ts e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3 --output=test-results/test-5-opening-stability/production
 ```
 
 Playwright требует работающий сайт и Chromium: `npx.cmd playwright install chromium`; адрес по умолчанию `http://localhost:3000`, другой задаётся через `PLAYWRIGHT_BASE_URL`. Все браузерные сценарии: `npm.cmd run test:e2e`.
@@ -376,7 +376,9 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 
 Первая проверка 8 октября 2026 для `/test_5`, до обновления живого hero: lint, typecheck и production build прошли; Vitest — 67 passed в 14 файлах; последний Playwright-набор выше на `http://localhost:3000` — 30 passed, включая камеру, фоторедактор и регрессии `/test_4`. `docker compose up -d --no-deps --build --wait frontend` пересобрал frontend, сервис healthy. Новых env-переменных и зависимостей нет.
 
-После обновления живого hero 8 октября 2026: lint/typecheck прошли; `npm.cmd test -- --run --testTimeout=15000` — 73 passed в 16 файлах; `npm.cmd run build` прошёл. Camera + photo editor на dev3001 — 17 passed; полный production Playwright-набор из 7 файлов выше на `http://localhost:3000` — 43 passed (1.1 минуты), включая регрессии `/test_4` и Design System; `docker compose up -d --no-deps --build --wait frontend` пересобрал production frontend, сервис healthy. Новых зависимостей и env-переменных нет.
+После обновления живого hero, до исправления разворота: production Playwright — 43 passed (1.1 минуты); camera + photo editor на dev3001 — 17 passed.
+
+После исправления разворота и стабилизации камеры 8 октября 2026: lint/typecheck и `npm.cmd run build` прошли; `npm.cmd test -- --run --testTimeout=15000` — 73 passed в 16 файлах. Production Playwright-набор из 7 файлов выше на `http://localhost:3000` — 45 passed (1.4 минуты), включая регрессии `/test_4` и Design System. `docker compose up -d --no-deps --build --wait frontend` пересобрал frontend, сервис healthy. Новых зависимостей и env-переменных нет.
 
 ### Основные пути
 
@@ -388,6 +390,7 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - `editable-image.tsx`, `image-editor.tsx` и `image-editor.module.css` — ПКМ/кнопка «Фото», замена и сброс, общий crop-dialog. `react-easy-crop` 6.2.4 использует ratio слота; `crop-photo.ts` экспортирует WebP до 2400 px по длинной стороне; `photo-store.ts` сохраняет Blob по slotId в IndexedDB `travel-club-test-4-photos`.
 - `frontend/src/app/test_5/page.tsx` оборачивает один живой `EditorialHome` в локальные `LivingIssue` и `ImageEditorProvider`; компоненты и краткая карта — `frontend/src/components/test_5/README.md`. Тексты, стили и 30 photo-slots локальны, assets общие с прежними версиями.
 - В `/test_5` правая страница показывает настоящий header и полный hero с фото одного `EditorialHome`, без отдельного China-слоя. `data-page-hero` в `editorial-home.tsx` отмечает конец первого раздела; `living-issue.tsx` кеширует его offset-геометрию через ResizeObserver/resize/fonts.ready и вписывает header + hero по ширине и высоте. `TIMELINE` задаёт путь 1.25 высоты viewport внутри сцены 225svh; passive native scroll обновляет target, rAF догоняет его с `SMOOTHING.responseMs = 65` и останавливается в покое. На границах 0/1 камера синхронизируется сразу; после приближения transform/clip снимаются, обратная прокрутка сохраняет тот же DOM и состояния. Layout при scroll не читается.
+- На desktop `/test_5` левая редакционная страница — печатная обратная сторона обложки (`coverBack`): раскрывается на её шарнире до 180° и остаётся в развороте. Во время открытия единственный живой `siteSurface` использует `position: fixed` и координаты viewport; внешний `site` резервирует измеренную untransformed высоту всего содержимого (`--site-height`), чтобы native wheel не сдвигал страницу между rAF. В конце `siteSurface` возвращается в `position: relative`, transform/clip снимаются; DOM формы и редактора сохраняется.
 
 ### Design System Playground
 

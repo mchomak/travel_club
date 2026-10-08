@@ -17,3 +17,10 @@ Cover прежний. После раскрытия левая страница 
 
 ## Доставка (R05–R07)
 Root выполняет scoped commit, normal git push в origin для текущей branch после зелёных проверок. Пользователь это прямо разрешил; повторное подтверждение не нужно. Frontend-only Docker rebuild/restart не трогает PostgreSQL/backend; production3000 проверяется после запуска. Не включать существующие посторонние untracked файлы в commit. Финальный отчёт: что поменялось, проверки, commit/push/Docker outcome и ссылка /test_5.
+# Follow-up: opening realism and vertical stability
+
+- R08: desktop left editorial page starts concealed; as the cover hinges open its editorial reverse/left surface appears progressively and remains the final left page. Remove the competing stationary left content plus separately disappearing white back. Keep current China cover, left copy/photo, restrained perspective, right full live hero and short journey. Avoid whole-scene fade; opening must reverse correctly.
+- R09: actual live site stays aligned with the right page through native scroll and smooth animation. Diagnose with frame-level browser geometry; coordinate spaces and scrolling compensation must be coherent. Fix measured cause, avoid arbitrary CSS transitions, larger damping or pixel offsets as camouflage.
+- First reproduce each symptom red in browser; report ranked falsifiable hypotheses before changing implementation. Regression checks should sample real scrolling frames and exposed page geometry/content, not only final screenshots or data attributes. Capture partial opening at several angles plus focus/merge/reverse.
+- Keep one real homepage DOM and all existing #start/noJS/reduced-motion/photo-editor contracts. Only test_5 LivingIssue TSX/CSS, README and camera E2E change. Preserve other routes and settled homepage.
+- Verify 1440/1280/1920 desktop, 768 tablet, 390 mobile; slow/fast/native-wheel/reverse and resize. Lint/typecheck/build, existing target/source browser regressions and final production Docker check. Prior commit/push/frontend restart authorization remains active for this follow-up.
