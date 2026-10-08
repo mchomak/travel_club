@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { EditorialHome } from "@/components/test_5/editorial-home";
 import { LivingIssue } from "@/components/test_5/living-issue";
 import { ImageEditorProvider } from "@/components/test_5/image-editor";
-import s from "@/components/test_5/living-issue.module.css";
 
 export const metadata: Metadata = {
   title: "Travel Club — куда важно, с кем важнее",
@@ -11,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function TestHomePage() {
-  return <ImageEditorProvider><LivingIssue /><div className={s.site}><EditorialHome /></div></ImageEditorProvider>;
+  return <ImageEditorProvider><LivingIssue><EditorialHome /></LivingIssue></ImageEditorProvider>;
 }

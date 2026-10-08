@@ -209,3 +209,61 @@
 .leftPage .people { line-height: 1.65; }
 .leftPage .people::first-line { color: #c3c9d1; }
 .editionMark > span:last-child { color: #3763eb; }
+
+/* One document, one camera: scene above the live right page, then ordinary flow. */
+.camera { position: relative; overflow: clip; --open: 0; --focus: 0; --chrome: 1; background: #f3f2ee; }
+.camera .journey { height: 225svh; isolation: auto; --open: inherit; --chrome: inherit; }
+.camera .viewport { z-index: 3; pointer-events: none; perspective: none; }
+.camera .viewport a, .camera .coverFront { pointer-events: auto; }
+.camera .deskHead .skip { opacity: calc(1 - var(--focus)); }
+.camera .deskHead .skip:focus-visible { opacity: 1; }
+.camera .stage { perspective: none; }
+.camera .publication { transform-origin: top left; transform-style: flat; }
+.camera .spread { box-shadow: 3px 10px 28px rgb(23 47 80 / calc(.08 * (1 - var(--focus)))); }
+.camera .spread::after { opacity: calc(1 - var(--focus)); }
+.camera .rightPage { background: transparent; border-color: rgb(212 214 207 / calc(1 - var(--focus))); }
+.camera .site {
+  z-index: 2; margin-top: -100svh; transform-origin: top left;
+}
+.camera[data-animated="true"] .site {
+  transform: translate(var(--site-x, 50vw), var(--site-y, -100svh)) scale(var(--site-scale, .33));
+  clip-path: inset(0 0 max(0px, calc(100% - var(--clip-height, 1800px))) 0);
+}
+.chinaPanel {
+  z-index: 4;
+  position: absolute; top: var(--china-top, 280px); inset-inline: 0;
+  min-height: calc(var(--clip-height, 1800px) - var(--china-top, 280px));
+  padding: 32px 40px 48px; background: #f3f2ee; color: #232831;
+  font-family: "TC Golos", "Segoe UI", sans-serif;
+  transform: translateY(var(--china-exit, 0px)); pointer-events: none;
+}
+.chinaPanel .runningHead { font-size: 22px; display: flex; justify-content: space-between; gap: 24px; padding-bottom: 24px; }
+.chinaPanel .spreadPhoto { margin-top: 34px; }
+.chinaPanel .spreadCaption { font-size: 54px; line-height: 1.2; margin-block: 40px 0; }
+.chinaPanel .pageNumber { font-size: 22px; margin-top: 34px; }
+.camera[data-animated="true"][data-complete="true"] .site { transform: none; clip-path: none; }
+.camera[data-complete="true"] .chinaPanel { visibility: hidden; }
+.camera[data-complete="true"] .viewport { visibility: hidden; }
+.camera[data-skip="true"] .journey { display: none; }
+.camera[data-animated="true"][data-skip="true"] .site { margin-top: 0; transform: none; clip-path: none; }
+.camera[data-skip="true"] .chinaPanel { display: none; }
+.camera:not([data-animated="true"]) .chinaPanel { display: none; }
+/* The browser resolves :target before hydration, so a direct hero URL never
+   paints the magazine. The layout effect preserves that state on client entry. */
+.camera:not([data-ready="true"]):has([id="start"]:target) .journey { display: none; }
+.camera:not([data-ready="true"]):has([id="start"]:target) .site { margin-top: 0; transform: none; clip-path: none; }
+@media (max-width: 760px) {
+  .camera .spread { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .camera .leftPage { display: none; }
+  .camera .rightPage { border: 1px solid rgb(212 214 207 / calc(1 - var(--focus))); }
+  .chinaPanel { padding: 20px; }
+  .chinaPanel .runningHead { font-size: 10px; padding-bottom: 12px; }
+  .chinaPanel .spreadPhoto { margin-top: 16px; }
+  .chinaPanel .spreadCaption { font-size: 30px; margin-top: 20px !important; }
+  .chinaPanel .pageNumber { font-size: 10px; margin-top: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camera .journey { display: none; }
+  .camera .site, .camera[data-animated="true"] .site { margin-top: 0; transform: none; clip-path: none; }
+  .chinaPanel { display: none; }
+}
