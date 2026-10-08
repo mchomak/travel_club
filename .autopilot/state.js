@@ -10,8 +10,8 @@ window.STATE = {
     "memoryFile":  "AGENTS.md",
     "skillDir":  "C:/Users/McHomak/.agents/skills/autopilot",
     "startedAt":  "2026-10-08T20:52:03+03:00",
-    "updatedAt":  "2026-10-09T00:45:00+03:00",
-    "finishedAt":  null,
+    "updatedAt":  "2026-10-09T00:48:00+03:00",
+    "finishedAt":  "2026-10-09T00:48:00+03:00",
     "stages":  [
                    {
                        "id":  "preflight",
@@ -47,7 +47,7 @@ window.STATE = {
                        "status":  "done",
                        "startedAt":  "2026-10-08T23:49:00+03:00",
                        "finishedAt":  "2026-10-09T00:45:00+03:00",
-                       "note":  "frontend checks и production Docker green"
+                       "note":  "frontend checks and production Docker green"
                    },
                    {
                        "id":  "review",
@@ -58,14 +58,15 @@ window.STATE = {
                    },
                    {
                        "id":  "final",
-                       "status":  "active",
-                       "startedAt":  "2026-10-09T00:45:00+03:00"
+                       "status":  "done",
+                       "startedAt":  "2026-10-09T00:45:00+03:00",
+                       "finishedAt":  "2026-10-09T00:48:00+03:00"
                    }
                ],
     "requirements":  {
                          "total":  11,
-                         "done":  9,
-                         "inTicket":  2,
+                         "done":  11,
+                         "inTicket":  0,
                          "inSpec":  0,
                          "placeholder":  0,
                          "deferred":  0,
@@ -131,11 +132,13 @@ window.STATE = {
                                      "frontend/src/components/test_5/",
                                      "frontend/e2e/test-5-camera.spec.ts"
                                  ],
-                        "status":  "review",
+                        "status":  "done",
                         "startedAt":  "2026-10-08T23:49:00+03:00",
                         "retries":  0,
                         "repairs":  0,
-                        "handoffs":  0
+                        "handoffs":  0,
+                        "finishedAt":  "2026-10-09T00:48:00+03:00",
+                        "commit":  "7f1d4d1"
                     }
                 ],
     "singlePass":  null,
@@ -165,8 +168,8 @@ window.STATE = {
                      "test-5-camera.spec.ts: no explicit maximum-gap assertion for blank area after the form"
                  ],
     "reviewers":  {
-                      "manifestSpec":  "/root/page_continuation_g2",
-                      "craft":  "pending"
+                      "manifestSpec":  "/root/page_continuation_manifest_review",
+                      "craft":  "/root/page_continuation_craft_review"
                   },
     "blind":  "/root/opening_acceptance: implemented within retained brief; desktop hinged leaf + authorized simplified mobile"
 }
