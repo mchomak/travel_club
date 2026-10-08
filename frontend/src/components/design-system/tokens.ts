@@ -20,7 +20,15 @@ export type LayoutTokens = {
   narrowTextWidth: number;
   editorialGutter: number;
 };
-export type ResponsiveTypeScale = { desktopMin?: number; desktopVw?: number; mobileVw?: number; mobileReferenceWidth?: number };
+export type ResponsiveTypeScale = {
+  desktopMin?: number;
+  desktopVw?: number;
+  mobileVw?: number;
+  mobileReferenceWidth?: number;
+  mobileMin?: number;
+  mobileMax?: number;
+  mobileBelow360Vw?: number;
+};
 export type TypographyRole = {
   family: FontFamily;
   desktopSize: number;
@@ -61,8 +69,8 @@ const baseTokens = {
   },
   typography: {
     displayXL: { family: "TC Golos", desktopSize: 194, mobileSize: 48, responsiveScale: { desktopMin: 60, desktopVw: 12.7, mobileVw: 12.2, mobileReferenceWidth: 390 }, lineHeight: 1.02, weight: 700, letterSpacing: -0.04 },
-    displayL: { family: "TC Golos", desktopSize: 154, mobileSize: 42, responsiveScale: { desktopMin: 72, desktopVw: 10.7, mobileVw: 10.8, mobileReferenceWidth: 390 }, lineHeight: 1, weight: 600, letterSpacing: -0.04 },
-    h1: { family: "TC Golos", desktopSize: 70, mobileSize: 41, responsiveScale: { desktopMin: 44, desktopVw: 4.6, mobileVw: 10.4, mobileReferenceWidth: 390 }, lineHeight: 1.05, weight: 600, letterSpacing: -0.04 },
+    displayL: { family: "TC Golos", desktopSize: 154, mobileSize: 42, responsiveScale: { desktopMin: 72, desktopVw: 10.7, mobileVw: 10.8, mobileReferenceWidth: 390, mobileMin: 38, mobileMax: 76, mobileBelow360Vw: 10.4 }, lineHeight: 1, weight: 600, letterSpacing: -0.04 },
+    h1: { family: "TC Golos", desktopSize: 70, mobileSize: 41, responsiveScale: { desktopMin: 44, desktopVw: 4.6, mobileVw: 10.4, mobileReferenceWidth: 390, mobileMin: 35, mobileMax: 58 }, lineHeight: 1.05, weight: 600, letterSpacing: -0.04 },
     h2: { family: "TC Golos", desktopSize: 36, mobileSize: 31, lineHeight: 1.15, weight: 500, letterSpacing: -0.035 },
     h3: { family: "TC Lora", desktopSize: 25, mobileSize: 26, lineHeight: 1.3, weight: 500, letterSpacing: 0 },
     lead: { family: "TC Golos", desktopSize: 18, mobileSize: 15, lineHeight: 1.5, weight: 400, letterSpacing: 0 },
@@ -108,8 +116,9 @@ const colorNames = Object.keys(BASE_TOKENS.colors) as ColorToken[];
 const typeRoles = Object.keys(BASE_TOKENS.typography) as TypeRole[];
 const spacingNames = Object.keys(BASE_TOKENS.spacing) as SpacingToken[];
 const frameRoles = Object.keys(BASE_TOKENS.frames) as FrameRole[];
-const DRAFT_STORAGE_KEY = "travel-club.design-system.draft.v2";
-const DRAFT_VERSION = 2;
+const DRAFT_STORAGE_KEY = "travel-club.design-system.draft.v3";
+const LEGACY_DRAFT_STORAGE_KEYS = ["travel-club.design-system.draft.v2"] as const;
+const DRAFT_VERSION = 3;
 const destinationColor: Record<DestinationTheme, ColorToken> = {
   tc: "brandBlue",
   china: "china",
@@ -127,7 +136,11 @@ function typographySizeExpression(token: TypographyRole, mode: "desktop" | "mobi
     return `clamp(${responsiveScale.desktopMin ?? 0}px, ${responsiveScale.desktopVw}cqw, ${token.desktopSize}px)`;
   }
   if (mode === "mobile" && responsiveScale?.mobileVw !== undefined) {
-    return `${responsiveScale.mobileVw}cqw`;
+    const fluid = `${responsiveScale.mobileVw}cqw`;
+    if (responsiveScale.mobileMin !== undefined || responsiveScale.mobileMax !== undefined) {
+      return `clamp(${responsiveScale.mobileMin ?? 0}px, ${fluid}, ${responsiveScale.mobileMax ?? token.mobileSize}px)`;
+    }
+    return fluid;
   }
   return `${mode === "mobile" ? token.mobileSize : token.desktopSize}px`;
 }
@@ -146,6 +159,9 @@ export function createPreviewVariables(state: PlaygroundState): CSSProperties {
     variables[`${prefix}-mobile-size`] = token.mobileSize;
     variables[`${prefix}-desktop-resolved-size`] = typographySizeExpression(token, "desktop");
     variables[`${prefix}-mobile-resolved-size`] = typographySizeExpression(token, "mobile");
+    if (token.responsiveScale?.mobileBelow360Vw !== undefined) {
+      variables[`${prefix}-mobile-below-360-resolved-size`] = `${token.responsiveScale.mobileBelow360Vw}cqw`;
+    }
     variables[`${prefix}-line-height`] = token.lineHeight;
     variables[`${prefix}-weight`] = token.weight;
     variables[`${prefix}-letter-spacing`] = `${token.letterSpacing}em`;
@@ -173,7 +189,12 @@ export function createCssExport(state: PlaygroundState): string {
 }
 
 export function createJsonExport(state: PlaygroundState): string {
-  return JSON.stringify(state, null, 2);
+  return JSON.stringify({
+    ...state.tokens,
+    theme: state.theme,
+    viewport: state.viewport,
+    showGrid: state.showGrid,
+  }, null, 2);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -190,11 +211,14 @@ function isBoundedNumber(value: unknown, min: number, max: number): value is num
 
 function isResponsiveTypeScale(value: unknown): value is ResponsiveTypeScale {
   if (!isRecord(value) || Object.keys(value).length === 0
-    || !Object.keys(value).every((key) => ["desktopMin", "desktopVw", "mobileVw", "mobileReferenceWidth"].includes(key))) return false;
+    || !Object.keys(value).every((key) => ["desktopMin", "desktopVw", "mobileVw", "mobileReferenceWidth", "mobileMin", "mobileMax", "mobileBelow360Vw"].includes(key))) return false;
   if (value.desktopMin !== undefined && !isBoundedNumber(value.desktopMin, 0, 500)) return false;
   if (value.desktopVw !== undefined && !isBoundedNumber(value.desktopVw, 0.1, 100)) return false;
   if (value.mobileVw !== undefined && !isBoundedNumber(value.mobileVw, 0.1, 100)) return false;
   if (value.mobileReferenceWidth !== undefined && !isBoundedNumber(value.mobileReferenceWidth, 1, 2000)) return false;
+  if (value.mobileMin !== undefined && !isBoundedNumber(value.mobileMin, 1, 500)) return false;
+  if (value.mobileMax !== undefined && !isBoundedNumber(value.mobileMax, 1, 500)) return false;
+  if (value.mobileBelow360Vw !== undefined && !isBoundedNumber(value.mobileBelow360Vw, 0.1, 100)) return false;
   return true;
 }
 
@@ -240,33 +264,79 @@ function isPlaygroundState(value: unknown): value is PlaygroundState {
     && typeof value.showGrid === "boolean";
 }
 
+function restoreResponsiveDefaults(state: unknown): unknown {
+  if (!isRecord(state) || !isRecord(state.tokens) || !isRecord(state.tokens.typography)) return state;
+
+  const typography = { ...state.tokens.typography };
+  typeRoles.forEach((role) => {
+    const sourceScale = BASE_TOKENS.typography[role].responsiveScale;
+    const savedRole = typography[role];
+    if (!sourceScale || !isRecord(savedRole)) return;
+
+    const savedScale = savedRole.responsiveScale;
+    if (savedScale === undefined) {
+      typography[role] = { ...savedRole, responsiveScale: { ...sourceScale } };
+    } else if (isRecord(savedScale)) {
+      typography[role] = { ...savedRole, responsiveScale: { ...sourceScale, ...savedScale } };
+    }
+  });
+
+  return { ...state, tokens: { ...state.tokens, typography } };
+}
+
+function persistCurrentDraft(state: PlaygroundState): void {
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ version: DRAFT_VERSION, state }));
+  } catch {
+    return;
+  }
+
+  LEGACY_DRAFT_STORAGE_KEYS.forEach((key) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Keep a readable legacy copy if its removal is unavailable.
+    }
+  });
+}
+
 export function readDraft(): PlaygroundState | null {
   if (typeof window === "undefined") return null;
-  try {
-    const serialized = window.localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!serialized) return null;
-    const envelope: unknown = JSON.parse(serialized);
-    if (!isRecord(envelope) || envelope.version !== DRAFT_VERSION || !isPlaygroundState(envelope.state)) return null;
-    return envelope.state;
-  } catch {
-    return null;
+
+  for (const key of [DRAFT_STORAGE_KEY, ...LEGACY_DRAFT_STORAGE_KEYS]) {
+    let envelope: unknown;
+    try {
+      const serialized = window.localStorage.getItem(key);
+      if (!serialized) continue;
+      envelope = JSON.parse(serialized);
+    } catch {
+      continue;
+    }
+
+    if (!isRecord(envelope) || (envelope.version !== DRAFT_VERSION && envelope.version !== 2)) continue;
+    const isLegacyVersion = envelope.version === 2;
+    const candidate = isLegacyVersion ? restoreResponsiveDefaults(envelope.state) : envelope.state;
+    if (!isPlaygroundState(candidate)) continue;
+
+    if (isLegacyVersion || key !== DRAFT_STORAGE_KEY) persistCurrentDraft(candidate);
+    return candidate;
   }
+
+  return null;
 }
 
 export function writeDraft(state: PlaygroundState): void {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ version: DRAFT_VERSION, state }));
-  } catch {
-    // The current React state stays usable when this browser cannot store drafts.
-  }
+  persistCurrentDraft(state);
 }
 
 export function clearDraft(): void {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-  } catch {
-    // Clearing local storage is best effort; no project files are involved.
-  }
+  [DRAFT_STORAGE_KEY, ...LEGACY_DRAFT_STORAGE_KEYS].forEach((key) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Clearing browser drafts is best effort; no project files are involved.
+    }
+  });
 }

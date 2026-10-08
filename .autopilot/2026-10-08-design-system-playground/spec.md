@@ -178,3 +178,11 @@ D01 ? R18: task 01 demonstrated that a numeric `desktopSize` alone cannot repres
 | R64 | история 17 |
 | R65 | история 18 |
 | R66 | история 19 |
+
+## D03 — Browser draft schema migration
+
+The local browser draft is a temporary preview, but schema changes must not restore a valid v2 draft with incomplete responsive typography. `readDraft` should migrate v2 payloads to v3 by preserving the user's current token values and merging only newly required responsive curve metadata from `BASE_TOKENS`; migration persists under the v3 key. `RESET` clears both legacy and current draft keys. Unknown/malformed versions remain best-effort: ignore with a visible fallback status rather than throwing.
+
+## D04 — Destination preview consistency
+
+Theme previews may change destination color, photographs and local editorial details, but the visible city/country, route, coordinates, captions and image alt text must remain internally consistent with the selected theme. The default TC theme must describe a real place matching its selected images, or use destination-neutral copy when those images are reused.

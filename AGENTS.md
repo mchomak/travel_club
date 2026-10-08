@@ -387,6 +387,12 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - `frontend/src/app/test_5/page.tsx` оборачивает один живой `EditorialHome` в локальные `LivingIssue` и `ImageEditorProvider`; компоненты и краткая карта — `frontend/src/components/test_5/README.md`. Тексты, стили и 30 photo-slots локальны, assets общие с прежними версиями.
 - В `/test_5` `living-issue.tsx` задаёт `TIMELINE`: камера проходит 1.25 высоты viewport внутри сцены 225svh; native scroll/rAF меняют transform/clip, ResizeObserver/resize/fonts.ready читают untransformed offset-геометрию. Правой страницей становится настоящий сайт; после приближения transform/clip снимаются, обратная прокрутка сохраняет тот же DOM и состояния.
 
+### Design System Playground
+
+- Локальный playground открывается по `http://localhost:3000/design-system`; точка входа — `frontend/src/app/design-system/page.tsx`. Его UI изолирован в `frontend/src/components/design-system/`: `playground-shell.tsx` управляет состоянием и контролами, `playground-preview.tsx` отображает preview, `playground.module.css` содержит стили, `tokens.ts` — типы, неизменяемые `BASE_TOKENS` и функции preview/CSS/JSON/draft. В `BASE_TOKENS` лежат цвета, роли типографики, spacing, layout и frame tokens; шрифтовые семьи — TC Golos и TC Lora.
+- Live CSS-переменные применяются только к корню preview; не выносить их в глобальные стили и не добавлять playground в общую навигацию. Draft — best-effort browser localStorage, без записи файлов или сервера. При изменении responsive type scale проверять viewport 390px и 320px.
+- Проверенные команды 8 октября 2026: из корня `docker compose up -d --no-deps --build --wait frontend`; затем открыть `/design-system`. Из `frontend/`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, `npm.cmd run build`, `npm.cmd exec playwright test e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3`. Playwright проверялся на production frontend по умолчанию на `http://localhost:3000`.
+
 ### Подводные камни
 
 - `/test_4` изолирован от прежних версий: тексты, компоненты и CSS локальны. Общие фото/шрифты читаются из `frontend/public/test/` и `frontend/public/test_2/`; demo-валидация/адаптер — из `frontend/src/components/test/lead.ts`. Не менять их ради новой версии. Memory убран из рендера `/test_4`.

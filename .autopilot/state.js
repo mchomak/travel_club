@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "design-system-playground",
-  "dir": "2026-10-08-design-system-playground--wip",
+  "dir": "2026-10-08-design-system-playground",
   "title": "Travel Club Design System Playground",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-08T01:55:53+03:00",
-  "updatedAt": "2026-10-08T14:36:45+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-08T19:32:52+03:00",
+  "finishedAt": "2026-10-08T19:32:52+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -46,23 +46,30 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-10-08T13:44:14+03:00",
-      "note": "1 ?? 2 ?????? ??????"
+      "note": "2 tickets complete; lint, typecheck, 73 Vitest tests, build and 11 production E2E passed.",
+      "finishedAt": "2026-10-08T19:32:52+03:00"
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "done",
+      "finishedAt": "2026-10-08T19:32:52+03:00",
+      "startedAt": "2026-10-08T19:32:52+03:00",
+      "note": "Craft and manifest/spec reviewers clean; blind acceptance found no implementation gap."
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "done",
+      "finishedAt": "2026-10-08T19:32:52+03:00",
+      "startedAt": "2026-10-08T19:32:52+03:00",
+      "note": "G4 acceptance, memory update, final verification and archive completed."
     }
   ],
   "requirements": {
     "total": 66,
-    "done": 0,
-    "inTicket": 66,
+    "done": 66,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -218,7 +225,9 @@ window.STATE =
         "R62.1",
         "R64.1",
         "R65.1",
-        "D01"
+        "D01",
+        "D03",
+        "D04"
       ],
       "blockedBy": [
         "01"
@@ -230,15 +239,52 @@ window.STATE =
         "frontend/styles/",
         "frontend/e2e/"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "repairFindings": [],
-      "handoffs": 0
+      "repairs": 1,
+      "repairFindings": [
+        "Manifest review: v2 browser drafts still validate after responsiveScale mobile clamp fields were added, leaving DISPLAY L/H1 missing min/max/below-360 bounds and breaking 320px behavior. Migrate v2 drafts to v3 or safely reject them.",
+        "Craft review: China/Madagascar retain Bangkok coordinates, while TC displays Istanbul imagery alongside Bangkok copy; align all location metadata, captions, alt text and photos with each theme."
+      ],
+      "handoffs": 0,
+      "startedAt": "2026-10-08T14:51:30+03:00",
+      "files": [
+        "frontend/src/components/design-system/playground-shell.tsx",
+        "frontend/src/components/design-system/playground-preview.tsx",
+        "frontend/src/components/design-system/playground.module.css",
+        "frontend/src/components/design-system/tokens.ts",
+        "frontend/src/components/design-system/tokens.test.ts",
+        "frontend/e2e/design-system-responsive-type.spec.ts",
+        "frontend/e2e/design-system.spec.ts"
+      ],
+      "tests": {
+        "vitestFiles": 16,
+        "passed": 73,
+        "failed": 0,
+        "lint": "pass",
+        "typecheck": "pass",
+        "build": "pass",
+        "designSystemE2E": "11/11 passed on production frontend",
+        "routeConsoleMatrix": "0 browser/page errors; 0 failed local requests",
+        "priorFullProjectE2E": "52/71; 19 constructor/foundation backend fixture failures outside scope"
+      },
+      "concerns": [
+        "Full-project Playwright includes 19 constructor/foundation failures due backend/API fixture behavior; no backend/admin source changed, and public route plus Design System scenarios passed.",
+        "Repair: preserve v2 browser drafts with new clamp metadata and align theme photos/location data."
+      ],
+      "finishedAt": "2026-10-08T19:32:52+03:00"
     }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": {
+    "lint": "pass",
+    "typecheck": "pass",
+    "vitest": "16 files, 73 passed",
+    "build": "pass",
+    "designSystemPlaywright": "11/11 passed on production frontend",
+    "dockerFrontend": "healthy after production rebuild",
+    "routeConsoleMatrix": "0 browser/page errors; 0 failed local requests"
+  },
   "debt": {
     "placeholders": [],
     "assumptions": [],
@@ -286,18 +332,33 @@ window.STATE =
     ]
   },
   "concerns": [
-    "Task 01 craft: tokens.test covers base literals but not public serialization/draft/storage helpers; reviewer suggests asserting those public seams. Nonblocking per review rules; not a red run.",
-    "Task 01 craft: narrow viewport caps can make effective display sizes differ from selected mobile token. Review during task 02 canvas refinement.",
-    "Task 01 craft: repeated Reset group buttons need group-specific accessible names. Include in task 02.",
-    "D01 added from blocking R18 review: the original numeric responsive type model could not preserve source clamp/vw sizes; ticket 01 repair and ticket 02 canvas integration now own the constraint.",
-    "Task 01 craft: at a large desktop target, fluid preferred size may not change when maximum is raised above preferred; task 02 must make the control truthful or explain its effective cap.",
-    "Task 01 craft: widths below 360 may override selected DISPLAY XL/L mobile size; task 02 must verify computed rendering at 360/320."
+    "DROP (resolved): serialization/draft seam coverage; ticket 02 adds clipboard, JSON export, reload/reset and v2-to-v3 migration E2E coverage.",
+    "DROP (resolved): narrow responsive type edits, including the below-360 rule, are verified at 320/390px.",
+    "DROP (resolved): group reset controls have distinct accessible names.",
+    "DROP (resolved): destination metadata/photos are aligned for all four themes and checked in E2E.",
+    "REPORT: an earlier full-project Playwright run was 52/71; 19 constructor/foundation failures were tied to backend/API fixtures outside this task. The focused production route matrix passed, and backend/admin were not changed."
   ],
   "reviewers": {
     "manifestSpec": "review_manifest_spec",
     "craft": "review_craft"
   },
-  "blind": null,
+  "blind": {
+    "status": "passed",
+    "findings": [],
+    "manual": {
+      "route": "Opened /design-system directly; separately opened /test, /test_2, /test_3, /test_4 and /test_5; each rendered its page.",
+      "controls": "DISPLAY XL 194px to 150px updated live; Cloud HEX changed preview color; spacing/layout controls and 12-column grid overlay worked.",
+      "themes": "China and Thailand switched accent/photo/route while retaining shared layout; Madagascar and all four photo sets were confirmed by production E2E.",
+      "responsive": "Preview changed to 768px and 390px with reflow; 320px behavior is covered by E2E.",
+      "actions": "Copy CSS and JSON download confirmed in UI; E2E inspects clipboard/fallback and downloaded JSON content.",
+      "draft": "Reload restored browser draft; Reset all restored TC/Desktop/source type size and cleared it.",
+      "navigation_and_scope": "No public-navigation link to /design-system found; copied :root CSS is only text, runtime overrides remain scoped to live preview.",
+      "console": "Manual console was not inspected; production E2E route/console matrix passed with 0 browser/page errors and 0 failed local requests."
+    },
+    "command": "docker compose up -d --no-deps --build --wait frontend",
+    "result": "exit code 0; frontend rebuilt, started and reported Healthy",
+    "automated": "npm.cmd exec playwright test e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3 ? 11/11 passed (run by orchestrator, not blind checker)."
+  },
   "interruptions": [
     "The state file was shared with a concurrent /test_5 run; user confirmed that run is finished and asked to continue this Playground flight."
   ]
