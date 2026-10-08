@@ -17,3 +17,5 @@ Implementation, final production checks, source fingerprints, reviews and delive
 - Source fingerprints: all 194 protected source/assets/dependency files unchanged.
 - Final root lint/typecheck: passed. Craft repair re-review: clean; computed-transform rest assertion production check: 1 passed.
 - Production public regression suite (seven specs: target camera/photo, source editorial/photo/living issue, Design System and responsive type): 43 passed, 1.1 min, exit 0; output `frontend/test-results/test-5-live-hero/production`.
+- Independent blind production acceptance: PASS at 1440×900 and 390×844; actual spread/focus/merge/hero captures, full live hero and retained single DOM, fine/fast wheel and reverse, resize/reload, fresh #start, reduced motion and no-JS. No browser errors. Artifacts `frontend/test-results/test-5-live-hero/independent-production`, including `results.json`.
+- Product commit `697edaa`; `git push origin main` passed (`a2b8c0a..697edaa`, main -> main).
