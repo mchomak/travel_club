@@ -229,25 +229,10 @@
   transform: translate(var(--site-x, 50vw), var(--site-y, -100svh)) scale(var(--site-scale, .33));
   clip-path: inset(0 0 max(0px, calc(100% - var(--clip-height, 1800px))) 0);
 }
-.chinaPanel {
-  z-index: 4;
-  position: absolute; top: var(--china-top, 280px); inset-inline: 0;
-  min-height: calc(var(--clip-height, 1800px) - var(--china-top, 280px));
-  padding: 32px 40px 48px; background: #f3f2ee; color: #232831;
-  font-family: "TC Golos", "Segoe UI", sans-serif;
-  transform: translateY(var(--china-exit, 0px)); pointer-events: none;
-}
-.chinaPanel .runningHead { font-size: 22px; display: flex; justify-content: space-between; gap: 24px; padding-bottom: 24px; }
-.chinaPanel .spreadPhoto { margin-top: 34px; }
-.chinaPanel .spreadCaption { font-size: 54px; line-height: 1.2; margin-block: 40px 0; }
-.chinaPanel .pageNumber { font-size: 22px; margin-top: 34px; }
 .camera[data-animated="true"][data-complete="true"] .site { transform: none; clip-path: none; }
-.camera[data-complete="true"] .chinaPanel { visibility: hidden; }
 .camera[data-complete="true"] .viewport { visibility: hidden; }
 .camera[data-skip="true"] .journey { display: none; }
 .camera[data-animated="true"][data-skip="true"] .site { margin-top: 0; transform: none; clip-path: none; }
-.camera[data-skip="true"] .chinaPanel { display: none; }
-.camera:not([data-animated="true"]) .chinaPanel { display: none; }
 /* The browser resolves :target before hydration, so a direct hero URL never
    paints the magazine. The layout effect preserves that state on client entry. */
 .camera:not([data-ready="true"]):has([id="start"]:target) .journey { display: none; }
@@ -256,14 +241,8 @@
   .camera .spread { grid-template-columns: 1fr; grid-template-rows: 1fr; }
   .camera .leftPage { display: none; }
   .camera .rightPage { border: 1px solid rgb(212 214 207 / calc(1 - var(--focus))); }
-  .chinaPanel { padding: 20px; }
-  .chinaPanel .runningHead { font-size: 10px; padding-bottom: 12px; }
-  .chinaPanel .spreadPhoto { margin-top: 16px; }
-  .chinaPanel .spreadCaption { font-size: 30px; margin-top: 20px !important; }
-  .chinaPanel .pageNumber { font-size: 10px; margin-top: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .camera .journey { display: none; }
   .camera .site, .camera[data-animated="true"] .site { margin-top: 0; transform: none; clip-path: none; }
-  .chinaPanel { display: none; }
 }

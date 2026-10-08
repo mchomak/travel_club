@@ -1,8 +1,75 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
-const captures = "test-results/test-5-camera";
+const captures = "test-results/test-5-live-hero/captures";
 const screenshotStyle = "nextjs-portal { display: none !important; }";
+
+async function settle(page: Page, progress: number) {
+  const camera = page.locator("[data-animated='true']");
+  // scrollTo is pixel rounded by the browser; wait for that new target first.
+  await expect.poll(() => camera.evaluate((e, p) => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - p), progress)).toBeLessThan(.002);
+  await expect(camera).toHaveAttribute("data-motion", "idle");
+}
+
+test("the open right page contains the actual complete hero instead of a China panel", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => window.scrollTo(0, innerHeight * 1.25 * .47));
+  const camera = page.locator("[data-animated='true']");
+  await settle(page, .47);
+  await expect.poll(() => camera.evaluate(e => Number(getComputedStyle(e).getPropertyValue("--open")))).toBe(1);
+  await expect(page.locator("[class*='chinaPanel']")).toHaveCount(0);
+  await expect(page.locator("#hero-title")).toHaveText("Куда — важно.С кем — важнее.");
+  const hero = page.locator("#main > section").first();
+  await expect(hero.locator("p").first()).toContainText("путешествия");
+  const image = hero.locator("[data-photo-slot='hero-table']");
+  const imageBox = (await image.boundingBox())!;
+  expect(imageBox.x).toBeGreaterThan(700);
+  expect(imageBox.y).toBeGreaterThan(100);
+  expect(imageBox.y + imageBox.height).toBeLessThan(780);
+  expect(await image.evaluate(e => {
+    // The preview is deliberately inert; temporarily enable hit testing to check
+    // the real photograph is painted rather than covered by an opening layer.
+    const site = e.closest<HTMLElement>("[inert]")!;
+    site.inert = false;
+    const r = e.getBoundingClientRect();
+    const exposed = e.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+    site.inert = true;
+    return exposed;
+  })).toBe(true);
+  await expect(page.locator("#hero-title")).toHaveCount(1);
+});
+
+test("the camera eases across multiple frames, settles at rest and releases native flow at the boundary", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator("[data-animated='true']")).toHaveAttribute("data-motion", "idle");
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const scales = await page.evaluate(async () => {
+    const site = document.querySelector<HTMLElement>("#top")!.parentElement!;
+    window.scrollTo(0, innerHeight * 1.25 * .8);
+    const samples: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      samples.push(new DOMMatrix(getComputedStyle(site).transform).a);
+    }
+    return samples;
+  });
+  expect(new Set(scales).size).toBeGreaterThan(2);
+  expect(scales.every((scale, index) => index === 0 || scale >= scales[index - 1])).toBe(true);
+  const camera = page.locator("[data-animated='true']");
+  await expect(camera).toHaveAttribute("data-motion", "idle");
+  await expect.poll(() => camera.evaluate(e => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - Number((e as HTMLElement).dataset.renderedProgress)))).toBeLessThan(.0001);
+  const still = await page.locator("#top").evaluate(e => getComputedStyle(e.parentElement!).transform);
+  expect(still).not.toBe("none");
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  expect(await page.locator("#top").evaluate(e => getComputedStyle(e.parentElement!).transform)).toBe(still);
+  await page.mouse.wheel(0, 700);
+  await expect(camera).toHaveAttribute("data-complete", "true");
+  await expect.poll(() => page.locator("#start").evaluate(e => e.getBoundingClientRect().top)).toBeLessThan(-100);
+});
 
 test("the live homepage masthead grows from the right page and continues into native scroll", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -27,21 +94,23 @@ for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 90
     await page.setViewportSize(viewport);
     await page.goto("/test_5");
     await page.evaluate(() => document.fonts.ready);
-    const capture = async (name: string) => {
+    await expect.poll(() => page.locator("[data-photo-slot='hero-table'] img").evaluate(e => (e as HTMLImageElement).complete && (e as HTMLImageElement).naturalWidth > 0)).toBe(true);
+    const capture = async (name: string, progress: number) => {
+      await settle(page, progress);
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await page.screenshot({ path: `${captures}/${viewport.width}-${name}.png`, style: screenshotStyle });
     };
     for (const [name, progress] of [["cover", 0], ["opening", .3], ["spread", .47], ["focus", .65], ["merge", .8], ["late-merge", .93], ["hero", 1]] as const) {
       await page.evaluate(p => window.scrollTo(0, innerHeight * 1.25 * p), progress);
-      await capture(name);
+      await capture(name, progress);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     await expect.poll(() => page.locator("#start").evaluate(e => Math.abs(e.getBoundingClientRect().top))).toBeLessThan(2);
     await page.evaluate(() => window.scrollTo(0, innerHeight * 3));
     await page.evaluate(() => window.scrollTo(0, innerHeight * 1.25 * .65));
-    await capture("reverse-focus");
+    await capture("reverse-focus", .65);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await capture("reverse-cover");
+    await capture("reverse-cover", 0);
     await page.reload();
     await expect(page.getByRole("heading", { name: "TRAVEL CLUB", exact: true })).toBeVisible();
     expect(errors).toEqual([]);

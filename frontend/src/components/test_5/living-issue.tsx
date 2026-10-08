@@ -10,8 +10,16 @@ function ease(value: number) {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
+function focusEase(value: number) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
 // Short cover hold, deliberate spread dwell, then one eased page-to-viewport camera move.
-const TIMELINE = { distance: 1.25, openStart: .16, openEnd: .43, focusStart: .49, focusEnd: 1, chinaStart: .69, chinaEnd: .93 };
+const TIMELINE = { distance: 1.25, openStart: .16, openEnd: .43, focusStart: .49, focusEnd: 1 };
+// Short exponential catch-up in milliseconds; the same response at any refresh rate.
+// Snap at the native-flow boundaries so scroll never outruns a clipped miniature.
+const SMOOTHING = { responseMs: 65, settleProgress: .00005, maxFrameMs: 64 };
 
 export function LivingIssue({ children }: { children: ReactNode }) {
   const cameraRef = useRef<HTMLDivElement>(null);
@@ -43,6 +51,8 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     let viewportHeight = 1;
     let pageX = 0, pageY = 0, pageWidth = 1, pageHeight = 1, publicationWidth = 1;
     let viewportWidth = 1, siteTop = 0, publicationX = 0, publicationY = 0;
+    let heroHeight = 1;
+    let targetProgress = 0, renderedProgress = 0, lastTime = 0;
     let active = true;
     const skipped = location.hash === "#start";
     camera.dataset.skip = String(skipped);
@@ -56,8 +66,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       site.querySelector<HTMLElement>("#start")?.focus({ preventScroll: true });
     }
 
-    function update() {
-      frame = 0;
+    function render(progress: number) {
       if (!active || !camera || !scene || !publication || !site) return;
       if (skipped || motion.matches) {
         camera.dataset.complete = "true";
@@ -66,13 +75,15 @@ export function LivingIssue({ children }: { children: ReactNode }) {
         finishSkipFocus();
         return;
       }
-      const progress = Math.max(0, Math.min(1, window.scrollY / distance));
       const open = ease((progress - TIMELINE.openStart) / (TIMELINE.openEnd - TIMELINE.openStart));
-      const focus = ease((progress - TIMELINE.focusStart) / (TIMELINE.focusEnd - TIMELINE.focusStart));
+      const focus = focusEase((progress - TIMELINE.focusStart) / (TIMELINE.focusEnd - TIMELINE.focusStart));
       const mobile = viewportWidth <= 760;
-      const initialScale = pageWidth / viewportWidth;
+      // Contain the real header and complete hero in the page, including its photos.
+      // Narrow screens need height fitting as well as width fitting.
+      const pageScale = pageWidth / viewportWidth;
+      const initialScale = Math.min(pageScale, pageHeight / heroHeight);
       const scale = initialScale + (1 - initialScale) * focus;
-      const zoom = scale / initialScale;
+      const zoom = 1 + (1 / pageScale - 1) * focus;
       const openingShift = mobile ? 0 : -publicationWidth * .25 * (1 - open);
       const x = (pageX + openingShift) * (1 - focus);
       const y = pageY * (1 - focus);
@@ -81,23 +92,50 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       camera.style.setProperty("--focus", String(focus));
       // The book and the one live website share this measured top-left camera matrix.
       publication.style.transform = `translate(${x - publicationX - (mobile ? 0 : pageWidth * zoom)}px, ${y - publicationY}px) scale(${zoom})`;
-      site.style.setProperty("--site-x", `${x}px`);
+      site.style.setProperty("--site-x", `${x + (pageWidth - viewportWidth * initialScale) / 2 * (1 - focus)}px`);
       site.style.setProperty("--site-y", `${Math.min(window.scrollY, distance) - siteTop + y}px`);
       site.style.setProperty("--site-scale", String(scale));
-      site.style.setProperty("--clip-height", `${pageHeight / initialScale + (viewportHeight - pageHeight / initialScale) * focus}px`);
-      site.style.setProperty("--china-exit", `${ease((progress - TIMELINE.chinaStart) / (TIMELINE.chinaEnd - TIMELINE.chinaStart)) * (pageHeight / initialScale + viewportHeight)}px`);
+      site.style.setProperty("--clip-height", `${heroHeight + (viewportHeight - heroHeight) * focus}px`);
       camera.dataset.complete = String(progress >= 1);
       site.inert = progress < 1;
       scene.inert = progress >= 1;
       // Focus only after the same frame exposes the live homepage to keyboard input.
       finishSkipFocus();
     }
+    function update(time: number) {
+      frame = 0;
+      if (!active || !camera) return;
+      const elapsed = lastTime ? Math.min(time - lastTime, SMOOTHING.maxFrameMs) : 1000 / 60;
+      lastTime = time;
+      const boundary = targetProgress === 0 || targetProgress === 1;
+      renderedProgress = boundary ? targetProgress : renderedProgress + (targetProgress - renderedProgress) * (1 - Math.exp(-elapsed / SMOOTHING.responseMs));
+      const settled = Math.abs(targetProgress - renderedProgress) <= SMOOTHING.settleProgress;
+      if (settled) renderedProgress = targetProgress;
+      camera.dataset.renderedProgress = String(renderedProgress);
+      camera.dataset.motion = settled ? "idle" : "running";
+      render(renderedProgress);
+      if (!settled) frame = requestAnimationFrame(update);
+      else lastTime = 0;
+    }
     function schedule() {
+      if (!camera) return;
+      targetProgress = Math.max(0, Math.min(1, window.scrollY / distance));
+      camera.dataset.targetProgress = String(targetProgress);
       if (!frame) frame = requestAnimationFrame(update);
+    }
+    function reset() {
+      if (!camera) return;
+      cancelAnimationFrame(frame);
+      frame = 0;
+      lastTime = 0;
+      targetProgress = renderedProgress = Math.max(0, Math.min(1, window.scrollY / distance));
+      camera.dataset.targetProgress = camera.dataset.renderedProgress = String(renderedProgress);
+      camera.dataset.motion = "idle";
+      render(renderedProgress);
     }
     function measure() {
       if (!active || !camera || !scene || !publication || !site || !camera.isConnected) return;
-      if (skipped || motion.matches) { update(); return; }
+      if (skipped || motion.matches) { reset(); return; }
       const stage = publication.parentElement;
       const viewport = scene.querySelector<HTMLElement>(`.${s.viewport}`);
       if (!stage || !viewport) return;
@@ -115,10 +153,10 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       pageY = publicationY;
       siteTop = site.offsetTop;
       // offset geometry is untransformed and read only on resize, never on scroll.
-      const masthead = site.querySelector<HTMLElement>("[data-page-masthead]");
-      if (!masthead) return;
-      site.style.setProperty("--china-top", `${masthead.offsetTop + masthead.offsetHeight}px`);
-      update();
+      const hero = site.querySelector<HTMLElement>("[data-page-hero]");
+      if (!hero) return;
+      heroHeight = hero.offsetTop + hero.offsetHeight;
+      reset();
     }
     function changeMotion() {
       measure();
@@ -126,6 +164,8 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(measure);
     observer.observe(publication);
     observer.observe(camera);
+    const hero = site.querySelector<HTMLElement>("[data-page-hero]");
+    if (hero) observer.observe(hero);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
     motion.addEventListener("change", changeMotion);
@@ -187,12 +227,6 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     </section>
     <div ref={siteRef} className={s.site}>
       {children}
-      <div className={s.chinaPanel} aria-hidden="true">
-        <div className={s.runningHead}><span>{issue.spread.route}</span><span>ПОЛЕВЫЕ ЗАМЕТКИ / CHINA ’26</span></div>
-        <EditableImage slotId={issue.spread.imageSlot} sizes="(max-width: 760px) 92vw, 720px" className={s.spreadPhoto} />
-        <p className={s.spreadCaption}>{issue.spread.caption}</p>
-        <div className={s.pageNumber}><span>{issue.spread.footnote}</span><span>002</span></div>
-      </div>
     </div>
   </div>;
 }

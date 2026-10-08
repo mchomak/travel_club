@@ -17,7 +17,7 @@ export function EditorialHome() {
     <a href="#main" className={s.skipLink}>К содержимому</a>
     <header id="start" tabIndex={-1} className={`${s.header} ${s.container}`}><a href="#top" className={s.wordmark} aria-label="Travel Club — начало страницы">Travel Club<span aria-hidden="true">●</span></a><span className={s.headerCaption}>Независимая редакция<br />ваших путешествий</span><nav aria-label="Разделы Travel Club">{navigation.map((item) => <a key={item.href} href={item.href === "#start" ? "#story" : item.href}>{item.label}</a>)}</nav><a href="#story" className={s.headerCta}>Начать историю <Arrow /></a></header>
     <main id="main">
-      <section className={s.container} aria-labelledby="hero-title">
+      <section data-page-hero className={s.container} aria-labelledby="hero-title">
         <div className={s.editionLine}><span>НЕЗАВИСИМОЕ ИЗДАНИЕ О ПУТЕШЕСТВИЯХ</span><span>ЛЮДИ / МЕСТА / ОБЩИЕ ИСТОРИИ</span><span>ТОМ 01 — 2026</span></div><div data-page-masthead className={s.masthead} aria-hidden="true">TRAVEL CLUB</div>
         <div className={s.coverGrid}>
           <h1 id="hero-title"><span>{copy.heroFirst}</span><span className={s.heroSerif}>{copy.heroSecond}</span></h1>
