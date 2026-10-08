@@ -15,4 +15,3 @@ __pycache__/
 test-results/
 playwright-report/
 .playwright-mcp
-/.autopilot
