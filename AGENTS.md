@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Рабочая карта проекта
 
-Travel Club — закрытый конструктор поездок: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose. Публичная `/` — витрина палитр и шрифтов; `/test` и `/test_2` — редакционные эксперименты, `/test_3` — экспериментальный анонс Shanghai, `/test_4` — FIELD NOTES и локальный фоторедактор. Публичные формы демонстрационные.
+Travel Club — закрытый конструктор поездок: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose. Публичная `/` — витрина палитр и шрифтов; `/test` и `/test_2` — редакционные эксперименты, `/test_3` — экспериментальный анонс Shanghai, `/test_4` — FIELD NOTES и локальный фоторедактор, `/test_5` — тот же сайт с приближением из правой страницы журнала. Публичные формы демонстрационные.
 
 ### Запуск и проверка (PowerShell)
 
@@ -364,14 +364,21 @@ docker compose exec -T backend ruff check .
 cd frontend
 npm.cmd run lint
 npm.cmd run typecheck
-npm.cmd test -- --run
+npm.cmd test -- --run --testTimeout=15000
 npm.cmd run build
 npm.cmd exec playwright test e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts -- --workers=3
+npm.cmd exec playwright test e2e/test-5-camera.spec.ts e2e/test-5-photo-editor.spec.ts e2e/test-4-editorial.spec.ts e2e/test-4-photo-editor.spec.ts e2e/living-issue.spec.ts e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3 --output=test-results/test-5-opening-stability/production
 ```
 
 Playwright требует работающий сайт и Chromium: `npx.cmd playwright install chromium`; адрес по умолчанию `http://localhost:3000`, другой задаётся через `PLAYWRIGHT_BASE_URL`. Все браузерные сценарии: `npm.cmd run test:e2e`.
 
 Проверено 7 октября 2026 для `/test_4`: lint, typecheck и build прошли; Vitest — 67 passed в 14 файлах; указанные Playwright-сценарии — 15 passed (2 editorial, 4 photo editor, 9 living issue). Из корня `docker compose up -d --no-deps --build --wait frontend` успешно пересобрал и запустил только frontend; backend/admin проверки в этой итерации не повторялись. Новых env-переменных нет.
+
+Первая проверка 8 октября 2026 для `/test_5`, до обновления живого hero: lint, typecheck и production build прошли; Vitest — 67 passed в 14 файлах; последний Playwright-набор выше на `http://localhost:3000` — 30 passed, включая камеру, фоторедактор и регрессии `/test_4`. `docker compose up -d --no-deps --build --wait frontend` пересобрал frontend, сервис healthy. Новых env-переменных и зависимостей нет.
+
+После обновления живого hero, до исправления разворота: production Playwright — 43 passed (1.1 минуты); camera + photo editor на dev3001 — 17 passed.
+
+После исправления разворота и стабилизации камеры 8 октября 2026: lint/typecheck и `npm.cmd run build` прошли; `npm.cmd test -- --run --testTimeout=15000` — 73 passed в 16 файлах. Production Playwright-набор из 7 файлов выше на `http://localhost:3000` — 45 passed (1.4 минуты), включая регрессии `/test_4` и Design System. `docker compose up -d --no-deps --build --wait frontend` пересобрал frontend, сервис healthy. Новых зависимостей и env-переменных нет.
 
 ### Основные пути
 
@@ -381,12 +388,22 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - В `/test_4` `data.ts` содержит `copy`, продукты, `fieldNotes` и `archiveStories`; `issue-content.ts` — вступление China ’26. `field-notes.tsx` рисует происхождение клуба, Thailand/China ’26, архив ’25 и NEXT ISSUE. FIELD NOTES — поездки друзей до запуска; NEXT ISSUE — будущая официальная поездка. `editorial.module.css` оформляет страницу; `living-issue.tsx` и `living-issue.module.css` сохраняют открытие журнала нативной прокруткой/rAF и статичный reduced motion.
 - `photo-slots.ts` — 30 стабильных ID с fallback/src/alt/aspectRatio/position. Для постоянной замены менять слот и alt; ratio одинаков на desktop/mobile. Девять новых JPEG лежат в `frontend/public/test_4/`; `manifest.json` и `README.md` там фиксируют источники, авторов, размеры и лицензии. Stock-фото иллюстративные.
 - `editable-image.tsx`, `image-editor.tsx` и `image-editor.module.css` — ПКМ/кнопка «Фото», замена и сброс, общий crop-dialog. `react-easy-crop` 6.2.4 использует ratio слота; `crop-photo.ts` экспортирует WebP до 2400 px по длинной стороне; `photo-store.ts` сохраняет Blob по slotId в IndexedDB `travel-club-test-4-photos`.
+- `frontend/src/app/test_5/page.tsx` оборачивает один живой `EditorialHome` в локальные `LivingIssue` и `ImageEditorProvider`; компоненты и краткая карта — `frontend/src/components/test_5/README.md`. Тексты, стили и 30 photo-slots локальны, assets общие с прежними версиями.
+- В `/test_5` публикация имеет размер `min(88vw, 1360px)` × `min(82svh, 760px)`; на компактном breakpoint — `88vw` × `min(78svh, 660px)`. `LivingIssue` измеряет листы и live homepage через `ResizeObserver`, выравнивает срез сайта с правой страницей и раскрывает его до полной ширины через камеру и clip CSS-переменные; `data-page-hero` задаёт границу hero для мобильного кадра. `TIMELINE` задаёт путь 1.25 высоты viewport внутри сцены 225svh; passive native scroll обновляет target, rAF догоняет его с `SMOOTHING.responseMs = 65` и останавливается в покое. На границах 0/1 камера синхронизируется сразу; после приближения transform/clip снимаются, обратная прокрутка сохраняет тот же DOM и состояния. Layout при scroll не читается.
+- На desktop `/test_5` левая редакционная страница — печатная обратная сторона обложки (`coverBack`): раскрывается на её шарнире до 180° и остаётся в развороте. Во время открытия единственный живой `siteSurface` использует `position: fixed` и координаты viewport; внешний `site` резервирует измеренную untransformed высоту всего содержимого (`--site-height`), чтобы native wheel не сдвигал страницу между rAF. В конце `siteSurface` возвращается в `position: relative`, transform/clip снимаются; DOM формы и редактора сохраняется.
+
+### Design System Playground
+
+- Локальный playground открывается по `http://localhost:3000/design-system`; точка входа — `frontend/src/app/design-system/page.tsx`. Его UI изолирован в `frontend/src/components/design-system/`: `playground-shell.tsx` управляет состоянием и контролами, `playground-preview.tsx` отображает preview, `playground.module.css` содержит стили, `tokens.ts` — типы, неизменяемые `BASE_TOKENS` и функции preview/CSS/JSON/draft. В `BASE_TOKENS` лежат цвета, роли типографики, spacing, layout и frame tokens; шрифтовые семьи — TC Golos и TC Lora.
+- Live CSS-переменные применяются только к корню preview; не выносить их в глобальные стили и не добавлять playground в общую навигацию. Draft — best-effort browser localStorage, без записи файлов или сервера. При изменении responsive type scale проверять viewport 390px и 320px.
+- Проверенные команды 8 октября 2026: из корня `docker compose up -d --no-deps --build --wait frontend`; затем открыть `/design-system`. Из `frontend/`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, `npm.cmd run build`, `npm.cmd exec playwright test e2e/design-system.spec.ts e2e/design-system-responsive-type.spec.ts -- --workers=3`. Playwright проверялся на production frontend по умолчанию на `http://localhost:3000`.
 
 ### Подводные камни
 
 - `/test_4` изолирован от прежних версий: тексты, компоненты и CSS локальны. Общие фото/шрифты читаются из `frontend/public/test/` и `frontend/public/test_2/`; demo-валидация/адаптер — из `frontend/src/components/test/lead.ts`. Не менять их ради новой версии. Memory убран из рендера `/test_4`.
 - Замены фото существуют только в текущем браузере и origin; другой порт имеет своё хранилище. Backend upload отсутствует. Сброс возвращает fallback; отмена/Escape сохраняют прежний кадр. Для общего постоянного результата менять исходный слот/asset в репозитории.
 - В `/test_2` и `/test_4` `#start` ведёт к hero после журнала, `#story` — к форме. NEXT ISSUE в `/test_4` выбирает групповой формат.
+- В `/test_5` прямой `#start` и reduced motion сразу показывают сайт; кнопка «К сайту» использует `site.offsetTop`, затем фокусирует `#start`, чтобы transform не смещал якорь. До конца открытия сайт inert, после — inert сцена. `#story` ведёт к demo-форме. Фото заменяются через ПКМ/«Фото» и сохраняются по slotId в отдельной IndexedDB `travel-club-test-5-photos`; данные `/test_4` не используются.
 - На Windows использовать `npm.cmd`. После изменения `frontend/public/` пересобрать frontend: standalone-образ копирует assets при сборке. `.env` локальный; `docker compose down -v` удалит данные PostgreSQL.
 
 Обновлять только текст между маркерами, проверяя команды и пути по репозиторию.

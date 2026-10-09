@@ -1,0 +1,14 @@
+import type { Metadata } from "next";
+import { EditorialHome } from "@/components/test_5/editorial-home";
+import { LivingIssue } from "@/components/test_5/living-issue";
+import { ImageEditorProvider } from "@/components/test_5/image-editor";
+
+export const metadata: Metadata = {
+  title: "Travel Club — куда важно, с кем важнее",
+  description: "Небольшие групповые путешествия, индивидуальные маршруты и поездки под ключ. FIELD NOTES: поездки с друзьями до начала Travel Club.",
+  robots: { index: false, follow: false },
+};
+
+export default function TestHomePage() {
+  return <ImageEditorProvider><LivingIssue><EditorialHome /></LivingIssue></ImageEditorProvider>;
+}

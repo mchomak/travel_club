@@ -21,3 +21,10 @@
 | 2026-10-05 | `2026-10-05-test-2-editorial-polish` | сдан | Страница /test_2 получила плавное открытие журнала, крупный русский текст, разные форматы услуг и обновлённые фото; main отправлена, Docker пересобран. |
 
 | 2026-10-06 | `2026-10-06-test-4-field-notes--wip` | ? ?????? | ? |
+| 2026-10-08 | `2026-10-08-design-system-playground` | ???? | ?????????? `/design-system` ? ?????????????? Travel Club tokens, responsive editorial preview, ?????? ? ??????????? export-??????????. |
+
+| 2026-10-08 | `2026-10-08-test-5-page-to-website` | сдан | /test_5: правая страница Living Issue становится живой homepage; source сохранён, visual QA и 30 browser / 67 unit tests прошли. |
+
+| 2026-10-08 | `2026-10-08-test-5-live-hero` | сдан | /test_5: right magazine page continues through Contents, formats and lead form; 35 browser / 73 unit tests passed, frontend Docker rebuilt, commit 7f1d4d1 pushed. |
+
+| 2026-10-09 | `2026-10-09-test-5-paper-scale` | сдан | /test_5: обложка увеличена, а hero, содержание и три формата заполняют правую страницу без пустого нижнего поля; 36 production-тестов прошли, Docker healthy. |
