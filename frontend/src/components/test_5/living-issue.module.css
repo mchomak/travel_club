@@ -31,9 +31,9 @@
 .editionMark { position: absolute; right: 6%; top: 39%; display: flex; flex-direction: column; gap: 6px; }
 .editionMark > span:first-child { font-size: 10px; letter-spacing: .06em; }
 .editionMark > span:last-child { font-family: "TC Lora", Georgia, serif; font-size: 90px; line-height: 1; }
-.stage { position: absolute; inset: 85px 0 85px; display: grid; place-items: center; perspective: 1800px; }
+.stage { position: absolute; inset: clamp(48px, 8svh, 85px) 0; display: grid; place-items: center; perspective: 1800px; }
 .publication {
-  position: relative; height: min(68svh, 620px); width: min(950px, 72vw); transform-style: preserve-3d;
+  position: relative; height: min(82svh, 760px); width: min(1360px, 88vw); transform-style: preserve-3d;
   transform: translateX(calc(-25% * (1 - var(--open)))) translateY(calc(var(--enter) * -3%)) rotateX(calc(2deg * var(--open) * (1 - var(--enter)))) scale(calc(1 + .025 * var(--open) + .09 * var(--enter)));
 }
 .cover {
@@ -95,7 +95,7 @@
   .marginalia { left: 4%; width: 150px; }
   .marginalia p { font-size: 25px; }
   .editionMark { right: 4%; }
-  .publication { width: 78vw; height: min(65svh, 590px); }
+  .publication { width: 88vw; height: min(78svh, 660px); }
   .coverFront { padding: 20px; }
   .leftPage, .rightPage { padding: 22px; }
   .people { margin-top: 22px; }
@@ -228,7 +228,7 @@
 .camera[data-animated="true"] .siteSurface {
   position: fixed; top: 0; left: 0; width: 100%; transform-origin: top left;
   transform: translate(var(--site-x, 50vw), var(--site-y, 0px)) scale(var(--site-scale, .33));
-  clip-path: inset(0 0 max(0px, calc(100% - var(--clip-height, 1800px))) 0);
+  clip-path: inset(0 var(--clip-right, 0px) max(0px, calc(100% - var(--clip-height, 1800px))) var(--clip-left, 0px));
 }
 .camera[data-animated="true"][data-complete="true"] .siteSurface { position: relative; transform: none; clip-path: none; }
 .camera[data-complete="true"] .viewport { visibility: hidden; }

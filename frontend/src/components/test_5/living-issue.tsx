@@ -20,6 +20,8 @@ const TIMELINE = { distance: 1.25, openStart: .16, openEnd: .43, focusStart: .49
 // Short exponential catch-up in milliseconds; the same response at any refresh rate.
 // Snap at the native-flow boundaries so scroll never outruns a clipped miniature.
 const SMOOTHING = { responseMs: 65, settleProgress: .00005, maxFrameMs: 64 };
+// Match the live homepage's editorial gutter to the right sheet's 28px padding.
+const PAGE_INSET = 28;
 
 export function LivingIssue({ children }: { children: ReactNode }) {
   const cameraRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     let viewportHeight = 1;
     let pageX = 0, pageY = 0, pageWidth = 1, pageHeight = 1, publicationWidth = 1;
     let viewportWidth = 1, publicationX = 0, publicationY = 0;
-    let heroHeight = 1, continuationHeight = 1;
+    let heroHeight = 1, heroWidth = 1, surfaceHeight = 1;
     let targetProgress = 0, renderedProgress = 0, lastTime = 0;
     let active = true;
     const skipped = location.hash === "#start";
@@ -80,13 +82,20 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       const open = ease((progress - TIMELINE.openStart) / (TIMELINE.openEnd - TIMELINE.openStart));
       const focus = focusEase((progress - TIMELINE.focusStart) / (TIMELINE.focusEnd - TIMELINE.focusStart));
       const mobile = viewportWidth <= 760;
-      // Desktop fits the real header, hero, Contents, formats, and lead form.
+      // The open paper is filled by a width-fit slice of the real homepage.
       // Narrow screens keep the existing hero-only camera adaptation.
       const pageScale = pageWidth / viewportWidth;
-      const fitHeight = mobile ? heroHeight : continuationHeight;
-      const initialScale = Math.min(pageScale, pageHeight / fitHeight);
+      const pageContentWidth = pageWidth - PAGE_INSET * 2;
+      const initialScale = mobile
+        ? Math.min(pageScale, pageHeight / heroHeight)
+        : Math.max(pageScale, pageContentWidth / heroWidth);
       const scale = initialScale + (1 - initialScale) * focus;
       const zoom = 1 + (1 / pageScale - 1) * focus;
+      const visibleSourceWidth = mobile ? viewportWidth : pageWidth * zoom / scale;
+      const horizontalInset = Math.max(0, (viewportWidth - visibleSourceWidth) / 2);
+      const visibleSourceHeight = mobile
+        ? heroHeight + (viewportHeight - heroHeight) * focus
+        : Math.min(surfaceHeight, pageHeight * zoom / scale);
       const openingShift = mobile ? 0 : -publicationWidth * .25 * (1 - open);
       const x = (pageX + openingShift) * (1 - focus);
       const y = pageY * (1 - focus);
@@ -97,10 +106,12 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       publication.style.transform = `translate(${x - publicationX - (mobile ? 0 : pageWidth * zoom)}px, ${y - publicationY}px) scale(${zoom})`;
       // Both surfaces use viewport coordinates. Native compositor scrolling must
       // never move the live page before a later JS frame compensates for it.
-      surface.style.setProperty("--site-x", `${x + (pageWidth - viewportWidth * initialScale) / 2 * (1 - focus)}px`);
+      surface.style.setProperty("--site-x", `${x - horizontalInset * scale}px`);
       surface.style.setProperty("--site-y", `${y}px`);
       surface.style.setProperty("--site-scale", String(scale));
-      surface.style.setProperty("--clip-height", `${fitHeight + (viewportHeight - fitHeight) * focus}px`);
+      surface.style.setProperty("--clip-left", `${horizontalInset}px`);
+      surface.style.setProperty("--clip-right", `${horizontalInset}px`);
+      surface.style.setProperty("--clip-height", `${visibleSourceHeight}px`);
       camera.dataset.complete = String(progress >= 1);
       site.inert = progress < 1;
       scene.inert = progress >= 1;
@@ -156,15 +167,15 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       pageHeight = publication.offsetHeight;
       pageX = publicationX + (mobile ? 0 : pageWidth);
       pageY = publicationY;
-      // Retain the full document's scroll range while its one live surface is
-      // fixed. At completion the same surface returns to this ordinary flow slot.
-      site.style.setProperty("--site-height", `${surface.offsetHeight}px`);
       // offset geometry is untransformed and read only on resize, never on scroll.
       const hero = site.querySelector<HTMLElement>("[data-page-hero]");
-      const continuationEnd = site.querySelector<HTMLElement>("[data-page-continuation-end]");
-      if (!hero || !continuationEnd) return;
+      if (!hero) return;
       heroHeight = hero.offsetTop + hero.offsetHeight;
-      continuationHeight = continuationEnd.offsetTop + continuationEnd.offsetHeight;
+      heroWidth = hero.offsetWidth;
+      surfaceHeight = surface.offsetHeight;
+      // Retain the full document's scroll range while the surface is fixed.
+      // At completion the same surface returns to this ordinary flow slot.
+      site.style.setProperty("--site-height", `${surfaceHeight}px`);
       reset();
     }
     function changeMotion() {
@@ -173,10 +184,9 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     const observer = new ResizeObserver(measure);
     observer.observe(publication);
     observer.observe(camera);
+    observer.observe(surface);
     const hero = site.querySelector<HTMLElement>("[data-page-hero]");
     if (hero) observer.observe(hero);
-    const continuationEnd = site.querySelector<HTMLElement>("[data-page-continuation-end]");
-    if (continuationEnd) observer.observe(continuationEnd);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", measure, { passive: true });
     motion.addEventListener("change", changeMotion);
@@ -204,9 +214,9 @@ export function LivingIssue({ children }: { children: ReactNode }) {
       <div className={s.marginalia}><span>{issue.label}</span><p>{issue.statement}</p><span>ЛЮДИ &gt; МЕСТА</span></div>
       <div className={s.editionMark} aria-hidden="true"><span>{issue.edition}</span><span>01</span></div>
       <div className={s.stage}>
-        <div ref={publicationRef} className={s.publication}>
+        <div ref={publicationRef} className={s.publication} data-opening-publication>
           <article className={s.cover}>
-            <div className={s.coverFront}>
+            <div className={s.coverFront} data-opening-cover>
               <div className={s.coverMeta}><span>{issue.edition}</span><span>{issue.date}</span></div>
               <h2 id="living-issue-heading" className={s.coverMasthead}>{issue.title.split(" ").map(word => <span key={word}>{word}</span>)}</h2>
               <div className={s.coverImage}>
@@ -228,7 +238,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
             </div>
           </article>
           <div className={s.spread} role="group" aria-label="Разворот выпуска">
-            <div className={s.rightPage} aria-hidden="true" />
+            <div className={s.rightPage} data-opening-page aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -236,7 +246,7 @@ export function LivingIssue({ children }: { children: ReactNode }) {
     </div>
     </section>
     <div ref={siteRef} className={s.site}>
-      <div ref={surfaceRef} className={s.siteSurface}>{children}</div>
+      <div ref={surfaceRef} className={s.siteSurface} data-opening-surface>{children}</div>
     </div>
   </div>;
 }

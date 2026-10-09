@@ -101,56 +101,144 @@ test("the open right page contains the actual complete hero instead of a China p
   await expect(page.locator("#hero-title")).toHaveCount(1);
 });
 
-test("the open right page continues through Contents, all formats, and the lead form", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/test_5");
-  await page.evaluate(() => document.fonts.ready);
-  const camera = page.locator("[data-animated='true']");
-  await page.evaluate(() => window.scrollTo({ top: innerHeight * 1.25 * .47, behavior: "instant" }));
-  await expect.poll(() => camera.evaluate(e => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - .47))).toBeLessThan(.002);
-  await expect(camera).toHaveAttribute("data-motion", "idle");
-
-  const contents = page.locator('aside[aria-label="Содержание выпуска"]');
-  const formats = page.locator("#formats");
-  const lead = page.locator("#story");
-  await expect(contents).toHaveCount(1);
-  await expect(formats).toHaveCount(1);
-  await expect(formats.locator("a[data-format]")).toHaveCount(3);
-  await expect(lead.locator("form")).toHaveCount(1);
-  await expect(page.locator("#hero-title")).toHaveCount(1);
-
-  await mkdir(continuationEvidence, { recursive: true });
-  await page.screenshot({ path: `${continuationEvidence}/1440-open-spread.png`, style: screenshotStyle });
-  const geometry = await page.evaluate(() => {
-    const paper = document.querySelector<HTMLElement>('[aria-label="Разворот выпуска"] [class*="rightPage"]')!;
-    const site = document.querySelector<HTMLElement>("#top")!.closest<HTMLElement>("[inert]")!;
-    const contents = document.querySelector<HTMLElement>('aside[aria-label="Содержание выпуска"]')!;
-    const formats = document.querySelector<HTMLElement>("#formats")!;
-    const lead = document.querySelector<HTMLElement>("#story")!;
-    const targets = [
-      contents.querySelector("h2")!,
-      ...Array.from(formats.querySelectorAll<HTMLElement>("a[data-format]")),
-      lead.querySelector<HTMLInputElement>('input[name="contact"]')!,
-    ];
-    const rect = (element: Element) => {
-      const box = element.getBoundingClientRect();
-      return { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
-    };
-    site.inert = false;
-    const hits = targets.map(element => {
-      const box = element.getBoundingClientRect();
-      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
-      return Boolean(hit && element.contains(hit));
+test("the closed cover grows responsively and stays within safe viewport margins", async ({ page }) => {
+  for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 720], [1050, 700], [768, 1024], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/test_5");
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator("[data-animated='true']")).toHaveAttribute("data-motion", "idle");
+    const geometry = await page.locator("[data-opening-cover]").evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, width: rect.width, height: rect.height, scrollWidth: document.documentElement.scrollWidth };
     });
-    site.inert = true;
-    return { paper: rect(paper), regions: [contents, formats, lead].map(rect), hits };
-  });
-  const contained = geometry.regions.every(region =>
-    region.left >= geometry.paper.left - 1 && region.right <= geometry.paper.right + 1 &&
-    region.top >= geometry.paper.top - 1 && region.bottom <= geometry.paper.bottom + 1,
-  );
-  expect(contained, `homepage continuation must fit inside the open paper: ${JSON.stringify(geometry)}`).toBe(true);
-  expect(geometry.hits, "Contents, each format card, and the contact field must receive hit tests").toEqual([true, true, true, true, true]);
+    const minimumWidthRatio = width <= 760 ? .8 : width >= 1900 ? .3 : .4;
+    expect(geometry.left).toBeGreaterThanOrEqual(-1);
+    expect(geometry.right).toBeLessThanOrEqual(width + 1);
+    expect(geometry.width / width).toBeGreaterThanOrEqual(minimumWidthRatio);
+    expect(geometry.height / height).toBeGreaterThanOrEqual(.6);
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(width);
+    if (width === 1440 || width === 390) {
+      await mkdir(continuationEvidence, { recursive: true });
+      await page.screenshot({ path: `${continuationEvidence}/${width}-closed-cover.png`, style: screenshotStyle });
+    }
+  }
+});
+
+test("the open right page uses the full paper width and continues through the real site", async ({ page }) => {
+  for (const [width, height] of [[1920, 1080], [1440, 900], [1280, 720], [1050, 700]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/test_5");
+    await page.evaluate(() => document.fonts.ready);
+    const camera = page.locator("[data-animated='true']");
+    await page.evaluate(() => window.scrollTo({ top: innerHeight * 1.25 * .47, behavior: "instant" }));
+    await expect.poll(() => camera.evaluate(e => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - .47))).toBeLessThan(.002);
+    await expect(camera).toHaveAttribute("data-motion", "idle");
+
+    const contents = page.locator('aside[aria-label="Содержание выпуска"]');
+    const formats = page.locator("#formats");
+    await expect(contents).toHaveCount(1);
+    await expect(formats.locator("a[data-format]")).toHaveCount(3);
+    await expect(page.locator("#story form")).toHaveCount(1);
+    await expect(page.locator("#hero-title")).toHaveCount(1);
+
+    const geometry = await page.evaluate(() => {
+      const paper = document.querySelector<HTMLElement>("[data-opening-page]")!;
+      const surface = document.querySelector<HTMLElement>("[data-opening-surface]")!;
+      const hero = document.querySelector<HTMLElement>("[data-page-hero]")!;
+      const contents = document.querySelector<HTMLElement>("aside")!;
+      const formats = document.querySelector<HTMLElement>("#formats")!;
+      const targets = [
+        hero.querySelector("#hero-title")!,
+        hero.querySelector<HTMLElement>('[data-photo-slot="hero-table"]')!,
+        contents.querySelector("h2")!,
+        formats.querySelector<HTMLElement>("a[data-format]")!,
+      ];
+      const rect = (element: Element) => {
+        const box = element.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+      };
+      const paperBox = rect(paper);
+      const contentsBox = rect(contents);
+      const formatsBox = rect(formats);
+      const surfaceBox = rect(surface);
+      const surfaceStyle = getComputedStyle(surface);
+      const scale = Number(surfaceStyle.getPropertyValue("--site-scale"));
+      const clipLeft = Number.parseFloat(surfaceStyle.getPropertyValue("--clip-left"));
+      const clipRight = Number.parseFloat(surfaceStyle.getPropertyValue("--clip-right"));
+      const visibleSurface = {
+        left: surfaceBox.left + clipLeft * scale,
+        width: surfaceBox.width - (clipLeft + clipRight) * scale,
+      };
+      const visibleTargets = targets.filter(element => {
+        const box = element.getBoundingClientRect();
+        const x = box.left + box.width / 2, y = box.top + box.height / 2;
+        return x >= paperBox.left && x <= paperBox.right && y >= paperBox.top && y <= paperBox.bottom;
+      });
+      const site = surface.parentElement!;
+      site.inert = false;
+      const hits = visibleTargets.map(element => {
+        const box = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return Boolean(hit && element.contains(hit));
+      });
+      site.inert = true;
+      return {
+        paper: paperBox,
+        surface: visibleSurface,
+        hero: rect(hero),
+        contentWidth: Math.max(contentsBox.right, formatsBox.right) - Math.min(contentsBox.left, formatsBox.left),
+        compositionBottom: Math.max(contentsBox.bottom, formatsBox.bottom),
+        hits,
+      };
+    });
+    const paperInnerWidth = geometry.paper.width - 56;
+    const compositionGap = geometry.paper.bottom - Math.min(geometry.compositionBottom, geometry.paper.bottom);
+    const leftSurfaceGap = geometry.surface.left - geometry.paper.left;
+    const rightSurfaceGap = geometry.paper.right - (geometry.surface.left + geometry.surface.width);
+    expect(leftSurfaceGap).toBeGreaterThanOrEqual(-1);
+    expect(leftSurfaceGap).toBeLessThanOrEqual(geometry.paper.width * .04);
+    expect(rightSurfaceGap).toBeGreaterThanOrEqual(-1);
+    expect(rightSurfaceGap).toBeLessThanOrEqual(geometry.paper.width * .04);
+    expect(geometry.surface.width / geometry.paper.width, `${width}px surface should fill its paper: ${JSON.stringify(geometry)}`).toBeGreaterThanOrEqual(.9);
+    expect(geometry.contentWidth / paperInnerWidth).toBeGreaterThanOrEqual(.88);
+    const minimumPageMargin = 8;
+    expect(geometry.hero.left - geometry.paper.left).toBeGreaterThanOrEqual(minimumPageMargin);
+    expect(geometry.paper.right - geometry.hero.right).toBeGreaterThanOrEqual(minimumPageMargin);
+    expect(geometry.hero.top).toBeGreaterThanOrEqual(geometry.paper.top);
+    expect(geometry.hero.bottom).toBeLessThan(geometry.paper.bottom);
+    expect(compositionGap).toBeLessThanOrEqual(geometry.paper.height * .05);
+    expect(geometry.hits).toHaveLength(4);
+    expect(geometry.hits.every(Boolean)).toBe(true);
+
+    if ([1920, 1440, 1280].includes(width)) {
+      await mkdir(continuationEvidence, { recursive: true });
+      await page.screenshot({ path: `${continuationEvidence}/${width}-open-spread.png`, style: screenshotStyle });
+    }
+
+    for (const progress of [.61, .82]) {
+      await page.evaluate(value => window.scrollTo({ top: innerHeight * 1.25 * value, behavior: "instant" }), progress);
+      await settle(page, progress);
+      const alignment = await page.evaluate(() => {
+        const paper = document.querySelector<HTMLElement>("[data-opening-page]")!;
+        const surface = document.querySelector<HTMLElement>("[data-opening-surface]")!;
+        const paperBox = paper.getBoundingClientRect();
+        const surfaceBox = surface.getBoundingClientRect();
+        const styles = getComputedStyle(surface);
+        const scale = Number(styles.getPropertyValue("--site-scale"));
+        const left = surfaceBox.left + Number.parseFloat(styles.getPropertyValue("--clip-left")) * scale;
+        const right = surfaceBox.right - Number.parseFloat(styles.getPropertyValue("--clip-right")) * scale;
+        const bottom = surfaceBox.top + Math.min(Number.parseFloat(styles.getPropertyValue("--clip-height")), surface.offsetHeight) * scale;
+        return {
+          leftDelta: left - paperBox.left,
+          widthDelta: right - left - paperBox.width,
+          bottomDelta: bottom - paperBox.bottom,
+        };
+      });
+      expect(Math.abs(alignment.leftDelta), `${width}px left page edge at progress ${progress}: ${JSON.stringify(alignment)}`).toBeLessThan(1);
+      expect(Math.abs(alignment.widthDelta), `${width}px page width at progress ${progress}: ${JSON.stringify(alignment)}`).toBeLessThan(1);
+      expect(Math.abs(alignment.bottomDelta), `${width}px lower page edge at progress ${progress}: ${JSON.stringify(alignment)}`).toBeLessThan(1);
+    }
+  }
 });
 
 test("the camera eases across multiple frames, settles at rest and releases native flow at the boundary", async ({ page }) => {
