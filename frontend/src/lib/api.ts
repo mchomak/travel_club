@@ -29,5 +29,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 export const authApi = {
   login: (login: string, password: string) => apiRequest<UserInfo>("/auth/login", { method: "POST", body: JSON.stringify({ login, password }) }),
   logout: () => apiRequest<void>("/auth/logout", { method: "POST" }),
+  changePassword: (currentPassword: string, newPassword: string) => apiRequest<void>("/auth/password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  }),
   me: () => apiRequest<UserInfo>("/auth/me"),
 };

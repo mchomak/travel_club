@@ -1,0 +1,647 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "metrics": {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "images": [
+        {
+          "id": "living-cover-china",
+          "ratio": "1.15",
+          "w": 295.390625,
+          "h": 256.859375
+        },
+        {
+          "id": "living-detail-food",
+          "ratio": "1",
+          "w": 119.78125,
+          "h": 119.78125
+        },
+        {
+          "id": "living-spread-city",
+          "ratio": "1.5",
+          "w": 398.3125,
+          "h": 265.53125
+        },
+        {
+          "id": "hero-table",
+          "ratio": "2.1",
+          "w": 898.671875,
+          "h": 427.9375
+        },
+        {
+          "id": "hero-ferry",
+          "ratio": "0.8",
+          "w": 206.671875,
+          "h": 258.328125
+        },
+        {
+          "id": "thailand-26-islands",
+          "ratio": "1.65",
+          "w": 1014,
+          "h": 614.53125
+        },
+        {
+          "id": "thailand-26-bangkok",
+          "ratio": "0.68",
+          "w": 322,
+          "h": 473.515625
+        },
+        {
+          "id": "thailand-26-road",
+          "ratio": "1.25",
+          "w": 552.65625,
+          "h": 442.125
+        },
+        {
+          "id": "thailand-26-boat",
+          "ratio": "1.5",
+          "w": 437.34375,
+          "h": 291.5625
+        },
+        {
+          "id": "thailand-26-food",
+          "ratio": "1.1",
+          "w": 437.34375,
+          "h": 397.578125
+        },
+        {
+          "id": "thailand-26-company",
+          "ratio": "1.8",
+          "w": 552.65625,
+          "h": 307.03125
+        },
+        {
+          "id": "china-26-street",
+          "ratio": "1.65",
+          "w": 898.65625,
+          "h": 544.625
+        },
+        {
+          "id": "china-26-beijing",
+          "ratio": "0.75",
+          "w": 322,
+          "h": 429.328125
+        },
+        {
+          "id": "china-26-food",
+          "ratio": "1.4",
+          "w": 322,
+          "h": 230
+        },
+        {
+          "id": "china-26-night",
+          "ratio": "1",
+          "w": 322,
+          "h": 322
+        },
+        {
+          "id": "china-26-alley",
+          "ratio": "0.8",
+          "w": 322,
+          "h": 402.5
+        },
+        {
+          "id": "archive-china-street",
+          "ratio": "1.4",
+          "w": 356.546875,
+          "h": 254.671875
+        },
+        {
+          "id": "archive-china-alley",
+          "ratio": "0.85",
+          "w": 208.328125,
+          "h": 245.078125
+        },
+        {
+          "id": "archive-china-night",
+          "ratio": "1.45",
+          "w": 282.4375,
+          "h": 194.78125
+        },
+        {
+          "id": "archive-madagascar-baobabs",
+          "ratio": "0.85",
+          "w": 208.328125,
+          "h": 245.078125
+        },
+        {
+          "id": "archive-madagascar-lemur",
+          "ratio": "0.75",
+          "w": 208.34375,
+          "h": 277.78125
+        },
+        {
+          "id": "archive-madagascar-sunset",
+          "ratio": "1.8",
+          "w": 430.671875,
+          "h": 239.25
+        },
+        {
+          "id": "archive-thailand-islands",
+          "ratio": "1.6",
+          "w": 356.546875,
+          "h": 222.828125
+        },
+        {
+          "id": "archive-thailand-food",
+          "ratio": "1.1",
+          "w": 208.328125,
+          "h": 189.375
+        },
+        {
+          "id": "archive-thailand-boat",
+          "ratio": "1.5",
+          "w": 282.4375,
+          "h": 188.28125
+        },
+        {
+          "id": "pov-everyday",
+          "ratio": "0.67",
+          "w": 322,
+          "h": 480.59375
+        },
+        {
+          "id": "pov-tea",
+          "ratio": "0.8",
+          "w": 206.671875,
+          "h": 258.328125
+        },
+        {
+          "id": "pov-cafe-print",
+          "ratio": "1.3",
+          "w": 426.10614013671875,
+          "h": 339.3125
+        },
+        {
+          "id": "club-table",
+          "ratio": "1.65",
+          "w": 898.65625,
+          "h": 544.625
+        },
+        {
+          "id": "club-return",
+          "ratio": "1.5",
+          "w": 322,
+          "h": 214.65625
+        }
+      ],
+      "sections": [
+        {
+          "id": "field-notes",
+          "y": 3049.96875,
+          "h": 460.90625
+        },
+        {
+          "id": "field-thailand",
+          "y": 3510.875,
+          "h": 2219.890625
+        },
+        {
+          "id": "field-china",
+          "y": 5766.765625,
+          "h": 1514.8125
+        },
+        {
+          "id": "from-the-archive",
+          "y": 7281.578125,
+          "h": 1300.265625
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "metrics": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": [
+        {
+          "id": "living-cover-china",
+          "ratio": "1.15",
+          "w": 278.890625,
+          "h": 242.5
+        },
+        {
+          "id": "living-detail-food",
+          "ratio": "1",
+          "w": 113.25,
+          "h": 113.25
+        },
+        {
+          "id": "living-spread-city",
+          "ratio": "1.5",
+          "w": 376.5625,
+          "h": 251.03125
+        },
+        {
+          "id": "hero-table",
+          "ratio": "2.1",
+          "w": 792,
+          "h": 377.140625
+        },
+        {
+          "id": "hero-ferry",
+          "ratio": "0.8",
+          "w": 180,
+          "h": 225
+        },
+        {
+          "id": "thailand-26-islands",
+          "ratio": "1.65",
+          "w": 894,
+          "h": 541.8125
+        },
+        {
+          "id": "thailand-26-bangkok",
+          "ratio": "0.68",
+          "w": 282,
+          "h": 414.703125
+        },
+        {
+          "id": "thailand-26-road",
+          "ratio": "1.25",
+          "w": 486,
+          "h": 388.796875
+        },
+        {
+          "id": "thailand-26-boat",
+          "ratio": "1.5",
+          "w": 384,
+          "h": 256
+        },
+        {
+          "id": "thailand-26-food",
+          "ratio": "1.1",
+          "w": 384,
+          "h": 349.078125
+        },
+        {
+          "id": "thailand-26-company",
+          "ratio": "1.8",
+          "w": 486,
+          "h": 270
+        },
+        {
+          "id": "china-26-street",
+          "ratio": "1.65",
+          "w": 792,
+          "h": 480
+        },
+        {
+          "id": "china-26-beijing",
+          "ratio": "0.75",
+          "w": 282,
+          "h": 376
+        },
+        {
+          "id": "china-26-food",
+          "ratio": "1.4",
+          "w": 282,
+          "h": 201.421875
+        },
+        {
+          "id": "china-26-night",
+          "ratio": "1",
+          "w": 282,
+          "h": 282
+        },
+        {
+          "id": "china-26-alley",
+          "ratio": "0.8",
+          "w": 282,
+          "h": 352.5
+        },
+        {
+          "id": "archive-china-street",
+          "ratio": "1.4",
+          "w": 312.09375,
+          "h": 222.921875
+        },
+        {
+          "id": "archive-china-alley",
+          "ratio": "0.85",
+          "w": 181.671875,
+          "h": 213.71875
+        },
+        {
+          "id": "archive-china-night",
+          "ratio": "1.45",
+          "w": 246.875,
+          "h": 170.25
+        },
+        {
+          "id": "archive-madagascar-baobabs",
+          "ratio": "0.85",
+          "w": 181.65625,
+          "h": 213.703125
+        },
+        {
+          "id": "archive-madagascar-lemur",
+          "ratio": "0.75",
+          "w": 181.671875,
+          "h": 242.21875
+        },
+        {
+          "id": "archive-madagascar-sunset",
+          "ratio": "1.8",
+          "w": 377.328125,
+          "h": 209.625
+        },
+        {
+          "id": "archive-thailand-islands",
+          "ratio": "1.6",
+          "w": 312.125,
+          "h": 195.078125
+        },
+        {
+          "id": "archive-thailand-food",
+          "ratio": "1.1",
+          "w": 181.65625,
+          "h": 165.140625
+        },
+        {
+          "id": "archive-thailand-boat",
+          "ratio": "1.5",
+          "w": 246.90625,
+          "h": 164.59375
+        },
+        {
+          "id": "pov-everyday",
+          "ratio": "0.67",
+          "w": 282,
+          "h": 420.890625
+        },
+        {
+          "id": "pov-tea",
+          "ratio": "0.8",
+          "w": 180,
+          "h": 225
+        },
+        {
+          "id": "pov-cafe-print",
+          "ratio": "1.3",
+          "w": 370.03021240234375,
+          "h": 294.66015625
+        },
+        {
+          "id": "club-table",
+          "ratio": "1.65",
+          "w": 792,
+          "h": 480
+        },
+        {
+          "id": "club-return",
+          "ratio": "1.5",
+          "w": 282,
+          "h": 188
+        }
+      ],
+      "sections": [
+        {
+          "id": "field-notes",
+          "y": 2872.390625,
+          "h": 446.8125
+        },
+        {
+          "id": "field-thailand",
+          "y": 3319.203125,
+          "h": 2028.296875
+        },
+        {
+          "id": "field-china",
+          "y": 5383.5,
+          "h": 1383.140625
+        },
+        {
+          "id": "from-the-archive",
+          "y": 6766.640625,
+          "h": 1203.453125
+        }
+      ]
+    },
+    "errors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "metrics": {
+      "width": 390,
+      "scrollWidth": 390,
+      "images": [
+        {
+          "id": "living-cover-china",
+          "ratio": "1.15",
+          "w": 308,
+          "h": 267.8125
+        },
+        {
+          "id": "living-detail-food",
+          "ratio": "1",
+          "w": 0,
+          "h": 0
+        },
+        {
+          "id": "living-spread-city",
+          "ratio": "1.5",
+          "w": 308,
+          "h": 205.328125
+        },
+        {
+          "id": "hero-table",
+          "ratio": "2.1",
+          "w": 353.984375,
+          "h": 168.5625
+        },
+        {
+          "id": "hero-ferry",
+          "ratio": "0.8",
+          "w": 104.65625,
+          "h": 130.8125
+        },
+        {
+          "id": "thailand-26-islands",
+          "ratio": "1.65",
+          "w": 354,
+          "h": 214.53125
+        },
+        {
+          "id": "thailand-26-bangkok",
+          "ratio": "0.68",
+          "w": 169,
+          "h": 248.515625
+        },
+        {
+          "id": "thailand-26-road",
+          "ratio": "1.25",
+          "w": 169,
+          "h": 135.1875
+        },
+        {
+          "id": "thailand-26-boat",
+          "ratio": "1.5",
+          "w": 354,
+          "h": 236
+        },
+        {
+          "id": "thailand-26-food",
+          "ratio": "1.1",
+          "w": 169,
+          "h": 153.625
+        },
+        {
+          "id": "thailand-26-company",
+          "ratio": "1.8",
+          "w": 230.65625,
+          "h": 128.140625
+        },
+        {
+          "id": "china-26-street",
+          "ratio": "1.65",
+          "w": 354,
+          "h": 214.53125
+        },
+        {
+          "id": "china-26-beijing",
+          "ratio": "0.75",
+          "w": 169,
+          "h": 225.328125
+        },
+        {
+          "id": "china-26-food",
+          "ratio": "1.4",
+          "w": 169,
+          "h": 120.703125
+        },
+        {
+          "id": "china-26-night",
+          "ratio": "1",
+          "w": 169,
+          "h": 169
+        },
+        {
+          "id": "china-26-alley",
+          "ratio": "0.8",
+          "w": 169,
+          "h": 211.25
+        },
+        {
+          "id": "archive-china-street",
+          "ratio": "1.4",
+          "w": 231.328125,
+          "h": 165.234375
+        },
+        {
+          "id": "archive-china-alley",
+          "ratio": "0.85",
+          "w": 108.65625,
+          "h": 127.828125
+        },
+        {
+          "id": "archive-china-night",
+          "ratio": "1.45",
+          "w": 231.328125,
+          "h": 159.53125
+        },
+        {
+          "id": "archive-madagascar-baobabs",
+          "ratio": "0.85",
+          "w": 170,
+          "h": 200
+        },
+        {
+          "id": "archive-madagascar-lemur",
+          "ratio": "0.75",
+          "w": 170,
+          "h": 226.65625
+        },
+        {
+          "id": "archive-madagascar-sunset",
+          "ratio": "1.8",
+          "w": 354,
+          "h": 196.65625
+        },
+        {
+          "id": "archive-thailand-islands",
+          "ratio": "1.6",
+          "w": 292.671875,
+          "h": 182.90625
+        },
+        {
+          "id": "archive-thailand-food",
+          "ratio": "1.1",
+          "w": 169.984375,
+          "h": 154.53125
+        },
+        {
+          "id": "archive-thailand-boat",
+          "ratio": "1.5",
+          "w": 231.34375,
+          "h": 154.21875
+        },
+        {
+          "id": "pov-everyday",
+          "ratio": "0.67",
+          "w": 169,
+          "h": 252.234375
+        },
+        {
+          "id": "pov-tea",
+          "ratio": "0.8",
+          "w": 154,
+          "h": 192.5
+        },
+        {
+          "id": "pov-cafe-print",
+          "ratio": "1.3",
+          "w": 275.7813415527344,
+          "h": 219.60546875
+        },
+        {
+          "id": "club-table",
+          "ratio": "1.65",
+          "w": 354,
+          "h": 214.53125
+        },
+        {
+          "id": "club-return",
+          "ratio": "1.5",
+          "w": 169,
+          "h": 112.65625
+        }
+      ],
+      "sections": [
+        {
+          "id": "field-notes",
+          "y": 4343.921875,
+          "h": 543.96875
+        },
+        {
+          "id": "field-thailand",
+          "y": 4887.890625,
+          "h": 1675.78125
+        },
+        {
+          "id": "field-china",
+          "y": 6587.671875,
+          "h": 1438.125
+        },
+        {
+          "id": "from-the-archive",
+          "y": 8025.796875,
+          "h": 2494.84375
+        }
+      ]
+    },
+    "errors": []
+  }
+]

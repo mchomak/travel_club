@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy import select, update
 
@@ -30,6 +31,105 @@ def test_login_session_and_logout(client, admin):
     assert client.get("/api/auth/me").status_code == 401
 
 
+def test_change_password_keeps_current_session_and_revokes_other_sessions(client, admin):
+    assert (
+        client.post(
+            "/api/auth/login",
+            headers=HEADERS,
+            json={"login": admin.login, "password": FIXTURE_PASSWORD},
+        ).status_code
+        == 200
+    )
+    current_token = client.cookies.get("travel_session")
+
+    with TestClient(client.app) as other_browser:
+        assert (
+            other_browser.post(
+                "/api/auth/login",
+                headers=HEADERS,
+                json={"login": admin.login, "password": FIXTURE_PASSWORD},
+            ).status_code
+            == 200
+        )
+
+        response = client.post(
+            "/api/auth/password",
+            headers=HEADERS,
+            json={"current_password": FIXTURE_PASSWORD, "new_password": "TEST-ONLY-NEW-123"},
+        )
+
+        assert response.status_code == 204
+        assert response.content == b""
+        assert client.cookies.get("travel_session") == current_token
+        assert client.get("/api/auth/me").status_code == 200
+        assert other_browser.get("/api/auth/me").status_code == 401
+        assert (
+            other_browser.post(
+                "/api/auth/login",
+                headers=HEADERS,
+                json={"login": admin.login, "password": "TEST-ONLY-NEW-123"},
+            ).status_code
+            == 200
+        )
+        wrong_current = client.post(
+            "/api/auth/password",
+            headers=HEADERS,
+            json={"current_password": FIXTURE_PASSWORD, "new_password": "ANOTHER-TEST-ONLY-456"},
+        )
+        assert wrong_current.status_code == 400
+        assert wrong_current.json()["message"] == "Текущий пароль неверен"
+        assert client.get("/api/auth/me").status_code == 200
+        assert other_browser.get("/api/auth/me").status_code == 200
+
+        restore = client.post(
+            "/api/auth/password",
+            headers=HEADERS,
+            json={"current_password": "TEST-ONLY-NEW-123", "new_password": FIXTURE_PASSWORD},
+        )
+        assert restore.status_code == 204
+
+
+def test_change_password_requires_authentication_and_valid_length(client, admin):
+    payload = {"current_password": FIXTURE_PASSWORD, "new_password": "TEST-ONLY-12"}
+    unauthenticated = client.post("/api/auth/password", headers=HEADERS, json=payload)
+    assert unauthenticated.status_code == 401
+
+    assert (
+        client.post(
+            "/api/auth/login",
+            headers=HEADERS,
+            json={"login": admin.login, "password": FIXTURE_PASSWORD},
+        ).status_code
+        == 200
+    )
+    for invalid_password in ("x" * 11, "x" * 1025):
+        invalid = client.post(
+            "/api/auth/password",
+            headers=HEADERS,
+            json={"current_password": FIXTURE_PASSWORD, "new_password": invalid_password},
+        )
+        assert invalid.status_code == 422
+        assert any(
+            item["field"] == "body.new_password"
+            and any(limit in item["message"] for limit in ("12", "1024"))
+            for item in invalid.json()["details"]
+        )
+        assert client.get("/api/auth/me").status_code == 200
+
+    changed = client.post(
+        "/api/auth/password",
+        headers=HEADERS,
+        json={"current_password": FIXTURE_PASSWORD, "new_password": "TEST-ONLY-12"},
+    )
+    assert changed.status_code == 204
+    restored = client.post(
+        "/api/auth/password",
+        headers=HEADERS,
+        json={"current_password": "TEST-ONLY-12", "new_password": FIXTURE_PASSWORD},
+    )
+    assert restored.status_code == 204
+
+
 def test_normalized_login_length_is_rejected_before_database_access(client):
     response = client.post(
         "/api/auth/login",
@@ -42,11 +142,21 @@ def test_normalized_login_length_is_rejected_before_database_access(client):
 
 def test_csrf_rejects_missing_header_and_foreign_origin(client, admin):
     payload = {"login": admin.login, "password": FIXTURE_PASSWORD}
+    password_payload = {"current_password": FIXTURE_PASSWORD, "new_password": "TEST-ONLY-12"}
     assert client.post("/api/auth/login", json=payload).status_code == 403
+    assert client.post("/api/auth/password", json=password_payload).status_code == 403
     assert (
         client.post(
             "/api/auth/login",
             json=payload,
+            headers={**HEADERS, "Origin": "https://untrusted.example"},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            "/api/auth/password",
+            json=password_payload,
             headers={**HEADERS, "Origin": "https://untrusted.example"},
         ).status_code
         == 403

@@ -406,5 +406,12 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - В `/test_5` прямой `#start` и reduced motion сразу показывают сайт; кнопка «К сайту» использует `site.offsetTop`, затем фокусирует `#start`, чтобы transform не смещал якорь. До конца открытия сайт inert, после — inert сцена. `#story` ведёт к demo-форме. Фото заменяются через ПКМ/«Фото» и сохраняются по slotId в отдельной IndexedDB `travel-club-test-5-photos`; данные `/test_4` не используются.
 - На Windows использовать `npm.cmd`. После изменения `frontend/public/` пересобрать frontend: standalone-образ копирует assets при сборке. `.env` локальный; `docker compose down -v` удалит данные PostgreSQL.
 
+### Preview deployment and account
+
+- `compose.deploy.yaml` is source-free and references prebuilt `linux/amd64` tags `travel-club-frontend:preview` and `travel-club-backend:preview`; its opening comments list local buildx and `docker save` commands for both image tarballs. The runbook expects those tags to be loaded before Compose starts. Only the frontend binds to loopback (`127.0.0.1:3000`); API and PostgreSQL stay on the internal network, with PostgreSQL data in `travel_club_deploy_postgres_data`. Server `.env` supplies secrets and `ALLOWED_ORIGIN` from the verified runtime IP and HTTPS port; never commit the address or secrets.
+- `docs/deployment-preview.md` documents host Nginx/Certbot TLS ingress. The public origin is formed at runtime from a confirmed IP and an approved HTTPS port (`8443`, `9443`, or `10443`). A short-lived Let's Encrypt IP certificate (about six days) requires automatic renewal; `deploy/certbot/nginx-deploy-hook.sh` validates Nginx and gracefully reloads it, and `deploy/nginx/render.py` renders the host configs. The runbook describes the procedure and does not prove that a VPS deployment has happened.
+- Password changes use protected `POST /api/auth/password` and the private `/admin/account` page. On success, the backend keeps the current session and revokes the user's other sessions.
+- Local checks on 2026-10-09: clean `linux/amd64` backend image build (Mako 1.4.3); backend suite on an isolated database 54 passed (auth 10 passed), Ruff passed; account form 3 passed, targeted ESLint/typecheck and Next.js production build passed; deploy Compose config/isolation, Nginx renderer, and shell syntax checks passed. Local `nginx -t` could not run because Nginx is unavailable; run it on the host before reload.
+
 Обновлять только текст между маркерами, проверяя команды и пути по репозиторию.
 <!-- autopilot:end -->

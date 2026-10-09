@@ -1,0 +1,14 @@
+server {
+    listen @HTTPS_PORT@;
+    server_name @PUBLIC_IP@;
+
+    location = /__travel_club_port_probe {
+        default_type text/plain;
+        add_header Cache-Control "no-store";
+        return 200 "travel-club-port-open";
+    }
+
+    location / {
+        return 404;
+    }
+}

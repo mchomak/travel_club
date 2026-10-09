@@ -28,3 +28,5 @@
 | 2026-10-08 | `2026-10-08-test-5-live-hero` | сдан | /test_5: right magazine page continues through Contents, formats and lead form; 35 browser / 73 unit tests passed, frontend Docker rebuilt, commit 7f1d4d1 pushed. |
 
 | 2026-10-09 | `2026-10-09-test-5-paper-scale` | сдан | /test_5: обложка увеличена, а hero, содержание и три формата заполняют правую страницу без пустого нижнего поля; 36 production-тестов прошли, Docker healthy. |
+
+| 2026-10-09 | `2026-10-09-deploy-travel-club-preview--wip` | в работе | — |
