@@ -2,7 +2,7 @@
 
 This runbook describes how to publish the existing site on a VPS at a runtime URL of `https://<public-ip>:<HTTPS_PORT>`. The checked-in Nginx files are templates and commands only; they do not configure a server or mean that deployment is complete. The public IP, selected HTTPS port, resulting link, and certificate paths are set from verified runtime values and are not committed into the templates.
 
-The workflow keeps host Nginx separate from the `travel_club` Compose project, leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes; it requires the owner's separate authorization to deploy after the unified commit is pushed. This runbook or a prepared commit alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
+The workflow keeps host Nginx separate from the `travel_club` Compose project, routes to the frontend on its private Docker bridge address without publishing a frontend host port, leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes; it requires the owner's separate authorization to deploy after the unified commit is pushed. This runbook or a prepared commit alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
 
 ## 1. Confirm the pushed revision
 
@@ -69,14 +69,14 @@ certbot --version
 
 Certbot must be version 5.4 or newer for IP certificates through webroot. If Nginx or a suitable Certbot is unavailable, stop and arrange the approved host package source; do not install anything on the workstation. See [Let’s Encrypt’s Certbot instructions for IP and six-day certificates](https://letsencrypt.org/2026/03/11/shorter-certs-certbot).
 
-Set the values from verified deployment facts. The default frontend upstream is the loopback mapping `127.0.0.1:3000`; keep it loopback-only. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the IP, link, or certificate files.
+Set the values from verified deployment facts. `compose.deploy.yaml` assigns the frontend the private bridge address `172.19.0.4` on subnet `172.19.0.0/16`; it does not publish a host port. Confirm that subnet does not overlap an existing Docker or VPN network before starting Compose. Nginx proxies to `172.19.0.4:3000` from the host over the private bridge. If the subnet must change, update the Compose IPAM subnet, the frontend address, and `FRONTEND_UPSTREAM` together. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the public IP, link, or certificate files.
 Keep these values in the same administrative shell session for the remaining Bash commands. The external workstation commands use their own matching values.
 
 ```bash
 PUBLIC_IP='<confirmed-public-ipv4>'
 HTTPS_PORT=8443
 ACME_WEBROOT=/var/www/travel-club-acme
-FRONTEND_UPSTREAM=127.0.0.1:3000
+FRONTEND_UPSTREAM=172.19.0.4:3000
 ACME_EMAIL='<operator-email-for-certificate-notices>'
 TELEGRAM_PORT='<same-observed-telegram-tcp-port>'
 CERT_NAME=travel-club-preview
@@ -234,7 +234,7 @@ After production issuance succeeds, remove the temporary staging lineage created
 sudo certbot delete --cert-name travel-club-preview-staging
 ```
 
-Render TLS using only the certificate paths. The template contains no certificate or key material and proxies only to the configured loopback frontend:
+Render TLS using only the certificate paths. The template contains no certificate or key material and proxies only to the configured private IPv4 frontend:
 
 ```bash
 sudo python3 deploy/nginx/render.py https \

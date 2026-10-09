@@ -53,10 +53,9 @@ services:
     platform: linux/amd64
     environment:
       BACKEND_URL: http://backend:8000
-    ports:
-      - "127.0.0.1:3000:3000"
     networks:
-      - app
+      app:
+        ipv4_address: 172.19.0.4
     depends_on:
       backend:
         condition: service_healthy
@@ -69,3 +68,6 @@ volumes:
 networks:
   app:
     internal: true
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16

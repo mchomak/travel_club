@@ -43,10 +43,21 @@ def checked_path(value: str, name: str) -> str:
 
 
 def checked_upstream(value: str) -> str:
-    match = re.fullmatch(r"127\.0\.0\.1:([0-9]{1,5})", value)
-    if not match or not 1 <= int(match.group(1)) <= 65535:
-        raise argparse.ArgumentTypeError("FRONTEND_UPSTREAM must be 127.0.0.1:<port>")
-    return value
+    host, separator, raw_port = value.rpartition(":")
+    if not separator or not re.fullmatch(r"[0-9]{1,5}", raw_port) or not 1 <= int(raw_port) <= 65535:
+        raise argparse.ArgumentTypeError("FRONTEND_UPSTREAM must be a loopback or RFC1918 IPv4 address and port")
+    try:
+        parsed = ipaddress.ip_address(host)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("FRONTEND_UPSTREAM must be a loopback or RFC1918 IPv4 address and port") from exc
+    private_networks = (
+        ipaddress.ip_network("10.0.0.0/8"),
+        ipaddress.ip_network("172.16.0.0/12"),
+        ipaddress.ip_network("192.168.0.0/16"),
+    )
+    if parsed.version != 4 or not (parsed.is_loopback or any(parsed in network for network in private_networks)):
+        raise argparse.ArgumentTypeError("FRONTEND_UPSTREAM must be a loopback or RFC1918 IPv4 address and port")
+    return f"{parsed}:{int(raw_port)}"
 
 
 def render(template_name: str, replacements: dict[str, str]) -> str:
@@ -71,7 +82,7 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--acme-webroot", required=True, type=lambda value: checked_path(value, "ACME_WEBROOT"))
         if name == "https":
             command.add_argument("--cert-dir", required=True, type=lambda value: checked_path(value, "CERT_DIR"))
-            command.add_argument("--frontend-upstream", default="127.0.0.1:3000", type=checked_upstream)
+            command.add_argument("--frontend-upstream", default="172.19.0.4:3000", type=checked_upstream)
     return root
 
 
