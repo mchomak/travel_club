@@ -1,8 +1,10 @@
 export type ProductId = "plan" | "turnkey" | "group";
 
+export const productStartLinks: Record<ProductId, string> = { plan: "/start?format=route", turnkey: "/start?format=complete", group: "/start?format=group" };
+
 export const navigation = [
-  { label: "Форматы", href: "#formats" },
-  { label: "Выпуски", href: "#field-notes" },
+  { label: "Форматы", href: "/formats" },
+  { label: "Выпуски", href: "/archive" },
   { label: "О клубе", href: "#club" },
 ];
 
@@ -31,12 +33,12 @@ export const images: Record<string, EditorialImage> = {
 };
 
 export const contents = [
-  { number: "01", title: "Три способа начать", label: "ФОРМАТЫ", href: "#formats" },
+  { number: "01", title: "Три способа начать", label: "ФОРМАТЫ", href: "/formats" },
   { number: "02", title: "Среди своих, до начала клуба", label: "FIELD NOTES", href: "#field-notes" },
-  { number: "03", title: "Предыдущие страницы", label: "АРХИВ / 2025", href: "#from-the-archive" },
+  { number: "03", title: "Предыдущие страницы", label: "АРХИВ / 2025", href: "/archive" },
   { number: "04", title: "Наш культурный код", label: "НАШ ВЗГЛЯД", href: "#point-of-view" },
   { number: "05", title: "Люди, а не список", label: "КЛУБ", href: "#club" },
-  { number: "06", title: "Ваша история", label: "НАЧАТЬ ИСТОРИЮ", href: "#story" },
+  { number: "06", title: "Ваша история", label: "НАЧАТЬ ИСТОРИЮ", href: "/start" },
 ];
 
 export const fieldNotes = {
