@@ -2,6 +2,7 @@
   --pub-type-display-xl-size: var(--pub-type-display-xl-fluid);
   --pub-type-display-l-size: var(--pub-type-display-l-fluid);
   --pub-type-h1-size: var(--pub-type-h1-fluid);
+  --pub-type-legal-title-size: var(--pub-type-h1-size);
   --pub-type-h2-size: var(--pub-type-h2-fluid);
   --pub-type-h3-size: var(--pub-type-h3-fluid);
   --pub-type-lead-size: var(--pub-type-lead-fluid);
@@ -10,7 +11,6 @@
   --pub-type-meta-size: max(.75rem, var(--pub-type-meta-fluid));
   --pub-type-caption-size: var(--pub-type-caption-fluid);
   --pub-type-button-size: var(--pub-type-button-fluid);
-  --pub-font-editorial: var(--pub-font-serif);
   --pub-surface: var(--pub-color-cloud);
   --pub-text: var(--pub-color-ink);
   --pub-accent: var(--pub-color-brand-blue);
@@ -55,6 +55,7 @@
 .pageIntro > .meta { grid-column: 1 / -1; color: var(--pub-accent); }
 .pageIntro > h1 { grid-column: 1 / 9; color: var(--pub-accent); }
 .introLead { grid-column: 9 / -1; align-self: end; max-width: 40ch; }
+.pageIntro:has(+ .legalLayout) > h1 { font-size: var(--pub-type-legal-title-size); max-width: 100%; }
 .h1 { font-family: var(--pub-type-h1-family); font-size: var(--pub-type-h1-size); line-height: var(--pub-type-h1-line-height); font-weight: var(--pub-type-h1-weight); letter-spacing: var(--pub-type-h1-tracking); }
 .h2 { font-family: var(--pub-type-h2-family); font-size: var(--pub-type-h2-size); line-height: var(--pub-type-h2-line-height); font-weight: var(--pub-type-h2-weight); letter-spacing: var(--pub-type-h2-tracking); }
 .h3 { font-family: var(--pub-type-h3-family); font-size: var(--pub-type-h3-size); line-height: var(--pub-type-h3-line-height); font-weight: var(--pub-type-h3-weight); letter-spacing: var(--pub-type-h3-tracking); }
@@ -124,6 +125,7 @@
   .header nav { width: 100%; margin-left: 0; justify-content: space-between; gap: var(--pub-space-s); }
   .pageIntro { display: flex; flex-direction: column; align-items: start; gap: var(--pub-space-l); padding-block: var(--pub-space-2xl) var(--pub-space-xl); }
   .pageIntro h1 { max-width: 15ch; }
+  .root { --pub-type-legal-title-size: min(var(--pub-type-h1-size), 8.5vw); }
   .introLead { max-width: 45ch; }
   .footerTop { align-items: start; flex-direction: column; }
   .footerBottom { grid-template-columns: 1fr; }
@@ -131,6 +133,8 @@
   .legalLayout { grid-template-columns: 1fr; gap: var(--pub-space-2xl); }
   .legalAside { padding-bottom: var(--pub-space-l); border-bottom: 1px solid var(--pub-border); }
   .legalAside nav { flex-direction: row; flex-wrap: wrap; gap: var(--pub-space-m); }
+  .legalIndex a { display: block; position: relative; }
+  .legalIndex a > span { position: absolute; top: 0; right: 0; }
   .noticePage { grid-template-columns: 1fr; gap: var(--pub-space-2xl); padding-block: var(--pub-space-2xl); min-height: auto; }
   .noticeMark { font-size: var(--pub-type-h1-size); }
 }
