@@ -1,0 +1,40 @@
+@font-face { font-family: "TC Golos"; src: url("/test/fonts/golos-text-latin.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+.laboratory { position: fixed; inset: 0; overflow: hidden; color: #171717; font-family: "TC Golos", sans-serif; isolation: isolate; }
+.canvasHost { position: absolute; inset: 0; }
+.canvasHost canvas { display: block; width: 100%; height: 100%; }
+.identity { position: absolute; left: 28px; top: 26px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; font-size: 10px; letter-spacing: .13em; line-height: 1.3; }
+.identity > span:first-child { font-weight: 600; }
+.toggle { position: absolute; top: 18px; right: 22px; padding: 12px 14px; border: 1px solid #bdbbb3; background: #f2f0eadd; color: inherit; font-size: 12px; cursor: pointer; }
+.panel { position: absolute; right: 22px; top: 72px; bottom: 160px; width: 278px; padding: 18px; overflow-y: auto; background: #f2f0eaf5; border: 1px solid #c5c2b9; scrollbar-width: thin; }
+.panelHeading { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+.panelHeading h1 { font: 500 19px "TC Golos", sans-serif; margin: 0; }
+.panelHeading > span { font-size: 9px; letter-spacing: .12em; color: #66665e; }
+.panel details { border-top: 1px solid #c9c6be; padding: 10px 0; }
+.panel summary { font-size: 12px; font-weight: 500; cursor: pointer; }
+.slider { display: block; margin-top: 14px; }
+.slider > span, .scrub > span { display: flex; justify-content: space-between; font-size: 11px; }
+.slider output { color: #62635a; font-variant-numeric: tabular-nums; }
+.laboratory input[type="range"] { display: block; width: 100%; height: 18px; min-height: 0; padding: 0; border: 0; background: transparent; accent-color: #171717; cursor: pointer; margin: 5px 0 0; }
+.debug { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-top: 12px; }
+.laboratory input[type="checkbox"] { width: 14px; height: 14px; min-height: 0; margin: 0; padding: 0; accent-color: #171717; }
+.note { font-size: 10px; line-height: 1.55; color: #62635a; margin-top: 18px; }
+.metrics { display: block; font-size: 10px; line-height: 1.65; margin-top: 12px; }
+.transport { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); width: 374px; max-width: calc(100% - 32px); }
+.actions { display: flex; justify-content: center; }
+.actions button { background: #f2f0eae8; padding: 10px 15px; color: inherit; border: 1px solid #bdbbb3; font-size: 11px; cursor: pointer; min-height: 40px; }
+.actions button + button { border-left: none; }
+.actions button:hover, .toggle:hover { background: #e5e2d9; }
+.actions button:disabled { color: #77766e; cursor: default; }
+.scrub { display: block; padding: 13px 13px 0; }
+.scrub > span { font-size: 9px; letter-spacing: .05em; text-transform: uppercase; }
+.phase { display: block; margin-top: 6px; text-align: center; font-size: 9px; letter-spacing: .1em; }
+.error { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 400px; padding: 24px; background: #f2f0ea; border: 1px solid #bdbbb3; font-size: 14px; line-height: 1.6; }
+.error button { padding: 8px 12px; border: 1px solid #171717; background: transparent; }
+.laboratory button:focus-visible, .laboratory input:focus-visible, .panel summary:focus-visible { outline: 2px solid #163a5f; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .identity { left: 16px; top: 19px; font-size: 8px; gap: 6px; }
+  .toggle { right: 12px; top: 12px; font-size: 10px; }
+  .panel { right: 12px; top: 60px; bottom: 148px; width: min(278px, calc(100% - 24px)); }
+  .transport { bottom: 16px; }
+  .actions button { min-height: 44px; padding: 10px 13px; }
+}
