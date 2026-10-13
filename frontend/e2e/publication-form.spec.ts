@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { errors, expect, test } from "@playwright/test";
 
 test("format URLs select their context and unknown or repeated values fall back safely", async ({ page }) => {
   for (const [query, selected] of [
@@ -122,4 +122,39 @@ test("the form has no horizontal overflow at desktop, tablet, or narrow mobile w
     expect(box!.x + box!.width).toBeLessThanOrEqual(width);
     await expect(page.getByRole("radio", { name: /^Под ключ/ })).toBeChecked();
   }
+});
+
+test.describe("without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("click and Enter cannot serialize personal answers into a native form request", async ({ page }) => {
+    const transmissions: string[] = [];
+    const isFormRequest = (url: string, method: string) => new URL(url).searchParams.has("contact") || method === "POST";
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      if (isFormRequest(request.url(), request.method())) {
+        transmissions.push(`${request.method()} ${request.url()} ${request.postData() ?? ""}`);
+        await route.abort();
+      } else await route.continue();
+    });
+
+    for (const action of ["click", "Enter"]) {
+      await page.goto("/start");
+      const contact = page.getByLabel("Ваш контакт — обязательно");
+      await contact.fill("nojs-privacy@example.test");
+      const nativeRequest = page.waitForRequest((request) => isFormRequest(request.url(), request.method()), { timeout: 300 }).then(
+        () => true,
+        (error: unknown) => { if (error instanceof errors.TimeoutError) return false; throw error; },
+      );
+      if (action === "click") await page.getByRole("button", { name: "Продолжить" }).click({ force: true, noWaitAfter: true });
+      else await contact.press("Enter");
+      expect(await nativeRequest).toBe(false);
+      expect(transmissions).toEqual([]);
+      await expect(page).toHaveURL(/\/start$/);
+      await expect(page.getByRole("button", { name: "Продолжить" })).toBeDisabled();
+      const instruction = page.locator("noscript p");
+      await expect(instruction).toHaveText("Чтобы продолжить, включите JavaScript. Эта тестовая форма не отправляет данные.");
+      await expect(instruction).toBeVisible();
+    }
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { validateLead } from "../test/lead";
 import shared from "./publication.module.css";
@@ -15,6 +15,9 @@ const formats = [
 const initialFields = { destination: "", when: "", participants: "", budget: "", comment: "", contact: "" };
 type FieldName = keyof typeof initialFields;
 type FormErrors = Partial<Record<FieldName, string>>;
+const subscribeToHydration = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
 const fields: { name: FieldName; label: string; placeholder: string; limit: number; multiline?: boolean }[] = [
   { name: "destination", label: "Куда хотите поехать?", placeholder: "Страна, город или «пока не знаю»", limit: 100 },
   { name: "when", label: "Когда?", placeholder: "Даты, сезон или «пока не решил»", limit: 100 },
@@ -25,6 +28,7 @@ const fields: { name: FieldName; label: string; placeholder: string; limit: numb
 ];
 
 export function StartForm({ initialFormat = "route" }: { initialFormat?: StartFormat }) {
+  const hydrated = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [format, setFormat] = useState<StartFormat>(initialFormat);
@@ -38,6 +42,7 @@ export function StartForm({ initialFormat = "route" }: { initialFormat?: StartFo
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hydrated) return;
     const product = formats.find((item) => item.id === format)!.product;
     const leadErrors = validateLead({ product, destination: values.destination, when: values.when, contact: values.contact });
     const nextErrors: FormErrors = {};
@@ -100,7 +105,8 @@ export function StartForm({ initialFormat = "route" }: { initialFormat?: StartFo
       </section>
       <div className={s.submit}>
         <p id="start-demo-note" className={`${shared.caption} ${shared.muted}`}>Тестовая форма. Данные не отправляются и не сохраняются.</p>
-        <button type="submit" className={shared.buttonPrimary} aria-describedby="start-demo-note">Продолжить<span aria-hidden="true">↗</span></button>
+        <noscript><p className={shared.fieldHint}>Чтобы продолжить, включите JavaScript. Эта тестовая форма не отправляет данные.</p></noscript>
+        <button type="submit" className={shared.buttonPrimary} aria-describedby="start-demo-note" disabled={!hydrated}>Продолжить<span aria-hidden="true">↗</span></button>
       </div>
     </form>
   </div>;
