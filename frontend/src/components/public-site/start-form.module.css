@@ -9,7 +9,7 @@
 .formatOption + .formatOption { border-left: 1px solid var(--pub-border); }
 .formatOption:has(input:checked) { background: var(--pub-color-editorial-paper); box-shadow: inset 0 -2px var(--pub-accent); }
 .formatOption:has(input:focus-visible) { outline: 2px solid var(--pub-accent); outline-offset: var(--pub-space-xs); }
-.formatOption input { accent-color: var(--pub-accent); margin: var(--pub-space-s) 0 0; flex-shrink: 0; }
+.formatOption input { width: var(--pub-space-m); height: var(--pub-space-m); min-height: var(--pub-space-m); padding: 0; accent-color: var(--pub-accent); margin: var(--pub-space-s) 0 0; flex-shrink: 0; }
 .formatCopy { display: grid; gap: var(--pub-space-s); }
 .details { display: grid; gap: var(--pub-space-m); }
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--pub-space-l); margin-top: var(--pub-space-s); }
