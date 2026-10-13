@@ -17,16 +17,18 @@ const headerLinks = ["/formats", "/archive", "/start"];
 const footerLinks = [...headerLinks, "/legal", "/privacy", "/personal-data", "/thanks"];
 
 async function loadAllImages(page: Page) {
-  // Visit the real document flow so browser-native lazy images also get checked.
-  await page.evaluate(async () => {
-    for (let y = 0; y < document.documentElement.scrollHeight; y += innerHeight * .8) {
-      window.scrollTo(0, y);
-      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    }
-    window.scrollTo(0, 0);
-    await document.fonts.ready;
-  });
-  await expect.poll(() => page.locator("[data-publication-root] img").evaluateAll(images => images.every(image => {
+  const images = page.locator("[data-publication-root] img");
+  // Keep each native lazy image in view until its actual request completes.
+  // A fast rAF scroll sweep can leave offscreen requests queued in Chromium.
+  for (const image of await images.all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(() => image.evaluate(element => {
+      const photo = element as HTMLImageElement;
+      return photo.complete && photo.naturalWidth > 0 && !!photo.alt.trim();
+    }), { message: `Visible image must load: ${await image.getAttribute("alt")}` }).toBe(true);
+  }
+  await page.evaluate(async () => { window.scrollTo(0, 0); await document.fonts.ready; });
+  await expect.poll(() => images.evaluateAll(images => images.every(image => {
     const photo = image as HTMLImageElement;
     return photo.complete && photo.naturalWidth > 0 && !!photo.alt.trim();
   }))).toBe(true);
@@ -83,8 +85,8 @@ test("one scoped token set changes real serif, h1, body and Cloud on every publi
         const element = root as HTMLElement;
         const h1 = element.querySelector("main h1")!;
         const bodyParagraph = Array.from(element.querySelectorAll("main p")).find(p => p.className.split(" ").some(name => /(?:^|__)body(?:__|$)/.test(name)));
-        // Notice pages deliberately use lead/small paragraphs; their normal main
-        // flow still inherits the body role from the scoped publication root.
+        // Notices and the document index use lead/small/caption paragraphs;
+        // their main flow inherits body from the scoped publication root.
         const body = bodyParagraph ?? (allowInheritedBody ? element.querySelector("main") : null);
         if (!body) throw new Error("Page must render a real shared body role");
         // Exercise BASE -> adapter -> scoped CSS -> actual rendered roles.
@@ -97,7 +99,7 @@ test("one scoped token set changes real serif, h1, body and Cloud on every publi
           bodySize: getComputedStyle(body).fontSize,
           background: getComputedStyle(element).backgroundColor,
         };
-      }, { variables, allowInheritedBody: publication.path === "/thanks" || publication.status === 404 });
+      }, { variables, allowInheritedBody: ["/thanks", "/legal"].includes(publication.path) || publication.status === 404 });
       expect(actual, `${publication.path} at ${width}`).toEqual({ family: "Georgia, serif", headingSize: width === 1440 ? "37px" : "29px", bodySize: width === 1440 ? "19px" : "17px", background: "rgb(225, 234, 223)" });
     }
   }
