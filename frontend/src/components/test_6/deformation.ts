@@ -1,13 +1,15 @@
 export type PageShape = { bend: number; curl: number; stiffness: number; lift: number; spineConstraint: number; outerEdgeInfluence: number };
 export const PAGE_WIDTH = 2.32;
 export const PAGE_HEIGHT = 2.9;
-export const DEFAULT_SHAPE: PageShape = { bend: 1.65, curl: .65, stiffness: .24, lift: .35, spineConstraint: .12, outerEdgeInfluence: .065 };
+export const DEFAULT_SHAPE: PageShape = { bend: 2.05, curl: .9, stiffness: .24, lift: .35, spineConstraint: .12, outerEdgeInfluence: .15 };
 
 /** Arc-length sampled midsurface, row-major from the lower spine corner. */
 export function deformPage(progress: number, shape: PageShape, columns = 56, rows = 12): Float32Array {
   const p = Math.max(0, Math.min(1, progress));
   const eased = p * p * (3 - 2 * p);
-  const envelope = Math.sin(Math.PI * p) ** 1.1;
+  const ramp = (value: number) => { const t = Math.max(0, Math.min(1, value)); return t * t * (3 - 2 * t); };
+  // Gentle lift, a readable .4–.6 curl crest, then zero-velocity release at touchdown.
+  const envelope = ramp(p / .4) * (1 - ramp((p - .6) / .4));
   const compliance = 1 - shape.stiffness * .88;
   const step = PAGE_WIDTH / columns;
   const points = new Float32Array((columns + 1) * (rows + 1) * 3);

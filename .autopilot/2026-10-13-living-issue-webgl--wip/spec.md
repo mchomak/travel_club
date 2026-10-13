@@ -44,3 +44,9 @@ T1: two serial deliverables. First delivers working complete scene with controls
 
 ## G2 clarification: implementation depth, not extra product scope
 Scrub is a laboratory debug control serving required progress QA, visibility pause and dynamic reduced-motion serve deterministic motion/accessibility, WebGL failure/cleanup serve lifecycle, screenshots are evidence of requested visual comparisons, on-demand final rendering serves performance while keeping scene live. These are subordinate R##.n implementation details, not extra site capabilities. No change to original scope.
+
+## Cross-platform lock (D01, ticket02)
+Windows npmci dryrun and local build do not prove Linux Docker clean install. Docker exposed missing existing @emnapi/runtime and core optional transitive lock entries. Repair lock only, no added direct dependencies; verify clean Linuxnpmci through Docker frontendbuild. User scope unchanged.
+
+## Scoped icon (D02, ticket02)
+Real Chromium requested absent global/favicon.ico which headless-shell did not, causing consoleerror. Add only test6 route icon/metadata, keepglobal andother routes unchanged; validate actual Chromium console/network. Original consoleclean requirement unchanged.

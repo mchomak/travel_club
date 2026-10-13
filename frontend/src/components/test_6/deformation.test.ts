@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_SHAPE, deformPage, PAGE_WIDTH } from "./deformation";
 
 describe("the physical turning leaf", () => {
+  it("relaxes its curl before touchdown instead of flattening abruptly on the last frame", () => {
+    const points = deformPage(.99, DEFAULT_SHAPE, 56, 16);
+    const heights = [...points].filter((_, index) => index % 3 === 2);
+    expect(Math.max(...heights)).toBeLessThan(.004);
+  });
+  it("forms a broad paper curl at midflip rather than a nearly straight rising card", () => {
+    const points = deformPage(.5, DEFAULT_SHAPE, 56, 16);
+    const base = 8 * 57 * 3;
+    const tangent = (column: number) => {
+      const i = base + column * 3;
+      return Math.atan2(points[i + 5] - points[i + 2], points[i + 3] - points[i]);
+    };
+    // More than 120 degrees of tangent change reads as a curled sheet in silhouette.
+    expect(tangent(55) - tangent(0)).toBeGreaterThan(2.1);
+  });
   it("anchors every spine vertex while the free edge rises into a curved cross-section", () => {
     const points = deformPage(.48, DEFAULT_SHAPE, 56, 12);
     for (let row = 0; row <= 12; row++) {

@@ -1,0 +1,31 @@
+# Refinement and verification — 13 October 2026
+
+Artifact root: `frontend/test-results/test-6-refinement/`. Each ordered pass captured actual first-paper0/25/50/75/100 and whole-sequence0/25/50/75/100. The meaningful midpoint is active paper45–55%, not global sequence50%.
+
+| Pass | Before → after | Observation and change |
+| --- | --- | --- |
+| GEOMETRY | `geometry-before/` → `geometry-after/` | Baseline midpoint was narrow and free edge almost straight. Bend1.65→2.05, curl0.65→0.9, corner lead0.065→0.15 broaden the cylindrical silhouette without fabric waves. Midflip tangent acceptance failed2.062<2.1rad before change, passed afterward. Arc lengths, anchored spine and transverse strain<0.5% stay green. Viewed25/50/75: curved top/bottom edges and printed content, no visible intersection, flat endpoints. |
+| LIGHT/CAMERA | `light-before/` → `light-after/` | Low key made a long triangular floor shadow. Key(−3,4,7)→(−2,1,12), softness3→4, pitch24→18 keep shadow short and perspective calm. Closed cover centre925px→about730px on1440viewport via a gentle opening footprint offset; balanced final spread retains its position. No flying entrance. Midflip has a light page shadow; thin stack/spine remain restrained. |
+| MOTION | `motion-before/` → `motion-after/` | Original sinusoidal curl left0.0221units lift at99%, then flattened. Smoothstep formation/crest/release gives<0.004 before touchdown and flat endpoints. Crest40–60%, release60–100%. Turn0.64→0.68s, hold0.18→0.14s, sequence3.5→3.46s. No bounce/overshoot. Replay, all three turns and stationary China remain deterministic. |
+
+Root independently inspected these comparisons and confirmed stronger paper silhouette, shortened shadows, centred cover and quiet final composition. Midflip is a curved sheet: actual vertices deform instead of a card rotation.
+
+Responsive captures: `responsive-1280/`, `responsive-768/`, `responsive-390/`,1440 `motion-after/`. Paper25/50/75 and initial/final stay in frame;390 retains all transport controls. No document scroll. Console/page errors were empty during ordinary playback/captures. Context-loss testing intentionally exercises the failure path, disposes canvas/fonts/RAF and retries with exactly one canvas.
+
+Performance: three actual draw-timestamp runs at1440×900, canvas1440×900/DPR1. `performance-hardware-dev.json`: Chromium channel, ANGLE NVIDIA GeForce RTX4060 Direct3D11,120.24/120.12/120.11drawFPS; median8.3ms,95th percentile9.0/8.5/8.6ms. This establishes smooth playback on the tested desktop, not every laptop. Default headless-shell uses ANGLE Vulkan SwiftShader software rendering and is substantially slower. Mobile checks are desktop viewport checks, not phone performance guarantees. TARGET stops RAF; controls/resize render on demand.
+
+Local checks: lint/typecheck/production build passed; full Vitest88 passed in21files (baseline86), pure geometry/timeline8 passed (baseline6). Expanded Playwright10 passed (baseline4), covering every control,1440/1280/768/390, dynamic reduced motion, natural TARGET pause/RAF stop, hidden first-resume clock and context-loss cleanup/retry. First-resume observation replaces a fragile wall-time assertion and verifies exactly frozen elapsed.
+
+Production validation completed14October: frontend-only `docker compose up -d --no-deps --build --wait frontend` passed and service is healthy. Production Chromium suite `e2e/test-6-scene.spec.ts e2e/test-5-camera.spec.ts e2e/test-5-photo-editor.spec.ts --workers=1` passed31scenarios in2minutes (10laboratory +21regression), exit0. Screenshots: `production-1440/` and `production-390/`; production midflip/final visually confirmed. Lint/typecheck/full88unit/Next production build also passed. No changes to test_5/test_4/public-site files.
+
+Linux npm ci initially exposed missing existing transitive @emnapi/core/runtime lock entries. A clean node24 Linux resolver supplied those entries; unrelated metadata churn was removed. Final lockfile change is31added lines only: root runtime1.11.3 plus WASI nested core/runtime1.11.1. All original entries and direct dependencies retained. Clean Linux npm ci dry-run passed331packages, and the final minimal lockfile passed the Docker build. No dependency was added during refinement.
+
+Production hardware measurement (`performance-hardware-production.json`): RTX4060/Direct3D11, same1440×900/DPR1, three runs120.22/120.12/120.11drawFPS, median8.3ms and95th percentile8.9–9.0ms. Each replay recorded401draws. No claim is made for untested low-end hardware.
+
+Software rendering measurement (`performance-software-dev.json`): SwiftShader16.11/16.88/16.98drawFPS, median63–64ms. This software GPU bottleneck is explicitly distinct from the measured hardware path; do not infer desktop performance from default headless-shell results.
+
+Prototype limits: procedural editorial illusion rather than physical paper simulation; illustrative content and small mobile print; no website handoff, scroll integration, backend work or external deployment. Earlier routes/assets/design-system are untouched by refinement.
+
+Final console repair — 14 October: full headless Chromium (`channel: "chromium"`, not headless-shell) originally requested the absent `/favicon.ico`. Route-local `app/test_6/icon.svg` now supplies Next.js icon metadata without changing the global favicon or other routes. Frontend-only Compose rebuild passed, including the production build/type check, and the service is healthy. Actual Chromium verification on `http://localhost:3000/test_6` at1440×900 and390×844 recorded zero console/page errors and zero failed resource requests or HTTP errors. Each page exposed exactly one `/test_6/icon.svg` link; its response was200 `image/svg+xml`. Both ordinary playback runs naturally reached TARGET, paused at elapsed3.4600, and retained identical frame counts after one second (386desktop/394mobile). Evidence: `test-results/test-6-refinement/console-production.json`.
+
+After this icon-only repair, `npm.cmd exec playwright test e2e/test-6-scene.spec.ts -- --workers=1 --output=test-results/test-6-icon-final` passed all10existing laboratory scenarios in25.6seconds (exit0). The previously passing88unit/31browser/lint/typecheck checks remain recorded above; the full unit suite was not repeated for the static icon change.

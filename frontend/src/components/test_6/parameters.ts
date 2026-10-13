@@ -1,10 +1,10 @@
 import { DEFAULT_SHAPE } from "./deformation";
 import { DEFAULT_TIMING } from "./timeline";
 export const DEFAULT_PARAMS = {
-  distance: 9.1, fov: 32, pitch: 24, yaw: -8, roll: -2,
+  distance: 9.1, fov: 32, pitch: 18, yaw: -8, roll: -2,
   scale: 1, tilt: -3, ...DEFAULT_SHAPE, thickness: .004,
-  ambient: 2.2, key: 2.1, lightX: -3, lightY: 4, lightZ: 7,
-  shadowStrength: .19, shadowSoftness: 3, ...DEFAULT_TIMING, debug: false,
+  ambient: 2.2, key: 2.1, lightX: -2, lightY: 1, lightZ: 12,
+  shadowStrength: .19, shadowSoftness: 4, ...DEFAULT_TIMING, debug: false,
 };
 export type SceneParams = typeof DEFAULT_PARAMS;
 export type SliderKey = Exclude<keyof SceneParams, "debug">;

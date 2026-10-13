@@ -1,5 +1,5 @@
 export type Timing = { flipDuration: number; delay: number };
-export const DEFAULT_TIMING: Timing = { flipDuration: .64, delay: .18 };
+export const DEFAULT_TIMING: Timing = { flipDuration: .68, delay: .14 };
 export type TimelineFrame = { phase: string; spread: number; turning: boolean; cover: boolean; progress: number; total: number; elapsed: number };
 export function timelineDuration(timing: Timing): number { return .22 + .64 + timing.delay + 3 * (timing.flipDuration + timing.delay); }
 export function sampleTimeline(elapsed: number, timing: Timing): TimelineFrame {

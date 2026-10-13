@@ -21,7 +21,7 @@ test("seek, replay, pause, final, reset and immediate tuning", async ({ page }, 
   await page.screenshot({ path: info.outputPath("baseline-00-initial.png") });
   await range(page, "Sequence progress", 25);
   await page.screenshot({ path: info.outputPath("baseline-25.png") });
-  await range(page, "Sequence progress", 38.86);
+  await range(page, "Sequence progress", 38.73);
   await expect(scene).toHaveAttribute("data-phase", "FLIP_1");
   await page.screenshot({ path: info.outputPath("baseline-paper-midflip.png") });
   const frozen = await scene.getAttribute("data-elapsed");
@@ -95,4 +95,89 @@ test("mobile laboratory has no document scroll and controls remain reachable", a
   await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
   await range(page, "Bend", 2);
   await expect(page.getByRole("slider", { name: "Bend", exact: true })).toHaveValue("2");
+});
+
+test("every tuning group wakes the stationary renderer without restarting the sequence", async ({ page }) => {
+  await ready(page);
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
+  const groups = [
+    ["Camera", [["Distance", 11], ["FOV", 34], ["Pitch", 21], ["Yaw", 5], ["Roll", 0]]],
+    ["Magazine", [["Scale", .9], ["Overall tilt", 0], ["Page thickness", .006]]],
+    ["Page", [["Bend", 2.3], ["Curl", 1], ["Stiffness", .3], ["Lift", .5]]],
+    ["Light & shadow", [["Ambient intensity", 2], ["Main light intensity", 2.5], ["Light X", -1], ["Light Y", 2], ["Light Z", 10], ["Shadow strength", .22], ["Shadow softness", 5]]],
+    ["Animation", [["Flip duration", .8], ["Delay between flips", .2]]],
+  ] as const;
+  const scene = page.getByTestId("magazine-scene");
+  for (const [group, controls] of groups) {
+    const details = page.locator("details").filter({ has: page.locator("summary", { hasText: group }) });
+    if (await details.getAttribute("open") === null) await details.locator("summary").click();
+    for (const [label, value] of controls) {
+      const frames = Number(await scene.getAttribute("data-frames"));
+      await range(page, label, value);
+      await expect(page.getByRole("slider", { name: label, exact: true })).toHaveValue(String(value));
+      expect(Number(await scene.getAttribute("data-frames"))).toBeGreaterThan(frames);
+      await expect(scene).toHaveAttribute("data-phase", "TARGET");
+      await expect(scene).toHaveAttribute("data-paused", "true");
+    }
+  }
+  await page.getByRole("checkbox", { name: "Debug geometry" }).check();
+  await expect(page.getByText(/56 × 16 segments/)).toBeVisible();
+  await page.getByRole("button", { name: "Close controls −", exact: true }).click();
+  await expect(page.getByRole("complementary")).toHaveCount(0);
+});
+
+test("context loss disposes the scene and owned fonts, retry restores one canvas", async ({ page }) => {
+  await ready(page);
+  const before = await page.evaluate(() => document.fonts.size);
+  await page.locator("canvas").evaluate(canvas => canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true })));
+  await expect(page.getByTestId("living-issue-lab").getByRole("alert")).toContainText("Контекст WebGL потерян");
+  await expect(page.locator("canvas")).toHaveCount(0);
+  expect(await page.evaluate(() => document.fonts.size)).toBe(before - 2);
+  const scene = page.getByTestId("magazine-scene"), frames = await scene.getAttribute("data-frames");
+  await page.waitForTimeout(180); expect(await scene.getAttribute("data-frames")).toBe(frames);
+  await page.getByRole("button", { name: "Повторить", exact: true }).click();
+  await expect(page.locator("canvas")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Final State", exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => document.fonts.size)).toBe(before);
+});
+
+for (const width of [1440, 1280, 768]) {
+  test(`responsive paper inspection at ${width}px has no scroll or browser errors`, async ({ page }, info) => {
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+    await page.setViewportSize({ width, height: 900 }); await ready(page);
+    const scene = page.getByTestId("magazine-scene");
+    // First paper, not percentages of the entire cover + three-leaf sequence.
+    for (const active of [.25, .5, .75]) {
+      await range(page, "Sequence progress", (1 + active * .68) / 3.46 * 100);
+      await expect(scene).toHaveAttribute("data-phase", "FLIP_1");
+      expect(Number(await scene.getAttribute("data-active-progress"))).toBeCloseTo(active, 2);
+      await page.screenshot({ path: info.outputPath(`paper-${active * 100}.png`) });
+    }
+    await page.getByRole("button", { name: "Final State", exact: true }).click();
+    expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight])).toEqual([width, 900]);
+    expect(errors).toEqual([]);
+  });
+}
+
+test("hidden document freezes the clock and returning does not catch up elapsed time", async ({ page }) => {
+  await ready(page); await range(page, "Sequence progress", 35);
+  await page.getByRole("button", { name: "Play", exact: true }).evaluate(element => (element as HTMLButtonElement).click());
+  await page.evaluate(() => { Object.defineProperty(document, "hidden", { configurable: true, value: true }); document.dispatchEvent(new Event("visibilitychange")); });
+  const scene = page.getByTestId("magazine-scene"), elapsed = Number(await scene.getAttribute("data-elapsed"));
+  const frames = await scene.getAttribute("data-frames");
+  await page.waitForTimeout(250); expect(await scene.getAttribute("data-frames")).toBe(frames);
+  const resumed = await scene.evaluate(element => new Promise<number>(resolve => {
+    const observer = new MutationObserver(records => {
+      if (records.some(record => record.attributeName === "data-frames")) {
+        observer.disconnect(); resolve(Number((element as HTMLElement).dataset.elapsed));
+      }
+    });
+    observer.observe(element, { attributes: true });
+    Object.defineProperty(document, "hidden", { configurable: true, value: false }); document.dispatchEvent(new Event("visibilitychange"));
+  }));
+  // The first resumed draw has no clock delta, independent of the runner's speed.
+  expect(resumed).toBe(elapsed);
 });

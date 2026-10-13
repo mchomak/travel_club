@@ -164,8 +164,15 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   function render() {
     if (disposed) return;
     current = sampleTimeline(elapsed, params);
+    // Balance the closed single leaf, then gently release the offset as it opens.
+    // The object starts in place; this is the changing centre of its footprint.
+    const opening = current.cover ? current.progress * current.progress * (3 - 2 * current.progress) : 1;
+    const openingOffset = -PAGE_WIDTH * .46 * (1 - opening) * params.scale;
+    magazine.position.x = openingOffset;
     leftGroup.visible = !current.cover || current.progress > .55;
-    contact.scale.x = current.cover ? .54 : 1; contact.position.x = current.cover ? PAGE_WIDTH / 2 : 0;
+    contact.scale.x = current.cover ? .54 : 1;
+    contact.position.x = openingOffset + (current.cover ? PAGE_WIDTH / 2 * params.scale : 0);
+    contact.rotation.z = magazine.rotation.z;
     leftMaterial.map = art.spreads[current.spread].left;
     rightMaterial.map = art.spreads[Math.min(3, current.spread + (current.turning && !current.cover ? 1 : 0))].right;
     leaf.visible = current.turning;
