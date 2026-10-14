@@ -1,6 +1,43 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+test("the intro camera approaches from 11.5 to 7 before unlocking scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const time = new Date("2026-10-15T09:00:00Z");
+  await page.clock.install({ time });
+  await page.clock.pauseAt(time);
+  await page.goto("/test_7");
+  const root = page.getByTestId("magazine-handoff"), scene = page.getByTestId("magazine-scene");
+  await expect(scene).toHaveAttribute("data-phase", "CLOSED", { timeout: 20000 });
+  await expect(scene).toHaveAttribute("data-camera-distance", "11.5000");
+  const pageWidth = () => root.evaluate(element => {
+    const corners = JSON.parse((element as HTMLElement).dataset.pageCorners!) as { x: number }[];
+    return corners[1].x - corners[0].x;
+  });
+  const initialWidth = await pageWidth();
+  let previous = 11.5;
+  for (const step of [900, 900, 900]) {
+    await page.clock.runFor(step);
+    const distance = Number(await scene.getAttribute("data-camera-distance"));
+    expect(distance).toBeLessThan(previous);
+    expect(distance).toBeGreaterThan(7);
+    previous = distance;
+    await expect(root).toHaveAttribute("data-stage", "opening");
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
+  }
+  await page.clock.runFor(900);
+  await expect(root).toHaveAttribute("data-stage", "ready");
+  await expect(scene).toHaveAttribute("data-camera-distance", "7.0000");
+  expect(await pageWidth()).toBeGreaterThan(initialWidth * 1.4);
+  await page.evaluate(() => { scrollTo(0, innerHeight * 1.25); dispatchEvent(new Event("scroll")); });
+  await page.clock.runFor(50);
+  await expect(root).toHaveAttribute("data-stage", "site");
+  await page.evaluate(() => { scrollTo(0, 0); dispatchEvent(new Event("scroll")); });
+  await page.clock.runFor(50);
+  await expect(root).toHaveAttribute("data-stage", "ready");
+  await expect(scene).toHaveAttribute("data-camera-distance", "7.0000");
+});
+
 test("the preset opens eight leaves, then scroll turns the live right page into the website", async ({ page }) => {
   await page.goto("/test_7");
   const root = page.getByTestId("magazine-handoff");

@@ -6,6 +6,10 @@ existing `/test_5` homepage. Neither reference route is edited.
 - `preset.json` is an exact snapshot of the root `test-6-settings.json`, copied
   into the frontend build context. Eight leaves, separate cover, 3.46648 seconds
   to TARGET; no laboratory controls. The browser suite compares both JSON files.
+- The intro camera starts at distance11.5 and follows the same deterministic
+  clock to the preset's distance7, with quintic easing. Responsive safety fitting
+  still keeps the magazine in frame. TARGET holds that final pose until scroll;
+  reverse scroll returns there without replaying the camera approach.
 - `artwork.ts`, `deformation.ts`, `timeline.ts` and `parameters.ts` are local
   snapshots of the laboratory. This keeps the experiment independent of future
   laboratory edits. Three.js and the existing assets/fonts are reused.

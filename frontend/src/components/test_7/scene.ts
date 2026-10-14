@@ -5,6 +5,8 @@ import { deformPage, PAGE_HEIGHT, PAGE_WIDTH } from "./deformation";
 import { paramsForVariant, type SceneParams } from "./parameters";
 import { artworkIndex, buildTimeline, sampleTimeline, type TimelineFrame } from "./timeline";
 
+const INTRO_CAMERA_DISTANCE = 11.5;
+
 export type PageProjection = { corners: { x: number; y: number }[]; width: number; height: number; visible: boolean };
 export type SceneReport = { phase: string; paused: boolean; elapsed: number; total: number; progress: number; fps: number; frames: number; columns: number };
 export type SceneController = {
@@ -139,14 +141,24 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 600 ? 1.25 : 1.5));
     renderer.setSize(width, height, false);
     camera.aspect = width / Math.max(height, 1); camera.fov = params.fov;
+    camera.updateProjectionMatrix();
+  }
+  function cameraPose() {
     // Reserve room for the rising leaf, independently of its current phase.
     const halfFov = THREE.MathUtils.degToRad(params.fov / 2);
     const horizontalFit = (PAGE_WIDTH * 1.18 * params.scale) / (Math.tan(halfFov) * camera.aspect);
     const verticalFit = (PAGE_HEIGHT * .72 * params.scale) / Math.tan(halfFov);
-    const distance = Math.max(params.distance, horizontalFit, verticalFit);
+    // Share the paper's clock: pause/visibility/seek/replay also govern the dolly.
+    // Quintic easing brings the camera to rest before scroll takes ownership.
+    const progress = Math.max(0, Math.min(1, elapsed / timeline.total));
+    const approach = progress ** 3 * (progress * (progress * 6 - 15) + 10);
+    const requestedDistance = INTRO_CAMERA_DISTANCE + (params.distance - INTRO_CAMERA_DISTANCE) * approach;
+    const distance = Math.max(requestedDistance, horizontalFit, verticalFit);
+    host.dataset.cameraDistance = requestedDistance.toFixed(4);
+    host.dataset.fittedDistance = distance.toFixed(4);
     const pitch = THREE.MathUtils.degToRad(params.pitch), yaw = THREE.MathUtils.degToRad(params.yaw);
     camera.position.set(Math.sin(yaw) * Math.sin(pitch) * distance, -Math.cos(yaw) * Math.sin(pitch) * distance, Math.cos(pitch) * distance);
-    camera.lookAt(0, 0, .28); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+    camera.lookAt(0, 0, .28); camera.updateMatrixWorld();
     // Level the resting lower edge without changing the oblique camera position.
     // User roll remains an additional adjustment relative to this level frame.
     const edgeZ = (.025 + params.thickness * 12.5) * params.scale;
@@ -198,6 +210,7 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   function render() {
     if (disposed) return;
     current = sampleTimeline(elapsed, timeline);
+    cameraPose();
     // Balance the closed single leaf, then gently release the offset as it opens.
     // The object starts in place; this is the changing centre of its footprint.
     const opening = current.cover ? current.progress * current.progress * (3 - 2 * current.progress) : 1;
