@@ -61,7 +61,7 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   const materials: THREE.Material[] = [], geometries: THREE.BufferGeometry[] = [];
   const register = <T extends THREE.BufferGeometry>(geometry: T): T => { geometries.push(geometry); return geometry; };
   const paper = (map?: THREE.Texture, color = BASE_TOKENS.colors.cloud) => {
-    const material = new THREE.MeshStandardMaterial({ map, color: map ? "#ffffff" : color, roughness: 1, metalness: 0 });
+    const material = new THREE.MeshStandardMaterial({ ...(map ? { map } : {}), color: map ? "#ffffff" : color, roughness: 1, metalness: 0 });
     materials.push(material); return material;
   };
   const frontMaterial = paper(art.cover), backMaterial = paper(art.spreads[0].left), edgeMaterial = paper(undefined, "#dedcd4");

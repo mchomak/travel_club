@@ -683,7 +683,7 @@ All brief clauses remain live; repeated clauses preserved. Optional suggestions 
 | R677 | \- есть Final State; | done | Original brief governs | spec + acceptance checklist |
 | R678 | \- reduced-motion поддерживается; | done | Original brief governs | spec + acceptance checklist |
 | R679 | \- performance нормальная; | done | Original brief governs | spec + acceptance checklist |
-| R680 | \- console чистая; | done | Original brief governs | spec + acceptance checklist |
+| R680 | \- console чистая; | deferred | Scene errors/Three warnings fixed; two pre-existing Next root404 CSS warnings also reproduce on protectedtest5. Globalfixoutside authorizedrouteisolation. | spec Existing framework limitation |
 | R681 | \- /test_5 и другие routes не изменены; | done | Original brief governs | spec + acceptance checklist |
 | R682 | \- сделано минимум 3 refinement passes. | done | Original brief governs | spec + acceptance checklist |
 | R683 | \================================================== | done | Original brief governs | spec + acceptance checklist |
@@ -718,3 +718,4 @@ All brief clauses remain live; repeated clauses preserved. Optional suggestions 
 | R712 | Сначала реализуй, запусти, визуально проверь и доработай сцену. | done | Original brief governs | spec + acceptance checklist |
 | D01 | Linux clean npm ci lock completeness | done | Ticket02 Docker build proved Windows npm normalization omitted existing optional @emnapi core/runtime Linux entries; serves minimal dependencies/production build requirements | spec Cross-platform lock → ticket02 |
 | D02 | Real Chromium favicon request absent in headless-shell | done | Root production QA detected favicon.ico404 only in real Chromium; scope icon to test6 to serve consoleclean without changing other routes | spec Scoped icon → ticket02 |
+| D03 | G4 observed warnings and software-runner timing failure | done | Three material optional map passed undefined; strictPlayphase expectation saw legitimateTARGET after7.42seconds, requires statebasedobservation; serves originalcleanconsole/testverification requirements | ticket03 |

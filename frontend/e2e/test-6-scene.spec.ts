@@ -13,6 +13,8 @@ async function ready(page: Page) {
 
 test("seek, replay, pause, final, reset and immediate tuning", async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  const warnings: string[] = [];
+  page.on("console", message => { if (message.type() === "warning") warnings.push(message.text()); });
   await page.setViewportSize({ width: 1440, height: 900 });
   await ready(page);
   const scene = page.getByTestId("magazine-scene");
@@ -52,14 +54,26 @@ test("seek, replay, pause, final, reset and immediate tuning", async ({ page }, 
   await expect(scene).toHaveAttribute("data-paused", "true");
   const paused = await scene.getAttribute("data-elapsed");
   await page.waitForTimeout(140); expect(await scene.getAttribute("data-elapsed")).toBe(paused);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
-  await expect(scene).toHaveAttribute("data-paused", "false");
+  // Observe the first resumed draw in the click task: slow software rendering can
+  // finish the real-time sequence before the next Playwright assertion runs.
+  const resumed = await page.getByRole("button", { name: "Play", exact: true }).evaluate(element => {
+    const host = document.querySelector('[data-testid="magazine-scene"]') as HTMLElement;
+    const before = { elapsed: host.dataset.elapsed, frames: Number(host.dataset.frames) };
+    (element as HTMLButtonElement).click();
+    return { before, elapsed: host.dataset.elapsed, frames: Number(host.dataset.frames), paused: host.dataset.paused };
+  });
+  expect(resumed.paused).toBe("false");
+  expect(resumed.elapsed).toBe(resumed.before.elapsed);
+  expect(resumed.frames).toBeGreaterThan(resumed.before.frames);
   const replayStart = await page.getByRole("button", { name: "Replay", exact: true }).evaluate(element => {
     (element as HTMLButtonElement).click();
-    return (document.querySelector('[data-testid="magazine-scene"]') as HTMLElement).dataset.elapsed;
+    const host = document.querySelector('[data-testid="magazine-scene"]') as HTMLElement;
+    return { elapsed: host.dataset.elapsed, paused: host.dataset.paused };
   });
-  expect(Number(replayStart)).toBe(0);
-  await expect(scene).toHaveAttribute("data-paused", "false");
+  expect(Number(replayStart.elapsed)).toBe(0);
+  expect(replayStart.paused).toBe("false");
+  await info.attach("console-warnings", { body: JSON.stringify(warnings, null, 2), contentType: "application/json" });
+  expect(warnings.filter(message => message.startsWith("THREE.Material:"))).toEqual([]);
   expect(errors).toEqual([]);
 });
 

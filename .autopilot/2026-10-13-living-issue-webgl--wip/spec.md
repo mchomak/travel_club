@@ -50,3 +50,9 @@ Windows npmci dryrun and local build do not prove Linux Docker clean install. Do
 
 ## Scoped icon (D02, ticket02)
 Real Chromium requested absent global/favicon.ico which headless-shell did not, causing consoleerror. Add only test6 route icon/metadata, keepglobal andother routes unchanged; validate actual Chromium console/network. Original consoleclean requirement unchanged.
+
+## G4 repair(D03)
+Omit undefined texturemap materialoption; capture bothwarnings+errors realChromium in isolatedproductionrepeat to diagnoseunusedCSSpreload warning. Preservecorrectreal-time playback: testPlay via deterministicfirst-resumedraw/stateorlongenoughcontrolledtiming, notfragileassumptionthatsoftwaredriverreturnsbefore3.46end. No weakenedcontrolcoverage,newdependenciesor otherroutechanges.
+
+## Existing framework limitation / Out of scope
+R680 partial: zero scene/Three errors and warnings afterfix, buttwo unused CSS preload warnings originate in the unchanged rootnot-found boundary. Root reproduced identical warnings on protected/test5. Localboundary cannotremove rootRSC imports. Globalroot/notfound/publicsite changes prohibited by originalbrief and AGENTS surgicalscope rule, so that pre-existing subset is deferred and reported, not suppressed.

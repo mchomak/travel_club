@@ -14,3 +14,6 @@ Baseline localhost3001/test_6 dev session48393. First/second/third paper midpoin
 
 ## Built ticket02
 Three sequential actual before/after passes complete; CPU geometrybend2.05/curl.9/cornerlead.15; smooth envelope40–60%crest, .68turns/.14holds,3.46total. CameraPitch18,key(-2,1,12),softness4,closedfootprintcentered. ControllerAPIunchanged.8puretests/88fullunit/31productionbrowser(lab10+regression21), allchecks/Dockergreen. Scopedtest6/icon.svg removesrealChromefavicon404;rootactualcleanconsole+stablerenderstopverified. PerformanceRTX4060~120FPS1440x900DPR1;SwiftShader16–17.
+
+## Built ticket03
+Conditionalmaterialmapoptionremoves5Threewarnings. Play/Replay browserchecksobservefirstresumeddrawwithoutappclockchange.10software10hardware+independentG4 10pass; fullunit88afterfinalfix;lint/typecheck/Dockerbuildpass.0Threewarnings/errors/HTTPfailures; exactly2existingroot404CSSpreloadwarningsalso/test5 remainexplicitR680scope limitation. Finalstableproofdocs/qa/test-6.
