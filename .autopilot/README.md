@@ -34,3 +34,5 @@
 | 2026-10-13 | `2026-10-13-editorial-pages` | сдан | семь страниц, общие токены, demo-форма и 404; 100 browser checks |
 
 | 2026-10-13 | `2026-10-13-living-issue-webgl` | сдан с оговоркой | /test_6: процедурный 3D-журнал, page curl, три прохода, панель; два существующих Next CSS warning отмечены отдельно. |
+
+| 2026-10-14 | `2026-10-14-test-7-magazine-handoff` | сдан | /test_7:8лиcтов по preset → scroll в живую homepage, Docker46browserchecks, feature committed/pushed. |

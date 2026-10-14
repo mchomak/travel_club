@@ -442,4 +442,14 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 
 - В обычном Chromium остаются два предупреждения Next о preload CSS общей `app/not-found.tsx` (также воспроизводятся на `/test_5`); ошибки/предупреждения Three и сетевые ошибки устранены. Общая граница не менялась ради лаборатории.
 
+### Living Issue → живой сайт `/test_7` — 14 октября 2026
+
+- Вход — `frontend/src/app/test_7/page.tsx`; локальная сцена и координатор — `frontend/src/components/test_7/`. Корневой `test-6-settings.json` зафиксирован точной копией `preset.json` в этом каталоге для frontend-only Docker context; маршрут preset не изменяет.
+- `MagazineHandoff` принимает один живой `EditorialHome` внутри `ImageEditorProvider` из `test_5`: DOM сайта и состояние редактора сохраняются; фото используют общую с `/test_5` IndexedDB `travel-club-test-5-photos` на том же origin.
+- `scene.ts` рисует прозрачный WebGL canvas: depth-tested shader вырезает правую страницу, `ShadowMaterial` сохраняет тени; `projection.ts` проецирует настоящий DOM сайта через `matrix3d` по четырём углам листа, без скриншота/дубликата homepage.
+- `magazine-handoff.tsx`: opening → ready (TARGET) → focus → site; после автоперелистывания native scroll на 1.25 высоты viewport приближает камеру к правой странице, rAF сглаживает за 65ms. На границе сайт возвращается в native flow, transform/clip снимаются; обратная прокрутка возвращает проекцию того же DOM.
+- До TARGET блокируются overflow/wheel/touch/scroll-клавиши; до конца focus сайт inert, затем inert сцена. Cleanup восстанавливает overflow/history.scrollRestoration и освобождает listeners/RAF/GPU; скрытая вкладка останавливает intro без catch-up, TARGET рисуется по требованию.
+- «К сайту», вход с hash, reduced motion, ошибка загрузки/WebGL и context loss сразу открывают сайт, снимая блокировку; hash разрешается через ID с безопасным decode и fallback на `#start`. Без JavaScript noscript показывает сайт.
+- Проверено 14 октября из `frontend/`: `npm.cmd run lint`, `npm.cmd run typecheck`; `npm.cmd test -- --run --testTimeout=15000` — 94 passed, 21 файл. `$env:PLAYWRIGHT_BASE_URL='http://localhost:3001'; npm.cmd exec playwright test e2e/test-7-handoff.spec.ts -- --workers=1 --output=test-results/test-7-stable` — 10 passed.
+- Production-сборка/запуск из корня: `docker compose up -d --no-deps --build --wait frontend`; успешно пересобрал и запустил `/test_7` 15 октября. Production-набор `npm.cmd exec playwright test e2e/test-7-handoff.spec.ts e2e/test-6-scene.spec.ts e2e/test-5-camera.spec.ts e2e/test-5-photo-editor.spec.ts -- --workers=2 --output=test-results/test-7-production` — 46 passed (1.9m). Новых зависимостей и env-переменных нет.
 <!-- autopilot:end -->
