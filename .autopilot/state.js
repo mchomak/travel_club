@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "living-issue-webgl",
-  "dir": "2026-10-13-living-issue-webgl--wip",
+  "dir": "2026-10-13-living-issue-webgl",
   "title": "Travel Club — Living Issue WebGL laboratory",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-13T22:47:39+03:00",
-  "updatedAt": "2026-10-14T12:57:32+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-14T12:59:36+03:00",
+  "finishedAt": "2026-10-14T12:59:36+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -59,9 +59,10 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-10-14T00:23:54+03:00",
-      "note": "Final bounded fixes; existing global CSS warning documented"
+      "note": "Magazine and checks accepted; R680 existingNextCSSwarnings explicitlydeferred",
+      "finishedAt": "2026-10-14T12:59:36+03:00"
     }
   ],
   "requirements": {
@@ -1575,7 +1576,8 @@ window.STATE =
       "tests": {
         "passed": 98,
         "failed": 0
-      }
+      },
+      "commit": "48b0ff36c6e78c9f9995b0bc2869ed44b536e70e"
     }
   ],
   "singlePass": null,
@@ -1627,6 +1629,7 @@ window.STATE =
       "npm.cmd test -- --run --testTimeout=15000 →88passed",
       "npm.cmd exec playwright test e2e/test-6-scene.spec.ts -- --workers=1 --output=test-results/test-6-g4-repair →10passed",
       "actualChromiumchannel hardware audit →0Threewarnings0errors0HTTPfailures,2existingNextwarnings"
-    ]
+    ],
+    "finalRecheck": "IndependentG4 target10passed;0Threewarnings/errors/HTTPfailures,2existingNextwarnings scope limitation"
   }
 }

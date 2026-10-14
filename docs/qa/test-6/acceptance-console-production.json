@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-14",
+  "url": "http://localhost:3000/test_6",
+  "channel": "chromium",
+  "observation": "3.5 seconds ordinary playback after readiness, then 6.5 additional seconds settled; no console suppression",
+  "runs": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "warnings": [
+        {
+          "elapsedMs": 3147,
+          "text": "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+        },
+        {
+          "elapsedMs": 3147,
+          "text": "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+        }
+      ],
+      "errors": [],
+      "failedResources": [],
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 (0x00002882) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "playback": {
+        "testid": "magazine-scene",
+        "phase": "TARGET",
+        "elapsed": "3.4600",
+        "frames": "381",
+        "activeProgress": "1.0000",
+        "paused": "true"
+      },
+      "settled": {
+        "testid": "magazine-scene",
+        "phase": "TARGET",
+        "elapsed": "3.4600",
+        "frames": "381",
+        "activeProgress": "1.0000",
+        "paused": "true"
+      },
+      "stylesheets": {
+        "links": [
+          {
+            "rel": "stylesheet",
+            "as": "",
+            "href": "http://localhost:3000/_next/static/chunks/0ebrp3zapjvt6.css"
+          },
+          {
+            "rel": "stylesheet",
+            "as": "",
+            "href": "http://localhost:3000/_next/static/chunks/1-dzi0q5na54_.css"
+          },
+          {
+            "rel": "preload",
+            "as": "style",
+            "href": "http://localhost:3000/_next/static/chunks/3bswa89roskq3.css"
+          },
+          {
+            "rel": "preload",
+            "as": "style",
+            "href": "http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css"
+          }
+        ],
+        "sheets": [
+          "http://localhost:3000/_next/static/chunks/0ebrp3zapjvt6.css",
+          "http://localhost:3000/_next/static/chunks/1-dzi0q5na54_.css"
+        ]
+      }
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "warnings": [
+        {
+          "elapsedMs": 3131,
+          "text": "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+        },
+        {
+          "elapsedMs": 3131,
+          "text": "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+        }
+      ],
+      "errors": [],
+      "failedResources": [],
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4060 (0x00002882) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "playback": {
+        "testid": "magazine-scene",
+        "phase": "TARGET",
+        "elapsed": "3.4600",
+        "frames": "390",
+        "activeProgress": "1.0000",
+        "paused": "true"
+      },
+      "settled": {
+        "testid": "magazine-scene",
+        "phase": "TARGET",
+        "elapsed": "3.4600",
+        "frames": "390",
+        "activeProgress": "1.0000",
+        "paused": "true"
+      },
+      "stylesheets": {
+        "links": [
+          {
+            "rel": "stylesheet",
+            "as": "",
+            "href": "http://localhost:3000/_next/static/chunks/0ebrp3zapjvt6.css"
+          },
+          {
+            "rel": "stylesheet",
+            "as": "",
+            "href": "http://localhost:3000/_next/static/chunks/1-dzi0q5na54_.css"
+          },
+          {
+            "rel": "preload",
+            "as": "style",
+            "href": "http://localhost:3000/_next/static/chunks/3bswa89roskq3.css"
+          },
+          {
+            "rel": "preload",
+            "as": "style",
+            "href": "http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css"
+          }
+        ],
+        "sheets": [
+          "http://localhost:3000/_next/static/chunks/0ebrp3zapjvt6.css",
+          "http://localhost:3000/_next/static/chunks/1-dzi0q5na54_.css"
+        ]
+      }
+    }
+  ],
+  "limitation": "Two unused CSS preload warnings per viewport originate from publication styles eagerly loaded for the inherited global not-found boundary by Next.js; global route changes are outside the isolated test_6 scope."
+}
