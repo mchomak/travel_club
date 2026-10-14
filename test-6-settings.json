@@ -1,0 +1,39 @@
+{
+  "format": "travel-club/test_6-settings",
+  "version": 1,
+  "settings": {
+    "distance": 7,
+    "fov": 31,
+    "pitch": 18,
+    "yaw": 0,
+    "roll": 0,
+    "scale": 0.96,
+    "tilt": 0,
+    "bend": 1.6,
+    "curl": 0.9,
+    "stiffness": 0.24,
+    "lift": 0.35,
+    "spineConstraint": 0.12,
+    "outerEdgeInfluence": 0.15,
+    "thickness": 0.006,
+    "ambient": 1.6,
+    "key": 1.7,
+    "lightX": -5.5,
+    "lightY": 1,
+    "lightZ": 12,
+    "shadowStrength": 0.21,
+    "shadowSoftness": 5.25,
+    "variant": "fast",
+    "flipDuration": 0.34,
+    "delay": 0.07,
+    "pageCount": 8,
+    "speedCurve": [
+      { "position": 0, "speed": 2.4 },
+      { "position": 0.18, "speed": 2.02 },
+      { "position": 0.42, "speed": 1.53 },
+      { "position": 0.67, "speed": 1.13 },
+      { "position": 1, "speed": 0.77 }
+    ],
+    "debug": false
+  }
+}
