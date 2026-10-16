@@ -8,14 +8,23 @@ export type PricingMode = "markup" | "target_margin";
 export type TripStatus = "draft" | "ready" | "archived";
 export type Category = "transport" | "accommodation" | "activities" | "other";
 export interface UserInfo { id: UUID; login: string }
+export type TravelMode = "drive" | "walk" | "transit";
+export interface MapPlace {
+  name: string; address: string; latitude: number; longitude: number;
+  provider: "geoapify" | "manual" | "google_link";
+  provider_place_id?: string | null; source_url?: string | null;
+}
+export interface MapLegMode { from_key: string; to_key: string; mode: TravelMode }
 export interface DayInput {
   id: UUID; date: string; country: string; city: string; place: string; title: string;
   status: string; internal_note: string; client_note: string;
+  map_start?: MapPlace | null; map_end?: MapPlace | null; map_leg_modes?: MapLegMode[];
 }
 export interface ItemInput {
   id: UUID; day_id: UUID | null; end_day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
   subtype?: ItemSubtype | null; airport_before_minutes?: number; airport_after_minutes?: number;
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
+  map_place?: MapPlace | null; map_end_place?: MapPlace | null;
   external_url: string | null; internal_note: string; client_note: string; included: boolean; currency: string;
   unit_price: DecimalString; quantity: DecimalString; participants_override: number | null;
   capacity: number | null; rooms_override: number | null; duration_days: number;

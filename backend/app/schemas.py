@@ -113,6 +113,75 @@ class PasswordChangeInput(DTO):
     new_password: str = Field(min_length=12, max_length=1024)
 
 
+TravelMode = Literal["drive", "walk", "transit"]
+
+
+class MapPlace(DTO):
+    name: str = Field(min_length=1, max_length=200)
+    address: str = Field(max_length=500)
+    latitude: float = Field(ge=-90, le=90, allow_inf_nan=False, strict=True)
+    longitude: float = Field(ge=-180, le=180, allow_inf_nan=False, strict=True)
+    provider: Literal["geoapify", "manual", "google_link"]
+    provider_place_id: str | None = Field(default=None, max_length=300)
+    source_url: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("name", "address", "provider_place_id", "source_url")
+    @classmethod
+    def no_null_characters(cls, value: str | None) -> str | None:
+        if value is not None and "\x00" in value:
+            raise ValueError("Текст места содержит недопустимый символ")
+        return value
+
+    @field_validator("name")
+    @classmethod
+    def nonempty_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Введите название места")
+        return value
+
+    @field_validator("source_url")
+    @classmethod
+    def valid_source_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        try:
+            parsed = TypeAdapter(AnyHttpUrl).validate_python(value)
+        except ValidationError:
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта") from None
+        parts = urlsplit(value)
+        if (
+            not parts.netloc or not parts.hostname or any(char.isspace() for char in value)
+            or parsed.username or parsed.password
+        ):
+            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта")
+        return value
+
+
+class MapLegMode(DTO):
+    from_key: str = Field(max_length=47)
+    to_key: str = Field(max_length=47)
+    mode: TravelMode
+
+    @field_validator("from_key", "to_key")
+    @classmethod
+    def valid_node_key(cls, value: str) -> str:
+        if value in {"day:start", "day:end"}:
+            return value
+        parts = value.split(":")
+        if len(parts) == 3 and parts[0] == "item" and parts[2] in {"start", "end"}:
+            try:
+                return f"item:{UUID(parts[1])}:{parts[2]}"
+            except ValueError:
+                pass
+        raise ValueError("Выберите точку дня или события")
+
+    @model_validator(mode="after")
+    def distinct_nodes(self):
+        if self.from_key == self.to_key:
+            raise ValueError("Начало и конец участка должны различаться")
+        return self
+
+
 class DayInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     date: date
@@ -123,6 +192,16 @@ class DayInput(DTO):
     status: str = Field(default="", max_length=200)
     internal_note: Note = ""
     client_note: Note = ""
+    map_start: MapPlace | None = None
+    map_end: MapPlace | None = None
+    map_leg_modes: list[MapLegMode] = Field(default_factory=list, max_length=20002)
+
+    @model_validator(mode="after")
+    def unique_map_legs(self):
+        pairs = [(leg.from_key, leg.to_key) for leg in self.map_leg_modes]
+        if len(pairs) != len(set(pairs)):
+            raise ValueError("Способ передвижения для участка не должен повторяться")
+        return self
 
 
 class ItemInput(DTO):
@@ -138,6 +217,8 @@ class ItemInput(DTO):
     title: Title
     description: Note = ""
     location: str = Field(default="", max_length=200)
+    map_place: MapPlace | None = None
+    map_end_place: MapPlace | None = None
     start_time: time | None = None
     end_time: time | None = None
     external_url: str | None = Field(default=None, max_length=2048)

@@ -19,3 +19,9 @@
 - Команды backend: docker compose exec -T backend pytest -q; ... ruff check . . Локальная .venv как запасной вариант. DB tests isolated existing fixture; не удалять production/local business data. Migrations clean DB verify in disposable database.
 - Browser: existing e2e/constructor.spec.ts provides auth fixture strategy. npm.cmd exec playwright test e2e/constructor.spec.ts e2e/trip-map.spec.ts -- --workers=1. Test fixtures may mock provider APIs only in tests; local real backend persistence/auth required.
 - Не создавать worktree с копией stale dirty sources: работаем в общей текущей папке по непересекающимся зонам. Коммиты только root, отдельно на таск после ревью/зелёных проверок.
+
+## Из таска 01
+
+- contracts.ts exports MapPlace, TravelMode, MapLegMode; nullable provider_place_id/source_url; ItemInput.map_place/map_end_place and DayInput.map_start/map_end/map_leg_modes optional for backward compatibility. tripInput/emptyDay/newItem preserve/init them.
+- Backend identical defaults via Pydantic and JSONB. Revision c93f62a1b7d8 after f64a81e0c9d2. Bounded preferences 20002, duplicate/self/invalid pairs rejected; syntactically valid stale UUID keys retained.
+- Backend59 tests (baseline54), frontend95 (baseline94), lint/typecheck/Ruff pass. Clean migration/downgrade/seeded legacy upgrade verified on disposable DB. Runtime backend needs final image rebuild before UI tests.

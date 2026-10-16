@@ -54,6 +54,132 @@ def editable(document):
     return payload
 
 
+def test_map_places_and_day_preferences_roundtrip_and_duplicate(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    place = {
+        "name": "Hotel", "address": "Tokyo", "latitude": 35.68, "longitude": 139.76,
+        "provider": "manual", "source_url": "https://example.com/place",
+    }
+    destination = {**place, "name": "Airport", "longitude": 140.39}
+    item_id = str(uuid4())
+    payload["days"][0].update(
+        map_start=place, map_end=destination,
+        map_leg_modes=[
+            {"from_key": "day:start", "to_key": f"item:{item_id}:start", "mode": "walk"},
+            {"from_key": f"item:{item_id}:end", "to_key": "day:end", "mode": "transit"},
+        ],
+    )
+    payload["items"] = [{
+        "id": item_id, "day_id": trip["days"][0]["id"], "type": "flight",
+        "calculation_mode": "fixed", "title": "Flight", "currency": "RUB",
+        "unit_price": "120", "map_place": place, "map_end_place": destination,
+        "start_time": "23:00", "end_time": "02:00",
+    }]
+    response = authenticated.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["items"][0]["map_place"]["latitude"] == 35.68
+    assert saved["items"][0]["map_end_place"]["name"] == "Airport"
+    assert saved["calculation"]["cost_total"] == "120.00"
+    assert authenticated.get(path).json() == saved
+    repeated = authenticated.put(path, headers=HEADERS, json=editable(saved))
+    assert repeated.status_code == 200, repeated.text
+    saved = repeated.json()
+    copied_response = authenticated.post(path + "/duplicate", headers=HEADERS)
+    assert copied_response.status_code == 201, copied_response.text
+    copied = copied_response.json()
+    copied_item = copied["items"][0]
+    assert copied_item["id"] != item_id
+    assert copied_item["map_place"] == saved["items"][0]["map_place"]
+    assert copied_item["map_end_place"] == saved["items"][0]["map_end_place"]
+    assert copied["days"][0]["map_start"] == saved["days"][0]["map_start"]
+    assert copied["days"][0]["map_end"] == saved["days"][0]["map_end"]
+    assert copied["days"][0]["map_leg_modes"] == [
+        {"from_key": "day:start", "to_key": f"item:{copied_item['id']}:start", "mode": "walk"},
+        {"from_key": f"item:{copied_item['id']}:end", "to_key": "day:end", "mode": "transit"},
+    ]
+    assert copied["calculation"]["cost_total"] == "120.00"
+    preview = authenticated.get(path + "/preview").text
+    assert "map_place" not in preview and "map_start" not in preview
+
+
+@pytest.mark.parametrize("field", ["map_start", "map_end", "map_leg_modes"])
+def test_map_only_day_removal_needs_confirmation_and_preserves_other_days(authenticated, field):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    place = {
+        "name": "Hotel", "address": "", "latitude": 35, "longitude": 139,
+        "provider": "manual",
+    }
+    value = ([{"from_key": "day:start", "to_key": "day:end", "mode": "drive"}]
+             if field == "map_leg_modes" else place)
+    payload["days"][4][field] = value
+    payload["days"][0]["map_start"] = place
+    saved_response = authenticated.put(path, headers=HEADERS, json=payload)
+    assert saved_response.status_code == 200, saved_response.text
+    saved = saved_response.json()
+    shortened = editable(saved)
+    shortened.update(end_date="2026-10-03", days=[])
+    rejected = authenticated.put(path, headers=HEADERS, json=shortened)
+    assert rejected.status_code == 409, rejected.text
+    assert rejected.json()["code"] == "DATE_REMOVAL_REQUIRED"
+    assert rejected.json()["details"]["dates"] == ["2026-10-05"]
+    assert authenticated.get(path).json() == saved
+    confirmed = authenticated.put(
+        path + "?confirm_date_removal=true", headers=HEADERS, json=shortened
+    )
+    assert confirmed.status_code == 200, confirmed.text
+    assert len(confirmed.json()["days"]) == 3
+    assert confirmed.json()["days"][0]["map_start"] == saved["days"][0]["map_start"]
+
+
+def test_map_validation_rejects_invalid_places_and_preferences_atomically(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    base = editable(trip)
+    place = {
+        "name": "Hotel", "address": "", "latitude": 35, "longitude": 139,
+        "provider": "manual",
+    }
+    for change in (
+        {"name": ""}, {"name": " "}, {"name": "x" * 201}, {"address": "x" * 501},
+        {"latitude": 91}, {"longitude": -181}, {"latitude": "NaN"},
+        {"longitude": "Infinity"}, {"latitude": True}, {"latitude": "35"},
+        {"provider": "unknown"}, {"provider_place_id": "x" * 301},
+        {"source_url": "javascript:alert(1)"}, {"source_url": "https:///missing"},
+        {"source_url": "https://user:password@example.com"},
+        {"source_url": "https://example.com/" + "x" * 2000},
+        {"source_url": "https://example.com/\x00"},
+    ):
+        payload = deepcopy(base)
+        payload["days"][0]["map_start"] = {**place, **change}
+        rejected = authenticated.put(path, headers=HEADERS, json=payload)
+        assert rejected.status_code == 422, (change, rejected.text)
+        assert authenticated.get(path).json() == trip
+
+    leg = {"from_key": "day:start", "to_key": "day:end", "mode": "walk"}
+    for modes in (
+        [leg, {**leg, "mode": "drive"}], [leg] * 20003,
+        [{**leg, "mode": "airplane"}], [{**leg, "to_key": "day:start"}],
+        [{**leg, "from_key": "item:invalid:start"}],
+    ):
+        payload = deepcopy(base)
+        payload["days"][0]["map_leg_modes"] = modes
+        rejected = authenticated.put(path, headers=HEADERS, json=payload)
+        assert rejected.status_code == 422, rejected.text
+        assert authenticated.get(path).json() == trip
+
+    # Stale identities can result from deleting or moving an event: keep the harmless preference.
+    stale_key = f"item:{uuid4()}:end"
+    base["days"][0]["map_leg_modes"] = [{**leg, "from_key": stale_key}]
+    accepted = authenticated.put(path, headers=HEADERS, json=base)
+    assert accepted.status_code == 200, accepted.text
+    assert accepted.json()["days"][0]["map_leg_modes"][0]["from_key"] == stale_key
+
+
 def test_meal_subtype_roundtrip_and_client_preview(authenticated):
     trip = create_trip(authenticated)
     path = f"/api/trips/{trip['id']}"

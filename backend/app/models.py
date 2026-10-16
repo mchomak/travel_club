@@ -16,6 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -110,6 +111,9 @@ class TripDay(Base):
     status: Mapped[str] = mapped_column(String(200), default="")
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")
+    map_start: Mapped[dict | None] = mapped_column(JSONB)
+    map_end: Mapped[dict | None] = mapped_column(JSONB)
+    map_leg_modes: Mapped[list[dict]] = mapped_column(JSONB, default=list, server_default="[]")
     __table_args__ = (
         UniqueConstraint("trip_id", "date", name="uq_day_date"),
         UniqueConstraint("trip_id", "id", name="uq_day_trip_id"),
@@ -131,6 +135,8 @@ class TripItem(Base):
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
     location: Mapped[str] = mapped_column(String(200), default="")
+    map_place: Mapped[dict | None] = mapped_column(JSONB)
+    map_end_place: Mapped[dict | None] = mapped_column(JSONB)
     start_time: Mapped[time | None]
     end_time: Mapped[time | None]
     external_url: Mapped[str | None] = mapped_column(String(2048))

@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T01:07:08+03:00",
+  "updatedAt": "2026-10-17T01:22:56+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -50,7 +50,8 @@ window.STATE =
     },
     {
       "id": "review",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-10-17T01:22:56+03:00"
     },
     {
       "id": "final",
@@ -76,7 +77,7 @@ window.STATE =
         "backend aggregate",
         "frontend shared DTO"
       ],
-      "status": "in-progress",
+      "status": "review",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
@@ -151,7 +152,9 @@ window.STATE =
     }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": {
+    "frontendBaseline": "94 passed /21files"
+  },
   "debt": {
     "placeholders": [],
     "assumptions": [],
@@ -165,12 +168,13 @@ window.STATE =
     "found": 2,
     "fixed": 2,
     "deferred": 0,
-    "note": "G2 independent: details location and reproducible provider setup clarified."
+    "note": "G2 independent: details location and reproducible provider setup clarified.",
+    "reviewedBy": "/root/map_spec_gate"
   },
   "concerns": [],
   "reviewers": {
-    "manifestSpec": null,
-    "craft": null
+    "manifestSpec": "/root/map_review_spec",
+    "craft": "/root/map_review_craft"
   },
   "blind": null
 }
