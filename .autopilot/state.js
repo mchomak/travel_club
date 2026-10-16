@@ -1,133 +1,176 @@
 window.STATE =
 {
-  "slug": "test-7-magazine-handoff",
-  "dir": "2026-10-14-test-7-magazine-handoff",
-  "title": "Travel Club — журнал становится сайтом /test_7",
+  "slug": "trip-day-maps",
+  "dir": "2026-10-17-trip-day-maps--wip",
+  "title": "Travel Club \u2014 \u043a\u0430\u0440\u0442\u0430 \u0438 \u043c\u0430\u0440\u0448\u0440\u0443\u0442\u044b \u0434\u043d\u044f",
   "mode": "full",
   "depth": "normal",
   "polish": null,
-  "tier": "T0",
-  "briefFile": "2026-10-14-brief.md",
+  "tier": "T2",
+  "briefFile": "2026-10-17-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
-  "startedAt": "2026-10-14T23:30:52+03:00",
-  "updatedAt": "2026-10-15T00:05:41+03:00",
-  "finishedAt": "2026-10-15T00:05:41+03:00",
+  "startedAt": "2026-10-17T00:59:41+03:00",
+  "updatedAt": "2026-10-17T01:07:08+03:00",
+  "finishedAt": null,
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-10-14T23:30:52+03:00",
-      "finishedAt": "2026-10-14T23:32:26+03:00"
+      "startedAt": "2026-10-17T00:59:41+03:00",
+      "finishedAt": "2026-10-17T01:01:56+03:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-10-14T23:32:26+03:00",
-      "finishedAt": "2026-10-14T23:32:26+03:00"
+      "finishedAt": "2026-10-17T01:01:56+03:00"
     },
     {
       "id": "briefing",
       "status": "skipped",
-      "note": "полный автомат — самобрифинг"
+      "note": "full: existing answers and self-briefing"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-10-14T23:32:26+03:00",
-      "finishedAt": "2026-10-14T23:36:53+03:00"
+      "startedAt": "2026-10-17T01:01:56+03:00",
+      "finishedAt": "2026-10-17T01:07:08+03:00"
     },
     {
       "id": "plan",
-      "status": "skipped",
-      "note": "T0 — одна связная сцена без разбивки"
+      "status": "done",
+      "startedAt": "2026-10-17T01:07:08+03:00",
+      "finishedAt": "2026-10-17T01:07:08+03:00",
+      "note": "T2: 5 tasks / 4 waves"
     },
     {
       "id": "build",
-      "status": "done",
-      "startedAt": "2026-10-14T23:36:53+03:00",
-      "finishedAt": "2026-10-14T23:57:18+03:00"
+      "status": "active",
+      "startedAt": "2026-10-17T01:07:08+03:00"
     },
     {
       "id": "review",
-      "status": "done",
-      "startedAt": "2026-10-14T23:57:18+03:00",
-      "finishedAt": "2026-10-14T23:57:18+03:00",
-      "note": "T0 self-review; independent final code review follows"
+      "status": "pending"
     },
     {
       "id": "final",
-      "status": "done",
-      "startedAt": "2026-10-14T23:57:18+03:00",
-      "finishedAt": "2026-10-15T00:05:41+03:00",
-      "note": "G4 accepted, production46 green, feature committed/pushed"
+      "status": "pending"
     }
   ],
   "requirements": {
-    "total": 14,
-    "done": 14,
-    "inTicket": 0,
+    "total": 25,
+    "done": 0,
+    "inTicket": 24,
     "inSpec": 0,
     "placeholder": 0,
-    "deferred": 0,
+    "deferred": 1,
     "dropped": 0
   },
-  "tickets": [],
-  "singlePass": {
-    "startedAt": "2026-10-14T23:36:53+03:00",
-    "status": "done",
-    "finishedAt": "2026-10-15T00:05:41+03:00",
-    "commit": "c8beffb1a914dde6f297735d753e34d8e5dffe5e",
-    "files": [
-      "frontend/src/app/test_7",
-      "frontend/src/components/test_7",
-      "frontend/e2e/test-7-handoff.spec.ts",
-      "test-6-settings.json"
-    ],
-    "tests": {
-      "passed": 46,
-      "failed": 0
+  "tickets": [
+    {
+      "id": "01",
+      "title": "Place persistence",
+      "blockedBy": [],
+      "wave": 1,
+      "zone": [
+        "backend aggregate",
+        "frontend shared DTO"
+      ],
+      "status": "in-progress",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-10-17T01:07:08+03:00"
+    },
+    {
+      "id": "02",
+      "title": "Geoapify service",
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "backend maps",
+        "runtime configuration",
+        "setup docs"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "03",
+      "title": "Day route logic",
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "frontend/src/lib/day-route.ts"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "04",
+      "title": "Day map UI",
+      "blockedBy": [
+        "01",
+        "02",
+        "03"
+      ],
+      "wave": 3,
+      "zone": [
+        "frontend trips UI",
+        "frontend maps client",
+        "frontend packages"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "05",
+      "title": "Local acceptance",
+      "blockedBy": [
+        "04"
+      ],
+      "wave": 4,
+      "zone": [
+        "e2e map",
+        "QA docs"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
-  },
-  "tests": {
-    "unit": "94 passed /21 files",
-    "browserDev": "10 passed",
-    "lint": "passed",
-    "typecheck": "passed",
-    "build": "Docker production passed",
-    "compose": "frontend rebuilt and running",
-    "browserProduction": "46 passed /1.9m",
-    "performance": "356draws/3.4665s;~102.7drawFPS;idle356 stable",
-    "console": "0errors;2inheritedNextCSSpreloadwarnings",
-    "push": "origin/main c8beffb1a914dde6f297735d753e34d8e5dffe5e"
-  },
+  ],
+  "singlePass": null,
+  "tests": null,
   "debt": {
     "placeholders": [],
-    "assumptions": [
-      "Без панели лаборатории; один живой homepage; обратный scroll не запускает intro повторно.",
-      "Reduced motion/hash/WebGL fallback показывают сайт сразу."
-    ],
-    "emptyEnv": []
+    "assumptions": [],
+    "emptyEnv": [
+      "GEOAPIFY_MAPS_API_KEY",
+      "GEOAPIFY_API_KEY"
+    ]
   },
   "additions": [],
   "coverage": {
-    "found": 0,
-    "fixed": 0,
+    "found": 2,
+    "fixed": 2,
     "deferred": 0,
-    "note": "G2 independent: brief fully covered; extra clauses are implementation/lifecycle depth attached to R06/R08/R14i."
+    "note": "G2 independent: details location and reproducible provider setup clarified."
   },
-  "concerns": [
-    "Report: two inherited Next unused CSS preload warnings; source routes unchanged.",
-    "Report: shared test_5 photo provider/storage by design; no new persistence."
-  ],
+  "concerns": [],
   "reviewers": {
-    "manifestSpec": "T0 inline; G4 /root/blind7",
-    "craft": "/root/craft7"
+    "manifestSpec": null,
+    "craft": null
   },
-  "blind": {
-    "verdict": "accepted",
-    "agent": "/root/blind7",
-    "note": "All requested behavior verified independently; root subsequently completed commit/push.",
-    "pending": []
-  }
+  "blind": null
 }
