@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     login_limit_per_login: int = 5
     login_limit_per_ip: int = 20
     login_window_minutes: int = 15
+    geoapify_api_key: SecretStr = SecretStr("")
+    geoapify_maps_api_key: SecretStr = SecretStr("")
 
     @model_validator(mode="after")
     def safe_production(self):

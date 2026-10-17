@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T13:08:31+03:00",
+  "updatedAt": "2026-10-17T13:11:45+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,7 +47,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "2/5 complete; task02 review"
+      "note": "3/5 complete; task04 ready"
     },
     {
       "id": "review",
@@ -103,7 +103,7 @@ window.STATE =
         "runtime configuration",
         "setup docs"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
@@ -112,7 +112,9 @@ window.STATE =
         "backend": 102,
         "maps": 43,
         "compose": "local/deploy config + isolation passed"
-      }
+      },
+      "finishedAt": "2026-10-17T13:11:45+03:00",
+      "review": "Manifest/Spec passed; Craft no blockers"
     },
     {
       "id": "03",
@@ -141,7 +143,8 @@ window.STATE =
         "typecheck": "passed"
       },
       "finishedAt": "2026-10-17T13:08:31+03:00",
-      "review": "Manifest/Spec/Craft blockers addressed after repair1"
+      "review": "Manifest/Spec/Craft blockers addressed after repair1",
+      "commit": "a5582a2"
     },
     {
       "id": "04",
@@ -212,6 +215,13 @@ window.STATE =
       "axis": "craft",
       "file": "frontend/src/lib/day-route.ts:38",
       "finding": "Missing day with empty nodes yields complete=true and zero totals",
+      "status": "deferred-final-triage"
+    },
+    {
+      "task": "02",
+      "axis": "craft",
+      "file": "backend/app/maps.py:134,256",
+      "finding": "Malformed payload RecursionError/OverflowError portability and extreme-number cases need triage; current Python3.14.8 failure not reproduced",
       "status": "deferred-final-triage"
     }
   ],

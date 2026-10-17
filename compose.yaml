@@ -23,6 +23,8 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+      GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

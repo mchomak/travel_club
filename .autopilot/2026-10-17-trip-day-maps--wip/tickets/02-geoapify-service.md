@@ -4,7 +4,7 @@
 **Blocked by:** 01
 **Зона:** backend maps module/routes/config/main and maps tests; .env.example, compose.yaml, compose.deploy.yaml; docs/geoapify-setup.md, ADR provider
 **Волна:** 2
-**Status:** ready
+**Status:** done — backend102/maps43, Ruff/Compose green; Manifest/Spec/Craft blocking нет.
 
 ## Результат
 Аутентифицированный API получает карту runtime, ищет и уточняет места, безопасно читает Maps URLs, рассчитывает три режима Geoapify. При пустых ключах поддерживает честную настройку и offline URL parsing.
