@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "trip-day-maps",
-  "dir": "2026-10-17-trip-day-maps--wip",
+  "dir": "2026-10-17-trip-day-maps",
   "title": "Travel Club \u2014 \u043a\u0430\u0440\u0442\u0430 \u0438 \u043c\u0430\u0440\u0448\u0440\u0443\u0442\u044b \u0434\u043d\u044f",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T20:05:17+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-17T20:20:24+03:00",
+  "finishedAt": "2026-10-17T20:20:24+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -58,8 +58,10 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
-      "startedAt": "2026-10-17T20:05:17+03:00"
+      "status": "done",
+      "startedAt": "2026-10-17T20:05:17+03:00",
+      "finishedAt": "2026-10-17T20:20:24+03:00",
+      "note": "Blind acceptance completed; two live-validation partials reported, memory+ADR+report ready"
     }
   ],
   "requirements": {
@@ -69,7 +71,8 @@ window.STATE =
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 1,
-    "dropped": 0
+    "dropped": 0,
+    "liveValidationPartial": 2
   },
   "tickets": [
     {
@@ -216,7 +219,8 @@ window.STATE =
       },
       "handoffFile": "handoff-05-1.md",
       "finishedAt": "2026-10-17T20:05:17+03:00",
-      "review": "Manifest/Spec/Craft passed; greenhandoff only review/commit remained"
+      "review": "Manifest/Spec/Craft passed; greenhandoff only review/commit remained",
+      "commit": "f5eac29"
     }
   ],
   "singlePass": null,
@@ -277,5 +281,49 @@ window.STATE =
     "manifestSpec": "/root/map_review_spec",
     "craft": "/root/map_review_craft"
   },
-  "blind": null
+  "blind": {
+    "reviewedBy": "/root/map_final_blind",
+    "verdict": "Local implementation accepted; two live-validation partials",
+    "found": 2,
+    "fixed": 0,
+    "deferred": 2,
+    "fulfilled": 16,
+    "partial": 2,
+    "missing": 0,
+    "runtime": {
+      "browser": "7passed /22.4sec",
+      "domainClient": "12passed /2files",
+      "services": "backend/postgres healthy, frontend Up"
+    },
+    "drift": [
+      {
+        "id": "R13",
+        "manifest": "done(local code)",
+        "blind": "partial",
+        "reason": "Worldwide provider coverage/accuracy unverified without keys",
+        "resolution": "Report openly; live verification under deferredR22"
+      },
+      {
+        "id": "R20",
+        "manifest": "done(local code)",
+        "blind": "partial",
+        "reason": "Real credit usage/quota sufficiency unmeasured",
+        "resolution": "Report openly; observe account Statistics after keys"
+      }
+    ],
+    "report": "blind-acceptance.md"
+  },
+  "artifacts": {
+    "report": "report.md",
+    "blind": "blind-acceptance.md",
+    "memory": "AGENTS.md",
+    "setup": "docs/geoapify-setup.md",
+    "qa": "docs/qa/trip-day-maps/README.md",
+    "adrs": [
+      "docs/adr/0019-geoapify-day-map-provider.md",
+      "docs/adr/0020-inline-trip-map-places-and-day-preferences.md",
+      "docs/adr/0021-day-route-boundaries-and-scheduled-connections.md",
+      "docs/adr/0022-backend-only-egress-with-internal-database-network.md"
+    ]
+  }
 }

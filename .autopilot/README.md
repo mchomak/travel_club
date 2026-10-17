@@ -37,4 +37,4 @@
 
 | 2026-10-14 | `2026-10-14-test-7-magazine-handoff` | сдан | /test_7:8лиcтов по preset → scroll в живую homepage, Docker46browserchecks, feature committed/pushed. |
 
-| 2026-10-17 | `2026-10-17-trip-day-maps--wip` | в работе | Geoapify: карта и маршруты дня. |
+| 2026-10-17 | `2026-10-17-trip-day-maps` | сдан | [Карта и маршруты дня — локальный результат](2026-10-17-trip-day-maps/report.md) |
