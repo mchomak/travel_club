@@ -131,7 +131,7 @@ def provider_json(path: str, params: dict):
                 if not isinstance(result, dict):
                     raise provider_error()
                 return result
-    except (httpx.HTTPError, ValueError, UnicodeError):
+    except (httpx.HTTPError, ValueError, UnicodeError, RecursionError):
         raise provider_error() from None
 
 
@@ -253,7 +253,7 @@ def route_result(result: dict, mode: TravelMode) -> RouteResult:
             if mode == "transit"
             else None,
         )
-    except (KeyError, IndexError, TypeError, ValueError):
+    except (KeyError, IndexError, TypeError, ValueError, OverflowError):
         raise provider_error() from None
 
 

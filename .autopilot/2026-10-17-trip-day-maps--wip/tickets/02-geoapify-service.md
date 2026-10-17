@@ -4,7 +4,10 @@
 **Blocked by:** 01
 **Зона:** backend maps module/routes/config/main and maps tests; .env.example, compose.yaml, compose.deploy.yaml; docs/geoapify-setup.md, ADR provider
 **Волна:** 2
-**Status:** done — backend102/maps43, Ruff/Compose green; Manifest/Spec/Craft blocking нет.
+**Status:** done — исходный commit0c7ab3b + repair1; backend106/maps47 green, Manifest/Spec/Craft blocking нет.
+
+## Дозапрос1 после проверки concern
+Публичный `/api/maps/route` с валидным JSON provider number из1000цифр (distance или координата) возвращает500: `math.isfinite(int)` выбрасывает OverflowError. Выполнить существующий malformed-provider contract §3: HTTP200 status:'unavailable', null distance/time/geometry с понятным сообщением, без утечки ключей. Search/reverse сохраняют существующий502. Regression на HTTP/provider boundary, не на приватной функции. Публичные DTO/HTTP semantics неизменны.
 
 ## Результат
 Аутентифицированный API получает карту runtime, ищет и уточняет места, безопасно читает Maps URLs, рассчитывает три режима Geoapify. При пустых ключах поддерживает честную настройку и offline URL parsing.

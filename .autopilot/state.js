@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T13:11:45+03:00",
+  "updatedAt": "2026-10-17T13:41:42+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,7 +47,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "3/5 complete; task04 ready"
+      "note": "3/5 complete; task04 stale-link repair1"
     },
     {
       "id": "review",
@@ -105,7 +105,7 @@ window.STATE =
       ],
       "status": "done",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
       "handoffs": 0,
       "startedAt": "2026-10-17T01:32:45+03:00",
       "tests": {
@@ -113,8 +113,9 @@ window.STATE =
         "maps": 43,
         "compose": "local/deploy config + isolation passed"
       },
-      "finishedAt": "2026-10-17T13:11:45+03:00",
-      "review": "Manifest/Spec passed; Craft no blockers"
+      "finishedAt": "2026-10-17T13:41:42+03:00",
+      "review": "Repair1: Manifest/Spec/Craft clean; root backend106/frontend113 green",
+      "commit": "0c7ab3b"
     },
     {
       "id": "03",
@@ -160,10 +161,14 @@ window.STATE =
         "frontend maps client",
         "frontend packages"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-10-17T13:11:52+03:00",
+      "reviewFindings": [
+        "Late resolve-link must not overwrite newer URL/search/manual/candidate edits"
+      ]
     },
     {
       "id": "05",
@@ -185,8 +190,8 @@ window.STATE =
   "singlePass": null,
   "tests": {
     "frontendBaseline": "94 passed /21files",
-    "backend": "102 passed /Ruff passed /backend rebuilt healthy",
-    "frontend": "105 passed /lint+typecheck passed",
+    "backend": "106 passed /maps47 /Ruff /fresh healthy image",
+    "frontend": "113 passed /26files /lint+typecheck+build passed",
     "migration": "clean+downgrade+legacy passed"
   },
   "debt": {
@@ -222,7 +227,8 @@ window.STATE =
       "axis": "craft",
       "file": "backend/app/maps.py:134,256",
       "finding": "Malformed payload RecursionError/OverflowError portability and extreme-number cases need triage; current Python3.14.8 failure not reproduced",
-      "status": "deferred-final-triage"
+      "status": "fixed-repair1",
+      "evidence": "Public route HTTP500 for valid1000digit provider distance/coordinate (2scratch HTTP repros)"
     }
   ],
   "reviewers": {

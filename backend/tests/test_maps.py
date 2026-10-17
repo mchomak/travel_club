@@ -1,7 +1,9 @@
+import json
 import socket
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
 
 from app.config import get_settings
 from tests.conftest import FIXTURE_PASSWORD
@@ -415,3 +417,55 @@ def test_deeply_nested_provider_json_is_controlled(client, admin, monkeypatch):
         200, content=b'{"results":' + b'[' * 2000 + b']' * 2000 + b'}',
     ))
     assert client.get("/api/maps/search?q=Paris").status_code == 502
+
+
+@pytest.mark.parametrize("field", ["distance", "longitude", "latitude"])
+def test_oversized_provider_route_numbers_are_controlled(client, admin, monkeypatch, field):
+    monkeypatch.setenv("GEOAPIFY_API_KEY", "TEST-ONLY-SERVER-KEY")
+    get_settings.cache_clear()
+    login(client, admin)
+    huge = 10 ** 999  # Valid JSON integer; conversion to a float raises OverflowError.
+    properties = {"distance": huge if field == "distance" else 10, "time": 20}
+    point = [huge if field == "longitude" else 2, huge if field == "latitude" else 48]
+    feature = {
+        "properties": {**properties, "apiKey": "TEST-ONLY-SERVER-KEY"},
+        "geometry": {"type": "MultiLineString", "coordinates": [[point, [3, 49]]]},
+    }
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", lambda self, request: httpx.Response(
+        200, json={"features": [feature]},
+    ))
+    with TestClient(client.app, raise_server_exceptions=False) as browser:
+        browser.cookies.update(client.cookies)
+        response = browser.post("/api/maps/route", headers=HEADERS, json={
+            "from": PLACE, "to": {**PLACE, "latitude": 49}, "mode": "drive",
+        })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "unavailable"
+    assert data["distance_m"] is None and data["duration_s"] is None and data["geometry"] is None
+    assert data["message"]
+    assert "TEST-ONLY-SERVER-KEY" not in response.text
+
+
+def test_provider_parser_recursion_is_controlled(client, admin, monkeypatch):
+    monkeypatch.setenv("GEOAPIFY_API_KEY", "TEST-ONLY-SERVER-KEY")
+    get_settings.cache_clear()
+    login(client, admin)
+    payload = b'{"results":[],"fixture":"parser-recursion"}'
+    original_loads = json.loads
+
+    def decode(data, *args, **kwargs):
+        if data == payload:
+            raise RecursionError("TEST-ONLY-SERVER-KEY parser details")
+        return original_loads(data, *args, **kwargs)
+
+    monkeypatch.setattr(json, "loads", decode)
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", lambda self, request: httpx.Response(
+        200, content=payload,
+    ))
+    with TestClient(client.app, raise_server_exceptions=False) as browser:
+        browser.cookies.update(client.cookies)
+        response = browser.get("/api/maps/search?q=Paris")
+    assert response.status_code == 502
+    assert response.json()["code"] == "provider_unavailable"
+    assert "TEST-ONLY-SERVER-KEY" not in response.text

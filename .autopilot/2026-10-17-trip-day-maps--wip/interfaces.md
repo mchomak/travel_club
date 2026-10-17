@@ -49,3 +49,13 @@
 - `GEOAPIFY_API_KEY`/`GEOAPIFY_MAPS_API_KEY` runtime через обе Compose configs. Deploy backend-only egress network без exposed ports; DB internal.
 - Исполнитель: backend102 (было59), maps43, Ruff green; backend image rebuilt/healthy; Compose config/isolation green. Проверена только no-key DNS/TLS connectivity; actual keys/search/transit/browser/server restrictions не проверены.
 - Setup: docs/geoapify-setup.md; provider decision: docs/adr/0019-geoapify-day-map-provider.md.
+
+## Из таска 04
+
+- `DayRouteMap({trip,dayId,onChange})`, `LocationPicker({value,onChange,label?})`, browser-only `MapCanvas(MapCanvasProps)`; `useMapsConfig()`.
+- `createMapsClient()` / singleton `mapsClient`: config/search/resolveLink/route/retry; MapRouteResult/MapsConfig; routeCacheKey; travelModes/travelModeLabels/mapsErrorMessage. Session cache TTL5мин, max400, concurrency3; stale responses ignored, explicit retry resets cache.
+- Region «Маршрут дня», map «Карта выбранного дня»; boundaries «Выбрать начало/конец», «Автоматически»; three modes «Машина/Пешком/Транспорт», «Переместить {title} вверх/вниз», «Повторить расчёт участка».
+- Inline pickers «Место посещения / отправления», «Место окончания / прибытия»; fields «Название точки», «Адрес точки», «Широта», «Долгота»; actions «Подтвердить место», «Удалить привязку», «Повторить загрузку карты».
+- Leaflet1.9.4 + @types/leaflet1.9.22. Labels safe DOM; tile crossorigin/referrer + error hint/retry; plan.warnings visible. Scheduled/off-day provider routing excluded.
+- Исполнитель: frontend113/26files (было105/22), lint/typecheck/build green. Production browser/responsive QA — таск05; actual Geoapify keys not tested.
+- Дозапрос02: +OverflowError route normalization, +RecursionError parser boundary; malformed route200unavailable / search502 unchanged. Backend106/maps47/Ruff green, fresh image healthy; narrow review pending.
