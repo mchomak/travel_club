@@ -72,7 +72,7 @@ test("calendar creates a timed event and closes its editor by clicking outside",
   await expect(panel.getByLabel("Прилёт по местному времени")).toHaveValue("02:00");
   await panel.getByLabel("Название элемента").fill("Рейс из календаря");
   await panel.getByLabel("Описание для клиента").fill("Вылет утром");
-  await panel.getByLabel("Ссылка").fill("https://example.com/ticket");
+  await panel.getByLabel("Ссылка", { exact: true }).fill("https://example.com/ticket");
   await panel.getByLabel("Цена билета").fill("100");
   await panel.getByRole("button", { name: "Сохранить элемент" }).click();
   await saved(page);

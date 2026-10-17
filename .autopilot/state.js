@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T19:41:25+03:00",
+  "updatedAt": "2026-10-17T20:05:17+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -45,24 +45,27 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "4/5 complete; task05 combined29browser suite running"
+      "note": "5/5 complete",
+      "finishedAt": "2026-10-17T20:05:17+03:00"
     },
     {
       "id": "review",
-      "status": "active",
-      "startedAt": "2026-10-17T01:22:56+03:00"
+      "status": "done",
+      "startedAt": "2026-10-17T01:22:56+03:00",
+      "finishedAt": "2026-10-17T20:05:17+03:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-10-17T20:05:17+03:00"
     }
   ],
   "requirements": {
     "total": 26,
-    "done": 0,
-    "inTicket": 25,
+    "done": 25,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 1,
@@ -184,7 +187,8 @@ window.STATE =
         "build": "fresh production image healthy",
         "resize": "initial320 and desktop1440 to390 to320 realLeaflet regression passed"
       },
-      "commit": "e3dc964"
+      "commit": "e3dc964",
+      "repairCommit": "9ddd172"
     },
     {
       "id": "05",
@@ -195,17 +199,24 @@ window.STATE =
       "wave": 4,
       "zone": [
         "e2e map",
-        "QA docs"
+        "QA docs",
+        "constructor exact-label locator"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0,
+      "handoffs": 1,
       "startedAt": "2026-10-17T14:09:01+03:00",
       "tests": {
-        "productionBuild": "passed, frontend healthy",
-        "browser": "Independent keyless, configured picker, overnight/boundaries/order, provider errors passed; stale-day + combined suite pending"
-      }
+        "productionBuild": "passed, frontend healthy with resize repair",
+        "browser": "29 passed /22constructor+7maps /1.4min",
+        "e2eLint": "passed",
+        "typecheck": "passed",
+        "screenshots": 7
+      },
+      "handoffFile": "handoff-05-1.md",
+      "finishedAt": "2026-10-17T20:05:17+03:00",
+      "review": "Manifest/Spec/Craft passed; greenhandoff only review/commit remained"
     }
   ],
   "singlePass": null,
@@ -214,7 +225,8 @@ window.STATE =
     "backend": "106 passed /maps47 /Ruff /fresh healthy image",
     "frontend": "119 passed /26files /lint+typecheck passed",
     "migration": "clean+downgrade+legacy passed",
-    "build": "fresh production Compose image with resize fix: passed/healthy"
+    "build": "fresh production Compose image with resize fix: passed/healthy",
+    "browser": "29 passed /22constructor+7maps /1.4min"
   },
   "debt": {
     "placeholders": [],
@@ -242,7 +254,8 @@ window.STATE =
       "axis": "craft",
       "file": "frontend/src/lib/day-route.ts:38",
       "finding": "Missing day with empty nodes yields complete=true and zero totals",
-      "status": "deferred-final-triage"
+      "status": "dropped-current-product",
+      "reason": "Craft final triage: DayRouteMap:31 returns null for absent day before summary; TripEditor:62 selects existing day/fallback. Not user-exposed."
     },
     {
       "task": "02",
@@ -256,7 +269,8 @@ window.STATE =
       "task": "05",
       "axis": "qa",
       "finding": "Existing admin header overflows320 for long fixture login; preserve unrelated header, use short unique login for map-focused QA and report original limitation",
-      "status": "deferred-final-triage"
+      "status": "report-existing-limitation",
+      "evidence": "Actual browser320: old header logout x321.47 with15char fixture and x367.47 withlong login; map region fits. Tests use9char unique login; header unmodified."
     }
   ],
   "reviewers": {
