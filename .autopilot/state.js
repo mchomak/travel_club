@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T14:08:54+03:00",
+  "updatedAt": "2026-10-17T19:41:25+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,7 +47,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "4/5 complete; local production QA ready"
+      "note": "4/5 complete; task05 combined29browser suite running"
     },
     {
       "id": "review",
@@ -164,25 +164,27 @@ window.STATE =
       ],
       "status": "done",
       "retries": 0,
-      "repairs": 1,
+      "repairs": 2,
       "handoffs": 0,
       "startedAt": "2026-10-17T13:11:52+03:00",
       "reviewFindings": [
-        "Late resolve-link must not overwrite newer URL/search/manual/candidate edits"
+        "Real Leaflet after desktop1440 to390/320 resize: hotel/garden markers outside map bounds"
       ],
       "repairBase": {
         "picker": "5262b7dd65a3195c9dae87a920f9be9631e7b62d",
         "test": "56a9d302c1064f8361c694977e482c320836c017"
       },
-      "finishedAt": "2026-10-17T14:08:54+03:00",
-      "review": "Manifest/Spec/Craft repair1 addressed; root117green",
+      "finishedAt": "2026-10-17T19:41:25+03:00",
+      "review": "Repair2 Manifest/Spec/Craft clean; root119+lint+types green; production rebuilt",
       "tests": {
-        "frontend": 117,
+        "frontend": 119,
         "files": 26,
         "lint": "passed",
         "typecheck": "passed",
-        "build": "passed before repair; final image in05"
-      }
+        "build": "fresh production image healthy",
+        "resize": "initial320 and desktop1440 to390 to320 realLeaflet regression passed"
+      },
+      "commit": "e3dc964"
     },
     {
       "id": "05",
@@ -195,18 +197,24 @@ window.STATE =
         "e2e map",
         "QA docs"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-10-17T14:09:01+03:00",
+      "tests": {
+        "productionBuild": "passed, frontend healthy",
+        "browser": "Independent keyless, configured picker, overnight/boundaries/order, provider errors passed; stale-day + combined suite pending"
+      }
     }
   ],
   "singlePass": null,
   "tests": {
     "frontendBaseline": "94 passed /21files",
     "backend": "106 passed /maps47 /Ruff /fresh healthy image",
-    "frontend": "117 passed /26files /lint+typecheck passed",
-    "migration": "clean+downgrade+legacy passed"
+    "frontend": "119 passed /26files /lint+typecheck passed",
+    "migration": "clean+downgrade+legacy passed",
+    "build": "fresh production Compose image with resize fix: passed/healthy"
   },
   "debt": {
     "placeholders": [],
@@ -243,6 +251,12 @@ window.STATE =
       "finding": "Malformed payload RecursionError/OverflowError portability and extreme-number cases need triage; current Python3.14.8 failure not reproduced",
       "status": "fixed-repair1",
       "evidence": "Public route HTTP500 for valid1000digit provider distance/coordinate (2scratch HTTP repros)"
+    },
+    {
+      "task": "05",
+      "axis": "qa",
+      "finding": "Existing admin header overflows320 for long fixture login; preserve unrelated header, use short unique login for map-focused QA and report original limitation",
+      "status": "deferred-final-triage"
     }
   ],
   "reviewers": {

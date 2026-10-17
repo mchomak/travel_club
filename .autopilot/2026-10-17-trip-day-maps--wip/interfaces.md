@@ -60,3 +60,4 @@
 - Исполнитель: frontend113/26files (было105/22), lint/typecheck/build green. Production browser/responsive QA — таск05; actual Geoapify keys not tested.
 - Дозапрос02: +OverflowError route normalization, +RecursionError parser boundary; malformed route200unavailable / search502 unchanged. Backend106/maps47/Ruff green, fresh image healthy; narrow review pending.
 - Оба narrow review завершены без blocking. Task04 repair1 защищает новый ввод от старого resolve-link result/query/error/finally; 5 picker tests, frontend117/26files, lint/typecheck green, root full117 подтверждён. Build до repair green; актуальная production image проверяется в05.
+- Repair2: resize после invalidateSize повторяет fitBounds(all points+chosen geometry,padding28); real Leaflet tests initial320 /1440→390→320 red→green. Manifest/Spec/Craft accepted; root119/26files, lint/typecheck green, новая production Compose image healthy. Подробный browser29 прогон в05.

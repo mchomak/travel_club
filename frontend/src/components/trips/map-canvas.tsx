@@ -32,9 +32,10 @@ export function MapCanvas({mapsKey,nodes,geometries=[],onPick,label='Карта 
     marker.on('dragend',()=>{const p=marker.getLatLng();pick.current?.(p.lat,p.lng);});
    });
    geometries?.forEach(geometry=>{const line=geometry.coordinates.map(([lng,lat])=>[lat,lng] as [number,number]);L.polyline(line,{color:'#225740',weight:4}).addTo(map);points.push(...line);});
-   if(points.length)map.fitBounds(L.latLngBounds(points),{padding:[28,28],maxZoom:15,animate:false});
+   const fitPoints=()=>{if(points.length)map.fitBounds(L.latLngBounds(points),{padding:[28,28],maxZoom:15,animate:false});};
+   fitPoints();
    map.on('click',(event:import('leaflet').LeafletMouseEvent)=>pick.current?.(event.latlng.lat,event.latlng.lng));
-   const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(()=>map.invalidateSize({pan:false}));observer?.observe(host.current);
+   const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(()=>{map.invalidateSize({pan:false});fitPoints();});observer?.observe(host.current);
    dispose=()=>{observer?.disconnect();map.remove();};
   }).catch(()=>{if(!cancelled)setError('Не удалось загрузить карту. Координаты и текстовый маршрут доступны.');});
   return()=>{cancelled=true;dispose?.();};
