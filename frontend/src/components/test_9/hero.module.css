@@ -1,0 +1,236 @@
+.hero {
+  --hero-accent: var(--blue); --hero-paper: var(--paper); --hero-ink: var(--ink);
+  width: min(calc(100% - 80px), var(--pub-layout-container-width)); margin-inline: auto;
+  color: var(--hero-ink); container-type: inline-size;
+}
+.hero .meta { display: flex; justify-content: space-between; gap: 20px; padding-block: 16px; color: var(--blue); font-size: var(--pub-type-meta-fluid); line-height: 1.5; letter-spacing: .07em; text-transform: uppercase; }
+.composition { position: relative; }
+.hero .brand { width: clamp(210px, 29cqw, 420px); position: relative; z-index: 1; }
+.brand img { display: block; width: 100%; height: auto; }
+.hero .title { color: inherit; font: 600 clamp(36px, 4.5cqw, 65px)/1.08 var(--pub-font-sans); letter-spacing: -.04em; text-wrap: balance; }
+.hero .title span { font-family: var(--pub-font-serif); font-weight: 400; font-size: .91em; color: var(--hero-accent); letter-spacing: -.04em; }
+.hero .summary { min-width: 0; }
+.hero .summary > p { max-width: 45ch; font-size: clamp(15px,1.35cqw,18px); line-height: 1.55; color: inherit; }
+.hero .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 23px; }
+.hero .primary, .hero .secondary { display: inline-flex; align-items: center; justify-content: space-between; min-height: 48px; gap: 26px; font: 500 13px/1.4 var(--pub-font-sans); text-decoration: none; }
+.hero .primary { padding: 13px 19px; background: var(--hero-accent); color: var(--hero-paper); border: 1px solid var(--hero-accent); }
+.hero .secondary { color: var(--hero-accent); border-bottom: 1px solid currentColor; padding-block: 12px; }
+.hero .primary:hover { opacity: .88; }.hero .secondary:hover { text-decoration: underline; }
+.hero a:focus-visible { outline: 3px solid currentColor; outline-offset: 5px; }
+.photograph { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--line); }
+.photograph img { display: block; object-fit: cover; object-position: var(--photo-position); }
+.hero .caption { display: flex; justify-content: space-between; gap: 16px; padding-block: 10px 15px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.hero .foot { border-top: 1px solid var(--blue); padding-block: 16px 22px; display: flex; justify-content: space-between; gap: 24px; font-size: var(--pub-type-meta-fluid); line-height: 1.5; color: var(--blue); }
+.hero .editorialNote { color: var(--hero-accent); font-size: 13px; line-height: 1.65; }
+.reading { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; padding-block: 26px 4px; }
+
+/* 01 — an image-led cover, followed by a clear service colophon. */
+.coverFrame { position: relative; height: clamp(490px,44cqw,635px); color: var(--paper); --hero-accent: var(--paper); }
+.coverFrame .photograph { position: absolute; inset: 0; }
+.coverFrame::after { content: ""; position: absolute; inset: 30% 0 0; background: radial-gradient(ellipse at bottom left, rgb(10 26 34 / .65), rgb(10 26 34 / .25) 45%, transparent 75%); pointer-events: none; }
+.hero .coverFrame .brand { position: absolute; top: 36px; left: 40px; text-shadow: 0 1px 8px rgb(0 0 0 / .24); }
+.hero .coverFrame .title { position: absolute; z-index: 1; bottom: 37px; left: 40px; text-shadow: 0 1px 8px rgb(0 0 0 / .2); }
+
+/* 02 — text and vertical photograph have equal editorial weight. */
+.splitFrame { display: grid; grid-template-columns: 1fr 1fr; min-height: 690px; }
+.splitFrame .copy { padding: 36px 44px 32px 0; display: flex; flex-direction: column; align-items: start; }
+.hero .splitFrame .brand { --hero-accent: var(--green); margin-bottom: 68px; }
+.hero .splitFrame .title { font-size: clamp(36px,3.9cqw,56px); margin-bottom: 28px; }
+.splitFrame .summary { margin-top: auto; padding-top: 25px; }
+.splitFrame .photograph { min-height: 690px; }
+
+/* 03 — a central masthead and a centered, quiet reading axis. */
+.centerFrame { height: clamp(400px,34cqw,490px); position: relative; }
+.centerFrame .photograph { position: absolute; inset: 0; }
+.hero .centerFrame .brand { position: absolute; top: 35px; left: 50%; transform: translateX(-50%); text-align: center; --hero-accent: var(--paper); text-shadow: 0 1px 10px rgb(0 0 0 / .3); }
+.centerReading { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 26px 24px 5px; gap: 20px; }
+.hero .centerReading .title { font-size: clamp(36px,3.7cqw,53px); }
+.hero .centerReading .summary > p { max-width: 66ch; }.centerReading .actions { justify-content: center; margin-top: 16px; }
+
+/* 04 — identity in the dawn sky; a precise, opaque reading block. */
+.rightFrame { position: relative; min-height: 740px; display: flex; align-items: end; }
+.rightFrame .photograph { position: absolute; inset: 0; }
+.hero .rightFrame .brand { position: absolute; right: 42px; top: 34px; text-align: right; }
+.rightFrame .copy { position: relative; background: var(--paper); width: 46%; padding: 32px 34px 30px 0; margin-bottom: 0; }
+.hero .rightFrame .title { font-size: clamp(36px,3.7cqw,53px); margin-bottom: 22px; }
+.hero .rightFrame .summary > p { font-size: 16px; }
+
+/* 05 — a photograph on the left leaf, a printed reading page on the right. */
+.spreadFrame { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0; min-height: 680px; }
+.spreadFrame .photograph { min-height: 680px; }
+.spreadFrame .copy { padding: 32px 0 18px 40px; display: flex; flex-direction: column; }
+.hero .spreadFrame .brand { --hero-accent: #743e2b; width: 265px; }
+.rule { height: 1px; background: var(--line); margin-block: 40px 28px; }
+.hero .spreadFrame .title { font-size: clamp(34px,3.7cqw,53px); margin-bottom: 25px; }
+.spreadFrame .summary { margin-top: auto; }
+
+/* 06 — a large identity and a horizontal landscape aperture. */
+.windowHead { display: flex; align-items: end; justify-content: space-between; gap: 35px; padding-block: 18px 32px; }
+.hero .windowHead .brand { width: 32%; }
+.hero .windowHead .title { font-size: clamp(36px,4.2cqw,60px); }
+.windowFrame { height: clamp(260px,25cqw,350px); }.windowFrame .photograph { height: 100%; }
+
+/* 07 — a single photograph and a restrained identity near the waterline. */
+.minimalFrame { position: relative; height: clamp(460px,40cqw,575px); }
+.minimalFrame .photograph { position: absolute; inset: 0; }
+.hero .minimalFrame .brand { position: absolute; left: 32px; bottom: 30px; width: 190px; --hero-accent: var(--paper); }
+.minimalReading { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding-block: 28px 5px; }
+.hero .minimalReading .title { font-size: clamp(36px,3.3cqw,48px); }
+
+/* 08 — the photo is an offset page, the identity crosses its sky. */
+.offsetFrame { display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); grid-template-rows: 280px 355px; position: relative; }
+.offsetFrame .photograph { grid-column: 5/-1; grid-row: 1/-1; }
+.hero .offsetFrame .brand { position: absolute; left: 0; top: 34px; width: 49%; }
+.hero .offsetFrame .title { grid-column: 1/6; grid-row: 2; align-self: end; background: var(--paper); padding: 28px 24px 14px 0; position: relative; font-size: clamp(35px,3.6cqw,52px); }
+
+/* 09 — natural evening light, with no global dark overlay on the photograph. */
+.darkFrame { display: grid; grid-template-columns: 1.45fr 1fr; background: #1e2c30; color: #f2f0ea; --hero-accent: #f2f0ea; --hero-paper: #1e2c30; }
+.darkFrame .photograph { min-height: 700px; }
+.darkFrame .copy { padding: 34px 32px 34px; display: flex; flex-direction: column; align-items: start; }
+.hero .darkFrame .brand { width: 240px; margin-bottom: 70px; }
+.hero .darkFrame .title { font-size: clamp(34px,3.3cqw,48px); margin-bottom: 28px; }
+.darkFrame .summary { margin-top: auto; }.hero .darkFrame .summary > p { font-size: 16px; }
+.hero .darkFrame .actions { gap: 12px 22px; }
+
+/* 10 — three unequal rails: identity, landscape, editorial statement. */
+.experimentalFrame { display: grid; grid-template-columns: .85fr 1.55fr 1fr; gap: 24px; min-height: 620px; }
+.identityRail { display: flex; flex-direction: column; justify-content: space-between; padding-block: 20px; }
+.hero .identityRail .brand { width: 100%; --hero-accent: var(--green); }
+.hero .identityRail p { color: var(--green); font: 400 clamp(24px,2.8cqw,40px)/1.22 var(--pub-font-serif); letter-spacing: -.03em; }
+.hero .experimentalFrame .title { align-self: end; padding-bottom: 20px; font-size: clamp(34px,4cqw,58px); }
+.experimentalFrame .title span { --hero-accent: var(--green); }
+.experimentalReading { display: grid; grid-template-columns: .85fr 2.55fr; gap: 24px; padding-block: 28px 6px; }
+.experimentalReading .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }.experimentalReading .actions { margin-top: 0; }
+
+/* 11–20 — complete landscapes; the original wordmark and unchanged tagline
+   float independently over each photograph. Intrinsic ratios keep every edge. */
+.overlayFrame { position: relative; }
+.overlayPhoto { position: relative; width: 100%; aspect-ratio: var(--photo-ratio); min-width: 0; margin: 0; overflow: hidden; }
+.overlayPhoto img { display: block; object-fit: contain; }
+.hero .overlayBrand { position: absolute; z-index: 1; width: clamp(170px, 23cqw, 330px); }
+.overlayBrand img { filter: drop-shadow(0 1px 9px rgb(12 25 32 / .25)); }
+.hero .overlayTitle { position: absolute; z-index: 1; width: min(58%, 730px); margin: 0; font-size: clamp(42px, 6.1cqw, 88px); line-height: 1.02; }
+.overlayTitle span { color: inherit !important; }
+.overlayTitle[data-tone="cream"] { color: var(--paper); text-shadow: 0 2px 18px rgb(10 22 28 / .58); }
+.overlayTitle[data-tone="navy"] { color: var(--blue); text-shadow: 0 1px 9px rgb(242 240 234 / .62); }
+.overlayReading { padding-top: 26px; }
+.overlayReading .summary { display: grid; grid-template-columns: 1.25fr 1fr; align-items: start; gap: 40px; }
+.overlayReading .summary > p { max-width: 55ch; }
+
+/* Deliberately independent placements make the wordmark and line move around
+   the unchanged photographic field, rather than opening a hole in the image. */
+.overlayFrame[data-placement="11"] .overlayBrand { top: 46%; left: 5%; width: clamp(165px, 20cqw, 290px); }
+.overlayFrame[data-placement="11"] .overlayTitle { right: 5%; bottom: 7%; width: 50%; text-align: right; }
+.overlayFrame[data-placement="12"] .overlayBrand { top: 6%; left: 50%; width: clamp(190px, 25cqw, 360px); transform: translateX(-50%); }
+.overlayFrame[data-placement="12"] .overlayTitle { top: 43%; right: 5%; width: 46%; text-align: right; }
+.overlayFrame[data-placement="13"] .overlayBrand { bottom: 6%; left: 5%; width: clamp(170px, 22cqw, 310px); }
+.overlayFrame[data-placement="13"] .overlayTitle { top: 7%; right: 5%; width: 49%; text-align: right; }
+.overlayFrame[data-placement="14"] .overlayBrand { bottom: 6%; left: 5%; width: clamp(180px, 24cqw, 340px); }
+.overlayFrame[data-placement="14"] .overlayTitle { top: 8%; right: 5%; width: 49%; text-align: right; }
+.overlayFrame[data-placement="15"] .overlayBrand { top: 24%; right: 6%; width: clamp(170px, 22cqw, 320px); }
+.overlayFrame[data-placement="15"] .overlayTitle { bottom: 7%; left: 5%; width: 52%; }
+.overlayFrame[data-placement="16"] .overlayBrand { top: 6%; left: 5%; width: clamp(175px, 23cqw, 330px); }
+.overlayFrame[data-placement="16"] .overlayTitle { top: 43%; right: 5%; width: 48%; text-align: right; }
+.overlayFrame[data-placement="17"] .overlayBrand { top: 8%; right: 5%; width: clamp(170px, 22cqw, 320px); }
+.overlayFrame[data-placement="17"] .overlayTitle { bottom: 8%; left: 5%; width: 49%; }
+.overlayFrame[data-placement="18"] .overlayBrand { top: 33%; left: 5%; width: clamp(170px, 22cqw, 320px); }
+.overlayFrame[data-placement="18"] .overlayTitle { bottom: 8%; left: 30%; width: 63%; text-align: center; }
+.overlayFrame[data-placement="19"] .overlayBrand { bottom: 6%; right: 5%; width: clamp(175px, 23cqw, 330px); }
+.overlayFrame[data-placement="19"] .overlayTitle { top: 7%; left: 5%; width: 48%; }
+.overlayFrame[data-placement="20"] .overlayBrand { top: 6%; right: 5%; width: clamp(180px, 24cqw, 340px); }
+.overlayFrame[data-placement="20"] .overlayTitle { top: 41%; left: 5%; width: 48%; }
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .splitFrame .copy { padding-right: 26px; }.splitFrame .brand { margin-bottom: 45px; }
+  .spreadFrame .copy { padding-left: 26px; }.hero .spreadFrame .brand { width: 210px; }
+  .hero .actions { gap: 8px 20px; }.hero .primary { padding-inline: 15px; }
+  .rightFrame .copy { width: 53%; padding-right: 24px; }
+  .hero .darkFrame .brand { width: 190px; }.darkFrame .copy { padding-inline: 24px; }
+  .experimentalFrame { grid-template-columns: .8fr 1.2fr 1fr; gap: 20px; min-height: 570px; }
+  .experimentalReading .summary { display: block; }.experimentalReading .actions { margin-top: 20px; }
+  .hero .overlayBrand { width: clamp(100px, 31cqw, 142px) !important; }
+  .hero .overlayTitle { width: min(82%, 330px); font-size: clamp(25px, 7.6cqw, 33px); line-height: 1.04; }
+  .overlayFrame[data-mobile-title-tone="cream"] .overlayTitle { color: var(--paper); text-shadow: 0 1px 12px rgb(10 22 28 / .62); }
+  .overlayFrame[data-mobile-title-tone="navy"] .overlayTitle { color: var(--blue); text-shadow: 0 1px 8px rgb(242 240 234 / .72); }
+  .overlayFrame[data-placement] [data-page-masthead] { top: 7%; bottom: auto; left: auto; right: auto; transform: none; }
+  .overlayFrame[data-mobile-logo="top-left"] [data-page-masthead] { left: 5%; }
+  .overlayFrame[data-mobile-logo="top-center"] [data-page-masthead] { left: 50%; transform: translateX(-50%); }
+  .overlayFrame[data-mobile-logo="top-right"] [data-page-masthead] { right: 5%; }
+  .overlayFrame[data-placement] [id="hero-title"] { top: auto; left: auto; right: auto; bottom: 7%; text-align: left; }
+  .overlayFrame[data-mobile-title="bottom-left"] [id="hero-title"] { left: 5%; }
+  .overlayFrame[data-mobile-title="bottom-center"] [id="hero-title"] { left: 50%; transform: translateX(-50%); text-align: center; }
+  .overlayFrame[data-mobile-title="bottom-right"] [id="hero-title"] { right: 5%; text-align: right; }
+  .overlayReading { padding-top: 22px; }
+  .overlayReading .summary { grid-template-columns: 1fr; gap: 12px; }
+}
+
+@media (max-width: 760px) {
+  .hero { width: calc(100% - 36px); }
+  .hero .meta { padding-block: 12px; gap: 18px; font-size: 9px; letter-spacing: .03em; }
+  .meta > span:nth-child(2) { display: none; }.meta > span:last-child { flex-shrink: 0; }
+  .hero .brand { width: 210px; }
+  .hero .title { font-size: clamp(31px,9.3cqw,45px); }
+  .hero .summary > p { font-size: 15px; line-height: 1.55; max-width: 52ch; }
+  .hero .actions { gap: 10px 20px; margin-top: 20px; }
+  .hero .primary, .hero .secondary { font-size: 12px; min-height: 48px; gap: 15px; }.hero .primary { padding-inline: 15px; }
+  .photograph img { object-position: var(--photo-mobile-position); }
+  .hero .caption { font-size: 10px; padding-block: 10px 14px; }.caption > span:last-child,.illustration { display: none; }
+  .hero .foot { font-size: 10px; padding-block: 14px 20px; gap: 10px; }.foot > span { max-width: 21ch; }.foot > a { text-align: right; max-width: 18ch; }
+  .hero .editorialNote { font-size: 12px; }
+  .reading { grid-template-columns: 1fr; gap: 18px; padding-top: 22px; }.reading > .editorialNote { display: none; }
+  .coverFrame { height: 540px; }.hero .coverFrame .brand { left: 23px; top: 25px; }
+  .hero .coverFrame .title { left: 23px; right: 16px; bottom: 28px; font-size: clamp(30px,8.7cqw,42px); }
+  .coverFrame::after { inset: 58% 0 0; }
+  .splitFrame { display: flex; flex-direction: column; min-height: 0; }
+  .splitFrame .copy { padding: 18px 0 26px; }.hero .splitFrame .brand { margin-bottom: 30px; }
+  .hero .splitFrame .title { margin-bottom: 20px; font-size: clamp(33px,9.5cqw,45px); }
+  .splitFrame .summary { padding: 0; }.splitFrame .photograph { min-height: 440px; }
+  .centerFrame { height: 530px; }.hero .centerFrame .brand { top: 27px; width: 180px; }
+  .centerReading { padding: 24px 0 4px; gap: 18px; }.hero .centerReading .title { font-size: clamp(32px,9.2cqw,44px); }
+  .centerReading .actions { gap: 10px 20px; }
+  .rightFrame { min-height: 0; padding-top: 420px; display: block; }
+  .rightFrame .photograph { bottom: auto; height: 490px; }
+  .hero .rightFrame .brand { right: 21px; top: 24px; width: 165px; }
+  .rightFrame .copy { margin-right: 25px; width: calc(100% - 25px); padding: 24px 15px 10px 0; }
+  .hero .rightFrame .title { font-size: clamp(31px,8.9cqw,43px); margin-bottom: 20px; }.hero .rightFrame .summary > p { font-size: 15px; }
+  .spreadFrame { display: flex; flex-direction: column; min-height: 0; }
+  .spreadFrame .photograph { min-height: 430px; }.spreadFrame .copy { padding: 28px 0 5px; }
+  .hero .spreadFrame .brand { width: 190px; }.rule { margin-block: 25px 22px; }
+  .hero .spreadFrame .title { font-size: clamp(32px,9.2cqw,44px); margin-bottom: 20px; }
+  .windowHead { align-items: start; flex-direction: column; gap: 30px; padding-block: 12px 24px; }
+  .hero .windowHead .brand { width: 260px; }
+  .hero .windowHead .title { font-size: clamp(32px,9.2cqw,44px); }
+  .windowFrame { height: 300px; }
+  .minimalFrame { height: 490px; }.hero .minimalFrame .brand { left: 23px; bottom: 25px; width: 180px; }
+  .minimalReading { grid-template-columns: 1fr; gap: 20px; padding-top: 24px; }.hero .minimalReading .title { font-size: clamp(32px,9.2cqw,44px); }
+  .offsetFrame { grid-template-rows: 220px 340px; }
+  .offsetFrame .photograph { grid-column: 3/-1; grid-row: 1/-1; }
+  .hero .offsetFrame .brand { top: 20px; width: 280px; }
+  .hero .offsetFrame .title { grid-column: 1/12; padding: 21px 12px 10px 0; font-size: clamp(31px,8.9cqw,43px); }
+  .darkFrame { display: flex; flex-direction: column; }.darkFrame .photograph { min-height: 480px; }
+  .darkFrame .copy { padding: 26px 23px 28px; }.hero .darkFrame .brand { margin-bottom: 32px; width: 170px; }
+  .hero .darkFrame .title { font-size: clamp(30px,8.5cqw,40px); margin-bottom: 22px; }.hero .darkFrame .summary > p { font-size: 15px; }
+  .hero .darkFrame .actions { gap: 12px 18px; }
+  .experimentalFrame { grid-template-columns: 1fr 1.25fr; grid-template-rows: auto 430px; gap: 24px 18px; min-height: 0; }
+  .identityRail { grid-column: 1; grid-row: 1; padding: 14px 0; }.hero .identityRail .brand { width: 100%; }
+  .identityRail p { display: none; }
+  .experimentalFrame .photograph { grid-column: 1/-1; grid-row: 2; }
+  .hero .experimentalFrame .title { grid-column: 2; grid-row: 1; font-size: clamp(25px,7cqw,34px); padding-bottom: 14px; }
+  .experimentalReading { grid-template-columns: 1fr; padding-top: 24px; }.experimentalReading .editorialNote { display: none; }
+  .experimentalReading .summary { display: block; }.experimentalReading .actions { margin-top: 20px; }
+  /* Full landscape stays at its natural ratio; the two overlays move to opposing edges. */
+  .overlayFrame[data-placement] .overlayBrand { width: clamp(100px, 31cqw, 142px); }
+  .overlayFrame[data-placement] .overlayTitle { width: min(82%, 330px); font-size: clamp(23px, 7.6cqw, 33px); line-height: 1.04; }
+  .overlayFrame[data-placement] [data-page-masthead] { top: 7%; bottom: auto; left: auto; right: auto; transform: none; }
+  .overlayFrame[data-mobile-logo="top-left"] [data-page-masthead] { left: 5%; }
+  .overlayFrame[data-mobile-logo="top-center"] [data-page-masthead] { left: 50%; transform: translateX(-50%); }
+  .overlayFrame[data-mobile-logo="top-right"] [data-page-masthead] { right: 5%; }
+  .overlayFrame[data-placement] [id="hero-title"] { top: auto; left: auto; right: auto; bottom: 7%; text-align: left; }
+  .overlayFrame[data-mobile-title="bottom-left"] [id="hero-title"] { left: 5%; }
+  .overlayFrame[data-mobile-title="bottom-center"] [id="hero-title"] { left: 50%; transform: translateX(-50%); text-align: center; }
+  .overlayFrame[data-mobile-title="bottom-right"] [id="hero-title"] { right: 5%; text-align: right; }
+  .overlayFrame[data-mobile-title-tone="cream"] .overlayTitle { color: var(--paper); text-shadow: 0 1px 12px rgb(10 22 28 / .62); }
+  .overlayFrame[data-mobile-title-tone="navy"] .overlayTitle { color: var(--blue); text-shadow: 0 1px 8px rgb(242 240 234 / .72); }
+  .overlayReading { padding-top: 22px; }
+  .overlayReading .summary { grid-template-columns: 1fr; gap: 12px; }
+}
