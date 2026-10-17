@@ -18,6 +18,7 @@ import { ItemForm } from "./item-form";
 import { DayForm, Finances, RatesForm } from "./editor-panels";
 import { TripCalendar } from "./trip-calendar";
 import { AirportBlockForm } from "./airport-block-form";
+import { DayRouteMap } from './day-route-map';
 
 function canonical(value: unknown): unknown {
   if (typeof value === "string" && /^\d+(\.\d+)?$/.test(value)) return new Decimal(value).toString();
@@ -131,6 +132,7 @@ function Editor({ document }: { document: TripDocument }) {
           onMoveItem={moveItem}
           onMoveHotel={moveHotel}
         />
+        {dayId&&<DayRouteMap trip={trip} dayId={dayId} onChange={change}/>}
         <section className="add-item-section" aria-label="Добавить в маршрут">
           <div><h2>Добавить в маршрут</h2><p>{day ? `Выбран ${formatDate(day.date)}. Выберите тип события.` : "Выберите тип события. Дату можно указать в форме."}</p></div>
           <div className="item-type-buttons">{eventCategories.map(({ type, label }) => <button key={type} onClick={() => add(type)}><Plus size={15} aria-hidden />{label}</button>)}</div>

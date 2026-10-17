@@ -1,0 +1,20 @@
+import { cleanup,fireEvent,render,screen,waitFor } from '@testing-library/react';
+import {afterEach,expect,test} from 'vitest';
+import { MapCanvas } from './map-canvas';
+afterEach(cleanup);
+test('real map tiles carry origin/referrer attributes and labels never become HTML',async()=>{
+ const {container}=render(<MapCanvas mapsKey="browser-test" nodes={[{key:'a',label:'<img src=x onerror=alert(1)>',place:{name:'A',address:'',latitude:1,longitude:2,provider:'manual'}}]}/>);
+ await waitFor(()=>expect(container.querySelector('img.leaflet-tile')).not.toBeNull());
+ const tile=container.querySelector('img.leaflet-tile')!;
+ expect(tile).toHaveAttribute('crossorigin','anonymous');
+ expect(tile).toHaveAttribute('referrerpolicy','strict-origin-when-cross-origin');
+ fireEvent.click(container.querySelector('.leaflet-marker-icon')!);
+ expect(container.querySelector('.leaflet-popup-content')).toHaveTextContent('<img src=x onerror=alert(1)>');
+ expect(container.querySelector('.leaflet-popup-content img')).toBeNull();
+ expect(container.querySelector('.leaflet-attribution-flag')).toBeNull();
+ expect(container.querySelector('[onerror]')).toBeNull();
+ expect(container).toHaveTextContent('Geoapify');
+ fireEvent.error(container.querySelector('img.leaflet-tile')!);
+ expect(await screen.findByText(/Подложка недоступна/)).toBeInTheDocument();
+ expect(screen.getByRole('button',{name:'Повторить загрузку карты'})).toBeInTheDocument();
+});

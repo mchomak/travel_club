@@ -4,7 +4,7 @@
 **Blocked by:** 01,02,03
 **Зона:** frontend trips UI (item-form, trip-editor, new map/location components and module CSS), frontend maps API client/hooks, package.json/package-lock.json, UI tests
 **Волна:** 3
-**Status:** ready
+**Status:** done — реализация и repair1 приняты Manifest/Spec/Craft; frontend117/lint/typecheck green. Production/responsive browser QA — таск05.
 
 ## Результат
 Полный локальный пользовательский путь: указать место → сохранить → выбрать день → увидеть карту/начало/конец → сравнить режимы под картой → выбрать способ для каждого участка → снова открыть поездку без потерь.

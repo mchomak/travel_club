@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T13:41:42+03:00",
+  "updatedAt": "2026-10-17T14:08:54+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,7 +47,7 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "3/5 complete; task04 stale-link repair1"
+      "note": "4/5 complete; local production QA ready"
     },
     {
       "id": "review",
@@ -115,7 +115,8 @@ window.STATE =
       },
       "finishedAt": "2026-10-17T13:41:42+03:00",
       "review": "Repair1: Manifest/Spec/Craft clean; root backend106/frontend113 green",
-      "commit": "0c7ab3b"
+      "commit": "0c7ab3b",
+      "repairCommit": "d4a12f6"
     },
     {
       "id": "03",
@@ -161,14 +162,27 @@ window.STATE =
         "frontend maps client",
         "frontend packages"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
       "repairs": 1,
       "handoffs": 0,
       "startedAt": "2026-10-17T13:11:52+03:00",
       "reviewFindings": [
         "Late resolve-link must not overwrite newer URL/search/manual/candidate edits"
-      ]
+      ],
+      "repairBase": {
+        "picker": "5262b7dd65a3195c9dae87a920f9be9631e7b62d",
+        "test": "56a9d302c1064f8361c694977e482c320836c017"
+      },
+      "finishedAt": "2026-10-17T14:08:54+03:00",
+      "review": "Manifest/Spec/Craft repair1 addressed; root117green",
+      "tests": {
+        "frontend": 117,
+        "files": 26,
+        "lint": "passed",
+        "typecheck": "passed",
+        "build": "passed before repair; final image in05"
+      }
     },
     {
       "id": "05",
@@ -191,7 +205,7 @@ window.STATE =
   "tests": {
     "frontendBaseline": "94 passed /21files",
     "backend": "106 passed /maps47 /Ruff /fresh healthy image",
-    "frontend": "113 passed /26files /lint+typecheck+build passed",
+    "frontend": "117 passed /26files /lint+typecheck passed",
     "migration": "clean+downgrade+legacy passed"
   },
   "debt": {
