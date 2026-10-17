@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T01:22:56+03:00",
+  "updatedAt": "2026-10-17T13:08:31+03:00",
   "finishedAt": null,
   "stages": [
     {
@@ -46,7 +46,8 @@ window.STATE =
     {
       "id": "build",
       "status": "active",
-      "startedAt": "2026-10-17T01:07:08+03:00"
+      "startedAt": "2026-10-17T01:07:08+03:00",
+      "note": "2/5 complete; task02 review"
     },
     {
       "id": "review",
@@ -59,9 +60,9 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 25,
+    "total": 26,
     "done": 0,
-    "inTicket": 24,
+    "inTicket": 25,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 1,
@@ -77,11 +78,18 @@ window.STATE =
         "backend aggregate",
         "frontend shared DTO"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-10-17T01:07:08+03:00"
+      "startedAt": "2026-10-17T01:07:08+03:00",
+      "finishedAt": "2026-10-17T01:32:45+03:00",
+      "commit": "ecaee7ca57c5d4fc5a593b0a176f3a61fae62520",
+      "tests": {
+        "backend": 59,
+        "frontend": 95,
+        "migration": "clean/downgrade/seeded legacy upgrade passed"
+      }
     },
     {
       "id": "02",
@@ -95,10 +103,16 @@ window.STATE =
         "runtime configuration",
         "setup docs"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-10-17T01:32:45+03:00",
+      "tests": {
+        "backend": 102,
+        "maps": 43,
+        "compose": "local/deploy config + isolation passed"
+      }
     },
     {
       "id": "03",
@@ -110,10 +124,24 @@ window.STATE =
       "zone": [
         "frontend/src/lib/day-route.ts"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-10-17T01:32:45+03:00",
+      "reviewFindings": [
+        "Chronological transport/event overlap must be explicit",
+        "Mapped untimed other event must remain stop",
+        "Explicit overnight end day must work without times"
+      ],
+      "tests": {
+        "frontend": 105,
+        "planner": 10,
+        "lint": "passed",
+        "typecheck": "passed"
+      },
+      "finishedAt": "2026-10-17T13:08:31+03:00",
+      "review": "Manifest/Spec/Craft blockers addressed after repair1"
     },
     {
       "id": "04",
@@ -153,11 +181,18 @@ window.STATE =
   ],
   "singlePass": null,
   "tests": {
-    "frontendBaseline": "94 passed /21files"
+    "frontendBaseline": "94 passed /21files",
+    "backend": "102 passed /Ruff passed /backend rebuilt healthy",
+    "frontend": "105 passed /lint+typecheck passed",
+    "migration": "clean+downgrade+legacy passed"
   },
   "debt": {
     "placeholders": [],
-    "assumptions": [],
+    "assumptions": [
+      "Connection totals exclude scheduled flights/trains, shown separately.",
+      "Missing places interrupt connections; no made-up distance.",
+      "Offline tests use deterministic provider fixtures; live requests await credentials."
+    ],
     "emptyEnv": [
       "GEOAPIFY_MAPS_API_KEY",
       "GEOAPIFY_API_KEY"
@@ -171,7 +206,15 @@ window.STATE =
     "note": "G2 independent: details location and reproducible provider setup clarified.",
     "reviewedBy": "/root/map_spec_gate"
   },
-  "concerns": [],
+  "concerns": [
+    {
+      "task": "03",
+      "axis": "craft",
+      "file": "frontend/src/lib/day-route.ts:38",
+      "finding": "Missing day with empty nodes yields complete=true and zero totals",
+      "status": "deferred-final-triage"
+    }
+  ],
   "reviewers": {
     "manifestSpec": "/root/map_review_spec",
     "craft": "/root/map_review_craft"

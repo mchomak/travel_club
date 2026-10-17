@@ -25,3 +25,27 @@
 - contracts.ts exports MapPlace, TravelMode, MapLegMode; nullable provider_place_id/source_url; ItemInput.map_place/map_end_place and DayInput.map_start/map_end/map_leg_modes optional for backward compatibility. tripInput/emptyDay/newItem preserve/init them.
 - Backend identical defaults via Pydantic and JSONB. Revision c93f62a1b7d8 after f64a81e0c9d2. Bounded preferences 20002, duplicate/self/invalid pairs rejected; syntactically valid stale UUID keys retained.
 - Backend59 tests (baseline54), frontend95 (baseline94), lint/typecheck/Ruff pass. Clean migration/downgrade/seeded legacy upgrade verified on disposable DB. Runtime backend needs final image rebuild before UI tests.
+
+## Уточнения при разработке
+
+- D01: deploy Compose internal:true не допускает внешние provider calls. Таск02 добавляет backend-only noninternal egress bridge без новых exposed ports; DB сохраняет internal network.
+- Одобрены optional RouteNode.date/time и RouteLeg.departureDate/arrivalDate/departureTime/arrivalTime для подписи scheduled переездов, не provider routing. Общий итог — только connection legs; planned flight/train отдельно.
+- Важное уточнение: день ночного ОТПРАВЛЕНИЯ заканчивается в map_place departure airport/station. Следующий день прибытия начинается в map_end_place. Дата прибытия не переносится на карту дня отправления как местная конечная точка.
+
+## Из таска 03
+
+- `buildDayRoute(trip:TripInput,dayId:string):DayRoutePlan` — pure planner.
+- `summarizeDayRoute(plan:DayRoutePlan,results:Readonly<Record<string,RouteMeasurement|undefined>>):DayRouteSummary`.
+- `RouteMeasurement={status:'ok'|'unavailable',distance_m:number|null,duration_s:number|null}`; `DayRouteSummary={distance_m:number|null,duration_s:number|null,complete:boolean,resolved_legs:number,total_legs:number}`.
+- `setMapLegMode(preferences:readonly MapLegMode[],fromKey:string,toKey:string,mode:TravelMode):MapLegMode[]`; `formatRouteDistance(meters:number|null):string`; `formatRouteDuration(seconds:number|null):string`.
+- RouteNode optional date/time; RouteLeg optional departureDate/arrivalDate/departureTime/arrivalTime. Scheduled legs may reference off-day endpoints: карта отображает только plan.nodes, provider вызывается только для connection legs. Возвращение в тот же отель может использовать один item key для начала и конца.
+- После дозапроса1: 10 targeted tests, full Vitest105 (было95), lint/typecheck passed. Исправлены mapped untimed custom stops, explicit overnight dates без времени, предупреждение о пересечении события и scheduled transport. UI обязан показывать plan.warnings; scheduled transport остаётся группой. Manifest/Spec/Craft blocking закрыты. Неблокирующий concern отсутствующего дня записан в state.
+
+## Из таска 02
+
+- Все согласованные `/api/maps/*` DTO и paths сохранены, endpoints Admin-protected. Config возвращает только браузерный maps_key и enabled flags.
+- Transit: первый `transit`; fallback `approximated_transit` только при пустом маршруте, не при429/network/auth/errors. `approximate:true`, нет обещания расписания.
+- Google URL resolver: offline selected pin/query extraction, viewport не считается местом; короткие ссылки — allowlist, public DNS pinning/SNI, максимум3 redirects, без HTML scraping.
+- `GEOAPIFY_API_KEY`/`GEOAPIFY_MAPS_API_KEY` runtime через обе Compose configs. Deploy backend-only egress network без exposed ports; DB internal.
+- Исполнитель: backend102 (было59), maps43, Ruff green; backend image rebuilt/healthy; Compose config/isolation green. Проверена только no-key DNS/TLS connectivity; actual keys/search/transit/browser/server restrictions не проверены.
+- Setup: docs/geoapify-setup.md; provider decision: docs/adr/0019-geoapify-day-map-provider.md.

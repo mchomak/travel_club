@@ -4,7 +4,7 @@
 **Blocked by:** 01
 **Зона:** frontend/src/lib/day-route.ts (new) and day-route.test.ts only
 **Волна:** 2
-**Status:** ready
+**Status:** done — 105 frontend tests; дозапрос1 закрыт, Manifest/Spec/Craft blocking нет.
 
 ## Результат
 Pure buildDayRoute API turns saved itinerary into deterministic route nodes and legs, explaining inferred boundaries. No UI/provider HTTP. Use existing calendar local schedule/legacy overnight semantics.

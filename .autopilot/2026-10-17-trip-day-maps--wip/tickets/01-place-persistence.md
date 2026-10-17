@@ -4,7 +4,7 @@
 **Blocked by:** none
 **Зона:** backend aggregate models/schemas/trips/migrations/tests; frontend contracts.ts, trips.ts, trip-ui.ts and their tests
 **Волна:** 1
-**Status:** ready
+**Status:** done — ecaee7c; backend59/frontend95, обе оси ревью clean.
 
 ## Результат
 Полный сохранённый документ поездки принимает координаты/места, границы дня и предпочтения способов передвижения. Legacy документы не меняют финансов и календарных смыслов. Основа доступна следующим таскам без выдумывания DTO.
