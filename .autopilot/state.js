@@ -1,329 +1,219 @@
 window.STATE =
 {
-  "slug": "trip-day-maps",
-  "dir": "2026-10-17-trip-day-maps",
-  "title": "Travel Club \u2014 \u043a\u0430\u0440\u0442\u0430 \u0438 \u043c\u0430\u0440\u0448\u0440\u0443\u0442\u044b \u0434\u043d\u044f",
+  "slug": "test-10-interactive-magazine",
+  "dir": "2026-10-17-test-10-interactive-magazine",
+  "title": "Travel Club — /test_10 Magazine",
   "mode": "full",
   "depth": "normal",
   "polish": null,
-  "tier": "T2",
+  "tier": "T1",
   "briefFile": "2026-10-17-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
-  "startedAt": "2026-10-17T00:59:41+03:00",
-  "updatedAt": "2026-10-17T20:20:24+03:00",
-  "finishedAt": "2026-10-17T20:20:24+03:00",
+  "startedAt": "2026-10-17T21:53:21+03:00",
+  "updatedAt": "2026-10-18T01:40:45+03:00",
+  "finishedAt": "2026-10-18T01:40:45+03:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-10-17T00:59:41+03:00",
-      "finishedAt": "2026-10-17T01:01:56+03:00"
+      "startedAt": "2026-10-17T21:53:21+03:00",
+      "finishedAt": "2026-10-17T22:00:54.113902+03:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "finishedAt": "2026-10-17T01:01:56+03:00"
+      "startedAt": "2026-10-17T21:53:21+03:00",
+      "finishedAt": "2026-10-17T22:00:54.113902+03:00"
     },
     {
       "id": "briefing",
       "status": "skipped",
-      "note": "full: existing answers and self-briefing"
+      "startedAt": "2026-10-17T21:53:21+03:00",
+      "note": "full: self-briefing, no questions required"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-10-17T01:01:56+03:00",
-      "finishedAt": "2026-10-17T01:07:08+03:00"
+      "startedAt": "2026-10-17T21:53:21+03:00",
+      "finishedAt": "2026-10-17T22:00:54.113902+03:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-10-17T01:07:08+03:00",
-      "finishedAt": "2026-10-17T01:07:08+03:00",
-      "note": "T2: 5 tasks / 4 waves"
+      "startedAt": "2026-10-17T22:00:35.365659+03:00",
+      "finishedAt": "2026-10-17T22:00:54.113902+03:00"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-10-17T01:07:08+03:00",
-      "note": "5/5 complete",
-      "finishedAt": "2026-10-17T20:05:17+03:00"
+      "startedAt": "2026-10-17T22:00:54.113902+03:00",
+      "finishedAt": "2026-10-18T01:39:34+03:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-10-17T01:22:56+03:00",
-      "finishedAt": "2026-10-17T20:05:17+03:00"
+      "startedAt": "2026-10-17T22:38:45+03:00",
+      "finishedAt": "2026-10-18T01:39:34+03:00"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-10-17T20:05:17+03:00",
-      "finishedAt": "2026-10-17T20:20:24+03:00",
-      "note": "Blind acceptance completed; two live-validation partials reported, memory+ADR+report ready"
+      "startedAt": "2026-10-18T01:39:34+03:00",
+      "finishedAt": "2026-10-18T01:40:45+03:00",
+      "note": "Independent G4 passed; all35 requirements delivered; final119unit/23browser/24visual cases passed."
     }
   ],
   "requirements": {
-    "total": 26,
-    "done": 25,
+    "total": 35,
+    "done": 35,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
-    "deferred": 1,
-    "dropped": 0,
-    "liveValidationPartial": 2
+    "deferred": 0,
+    "dropped": 0
   },
   "tickets": [
     {
       "id": "01",
-      "title": "Place persistence",
+      "title": "Журнал: вступление, геометрия и управление",
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12",
+        "R13",
+        "R14",
+        "R15",
+        "R16",
+        "R17",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35"
+      ],
       "blockedBy": [],
       "wave": 1,
       "zone": [
-        "backend aggregate",
-        "frontend shared DTO"
+        "shell"
       ],
       "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-10-17T01:07:08+03:00",
-      "finishedAt": "2026-10-17T01:32:45+03:00",
-      "commit": "ecaee7ca57c5d4fc5a593b0a176f3a61fae62520",
+      "startedAt": "2026-10-17T22:00:54.113902+03:00",
       "tests": {
-        "backend": 59,
-        "frontend": 95,
-        "migration": "clean/downgrade/seeded legacy upgrade passed"
-      }
+        "unit": 119,
+        "production-e2e": 23,
+        "lint": "passed",
+        "typecheck": "passed",
+        "build": "passed",
+        "docker": "healthy",
+        "viewport-cases": 24
+      },
+      "finishedAt": "2026-10-18T01:40:32+03:00",
+      "commit": "e37297c"
     },
     {
       "id": "02",
-      "title": "Geoapify service",
-      "blockedBy": [
-        "01"
+      "title": "Три редакционных разворота и фотоподборка",
+      "requirements": [
+        "R04",
+        "R18",
+        "R19",
+        "R20",
+        "R21",
+        "R22",
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R27",
+        "R28",
+        "R29",
+        "R30"
       ],
-      "wave": 2,
+      "blockedBy": [],
+      "wave": 1,
       "zone": [
-        "backend maps",
-        "runtime configuration",
-        "setup docs"
-      ],
-      "status": "done",
-      "retries": 0,
-      "repairs": 1,
-      "handoffs": 0,
-      "startedAt": "2026-10-17T01:32:45+03:00",
-      "tests": {
-        "backend": 102,
-        "maps": 43,
-        "compose": "local/deploy config + isolation passed"
-      },
-      "finishedAt": "2026-10-17T13:41:42+03:00",
-      "review": "Repair1: Manifest/Spec/Craft clean; root backend106/frontend113 green",
-      "commit": "0c7ab3b",
-      "repairCommit": "d4a12f6"
-    },
-    {
-      "id": "03",
-      "title": "Day route logic",
-      "blockedBy": [
-        "01"
-      ],
-      "wave": 2,
-      "zone": [
-        "frontend/src/lib/day-route.ts"
-      ],
-      "status": "done",
-      "retries": 0,
-      "repairs": 1,
-      "handoffs": 0,
-      "startedAt": "2026-10-17T01:32:45+03:00",
-      "reviewFindings": [
-        "Chronological transport/event overlap must be explicit",
-        "Mapped untimed other event must remain stop",
-        "Explicit overnight end day must work without times"
-      ],
-      "tests": {
-        "frontend": 105,
-        "planner": 10,
-        "lint": "passed",
-        "typecheck": "passed"
-      },
-      "finishedAt": "2026-10-17T13:08:31+03:00",
-      "review": "Manifest/Spec/Craft blockers addressed after repair1",
-      "commit": "a5582a2"
-    },
-    {
-      "id": "04",
-      "title": "Day map UI",
-      "blockedBy": [
-        "01",
-        "02",
-        "03"
-      ],
-      "wave": 3,
-      "zone": [
-        "frontend trips UI",
-        "frontend maps client",
-        "frontend packages"
-      ],
-      "status": "done",
-      "retries": 0,
-      "repairs": 2,
-      "handoffs": 0,
-      "startedAt": "2026-10-17T13:11:52+03:00",
-      "reviewFindings": [
-        "Real Leaflet after desktop1440 to390/320 resize: hotel/garden markers outside map bounds"
-      ],
-      "repairBase": {
-        "picker": "5262b7dd65a3195c9dae87a920f9be9631e7b62d",
-        "test": "56a9d302c1064f8361c694977e482c320836c017"
-      },
-      "finishedAt": "2026-10-17T19:41:25+03:00",
-      "review": "Repair2 Manifest/Spec/Craft clean; root119+lint+types green; production rebuilt",
-      "tests": {
-        "frontend": 119,
-        "files": 26,
-        "lint": "passed",
-        "typecheck": "passed",
-        "build": "fresh production image healthy",
-        "resize": "initial320 and desktop1440 to390 to320 realLeaflet regression passed"
-      },
-      "commit": "e3dc964",
-      "repairCommit": "9ddd172"
-    },
-    {
-      "id": "05",
-      "title": "Local acceptance",
-      "blockedBy": [
-        "04"
-      ],
-      "wave": 4,
-      "zone": [
-        "e2e map",
-        "QA docs",
-        "constructor exact-label locator"
+        "spreads"
       ],
       "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 1,
-      "startedAt": "2026-10-17T14:09:01+03:00",
+      "handoffs": 0,
+      "startedAt": "2026-10-17T22:00:54.113902+03:00",
       "tests": {
-        "productionBuild": "passed, frontend healthy with resize repair",
-        "browser": "29 passed /22constructor+7maps /1.4min",
-        "e2eLint": "passed",
+        "unit": 119,
+        "lint": "passed",
         "typecheck": "passed",
-        "screenshots": 7
+        "visual-cases": 6,
+        "review": "manifest/spec/craft clean"
       },
-      "handoffFile": "handoff-05-1.md",
-      "finishedAt": "2026-10-17T20:05:17+03:00",
-      "review": "Manifest/Spec/Craft passed; greenhandoff only review/commit remained",
-      "commit": "f5eac29"
+      "finishedAt": "2026-10-18T01:16:41+03:00",
+      "commit": "226c23e"
     }
   ],
-  "singlePass": null,
-  "tests": {
-    "frontendBaseline": "94 passed /21files",
-    "backend": "106 passed /maps47 /Ruff /fresh healthy image",
-    "frontend": "119 passed /26files /lint+typecheck passed",
-    "migration": "clean+downgrade+legacy passed",
-    "build": "fresh production Compose image with resize fix: passed/healthy",
-    "browser": "29 passed /22constructor+7maps /1.4min"
-  },
   "debt": {
     "placeholders": [],
     "assumptions": [
-      "Connection totals exclude scheduled flights/trains, shown separately.",
-      "Missing places interrupt connections; no made-up distance.",
-      "Offline tests use deterministic provider fixtures; live requests await credentials."
+      "NEXT ISSUE has no confirmed destination/date/price; BUILDING state.",
+      "New stock photos explicitly illustrative.",
+      "No Thailand detail route; archive link with notice."
     ],
-    "emptyEnv": [
-      "GEOAPIFY_MAPS_API_KEY",
-      "GEOAPIFY_API_KEY"
-    ]
+    "emptyEnv": []
   },
-  "additions": [],
   "coverage": {
-    "found": 2,
-    "fixed": 2,
-    "deferred": 0,
-    "note": "G2 independent: details location and reproducible provider setup clarified.",
-    "reviewedBy": "/root/map_spec_gate"
+    "findings": 4,
+    "resolved": [
+      "Separate data contract",
+      "Authoritative UTF-8 copy contract",
+      "Dominant logo visual comparison",
+      "Explicit refinement checklist"
+    ],
+    "verdict": "Independent G2 recheck: no missing/half-covered after copy-contract repair",
+    "G4": "Independent live browser acceptance passed, no missing requirements"
   },
   "concerns": [
     {
-      "task": "03",
-      "axis": "craft",
-      "file": "frontend/src/lib/day-route.ts:38",
-      "finding": "Missing day with empty nodes yields complete=true and zero totals",
-      "status": "dropped-current-product",
-      "reason": "Craft final triage: DayRouteMap:31 returns null for absent day before summary; TripEditor:62 selects existing day/fallback. Not user-exposed."
+      "item": "SVG/canvas intro snapshot verified in Chromium only; Firefox/Safari unverified",
+      "verdict": "report"
     },
     {
-      "task": "02",
-      "axis": "craft",
-      "file": "backend/app/maps.py:134,256",
-      "finding": "Malformed payload RecursionError/OverflowError portability and extreme-number cases need triage; current Python3.14.8 failure not reproduced",
-      "status": "fixed-repair1",
-      "evidence": "Public route HTTP500 for valid1000digit provider distance/coordinate (2scratch HTTP repros)"
+      "item": "fonts/decode capture waits may resolve after Skip; async state/GPU guarded after abort",
+      "verdict": "report"
     },
     {
-      "task": "05",
-      "axis": "qa",
-      "finding": "Existing admin header overflows320 for long fixture login; preserve unrelated header, use short unique login for map-focused QA and report original limitation",
-      "status": "report-existing-limitation",
-      "evidence": "Actual browser320: old header logout x321.47 with15char fixture and x367.47 withlong login; map region fits. Tests use9char unique login; header unmodified."
+      "item": "concurrent Playwright default output removed another run trace once",
+      "verdict": "closed: dedicated output; final production23passed"
     }
   ],
   "reviewers": {
-    "manifestSpec": "/root/map_review_spec",
-    "craft": "/root/map_review_craft"
+    "manifestSpec": "/root/spec_check",
+    "craft": "/root/craft_review"
   },
   "blind": {
-    "reviewedBy": "/root/map_final_blind",
-    "verdict": "Local implementation accepted; two live-validation partials",
-    "found": 2,
-    "fixed": 0,
-    "deferred": 2,
-    "fulfilled": 16,
-    "partial": 2,
-    "missing": 0,
-    "runtime": {
-      "browser": "7passed /22.4sec",
-      "domainClient": "12passed /2files",
-      "services": "backend/postgres healthy, frontend Up"
-    },
-    "drift": [
-      {
-        "id": "R13",
-        "manifest": "done(local code)",
-        "blind": "partial",
-        "reason": "Worldwide provider coverage/accuracy unverified without keys",
-        "resolution": "Report openly; live verification under deferredR22"
-      },
-      {
-        "id": "R20",
-        "manifest": "done(local code)",
-        "blind": "partial",
-        "reason": "Real credit usage/quota sufficiency unmeasured",
-        "resolution": "Report openly; observe account Statistics after keys"
-      }
-    ],
-    "report": "blind-acceptance.md"
+    "verdict": "pass",
+    "drift": [],
+    "checked": "Independent browser G4: natural intro, fullspread handoff,3compositions,450ms locks,links,history,focus,reduced,WebGLfailure,viewportfallback,test8preservation",
+    "agent": "/root/blind_acceptance"
   },
-  "artifacts": {
-    "report": "report.md",
-    "blind": "blind-acceptance.md",
-    "memory": "AGENTS.md",
-    "setup": "docs/geoapify-setup.md",
-    "qa": "docs/qa/trip-day-maps/README.md",
-    "adrs": [
-      "docs/adr/0019-geoapify-day-map-provider.md",
-      "docs/adr/0020-inline-trip-map-places-and-day-preferences.md",
-      "docs/adr/0021-day-route-boundaries-and-scheduled-connections.md",
-      "docs/adr/0022-backend-only-egress-with-internal-database-network.md"
-    ]
+  "tests": {
+    "vitest": 119,
+    "files": 26,
+    "playwright": 23,
+    "visualCases": 24,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "docker": "healthy"
   }
 }

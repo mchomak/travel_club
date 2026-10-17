@@ -38,3 +38,5 @@
 | 2026-10-14 | `2026-10-14-test-7-magazine-handoff` | сдан | /test_7:8лиcтов по preset → scroll в живую homepage, Docker46browserchecks, feature committed/pushed. |
 
 | 2026-10-17 | `2026-10-17-trip-day-maps` | сдан | [Карта и маршруты дня — локальный результат](2026-10-17-trip-day-maps/report.md) |
+
+| 2026-10-17 | `2026-10-17-test-10-interactive-magazine` | сдан 18 октября | /test_10: три разворота, Living Issue, 450ms перелистывание;119 unit/23 browser passed |
