@@ -13,6 +13,11 @@ export type SceneController = {
   setFocus(progress: number): void; update(params: SceneParams): void; replay(): void; togglePause(): void;
   final(): void; reset(): void; seek(fraction: number): void; dispose(): void;
 };
+/** Optional whole-book endpoint. Existing right-page handoffs retain their original path. */
+export type SpreadSceneOptions = {
+  frame(): { left: number; top: number; width: number; height: number };
+  targetLeft: HTMLCanvasElement;
+};
 
 /** A closed, two-sided shell. The back UV is reversed, so it reads normally after crossing the spine. */
 function leafGeometry(columns: number, rows: number) {
@@ -43,7 +48,7 @@ function leafGeometry(columns: number, rows: number) {
   return geometry;
 }
 
-export async function createScene(host: HTMLElement, initial: SceneParams, report: (state: SceneReport) => void, failure: (message: string) => void, signal: AbortSignal, project: (page: PageProjection) => void): Promise<SceneController> {
+export async function createScene(host: HTMLElement, initial: SceneParams, report: (state: SceneReport) => void, failure: (message: string) => void, signal: AbortSignal, project: (page: PageProjection) => void, spreadOptions?: SpreadSceneOptions): Promise<SceneController> {
   const art = await createArtwork();
   if (signal.aborted) { art.dispose(); throw new DOMException("Aborted", "AbortError"); }
   let renderer: THREE.WebGLRenderer;
@@ -91,6 +96,10 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   materials.push(pageShadowMaterial);
   const rightShadow = new THREE.Mesh(planeGeometry, pageShadowMaterial);
   rightShadow.receiveShadow = true; rightShadow.renderOrder = 2; rightGroup.add(rightShadow);
+  const leftCutout = new THREE.Mesh(planeGeometry, cutoutMaterial);
+  leftCutout.renderOrder = 1; leftCutout.visible = false; leftGroup.add(leftCutout);
+  const targetLeft = spreadOptions ? new THREE.CanvasTexture(spreadOptions.targetLeft) : null;
+  if (targetLeft) { targetLeft.colorSpace = THREE.SRGBColorSpace; targetLeft.anisotropy = 4; }
   const stackGeometry = register(new THREE.BoxGeometry(PAGE_WIDTH, PAGE_HEIGHT, .008));
   const stackMaterial = paper(undefined, "#e7e4dc");
   const stackLayers: { mesh: THREE.Mesh; layer: number }[] = [];
@@ -176,6 +185,18 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
     camera.quaternion.slerp(new THREE.Quaternion(), focus);
     camera.updateMatrixWorld();
 
+    if (spreadOptions) {
+      const frame = spreadOptions.frame();
+      const physicalHeight = PAGE_HEIGHT * params.scale * host.clientHeight / frame.height;
+      const position = new THREE.Vector3(
+        (host.clientWidth / 2 - frame.left - frame.width / 2) * physicalHeight / host.clientHeight,
+        (frame.top + frame.height / 2 - host.clientHeight / 2) * physicalHeight / host.clientHeight,
+        edgeZ + physicalHeight / (2 * Math.tan(halfFov)));
+      camera.position.lerp(position, approach);
+      camera.quaternion.slerp(new THREE.Quaternion(), approach);
+      camera.updateMatrixWorld();
+    }
+
   }
   function applyParams() {
     cameraFit(); magazine.scale.setScalar(params.scale); magazine.rotation.z = THREE.MathUtils.degToRad(params.tilt);
@@ -230,19 +251,25 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
     if (current.turning) {
       frontMaterial.map = current.cover ? art.cover : art.spreads[spread].right;
       backMaterial.map = art.spreads[current.cover ? 0 : nextSpread].left;
+      if (spreadOptions && !current.cover && nextSpread === 3 && targetLeft) backMaterial.map = targetLeft;
       deform(current);
     }
     const livePage = !current.cover && (current.turning ? nextSpread === 3 : spread === 3);
     rightPage.visible = !livePage; rightCutout.visible = livePage; rightShadow.visible = livePage;
     rightCutout.position.copy(rightPage.position);
     rightShadow.position.copy(rightPage.position); rightShadow.position.z += .0006;
+    const liveLeft = Boolean(spreadOptions && current.phase === "TARGET");
+    leftPage.visible = !liveLeft; leftCutout.visible = liveLeft;
+    leftCutout.position.copy(leftPage.position);
     magazine.updateMatrixWorld(true);
-    const corners = [[0, PAGE_HEIGHT / 2], [PAGE_WIDTH, PAGE_HEIGHT / 2],
-      [PAGE_WIDTH, -PAGE_HEIGHT / 2], [0, -PAGE_HEIGHT / 2]].map(([x, y]) => {
+    const left = spreadOptions ? -PAGE_WIDTH : 0;
+    const corners = [[left, PAGE_HEIGHT / 2], [PAGE_WIDTH, PAGE_HEIGHT / 2],
+      [PAGE_WIDTH, -PAGE_HEIGHT / 2], [left, -PAGE_HEIGHT / 2]].map(([x, y]) => {
       const p = magazine.localToWorld(new THREE.Vector3(x, y, rightPage.position.z)).project(camera);
       return { x: (p.x + 1) * host.clientWidth / 2, y: (1 - p.y) * host.clientHeight / 2 };
     });
-    project({ corners, width: host.clientWidth, height: host.clientWidth * PAGE_HEIGHT / PAGE_WIDTH, visible: livePage });
+    const sourceWidth = spreadOptions ? spreadOptions.frame().width : host.clientWidth;
+    project({ corners, width: sourceWidth, height: spreadOptions ? sourceWidth / 1.6 : host.clientWidth * PAGE_HEIGHT / PAGE_WIDTH, visible: livePage });
     renderer.render(scene, camera); frameCount++;
     host.dataset.phase = current.phase; host.dataset.elapsed = elapsed.toFixed(4); host.dataset.frames = String(frameCount);
     host.dataset.activeProgress = current.progress.toFixed(4); host.dataset.paused = String(paused);
@@ -293,6 +320,7 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
       document.removeEventListener("visibilitychange", visibility); reduced.removeEventListener("change", preference); renderer.domElement.removeEventListener("webglcontextlost", contextLost);
       debug.traverse(object => { if (object instanceof THREE.AxesHelper) { object.geometry.dispose(); (object.material as THREE.Material).dispose(); } });
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose()); art.dispose(); contactTexture.dispose();
+      targetLeft?.dispose();
       renderer.renderLists.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     },
   };
