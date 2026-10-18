@@ -1,5 +1,23 @@
 # Границы, решённые в спецификации
 
+## Итог доработки
+
+- Текущий код: локальный intro-scene с read-only test_7 helpers/fast preset; пауза на настоящей маленькой обложке до активации,8декоративных листов, endpoint первого Hero. Повтор обложки сохраняет текущий индекс. Начальные reduced/capture/WebGL fallbacks также ждут активации.
+- MagazineIntro({bookRef,frameRef,actionsRef,disabled,onComplete,onMoving}), IntroActions={open(),skip()}; reveal static/pending/enter. Пустая capture texture отклоняется по alpha, rootlogicalinset сбрасывается.
+- 296b8ef редакция;32c91ea вступление;196d72d QA. 45 production checks,21 PNG,119 unit; endpoint ≤0.062px,canvas0.
+- Нижние разделы о DOM hinge-only/автотаймере — исторический контракт первой итерации, заменённый текущей доработкой.
+
+
+## Доработка 18 октября — актуальный контракт (заменяет прежние assumptions ниже)
+
+- Прочитать `refinement-spec.md`. Новая постановка требует настоящую scene/timeline/deformation из test_8/test_7, distant paused cover, activation anywhere, multiple visual turns, Hero endpoint. Прежнее DOM hinge-only открытие снято пользователем. Не менять test_7/test_8/test_10/shared sources.
+- `MagazineSpread({index,side?,animate?,reveal?})`, `reveal?: 'static'|'pending'|'enter'`, export `RevealPhase`. Default static (или прежний animate mapping для совместимости). `pending` с первого paint показывает только якорные элементы, deferred уже скрыты/замаскированы; `enter` finite keyframes из pending; `static` полная печатная версия. `MagazineCover()` и SPREADS прежние.
+- Task04 владеет shell/parent/intro/capture/local scene и e2e/test-11-magazine.spec.ts. Он применяет pending к destination live странице И destination turning back до показа, static к уходящей. При окончании450ms переключает ту же target DOM в enter. Декоративный intro target snapshot/projected page также pending, затем enter после снятия scene. Direct/SSR не должны вспыхивать финальным контентом до hydration.
+- Task05 владеет spreads.tsx/spreads.module.css/data.ts и e2e/test-11-reveal.spec.ts. Он реализует фазы, IA/type/icons/colors/micro-interactions. Parent менять нельзя; контрактные изменения согласовать с Task04 сообщением.
+- Task06 владеет интеграционными screenshots/QA/docs. Только координатор запускает servers/production builds/Compose, все тесты в отдельных output dirs. Dev3001 стартует координатор; production3000 пока старая версия.
+- Окружение shell: тёплый цветной oxblood/plum matte, убрать серую зернистость. Start button может быть прозрачной fullviewport поверхностью без видимых надписей; доступное имя/keyboard/focus обязателен. До click только distant cover+background; no automatic start. Repeated/early click безопасно, cover текстура текущая test_11.
+- Новые библиотеки/assets/цены/факты не добавлять. Существующие пользовательские dirty файлы неприкосновенны. Baseline старых версий: `refinement-baseline.json`.
+
 | Модуль | Владеет | Выставляет | Прячет |
 |---|---|---|---|
 | shell | stage, turn, history, book geometry, surrounding surface, cover opening | MagazineExperience({initialIndex,skipIntro}); MagazineCover render location | timers, physical movement, transition lock |
