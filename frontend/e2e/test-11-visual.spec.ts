@@ -58,6 +58,7 @@ test("both pages reveal again on reentry with distinct finite chapter motion and
   for (const spread of [2, 3, 2, 1]) {
     await page.getByRole("navigation", { name: "Навигация журнала" }).getByRole("button", { name: new RegExp(`^0${spread}`) }).click();
     await expect(root).toHaveAttribute("data-turning", "false");
+    await expect(page.locator("[data-magazine-book] > [data-magazine-page]").first()).toHaveAttribute("data-reveal", "enter");
     const motion = await page.locator("[data-magazine-book] > [data-magazine-page]").evaluateAll(pages => pages.map(page => {
       const animations = page.getAnimations({ subtree: true });
       return {

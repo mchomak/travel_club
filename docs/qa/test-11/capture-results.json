@@ -1,6 +1,7 @@
 {
-  "generatedAt": "2026-10-18T10:17:05.524Z",
+  "generatedAt": "2026-10-18T19:11:46.766Z",
   "baseURL": "http://localhost:3000",
+  "environment": "local production Docker",
   "browser": "153.0.8010.12",
   "captures": [
     {
@@ -9,7 +10,13 @@
         "width": 1280,
         "height": 768
       },
+      "final": true,
       "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 76.796875,
         "y": 16,
@@ -26,6 +33,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -43,7 +62,13 @@
         "width": 1280,
         "height": 768
       },
+      "final": true,
       "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 76.796875,
         "y": 16,
@@ -60,6 +85,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -77,7 +114,13 @@
         "width": 1280,
         "height": 768
       },
+      "final": true,
       "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 76.796875,
         "y": 16,
@@ -96,6 +139,18 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
@@ -106,12 +161,79 @@
       "warnings": []
     },
     {
+      "filename": "cover-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "CLOSED",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 483.78765869140625,
+        "y": 213.03094482421875,
+        "width": 312.4246826171875,
+        "height": 356.67559814453125
+      },
+      "book": {
+        "x": 229.48306274414062,
+        "y": 236.48672485351562,
+        "width": 562.3011474609375,
+        "height": 321.5296325683594
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "warnings": [
+        "[.WebGL-0x6ce40636d200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
       "filename": "hero-formats-1440x900.png",
       "viewport": {
         "width": 1440,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 51.203125,
         "y": 16,
@@ -128,6 +250,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -145,7 +279,13 @@
         "width": 1440,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 51.203125,
         "y": 16,
@@ -162,6 +302,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -179,7 +331,13 @@
         "width": 1440,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 51.203125,
         "y": 16,
@@ -198,6 +356,18 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11.5636,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
@@ -213,12 +383,23 @@
         "width": 1440,
         "height": 900
       },
+      "final": true,
       "stage": "opening",
+      "spread": "1",
+      "introPhase": "CLOSED",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
       "book": {
-        "x": -256.39697265625,
-        "y": 24.483230590820312,
-        "width": 1283.9970703125,
-        "height": 819.0179443359375
+        "x": 238.93978881835938,
+        "y": 277.13287353515625,
+        "width": 658.9814453125,
+        "height": 376.82684326171875
       },
       "pageOverflow": [
         {
@@ -232,6 +413,260 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "opening-cover-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "OPENING",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 245.28053283691406,
+        "y": 274.0483703613281,
+        "width": 663.0396118164062,
+        "height": 379.2411193847656
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "opening-early-leaf-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "FLIP_2",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 322.0509033203125,
+        "y": 188.36009216308594,
+        "width": 795.851318359375,
+        "height": 460.4923095703125
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "opening-late-leaf-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "FLIP_7",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 73.5335922241211,
+        "y": 18.94091796875,
+        "width": 1292.8411865234375,
+        "height": 797.6868286132812
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "intro-hero-endpoint-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "stage": "reading",
+      "spread": "1",
+      "introPhase": "TARGET",
+      "introResult": "target",
+      "leafCount": null,
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
@@ -239,7 +674,126 @@
       "brokenImages": [],
       "runningAnimations": 0,
       "canvases": 0,
-      "warnings": []
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "reading-turn-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "stage": "reading",
+      "spread": "2",
+      "introPhase": "TARGET",
+      "introResult": "target",
+      "leafCount": null,
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 3,
+      "canvases": 0,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "reading-next-endpoint-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "stage": "reading",
+      "spread": "2",
+      "introPhase": "TARGET",
+      "introResult": "target",
+      "leafCount": null,
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": [
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x585408435e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
     },
     {
       "filename": "hero-formats-1728x900.png",
@@ -247,7 +801,13 @@
         "width": 1728,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 195.203125,
         "y": 16,
@@ -264,6 +824,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -281,7 +853,13 @@
         "width": 1728,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 195.203125,
         "y": 16,
@@ -298,6 +876,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -315,7 +905,13 @@
         "width": 1728,
         "height": 900
       },
+      "final": true,
       "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 195.203125,
         "y": 16,
@@ -334,6 +930,18 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11.5636,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
@@ -349,7 +957,13 @@
         "width": 1920,
         "height": 1080
       },
+      "final": true,
       "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 147.203125,
         "y": 16,
@@ -366,6 +980,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -383,7 +1009,13 @@
         "width": 1920,
         "height": 1080
       },
+      "final": true,
       "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 147.203125,
         "y": 16,
@@ -400,6 +1032,18 @@
           "side": "right",
           "horizontal": 0,
           "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
         }
       ],
       "documentOverflow": {
@@ -417,7 +1061,13 @@
         "width": 1920,
         "height": 1080
       },
+      "final": true,
       "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "cover": null,
       "book": {
         "x": 147.203125,
         "y": 16,
@@ -436,6 +1086,18 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 12,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
@@ -451,12 +1113,23 @@
         "width": 1920,
         "height": 1080
       },
+      "final": true,
       "stage": "opening",
+      "spread": "1",
+      "introPhase": "CLOSED",
+      "introResult": null,
+      "leafCount": "8",
+      "cover": {
+        "x": 736.41455078125,
+        "y": 303.3832702636719,
+        "width": 447.1708984375,
+        "height": 502.4276428222656
+      },
       "book": {
-        "x": -226.6270294189453,
-        "y": 26.309864044189453,
-        "width": 1560.457275390625,
-        "height": 995.3646240234375
+        "x": 382.7062072753906,
+        "y": 332.5594482421875,
+        "width": 790.734375,
+        "height": 452.15032958984375
       },
       "pageOverflow": [
         {
@@ -470,14 +1143,29 @@
           "vertical": 0
         }
       ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
       "documentOverflow": {
         "horizontal": 0,
         "vertical": 0
       },
       "brokenImages": [],
       "runningAnimations": 0,
-      "canvases": 0,
-      "warnings": []
+      "canvases": 1,
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
     }
   ]
 }
