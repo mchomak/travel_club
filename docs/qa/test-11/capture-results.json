@@ -1,0 +1,483 @@
+{
+  "generatedAt": "2026-10-18T10:17:05.524Z",
+  "baseURL": "http://localhost:3000",
+  "browser": "153.0.8010.12",
+  "captures": [
+    {
+      "filename": "hero-formats-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "stage": "reading",
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "next-issue-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "stage": "reading",
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "thailand-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "stage": "reading",
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "hero-formats-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "next-issue-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "thailand-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "cover-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "stage": "opening",
+      "book": {
+        "x": -256.39697265625,
+        "y": 24.483230590820312,
+        "width": 1283.9970703125,
+        "height": 819.0179443359375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "hero-formats-1728x900.png",
+      "viewport": {
+        "width": 1728,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 195.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "next-issue-1728x900.png",
+      "viewport": {
+        "width": 1728,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 195.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "thailand-1728x900.png",
+      "viewport": {
+        "width": 1728,
+        "height": 900
+      },
+      "stage": "reading",
+      "book": {
+        "x": 195.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "hero-formats-1920x1080.png",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "stage": "reading",
+      "book": {
+        "x": 147.203125,
+        "y": 16,
+        "width": 1625.59375,
+        "height": 1015.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "next-issue-1920x1080.png",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "stage": "reading",
+      "book": {
+        "x": 147.203125,
+        "y": 16,
+        "width": 1625.59375,
+        "height": 1015.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "thailand-1920x1080.png",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "stage": "reading",
+      "book": {
+        "x": 147.203125,
+        "y": 16,
+        "width": 1625.59375,
+        "height": 1015.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    },
+    {
+      "filename": "cover-1920x1080.png",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "stage": "opening",
+      "book": {
+        "x": -226.6270294189453,
+        "y": 26.309864044189453,
+        "width": 1560.457275390625,
+        "height": 995.3646240234375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "warnings": []
+    }
+  ]
+}
