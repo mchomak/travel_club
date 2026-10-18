@@ -33,15 +33,16 @@
 .photo { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
 .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .link { display: flex; align-items: center; gap: 20px; justify-content: space-between; width: fit-content; min-height: 30px; border-bottom: 1px solid currentColor; font-weight: 500; font-size: clamp(14px, 2.7cqw, 18px); }
-.link > span { font-size: 1.4em; line-height: 1; transition: transform 180ms ease-out; }
-.link:hover > span { transform: translate(2px, -2px); }
+.link > svg { width: 20px; height: 20px; flex-shrink: 0; stroke-width: 1.6; transition: transform 180ms ease-out; }
+.link:is(:hover, :focus-visible) > svg { transform: translate(2px, -2px); }
 .credit { font-size: clamp(11px, 1.9cqw, 12px); }
 
 /* The first page is a blue print: pale lettering crosses the edge of the sea. */
 .heroPage { background: #153a6b; color: #f5f0dc; gap: 1.3cqh; }
 .heroArt { flex: 1; min-height: 0; position: relative; }
 .heroLogo { position: absolute; width: 53%; height: auto; left: 0; top: .5%; z-index: 2; }
-.heroPhoto { position: absolute; top: 18%; right: -5%; width: 79%; height: 79%; }
+.heroPhotoReveal { position: absolute; top: 18%; right: -5%; width: 79%; height: 79%; }
+.heroPhoto { width: 100%; height: 100%; }
 .heroPhoto img { object-position: 45% 62%; filter: brightness(.72) saturate(.85); }
 .heroSlogan { position: absolute; inset: 30% 0 auto; display: flex; flex-direction: column; font-size: 13.9cqw; font-weight: 700; line-height: .96; letter-spacing: -.065em; z-index: 2; }
 .heroSlogan > span { display: block; overflow: hidden; padding-block: .07em; margin-block: -.07em; }
@@ -56,16 +57,22 @@
 .formatsPage { gap: 1.5cqh; }
 .formatsIntro { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-top: .5cqh; }
 .formatsIntro h2 { font-family: "TC Lora", Georgia, serif; font-weight: 400; font-size: 8.5cqw; line-height: .99; letter-spacing: -.055em; }
-.formatsIntro > p { font-size: clamp(14px, 2.45cqw, 17px); line-height: 1.5; padding-bottom: .4cqh; }
+.formatsIntro > p { max-width: 24ch; font-size: clamp(14px, 2.45cqw, 17px); line-height: 1.5; padding-bottom: .4cqh; }
 .formatsTable { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 1.2cqh; border-top: 1px solid currentColor; }
 .formatRow { flex: 1; min-height: 0; position: relative; display: grid; grid-template-columns: 12% 1fr auto; align-content: center; align-items: baseline; gap: .4cqh 9px; padding-block: 1.3cqh; border-bottom: 1px solid color-mix(in srgb, currentColor 32%, transparent); }
-.formatNumber { grid-row: 1 / 3; font-size: 7cqw; line-height: 1; font-weight: 400; letter-spacing: -.06em; color: #59718b; }
+.formatNumber { grid-row: 1 / 3; display: flex; flex-direction: column; align-items: start; gap: 1cqh; color: #476744; }
+.formatNumber svg { width: 24px; height: 24px; stroke-width: 1.5; transition: transform 180ms ease-out; }
+.formatNumber > span { font-size: 11px; letter-spacing: .03em; }
+.formatRow:nth-child(2) .formatNumber { color: #9b402e; }
+.formatRow:nth-child(3) .formatNumber { color: #6b4e85; }
 .formatName h3 { font-size: 4.2cqw; line-height: 1.05; font-weight: 500; letter-spacing: -.04em; }
-.formatName > span { display: block; margin-top: .7cqh; font-size: 11px; }
+.formatName > span { display: block; margin-top: .7cqh; font-size: 11px; color: #47617e; }
 .formatPrice { font-size: 4.7cqw; line-height: 1.1; white-space: nowrap; letter-spacing: -.045em; }
-.agreedPrice { font-size: clamp(14px, 2.7cqw, 18px); white-space: normal; max-width: 10ch; text-align: right; line-height: 1.15; letter-spacing: -.025em; }
+.agreedPrice { font-size: clamp(14px, 2.7cqw, 18px); white-space: nowrap; text-align: right; line-height: 1.15; letter-spacing: -.025em; }
 .formatRow > p { grid-column: 2 / -1; padding-top: .6cqh; padding-right: 6%; max-width: 47ch; font-size: clamp(14px, 2.45cqw, 17px); line-height: 1.45; }
-.formatArrow { position: absolute; bottom: 1.6cqh; right: 0; font-size: 20px; }
+.formatArrow { position: absolute; bottom: 1.6cqh; right: 0; width: 19px; height: 19px; stroke-width: 1.5; transition: transform 180ms ease-out; }
+.formatRow:is(:hover, :focus-visible) .formatArrow { transform: translate(2px, -2px); }
+.formatRow:is(:hover, :focus-visible) .formatNumber svg { transform: translateY(-2px); }
 .formatRow:hover .formatName h3 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
 .priceNote { font-size: clamp(11px, 2cqw, 13px); line-height: 1.4; max-width: 45ch; }
 
@@ -76,26 +83,27 @@
 .nextDisplay > span { position: relative; z-index: 2; }
 .nextDisplay > span:last-child { font-size: .85em; letter-spacing: -.06em; }
 .nextAperture { position: absolute; width: 83%; aspect-ratio: 1; left: 8.5%; top: 15%; clip-path: circle(50%); }
+.nextAperture > .photo { width: 100%; height: 100%; }
 .nextAperture img { object-position: 43% 50%; filter: saturate(.65) contrast(1.04); }
 .apertureMark { position: absolute; top: 24%; right: 1%; font-family: "TC Lora", Georgia, serif; font-size: 7cqw; line-height: 1; }
-.nextBuilding { position: absolute; top: 44%; left: 0; z-index: 3; padding: 8px 10px 8px 0; background: #ce3c28; font-size: 11px; line-height: 1.4; }
-.nextArtNote { position: absolute; bottom: 0; right: 0; max-width: 36%; font-family: "TC Lora", Georgia, serif; font-size: 3.3cqw; line-height: 1.2; text-align: right; }
+.nextBuilding { position: absolute; top: 44%; left: 0; z-index: 3; padding: 8px 10px 8px 0; background: #ce3c28; font-size: 11px; line-height: 1.4; white-space: nowrap; }
+.nextArtNote { position: absolute; bottom: 0; right: 0; font-family: "TC Lora", Georgia, serif; font-size: clamp(14px, 3cqw, 18px); line-height: 1.2; text-align: right; white-space: nowrap; }
 .nextDisclaimer { font-size: clamp(14px, 2.45cqw, 16px); line-height: 1.45; max-width: 47ch; }
 .nextStoryPage { background: #f0e9db; gap: 1.8cqh; }
-.nextStoryTitle { padding-block: 3cqh 0; font-family: "TC Lora", Georgia, serif; font-size: 9.5cqw; font-weight: 400; line-height: 1.02; letter-spacing: -.055em; }
+.nextStoryTitle { padding-block: 3cqh 1cqh; font-family: "TC Lora", Georgia, serif; font-size: 10cqw; font-weight: 400; line-height: 1.1; letter-spacing: -.045em; }
 .nextStoryTitle > span { display: block; }
-.nextStoryTitle > span:nth-child(2) { padding-left: 9%; }
-.nextStoryTitle > span:last-child { padding-left: 27%; }
-.nextLead { font-family: "TC Lora", Georgia, serif; font-size: 4.1cqw; line-height: 1.4; padding-block: 1.3cqh; }
+.nextStoryTitle > span:last-child { padding-top: .1em; font-size: .79em; white-space: nowrap; }
+.nextLead { font-family: "TC Lora", Georgia, serif; font-size: 4.1cqw; line-height: 1.4; padding-block: 1.3cqh; max-width: 28ch; }
 .nextStoryBody { display: grid; grid-template-columns: 1fr 29%; gap: 6%; align-items: end; }
 .nextStoryBody > p { font-size: clamp(14px, 2.6cqw, 18px); line-height: 1.65; }
 .nextMarginal { font-size: 11px; line-height: 1.5; }
-.nextMarginal > span { display: block; font-size: 9cqw; line-height: .9; padding-bottom: 1.4cqh; font-weight: 400; }
-.nextPlanning { display: flex; justify-content: space-between; align-items: start; border-top: 1px solid currentColor; padding-top: 1.6cqh; margin-top: auto; }
-.nextPlanning > span { font-size: 11px; }
-.nextPlanning > p { font-size: clamp(14px, 2.6cqw, 17px); line-height: 1.5; }
+.nextMarginal > svg { display: block; width: 30px; height: 30px; stroke-width: 1.2; margin-bottom: 1.4cqh; color: #9b402e; }
+.nextPlanning { display: flex; flex-direction: column; gap: .8cqh; border-top: 1px solid color-mix(in srgb, currentColor 40%, transparent); padding-top: 1.6cqh; margin-top: auto; }
+.nextPlanning > span { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #93402f; }
+.nextPlanning > span > svg { width: 16px; height: 16px; stroke-width: 1.6; }
+.nextPlanning > p { font-size: clamp(14px, 2.6cqw, 17px); line-height: 1.5; white-space: nowrap; }
 .nextAction { display: flex; flex-direction: column; gap: 1cqh; padding-top: .7cqh; }
-.nextAction > p { font-size: clamp(14px, 2.5cqw, 16px); line-height: 1.45; }
+.nextAction > p { font-size: clamp(11px, 2.1cqw, 13px); line-height: 1.45; white-space: nowrap; }
 .nextStoryPage .folio { margin-top: 0; }
 
 /* Actual Golos letter outlines mask a local photograph. Three narrow strips
@@ -116,14 +124,15 @@
 .thaiYear { position: absolute; bottom: -1%; left: 0; font-family: "TC Lora", Georgia, serif; font-size: 17cqw; line-height: 1; letter-spacing: -.06em; display: flex; align-items: center; gap: 8cqw; }
 .thaiYear > span { font-family: "TC Golos", Arial, sans-serif; font-size: clamp(14px, 2.7cqw, 18px); line-height: 1.5; letter-spacing: 0; }
 .thaiRoute { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
-.thaiRoute > span { font-family: "TC Lora", Georgia, serif; font-size: 4.5cqw; line-height: 1.2; }
+.thaiRoute > span { font-family: "TC Lora", Georgia, serif; font-size: 3.6cqw; line-height: 1.2; max-width: 66%; }
+.thaiRoute > span > svg { display: block; width: 19px; height: 19px; stroke-width: 1.5; margin-bottom: .8cqh; color: #d6cb8d; }
 .thaiRoute > p { font-size: clamp(14px, 2.6cqw, 17px); line-height: 1.5; text-align: right; }
 .thailandStory { background: #e9ecdf; color: var(--forest); gap: 1.7cqh; }
 .thaiStoryTitle { font-family: "TC Lora", Georgia, serif; font-size: 7.8cqw; font-weight: 400; line-height: 1.04; letter-spacing: -.055em; padding-block: .7cqh; }
 .thaiStoryTop { display: grid; grid-template-columns: 1fr 44%; gap: 6%; min-height: 0; flex: 1.05; }
 .thaiProse { display: flex; flex-direction: column; justify-content: space-between; gap: 1cqh; }
 .thaiProse > p { font-size: clamp(14px, 2.5cqw, 17px); line-height: 1.55; }
-.thaiProse > p::first-letter { float: left; margin: -.075em .05em -.08em -.02em; font-family: "TC Lora", Georgia, serif; font-size: 5em; line-height: 1; }
+.thaiProse > p::first-letter { float: left; margin: -.04em .08em -.06em -.02em; font-family: "TC Lora", Georgia, serif; font-size: 3.8em; line-height: 1; }
 .thaiProse > span { font-size: 11px; line-height: 1.5; }
 .peopleFigure, .cityFigure { min-height: 0; display: flex; flex-direction: column; gap: .8cqh; }
 .peopleFigure > .photo, .cityFigure > .photo { flex: 1; }
@@ -135,7 +144,7 @@
 .thaiMargin > p { font-size: 11px; line-height: 1.45; margin-top: 1.3cqh; }
 .cityFigure img { object-position: 50% 63%; }
 .thaiAction { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1cqh 15px; margin-top: 1cqh; }
-.thaiAction > p { font-size: clamp(14px, 2.5cqw, 16px); line-height: 1.4; }
+.thaiAction > p { font-size: clamp(11px, 2.1cqw, 13px); line-height: 1.4; white-space: nowrap; }
 .thailandStory .folio { margin-top: 0; }
 
 /* A separate, printable front cover; no animation, even inside the opening. */
@@ -156,35 +165,41 @@
 .coverBottom > :last-child { align-self: end; max-width: 52%; font-size: 11px; }
 .coverBottom span { display: block; margin-top: 1cqh; }
 
-/* Default geometry is always the final, readable state. Only live page entry
-   attaches these finite keyframes; static turn copies never inherit them. */
-.heroPage[data-reveal="true"] .heroSlogan > span > span { animation: typeEnter 850ms cubic-bezier(.16,1,.3,1) backwards; }
-.heroPage[data-reveal="true"] .heroSlogan > span:nth-child(2) > span { animation-delay: 90ms; }
-.heroPage[data-reveal="true"] .heroSlogan > span:nth-child(3) > span { animation-delay: 180ms; }
-.heroPage[data-reveal="true"] .heroSlogan > span:nth-child(4) > span { animation-delay: 270ms; }
-.heroPage[data-reveal="true"] .heroPhoto { animation: photoSweep 1300ms cubic-bezier(.16,1,.3,1) backwards; }
-.formatsPage[data-reveal="true"] .formatRow { animation: formatEnter 700ms cubic-bezier(.16,1,.3,1) backwards; }
-.formatsPage[data-reveal="true"] .formatRow:nth-child(2) { animation-delay: 120ms; }
-.formatsPage[data-reveal="true"] .formatRow:nth-child(3) { animation-delay: 240ms; }
-.nextPage[data-reveal="true"] .nextAperture { animation: irisEnter 1350ms cubic-bezier(.16,1,.3,1) backwards; }
-.nextPage[data-reveal="true"] .nextBuilding, .nextPage[data-reveal="true"] .nextArtNote { animation: annotationEnter 700ms ease-out 350ms backwards; }
-.nextStoryPage[data-reveal="true"] .nextStoryTitle > span { animation: editorialEnter 900ms cubic-bezier(.16,1,.3,1) backwards; }
-.nextStoryPage[data-reveal="true"] .nextStoryTitle > span:nth-child(2) { animation-delay: 100ms; }
-.nextStoryPage[data-reveal="true"] .nextStoryTitle > span:nth-child(3) { animation-delay: 200ms; }
-.thailandCover[data-reveal="true"] .thaiWord, .thailandCover[data-reveal="true"] .landWord { animation: lettersEnter 1100ms cubic-bezier(.16,1,.3,1) backwards; }
-.thailandCover[data-reveal="true"] .landWord { animation-delay: 180ms; }
-.thailandCover[data-reveal="true"] .thaiStrips > div { animation: stripEnter 1000ms cubic-bezier(.16,1,.3,1) backwards; }
-.thailandCover[data-reveal="true"] .thaiStrips > div:nth-child(2) { animation-delay: 120ms; }
-.thailandCover[data-reveal="true"] .thaiStrips > div:nth-child(3) { animation-delay: 240ms; }
-.thailandStory[data-reveal="true"] .thaiProse, .thailandStory[data-reveal="true"] .peopleFigure, .thailandStory[data-reveal="true"] .cityFigure { animation: annotationEnter 850ms ease-out backwards; }
-.thailandStory[data-reveal="true"] .peopleFigure { animation-delay: 160ms; }
-.thailandStory[data-reveal="true"] .cityFigure { animation-delay: 320ms; }
+/* Print/capture is complete by default. The parent marks destination pages
+   pending BEFORE either face is exposed. These poses exactly match keyframe 0;
+   changing pending → enter never paints a complete page followed by a reset.
+   Display type, service identities/prices and running heads stay as anchors. */
+.heroPage[data-reveal="pending"] .heroSlogan > span:nth-child(n+3) > span { transform: translateY(110%); }
+.heroPage[data-reveal="pending"] .heroPhotoReveal { clip-path: inset(0 100% 0 0); }
+.formatsPage[data-reveal="pending"] .formatRow > p { opacity: 0; transform: translateX(16px); }
+.nextPage[data-reveal="pending"] .nextAperture { clip-path: circle(0%); }
+.nextStoryPage[data-reveal="pending"] .nextStoryBody,
+.nextStoryPage[data-reveal="pending"] .nextAction { opacity: 0; }
+.thailandCover[data-reveal="pending"] .thaiStrips > div { clip-path: inset(100% 0 0); }
+.thailandStory[data-reveal="pending"] .thaiProse { opacity: 0; }
+.thailandStory[data-reveal="pending"] .peopleFigure { clip-path: inset(0 0 100%); }
+.thailandStory[data-reveal="pending"] .cityFigure { clip-path: inset(0 100% 0 0); }
+
+.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(n+3) > span { animation: typeEnter 760ms cubic-bezier(.16,1,.3,1) backwards; }
+.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(4) > span { animation-delay: 100ms; }
+.heroPage[data-reveal="enter"] .heroPhotoReveal { animation: photoSweep 1050ms cubic-bezier(.16,1,.3,1) backwards; }
+.formatsPage[data-reveal="enter"] .formatRow > p { animation: formatEnter 650ms cubic-bezier(.16,1,.3,1) backwards; }
+.formatsPage[data-reveal="enter"] .formatRow:nth-child(2) > p { animation-delay: 90ms; }
+.formatsPage[data-reveal="enter"] .formatRow:nth-child(3) > p { animation-delay: 180ms; }
+.nextPage[data-reveal="enter"] .nextAperture { animation: irisEnter 1150ms cubic-bezier(.16,1,.3,1) backwards; }
+.nextStoryPage[data-reveal="enter"] .nextStoryBody { animation: annotationEnter 800ms ease-out backwards; }
+.nextStoryPage[data-reveal="enter"] .nextAction { animation: annotationEnter 650ms ease-out 140ms backwards; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div { animation: stripEnter 900ms cubic-bezier(.16,1,.3,1) backwards; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(2) { animation-delay: 100ms; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(3) { animation-delay: 200ms; }
+.thailandStory[data-reveal="enter"] .thaiProse { animation: annotationEnter 750ms ease-out backwards; }
+.thailandStory[data-reveal="enter"] .peopleFigure { animation: lettersEnter 900ms cubic-bezier(.16,1,.3,1) 80ms backwards; }
+.thailandStory[data-reveal="enter"] .cityFigure { animation: photoSweep 1000ms cubic-bezier(.16,1,.3,1) 160ms backwards; }
 @keyframes typeEnter { from { transform: translateY(110%); } to { transform: none; } }
 @keyframes photoSweep { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
-@keyframes formatEnter { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes formatEnter { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 @keyframes irisEnter { from { clip-path: circle(0%); } to { clip-path: circle(50%); } }
 @keyframes annotationEnter { from { opacity: 0; } to { opacity: 1; } }
-@keyframes editorialEnter { from { clip-path: inset(0 0 100%); transform: translateX(-12px); } to { clip-path: inset(0); transform: none; } }
 @keyframes lettersEnter { from { clip-path: inset(0 0 100%); } to { clip-path: inset(0); } }
 @keyframes stripEnter { from { clip-path: inset(100% 0 0); } to { clip-path: inset(0); } }
 
@@ -202,6 +217,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; }
+  .page[data-reveal="pending"] .heroSlogan > span > span,
+  .page[data-reveal="pending"] .formatRow > p { transform: none; opacity: 1; }
+  .page[data-reveal="pending"] .heroPhotoReveal,
+  .page[data-reveal="pending"] .thaiStrips > div,
+  .page[data-reveal="pending"] .peopleFigure,
+  .page[data-reveal="pending"] .cityFigure { clip-path: inset(0); }
+  .page[data-reveal="pending"] .nextAperture { clip-path: circle(50%); }
+  .page[data-reveal="pending"] .nextStoryBody,
+  .page[data-reveal="pending"] .nextAction,
+  .page[data-reveal="pending"] .thaiProse { opacity: 1; }
 }
 
 /* Masks rasterised from the bundled TC Golos at print resolution. */
