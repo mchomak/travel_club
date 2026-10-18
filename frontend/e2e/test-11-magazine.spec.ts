@@ -1,5 +1,62 @@
 import { expect, test } from "@playwright/test";
 
+test("the distant cover waits indefinitely for background activation", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/test_11");
+  await page.waitForTimeout(4500);
+  const root = page.getByTestId("magazine-experience");
+  await expect(root).toHaveAttribute("data-stage", "opening");
+  const scene = page.getByTestId("magazine-intro-scene");
+  await expect(scene).toHaveAttribute("data-ready", "true");
+  const idleFrames = await scene.getAttribute("data-frames");
+  await page.waitForTimeout(250);
+  await expect(scene).toHaveAttribute("data-frames", idleFrames!);
+  await page.evaluate(() => {
+    const errors: number[] = [];
+    Object.assign(window, { projectionErrors: errors });
+    const sample = () => {
+      const book = document.querySelector<HTMLElement>('[data-magazine-book]')!;
+      const root = book.closest<HTMLElement>('main')!;
+      if (book.style.position === 'fixed' && book.style.visibility === 'visible') {
+        const corners = JSON.parse(root.dataset.introCorners!) as { x: number; y: number }[];
+        const xs = corners.map(point => point.x), ys = corners.map(point => point.y);
+        const rect = book.getBoundingClientRect();
+        errors.push(Math.max(Math.abs(rect.left - Math.min(...xs)), Math.abs(rect.right - Math.max(...xs)), Math.abs(rect.top - Math.min(...ys)), Math.abs(rect.bottom - Math.max(...ys))));
+      }
+      if (root.dataset.stage !== 'reading') requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await page.getByRole("button", { name: "Открыть журнал", exact: true }).click({ position: { x: 20, y: 20 } });
+  await expect(scene).toHaveAttribute("data-leaf-count", "8");
+  await expect(scene).toHaveAttribute("data-phase", /OPENING|FLIP_[1-8]|SPREAD_[1-8]/);
+  await expect(root).toHaveAttribute("data-stage", "reading", { timeout: 15000 });
+  await expect(root).toHaveAttribute("data-intro-result", "target");
+  await expect(root).toHaveAttribute("data-spread", "1");
+  await expect(page.locator("canvas,[data-magazine-intro]")).toHaveCount(0);
+  const errors = await page.evaluate(() => (window as unknown as { projectionErrors: number[] }).projectionErrors);
+  await testInfo.attach('projected-spread-errors', { body: JSON.stringify(errors), contentType: 'application/json' });
+  expect(errors.length).toBeGreaterThan(0);
+  expect(Math.max(...errors)).toBeLessThan(1);
+});
+
+test("an early cover click survives asset loading and reduced navigation stays visible after preference restores", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  let release!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/test_11/coast.webp', async route => { await blocked; await route.continue(); });
+  await page.goto('/test_11', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'Открыть журнал', exact: true }).click();
+  await expect(page.getByTestId('magazine-experience')).toHaveAttribute('data-stage', 'opening');
+  release();
+  await expect(page.getByTestId('magazine-experience')).toHaveAttribute('data-stage', 'reading', { timeout: 15000 });
+  await expect(page.getByTestId('magazine-experience')).toHaveAttribute('data-intro-result', 'target');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.keyboard.press('ArrowRight');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  expect(await page.locator('[data-magazine-book] > [data-magazine-page]').evaluateAll(pages => pages.every(page => page.getAttribute('data-reveal') !== 'pending'))).toBe(true);
+});
+
 test("direct links open the requested article and keyboard navigation preserves browser history", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_11?spread=2&source=qa");
@@ -35,6 +92,7 @@ test("modified arrow shortcuts pass through to the browser", async ({ page }) =>
 test("skipping the cover transfers focus to the usable magazine", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_11");
+  await page.getByRole("button", { name: "Открыть журнал", exact: true }).click();
   await page.getByRole("button", { name: "Пропустить вступление ↗" }).click();
   await expect(page.locator("[data-magazine-book]")).toBeFocused();
   await page.keyboard.press("ArrowRight");
@@ -53,7 +111,7 @@ test("450ms turns reject rapid commands and keep temporary copies out of focus",
   const leaf = page.locator('[aria-hidden="true"][inert]');
   await expect(leaf).toHaveCount(1);
   expect(await leaf.evaluate(element => getComputedStyle(element).animationDuration)).toBe("0.45s");
-  expect(await leaf.locator('[data-magazine-page]').evaluateAll(pages => pages.every(page => page.getAttribute('data-reveal') === 'false'))).toBe(true);
+  expect(await leaf.locator('[data-magazine-page]').evaluateAll(pages => pages.map(page => page.getAttribute('data-reveal')))).toEqual(['static', 'pending']);
   await page.keyboard.press("ArrowRight"); await page.keyboard.press("ArrowLeft");
   await expect(root).toHaveAttribute("data-spread", "2");
   await page.clock.runFor(449); await expect(root).toHaveAttribute("data-turning", "true");
@@ -83,9 +141,10 @@ test("the printed cover opens physically then can be revisited without losing th
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_11");
   const root = page.getByTestId("magazine-experience"), cover = page.locator("[data-magazine-cover]");
-  await expect(cover).toBeVisible();
+  await expect(page.getByRole("button", { name: "Открыть журнал", exact: true })).toBeVisible();
   const coverBox = await cover.boundingBox();
-  expect(coverBox!.height).toBeGreaterThan(720);
+  expect(coverBox!.height).toBeLessThan(520);
+  await page.getByRole("button", { name: "Открыть журнал", exact: true }).click();
   await expect(page.getByRole("link", { name: /Обсудить поездку/ })).toHaveCount(0);
   await expect(root).toHaveAttribute("data-stage", "reading", { timeout: 10000 });
   await expect(root).toHaveAttribute("data-intro-result", "target");
@@ -93,11 +152,10 @@ test("the printed cover opens physically then can be revisited without losing th
   await page.getByRole("button", { name: /03.*Thailand/i }).click();
   await expect(root).toHaveAttribute("data-turning", "false");
   await page.getByRole("button", { name: "Обложка", exact: true }).click();
-  await expect(cover).toBeVisible();
   await expect(page.getByRole("button", { name: "Открыть журнал", exact: true })).toBeFocused();
   await page.waitForTimeout(1800);
   await expect(root).toHaveAttribute("data-stage", "opening");
-  await page.getByRole("button", { name: "Открыть журнал", exact: true }).click();
+  await page.keyboard.press("Enter");
   await expect(root).toHaveAttribute("data-stage", "reading");
   await expect(root).toHaveAttribute("data-spread", "3");
   await expect(page.locator("[data-magazine-book]")).toBeFocused();
@@ -121,6 +179,8 @@ test("invalid and repeated links normalize to the first spread while reduced mot
     expect(await root.evaluate(element => element.getAnimations({ subtree: true }).filter(animation => animation.playState === "running").length)).toBe(0);
   }
   await page.goto("/test_11");
+  await expect(page.getByTestId("magazine-experience")).toHaveAttribute("data-stage", "opening");
+  await page.getByRole("button", { name: "Открыть журнал", exact: true }).click();
   await expect(page.getByTestId("magazine-experience")).toHaveAttribute("data-stage", "reading");
   await expect(page.locator("[data-magazine-intro],canvas")).toHaveCount(0);
 });

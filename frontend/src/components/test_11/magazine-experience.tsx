@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSiteVariables } from "../public-site/site-tokens";
-import { MagazineSpread } from "./spreads";
+import { MagazineSpread, type RevealPhase } from "./spreads";
 import { SPREADS } from "./data";
 import { MagazineIntro, type IntroActions } from "./magazine-intro";
 import s from "./magazine.module.css";
@@ -15,6 +15,7 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
   const [ready, setReady] = useState(skipIntro);
   const [revisiting, setRevisiting] = useState(false);
   const [introMoving, setIntroMoving] = useState(false);
+  const [reveal, setReveal] = useState<RevealPhase>("pending");
   const busy = useRef(false), current = useRef(initialIndex);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nav = useRef<HTMLElement>(null), bookRef = useRef<HTMLDivElement>(null), frameRef = useRef<HTMLDivElement>(null);
@@ -22,14 +23,14 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
   const introOpenRef = useRef<HTMLButtonElement>(null), focusAfterIntro = useRef(false);
   const introComplete = useCallback(() => {
     focusAfterIntro.current ||= Boolean(document.activeElement?.closest("[data-intro-controls]"));
-    setReady(true); setIntroMoving(false);
+    setReady(true); setIntroMoving(false); setReveal("enter");
   }, []);
   const introMovement = useCallback((value: boolean) => {
     if (value) focusAfterIntro.current ||= Boolean(document.activeElement?.closest("[data-intro-controls]"));
     setIntroMoving(value);
   }, []);
   const finish = useCallback(() => {
-    busy.current = false; setTurn(null);
+    busy.current = false; setTurn(null); setReveal("enter");
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
   }, []);
@@ -45,11 +46,17 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
     const url = new URL(location.href);
     url.searchParams.set("spread", String(next + 1));
     history.pushState(null, "", url);
-    current.current = next; setIndex(next);
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    current.current = next; setIndex(next); setReveal("pending");
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { setReveal("static"); return; }
     busy.current = true; setTurn({ from, to: next, direction: next > from ? 1 : -1 });
     timer.current = setTimeout(finish, 450);
   }, [finish, moveFocus, ready]);
+
+  useEffect(() => {
+    if (!skipIntro) return;
+    const id = requestAnimationFrame(() => setReveal("enter"));
+    return () => cancelAnimationFrame(id);
+  }, [skipIntro]);
 
   useEffect(() => {
     const url = new URL(location.href), values = url.searchParams.getAll("spread");
@@ -89,27 +96,26 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
   const live = ready && !turn;
   return <main className={s.root} style={createSiteVariables()} data-testid="magazine-experience" data-stage={ready ? "reading" : "opening"} data-spread={index + 1} data-turning={String(Boolean(turn))}>
     <div className={s.desktop}>
-      <div ref={frameRef} className={s.frame} data-intro-phase={!ready ? "closed" : undefined}>
+      <div ref={frameRef} className={s.frame}>
         <div ref={bookRef} className={s.book} data-magazine-book inert={!live} aria-hidden={!ready || undefined} tabIndex={-1} aria-label="Travel Club — интерактивный журнал">
-          <MagazineSpread index={left} side="left" animate={live} />
-          <MagazineSpread index={right} side="right" animate={live} />
+          <MagazineSpread index={left} side="left" reveal={turn && left === turn.from ? "static" : reveal} />
+          <MagazineSpread index={right} side="right" reveal={turn && right === turn.from ? "static" : reveal} />
           {turn && <div className={`${s.leaf} ${turn.direction > 0 ? s.forward : s.backward}`} aria-hidden="true" inert>
-            <div className={s.face}><MagazineSpread index={turn.from} side={turn.direction > 0 ? "right" : "left"} animate={false} /></div>
-            <div className={`${s.face} ${s.back}`}><MagazineSpread index={turn.to} side={turn.direction > 0 ? "left" : "right"} animate={false} /></div>
+            <div className={s.face}><MagazineSpread index={turn.from} side={turn.direction > 0 ? "right" : "left"} reveal="static" /></div>
+            <div className={`${s.face} ${s.back}`}><MagazineSpread index={turn.to} side={turn.direction > 0 ? "left" : "right"} reveal="pending" /></div>
           </div>}
         </div>
-        <MagazineIntro frameRef={frameRef} actionsRef={introActions} disabled={ready} manual={revisiting} index={index} onComplete={introComplete} onMoving={introMovement} />
+        <MagazineIntro bookRef={bookRef} frameRef={frameRef} actionsRef={introActions} disabled={ready} onComplete={introComplete} onMoving={introMovement} />
         <button className={`${s.edge} ${s.edgeLeft}`} aria-label="Предыдущий разворот" disabled={!live || index === 0} onClick={() => navigate(index - 1)}><span>←</span></button>
         <button className={`${s.edge} ${s.edgeRight}`} aria-label="Следующий разворот" disabled={!live || index === 2} onClick={() => navigate(index + 1)}><span>→</span></button>
       </div>
-      {!ready && <div className={s.introControls} data-intro-controls>
-        <span>Между строк <span aria-hidden="true">/</span> Travel Club</span>
-        <button ref={introOpenRef} type="button" disabled={introMoving} onClick={() => introActions.current?.open()}>Открыть журнал <span aria-hidden="true">↗</span></button>
-        <button type="button" className={s.skip} onClick={() => introActions.current?.skip()}>Пропустить вступление ↗</button>
+      {!ready && <div data-intro-controls>
+        <button ref={introOpenRef} className={s.startSurface} type="button" aria-label="Открыть журнал" disabled={introMoving} onClick={() => introActions.current?.open()} />
+        {introMoving && <button type="button" className={s.skip} onClick={() => introActions.current?.skip()}>Пропустить вступление ↗</button>}
       </div>}
       <nav ref={nav} className={s.navigation} aria-label="Навигация журнала" tabIndex={-1}>
         <div className={s.navStart}>
-          <button disabled={!live} onClick={() => { setRevisiting(true); setReady(false); }} className={s.coverControl}>Обложка</button>
+          <button disabled={!live} onClick={() => { setRevisiting(true); setReveal("pending"); setReady(false); }} className={s.coverControl}>Обложка</button>
           <button disabled={!live || index === 0} onClick={() => navigate(index - 1)} aria-label="Previous">←</button>
         </div>
         <div className={s.contents}>{SPREADS.map((spread, i) => <button key={i} disabled={!live} aria-current={index === i ? "page" : undefined} onClick={() => navigate(i)}><span>0{i + 1}</span><span>{spread.title}</span></button>)}</div>
