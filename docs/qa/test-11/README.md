@@ -28,7 +28,7 @@
 
 После уточнения TypeScript-типа тестового rAF-счётчика полный `npm.cmd run typecheck` и targeted ESLint повторены — exit 0; production reentry/idle-сценарий повторён отдельно — **1 passed, 13.9 s**. Приложение и screenshots не менялись.
 
-Координатор выполнил lint, typecheck, Vitest (**119 passed / 26 файлов**), Next.js production build и `docker compose up -d --no-deps --build --wait frontend` — успешно, frontend healthy. Защищённый baseline: **10 файлов, 0 изменено**, [результат SHA256](../../../.autopilot/2026-10-18-test-11-editorial/protected-result.json), [исходные хеши](../../../.autopilot/2026-10-18-test-11-editorial/baseline-hashes.json). Это проверка исходников; попиксельная идентичность старого маршрута не заявляется.
+Координатор выполнил lint, typecheck, Vitest (**119 passed / 26 файлов**), Next.js production build и `docker compose up -d --no-deps --build --wait frontend` — успешно, frontend running, HTTP 200. Защищённый baseline: **10 файлов, 0 изменено**, [результат SHA256](../../../.autopilot/2026-10-18-test-11-editorial/protected-result.json), [исходные хеши](../../../.autopilot/2026-10-18-test-11-editorial/baseline-hashes.json). Это проверка исходников; попиксельная идентичность старого маршрута не заявляется.
 
 Финальный production shell/regression run: **33 passed, 1.4 min**, один worker — 10 shell-сценариев `/test_11` плюс 23 регрессии `/test_10`, `/test_7`, `/test_8`. [Лог](../../../frontend/test-results/test-11-production-stable.log). С отдельным visual suite итог — **40 passed**.
 
