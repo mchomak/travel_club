@@ -40,4 +40,4 @@
 | 2026-10-17 | `2026-10-17-trip-day-maps` | сдан | [Карта и маршруты дня — локальный результат](2026-10-17-trip-day-maps/report.md) |
 
 | 2026-10-17 | `2026-10-17-test-10-interactive-magazine` | сдан 18 октября | /test_10: три разворота, Living Issue, 450ms перелистывание;119 unit/23 browser passed |
-| 2026-10-18 | `2026-10-18-test-11-editorial` | сдан | /test_11: ручное физическое вступление, плавные reveal, сливовый фон,3разворота;119unit/45browser,21PNG |
+| 2026-10-18 | `2026-10-18-test-11-editorial` | сдан 19 октября | /test_11: шесть глав, пластичный лист и медленные появления; 119 unit / 48 browser, 33 PNG; push main и local rebuild |

@@ -2,7 +2,7 @@ window.STATE =
 {
   "slug": "test-11-editorial",
   "dir": "2026-10-18-test-11-editorial",
-  "title": "Travel Club — /test_11 · Доработка вступления и редакции",
+  "title": "Travel Club — /test_11 · Шесть глав и пластика листа",
   "mode": "full",
   "depth": "normal",
   "polish": null,
@@ -11,60 +11,58 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-18T01:52:01+03:00",
-  "updatedAt": "2026-10-18T22:26:27+03:00",
-  "finishedAt": "2026-10-18T22:26:27+03:00",
+  "updatedAt": "2026-10-19T06:01:19+03:00",
+  "finishedAt": "2026-10-19T06:01:19+03:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-10-18T14:07:04+03:00",
-      "finishedAt": "2026-10-18T14:07:04+03:00"
+      "startedAt": "2026-10-19T00:09:03+03:00",
+      "finishedAt": "2026-10-19T00:09:03+03:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-10-18T14:07:04+03:00",
-      "finishedAt": "2026-10-18T14:07:04+03:00"
+      "startedAt": "2026-10-19T00:09:03+03:00",
+      "finishedAt": "2026-10-19T00:09:03+03:00"
     },
     {
       "id": "briefing",
-      "status": "skipped",
-      "note": "full: самобрифинг; творческие решения авторизованы"
+      "status": "skipped"
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-10-18T14:07:04+03:00",
-      "finishedAt": "2026-10-18T14:14:29+03:00"
+      "startedAt": "2026-10-19T00:09:03+03:00",
+      "finishedAt": "2026-10-19T00:11:45+03:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-10-18T14:14:29+03:00",
-      "finishedAt": "2026-10-18T14:14:29+03:00"
+      "finishedAt": "2026-10-19T00:11:45+03:00"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-10-18T14:14:29+03:00",
-      "finishedAt": "2026-10-18T22:20:16+03:00"
+      "startedAt": "2026-10-19T00:11:45+03:00",
+      "finishedAt": "2026-10-19T04:35:56+03:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-10-18T21:51:53+03:00",
-      "finishedAt": "2026-10-18T22:22:51+03:00"
+      "startedAt": "2026-10-19T04:35:56+03:00",
+      "finishedAt": "2026-10-19T05:09:23+03:00"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-10-18T22:20:16+03:00",
-      "finishedAt": "2026-10-18T22:26:27+03:00"
+      "startedAt": "2026-10-19T05:09:23+03:00",
+      "finishedAt": "2026-10-19T06:01:19+03:00"
     }
   ],
   "requirements": {
-    "total": 71,
-    "done": 71,
+    "total": 82,
+    "done": 82,
     "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
@@ -326,63 +324,169 @@ window.STATE =
         "typecheck": "passed",
         "build": "passed"
       }
+    },
+    {
+      "id": "07",
+      "title": "Пластичный лист и шесть пунктов навигации",
+      "requirements": [
+        "G17",
+        "G18"
+      ],
+      "zone": [
+        "07 shell/turnengine"
+      ],
+      "blockedBy": [],
+      "wave": 5,
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-10-19T00:11:45+03:00",
+      "commit": "e39aa81",
+      "finishedAt": "2026-10-19T06:01:19+03:00",
+      "tests": {
+        "productionAll": 48,
+        "current11": 25,
+        "legacy": 23,
+        "unit": 119,
+        "screenshots": 33
+      }
+    },
+    {
+      "id": "08",
+      "title": "Три новые главы и медленные появления",
+      "requirements": [
+        "G19",
+        "G20",
+        "G21",
+        "G22",
+        "G23",
+        "G24"
+      ],
+      "zone": [
+        "08 editorial/data/assets"
+      ],
+      "blockedBy": [],
+      "wave": 5,
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-10-19T00:11:45+03:00",
+      "commit": "3b2c56f",
+      "finishedAt": "2026-10-19T06:01:19+03:00",
+      "tests": {
+        "productionAll": 48,
+        "current11": 25,
+        "legacy": 23,
+        "unit": 119,
+        "screenshots": 33
+      }
+    },
+    {
+      "id": "09",
+      "title": "Шесть глав: приёмка, push и пересборка",
+      "requirements": [
+        "G17",
+        "G18",
+        "G19",
+        "G20",
+        "G21",
+        "G22",
+        "G23",
+        "G24",
+        "G25",
+        "G26",
+        "G27"
+      ],
+      "zone": [
+        "09 QA/docs/capture"
+      ],
+      "blockedBy": [
+        "07",
+        "08"
+      ],
+      "wave": 6,
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 1,
+      "startedAt": "2026-10-19T00:23:05+03:00",
+      "note": "QA preparation and visual7 passed; fresh successor recaptures final production after compatibility cleanup",
+      "commit": "db5523d",
+      "finishedAt": "2026-10-19T06:01:19+03:00",
+      "tests": {
+        "productionAll": 48,
+        "current11": 25,
+        "legacy": 23,
+        "unit": 119,
+        "screenshots": 33
+      }
     }
   ],
   "singlePass": null,
   "tests": {
-    "baselineVitest": 119,
-    "previousBrowser": 40,
-    "refinement": "45 production browser passed",
     "lint": "passed",
     "typecheck": "passed",
-    "vitest": 119,
-    "production11": 22,
-    "regression": 23,
-    "screenshots": 21,
-    "build": "passed Docker",
+    "unit": 119,
+    "unitFiles": 26,
+    "productionAll": 48,
+    "production11": 25,
+    "legacy": 23,
+    "screenshots": 33,
+    "protectedFiles": 30,
+    "build": "post-push Docker frontend exit0,35routes",
     "http": 200,
-    "protectedFiles": 30
+    "output": "test-results/test-11-completion-final-stable"
   },
   "debt": {
     "placeholders": [],
     "assumptions": [
-      "Desktop >=1100×700; smaller window fallback.",
-      "Illustrative stock photography, not team trip records.",
-      "China chapter future only; exactly three spreads."
+      "Desktop >=1100×700; six reading chapters.",
+      "Illustrative licensed stock photography, not team trip photographs.",
+      "Existing /start remains a prototype; no new submission backend."
     ],
     "emptyEnv": []
   },
   "additions": [],
   "coverage": {
-    "verdict": "Independent refinement G2 clear",
-    "findings": 0,
-    "agent": "/root/refinement_spec_check"
+    "agent": "/root/completion_coverage",
+    "verdict": "clear after scopedrepair",
+    "findings": 2,
+    "closed": [
+      "explicit5pointartdirectionreport",
+      "dependencypermissionpreserved"
+    ]
   },
   "concerns": [
     {
-      "item": "Previous gray/CSS-hinge and reveal/fallback/projection findings",
-      "verdict": "closed by current implementation and45productionchecks; obsolete historical limitations superseded"
+      "item": "QA body selector, CTA timeout and capture phase sampling",
+      "verdict": "closed; final48green and documented history"
     },
     {
-      "item": "Chromium ReadPixels and unused CSS preload warnings during capture",
-      "verdict": "report in QA; no JSerrors, canvas0 and idle0 atrest; cross-deviceFPS/GPUmemory not measured"
+      "item": "Oldtest8 exact1080WebP optimizer response hung",
+      "verdict": "runtime restart recovered200; isolatedcase and full48passed; sourceunchanged, rootcause remains inference"
     },
     {
-      "item": "DesktopChromium >=1100×700 scope",
-      "verdict": "report in QA; Safari/Firefox/mobilemagazine outside current requested desktop experiment"
+      "item": "DesktopChromium; FPS/GPUmemory acrossdevices not measured",
+      "verdict": "documented in QA; no cross-device guarantee"
     }
   ],
   "reviewers": {
-    "manifestSpec": "/root/refinement_spec_check",
-    "craft": "/root/refinement_craft"
+    "manifestSpec": "/root/completion_coverage",
+    "craft": "/root/completion_craft"
   },
   "blind": {
-    "verdict": "accepted desktop",
-    "agent": "/root/refinement_blind",
+    "verdict": "PASS desktop six-chapter journey; coordinator actions complete",
+    "agent": "/root/completion_blind",
     "drift": [],
-    "evidence": "docs/qa/test-11/refinement-blind-acceptance.md",
-    "limits": [
-      "No cross-hardware GPU benchmark; Chromium desktop scope."
-    ]
+    "evidence": "docs/qa/test-11/completion-blind-acceptance.md",
+    "remaining": null
+  },
+  "git": {
+    "branch": "main",
+    "sourceCommit": "db5523d0ed86d4d694360aaab801952610e6d745",
+    "sourcePush": "verified remoteHEAD match",
+    "postPushRebuild": "passed"
   }
 }

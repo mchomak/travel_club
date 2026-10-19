@@ -1,3 +1,30 @@
+# Реализованный контракт 19 октября
+
+- Шесть глав; MagazineSpread/RevealPhase/MagazineCover API сохранены.
+- ReadingTurn({from,to,direction,onPrepared,onComplete}); createReadingTurn(host,source,target,direction,complete) возвращает disposer.
+- Реальный mesh64×16/2210вершин,1000ms, source-static/target-pending текстуры, capture watchdog6s, supportedPCFShadowMap. Hidden clock и CSSleaf/shadow приостанавливаются; ресурсы освобождаются.
+- Шесть индивидуальных редакционных пар,2.4–3.0s раскрытия; query1–6/nav/history динамические.
+- 48/48 browser,119 unit,33 PNG,30 SHA256 unchanged; G4 PASS. Source push и post-push rebuild завершены.
+
+Ниже сохранены рабочие и исторические контракты проходов.
+
+# Границы текущего расширения
+
+## Расширение 19 октября — ЕДИНСТВЕННЫЙ актуальный контракт
+
+- Читать completion-spec.md; новая версия содержит6разворотов, прежний450ms/threechapter контракт ниже исторический. Зоны непересекаются.
+- 07: app/test_11/page.tsx, magazine-experience.tsx, magazine.module.css, reading-turn* localhelpers, capture-page.ts еслинужно, introфайлы только при необходимойинтеграции, e2e/test-11-magazine.spec.ts. Настоящий curvedleaf, ориентир1000ms; reusable readonlytest7/deformation. Source виден покаcaptureготовится, destinationpendingдоexposure, окончаниеenter; noflash. WebGLtransient, noidlecanvas/rAF. Fallback/reduced/abort/history/resize/reentry safe.
+- 08: data.ts, spreads.tsx, spreads.module.css, public/test_11 newassets/manifest/README, e2e/test-11-reveal.spec.ts. SPREADS первые3безизмененияназваний + {title:"China ’26"},{title:"Archive ’25"},{title:"Point of View + Start"}. Индексы0–5. Export MagazineCover,MagazineSpread({index,side?,animate?,reveal?}),RevealPhase static/pending/enter сохраняются. Новые3пары и разнообразные2.4–3.2srevealsвсех6, общийпечатныйритм. Основныеякорясразу, остальноеисходноhiddenизпервогоpaint. Side left/right поддерживаетсядлявсех6.
+- 07используетSPREADS.length вместо3вquery/nav/history/status; 08неправитparent. 07неправитspreads/data/CSSредакции. ОбщийDOMhook data-magazine-page=left/right и data-reveal-object сохранять. При необходимостиизменитьконтракт сообщитьдругомуагенту/координатору доизменения.
+- 09: e2e/test-11-visual.spec.ts, scripts/capture-test-11.mjs, docs/qa/test-11, componentREADME. После07/08 проверка12страниц3размера,6финальныхпар,midturn/intro,actualsource↔target/pending/enter, быстрыекоманды/history/fallback/reduced. Материалproduction3000 послеребилда.
+- Толькокоординатор запускаетservers/build/Compose и gitcommit/push; агентытолькоизолированныеtests/evidenceвразныхoutputdirs,workers1. Dev3001 будетподняткоординатором; production3000покапринятаяпредыдущаяверсия.
+- ДанныеChina26/Archive25/POV/Start братьreadonlytest8/concept-home.tsx и public-site/archive-data.ts. Не выдумыватьфакты/услуги/детали/новыедаты. Фототолькопроверенныелицензии и явнаяиллюстративность. Старыефайлы/маршруты/userdirty неприкосновенны,baselinecompletion-baseline.json. Не добавлятьdeps.
+
+
+---
+
+Исторические контракты предыдущих проходов:
+
 # Границы, решённые в спецификации
 
 ## Итог доработки

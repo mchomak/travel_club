@@ -80,3 +80,20 @@
 | G14 | «где-то мелкие анимации.» | done | G4 принят; 296b8ef,32c91ea,196d72d; 45 production checks | refinement-spec → T05,06 |
 | G15 | «закончи работу над текущими развовротами» | done | G4 принят; 296b8ef,32c91ea,196d72d; 45 production checks | refinement-spec → T04,05,06 |
 | G16 | «потом пересобери сайт, чтобы я посомтрел на результат.» | done | G4 принят; 296b8ef,32c91ea,196d72d; 45 production checks | refinement-spec → T06 |
+
+
+## Расширение 19 октября — актуальные пожелания
+
+| ID | Из дополнения (дословно) | Статус | Основание | Где |
+|---|---|---|---|---|---|
+| G17 | «сделай анимацию перелистывания разделов плавнее» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T07,09 |
+| G18 | «чтобы она была более реалистичной, как в начльной анимации.» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T07,09 |
+| G19 | «также сделай больше анимаций постепенного появления текста и фото» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G20 | «и не так быстро как сейчас.» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G21 | «FIELD NOTES / CHINA» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G22 | «ARCHIVE '25» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G23 | «POINT OF VIEW + START» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G24 | «доделай в таком же стиле остальные развороты:» | done | G4 PASS; 48/48 browser; 33 PNG; e39aa81,3b2c56f,db5523d | completion-spec → T08,09 |
+| G25 | «потом коммит» | done | commits e39aa81/3b2c56f/db5523d; origin/main push verified; post-push Docker rebuild exit0, HTTP200 | completion-spec → T09 |
+| G26 | «пуш» | done | commits e39aa81/3b2c56f/db5523d; origin/main push verified; post-push Docker rebuild exit0, HTTP200 | completion-spec → T09 |
+| G27 | «и пересобери сайт, чтобы я посомтрел на результат» | done | commits e39aa81/3b2c56f/db5523d; origin/main push verified; post-push Docker rebuild exit0, HTTP200 | completion-spec → T09 |
