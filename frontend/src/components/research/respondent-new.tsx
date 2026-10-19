@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { ResearchApiError, ResearchCategory, ResearchConfig, ResearchRespondent, researchApi } from "@/lib/research";
+import { ResearchApiError, ResearchCategory, ResearchConfig, ResearchRespondent, researchApi, scrollResearchToTop } from "@/lib/research";
 import { ScreeningForm } from "./screening-form";
 import styles from "./research.module.css";
 
@@ -28,7 +28,7 @@ export function RespondentNewPage() {
     setRespondent(created);
     setSelected(created.suggested_category);
     setError("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollResearchToTop();
   };
 
   const begin = async () => {

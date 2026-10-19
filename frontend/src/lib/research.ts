@@ -47,6 +47,11 @@ export interface RespondentList {
 }
 export interface AnswerDraft { answer_text: string; updated_at: string }
 
+export function scrollResearchToTop(): void {
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
 export class ResearchApiError extends Error {
   constructor(public status: number, message: string, public code?: string, public details?: unknown) {
     super(message);

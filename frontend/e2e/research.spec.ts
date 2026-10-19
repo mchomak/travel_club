@@ -25,6 +25,7 @@ function workbookXml(buffer: Buffer): string {
 }
 
 test("TC Research covers creation, recoverable interview notes, history and whole-base export", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const login = process.env.RESEARCH_E2E_LOGIN ?? "tc_research_e2e";
   const password = process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026";
   const respondentName = `Test interview ${Date.now()}`;
@@ -41,6 +42,12 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.getByRole("button", { name: "Войти в кабинет" }).click();
     await page.waitForURL(/\/admin\/trips/);
     await page.goto("/research/new");
+    await page.evaluate(() => {
+      window.scrollTo = ((target: ScrollToOptions | number) => {
+        const behavior = typeof target === "number" ? "positional" : target.behavior ?? "auto";
+        document.documentElement.setAttribute("data-research-scroll-behavior", behavior);
+      }) as typeof window.scrollTo;
+    });
     await page.getByLabel("Имя респондента или псевдоним").fill(respondentName);
   });
 
@@ -57,6 +64,7 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.getByRole("button", { name: "Сохранить анкету и выбрать сценарий" }).click();
     await expect(page.getByText(respondentName)).toBeVisible();
     await expect(page.getByText("Анкета уже сохранена в базе. Статус: черновик.")).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("data-research-scroll-behavior", "auto");
   });
 
   await test.step("3–5. Review a transparent recommendation, override it and start its route", async () => {
@@ -109,6 +117,17 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await navigationDialog.dismiss();
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
     await expect(page).toHaveURL(/\/research\/.+/);
+    for (const sharedLink of ["Респонденты", "Travel Club"]) {
+      const sharedPrompt = page.waitForEvent("dialog", { timeout: 1500 }).catch(() => null);
+      await page.getByRole("link", { name: sharedLink, exact: true }).click();
+      const sharedDialog = await sharedPrompt;
+      expect(sharedDialog, `Shared link ${sharedLink} should warn before leaving a dirty answer`).not.toBeNull();
+      if (!sharedDialog) break;
+      expect(sharedDialog.message()).toContain("ещё не подтверждены сервером");
+      await sharedDialog.dismiss();
+      await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
+      await expect(page).toHaveURL(/\/research\/.+/);
+    }
     const prevented = await page.evaluate(() => {
       const event = new Event("beforeunload", { cancelable: true });
       window.dispatchEvent(event);
@@ -138,8 +157,16 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.getByRole("button", { name: "Отмена" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByRole("button", { name: "Завершить интервью" }).click();
+    await page.evaluate(() => {
+      window.scrollTo = ((target: ScrollToOptions | number) => {
+        const behavior = typeof target === "number" ? "positional" : target.behavior ?? "auto";
+        document.documentElement.setAttribute("data-research-scroll-behavior", behavior);
+      }) as typeof window.scrollTo;
+      document.documentElement.removeAttribute("data-research-scroll-behavior");
+    });
     await page.getByRole("button", { name: "Да, завершить" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Все заметки останутся доступны" })).toBeVisible({ timeout: 7000 });
+    await expect(page.locator("html")).toHaveAttribute("data-research-scroll-behavior", "auto");
   });
 
   await test.step("12–15. Reopen, edit a completed answer and screening without replacing the snapshot", async () => {

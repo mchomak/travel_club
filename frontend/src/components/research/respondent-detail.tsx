@@ -1,12 +1,12 @@
 "use client";
 
-import { MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus } from "lucide-react";
 import {
   InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchQuestion,
-  ResearchRespondent, flushPendingAnswers, researchApi,
+  ResearchRespondent, flushPendingAnswers, researchApi, scrollResearchToTop,
 } from "@/lib/research";
 import { AnswerCard } from "./answer-card";
 import { CompletionDialog } from "./completion-dialog";
@@ -148,14 +148,14 @@ export function RespondentDetailPage() {
       const completed = await researchApi.completeInterview(interview.id);
       setInterview(completed); setConfirmComplete(false); setMessage("Интервью завершено. Все заметки останутся доступны для просмотра и редактирования.");
       const person = await researchApi.respondent(id); setRespondent(person);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollResearchToTop();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось завершить интервью."); }
     finally { setBusy(false); }
   };
 
-  const guardInternalNavigation = (event: ReactMouseEvent<HTMLDivElement>) => {
-    const activeInterview = interview;
-    if (!activeInterview) return;
+  const guardInternalNavigation = useCallback((event: MouseEvent) => {
+    const activeInterviewId = interview?.id;
+    if (!activeInterviewId) return;
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const clicked = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
     if (!clicked || clicked.hasAttribute("download") || (clicked.target && clicked.target !== "_self")) return;
@@ -167,14 +167,19 @@ export function RespondentDetailPage() {
     if (navigationPendingRef.current) return;
     navigationPendingRef.current = true;
     void (async () => {
-      const saved = await flushPendingAnswers(activeInterview.id).catch(() => false);
+      const saved = await flushPendingAnswers(activeInterviewId).catch(() => false);
       if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) {
         navigationPendingRef.current = false;
         return;
       }
       router.push(`${destination.pathname}${destination.search}${destination.hash}`);
     })();
-  };
+  }, [interview?.id, router]);
+
+  useEffect(() => {
+    document.addEventListener("click", guardInternalNavigation, true);
+    return () => document.removeEventListener("click", guardInternalNavigation, true);
+  }, [guardInternalNavigation]);
 
   const allQuestions = config?.bank.questions ?? [];
   const included = new Set(questions.map((question) => question.code));
@@ -190,7 +195,7 @@ export function RespondentDetailPage() {
   const profile = respondent.screening_answers;
   const statusText = statusNames[interview.status];
 
-  return <div className={styles.page} onClickCapture={guardInternalNavigation}>
+  return <div className={styles.page}>
     <div className={styles.stickyHeader}>
       <div className={styles.stickyInner}>
         <div className={styles.stickyName}><strong>{respondent.name}{respondent.age_range ? `, ${respondent.age_range}` : ""}</strong><div className={styles.stickyMeta} aria-label="Сводка интервью"><span>{respondent.city || "Город не указан"}</span><span>Самостоятельные поездки: {labelForAnswer("independent_trips_24m", profile.independent_trips_24m) || "не указано"}</span><span>Опыт групповых поездок: {labelForAnswer("group_experience", profile.group_experience) || "не указано"}</span><span>Итоговая категория: {categoryNames[respondent.final_category]}</span><span>{scenarioName}</span><span>{statusText}</span></div></div>
