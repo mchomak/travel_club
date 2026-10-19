@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
+from threading import Barrier
+from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
 from openpyxl import load_workbook
+from sqlalchemy import delete, event
 
 from app import research as research_api
+from app.auth import token_digest
 from app.config import get_settings
+from app.db import SessionLocal, engine, get_db
+from app.main import create_app
+from app.models import ResearchRespondent, User
+from app.models import Session as AdminSession
 from tests.conftest import FIXTURE_PASSWORD
 
 HEADERS = {"X-Requested-With": "TravelClub", "Origin": "http://localhost:3000"}
@@ -67,6 +78,20 @@ def test_authenticated_configuration_endpoint_exposes_editable_questionnaire(aut
     assert len(configuration["bank"]["hypotheses"]) == 17
     assert len(configuration["screening"]["fields"]) == 9
     assert configuration["offers_enabled"] is False
+
+
+def test_config_reports_malformed_sections_without_dereferencing_them(authenticated, monkeypatch):
+    monkeypatch.setattr(
+        research_api,
+        "load_configuration",
+        lambda: {"bank": {}, "scenarios": None, "screening": None, "classification": None},
+    )
+
+    response = authenticated.get("/api/research/config")
+
+    assert response.status_code == 200
+    assert "scenarios JSON root must be an object" in response.json()["validation_issues"]
+    assert response.json()["offers_enabled"] is False
 
 
 def test_old_interview_keeps_question_text_after_json_bank_changes(authenticated, monkeypatch):
@@ -241,6 +266,34 @@ def test_empty_completion_allows_later_question_and_answer_edits(authenticated):
     assert detail["interviews"][0]["answers"]["B01"]["answer_text"] == "Поздняя запись"
 
 
+def test_brand_questions_stay_at_end_when_supplementing_completed_interview(authenticated):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Brand order", "independent_trips_24m": "0"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
+    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
+
+    first_addition = authenticated.post(
+        f"/api/research/interviews/{interview_id}/questions",
+        headers=HEADERS,
+        json={"question_codes": ["B01"]},
+    )
+    assert first_addition.status_code == 200
+    later_addition = authenticated.post(
+        f"/api/research/interviews/{interview_id}/questions",
+        headers=HEADERS,
+        json={"question_codes": ["T01"]},
+    )
+
+    assert later_addition.status_code == 200
+    codes = [question["code"] for question in later_addition.json()["question_snapshot"]]
+    assert codes.index("T01") < codes.index("B01")
+    assert all(code.startswith("B") for code in codes[codes.index("B01"):])
+
+
 def test_screening_recalculation_does_not_rewrite_started_route_or_answers(authenticated):
     created = authenticated.post(
         "/api/research/respondents",
@@ -303,6 +356,119 @@ def test_respondent_list_search_filters_and_counts(authenticated):
     assert filtered.json()["total_count"] == 2
     assert filtered.json()["completed_count"] == 1
     assert filtered.json()["incomplete_count"] == 1
+
+
+def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
+    token = uuid4().hex
+    user = User(id=uuid4(), login=f"research-cas-{uuid4().hex}", password_hash="unused")
+    with SessionLocal() as setup:
+        setup.add(user)
+        setup.flush()
+        setup.add(
+            AdminSession(
+                token_digest=token_digest(token),
+                user_id=user.id,
+                expires_at=datetime.now(UTC) + timedelta(hours=1),
+            )
+        )
+        setup.commit()
+
+    def independent_db():
+        with SessionLocal() as session:
+            yield session
+
+    application = create_app()
+    application.dependency_overrides[get_db] = independent_db
+    auth_headers = {**HEADERS, "Cookie": f"travel_session={token}"}
+    respondent_id = None
+    try:
+        with TestClient(application) as setup_client:
+            created_response = setup_client.post(
+                "/api/research/respondents",
+                headers=auth_headers,
+                json={"screening_answers": {"name": "CAS concurrency"}},
+            )
+            assert created_response.status_code == 201, created_response.text
+            created = created_response.json()
+            respondent_id = created["id"]
+            interview_id = created["interviews"][0]["id"]
+            started = setup_client.post(
+                f"/api/research/interviews/{interview_id}/start", headers=auth_headers
+            )
+            assert started.status_code == 200, started.text
+            initial = setup_client.put(
+                f"/api/research/interviews/{interview_id}/answers/G01",
+                headers=auth_headers,
+                json={"answer_text": "initial", "expected_revision": 0},
+            )
+            assert initial.status_code == 200, initial.text
+
+        with TestClient(application) as first_client, TestClient(application) as second_client:
+            clients = (first_client, second_client)
+
+            def race_writes(expected_revision, texts):
+                gate = Barrier(2)
+
+                def synchronize_current_answer_read(
+                    connection, cursor, statement, parameters, context, executemany
+                ):
+                    normalized = statement.lstrip().upper()
+                    if (
+                        normalized.startswith("SELECT")
+                        and "FROM RESEARCH_ANSWERS" in normalized
+                        and "WHERE RESEARCH_ANSWERS.INTERVIEW_ID" in normalized
+                    ):
+                        gate.wait(timeout=10)
+
+                event.listen(engine, "after_cursor_execute", synchronize_current_answer_read)
+                try:
+                    def write(index):
+                        return clients[index].put(
+                            f"/api/research/interviews/{interview_id}/answers/G01",
+                            headers=auth_headers,
+                            json={
+                                "answer_text": texts[index],
+                                "expected_revision": expected_revision,
+                            },
+                        )
+
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        return list(executor.map(write, (0, 1)))
+                finally:
+                    event.remove(engine, "after_cursor_execute", synchronize_current_answer_read)
+
+            same_text_results = race_writes(1, ("shared retry", "shared retry"))
+            assert [response.status_code for response in same_text_results] == [200, 200]
+            assert {response.json()["revision"] for response in same_text_results} == {2}
+
+            idempotent_retry = clients[0].put(
+                f"/api/research/interviews/{interview_id}/answers/G01",
+                headers=auth_headers,
+                json={"answer_text": "shared retry", "expected_revision": 1},
+            )
+            assert idempotent_retry.status_code == 200
+            assert idempotent_retry.json()["revision"] == 2
+
+            competing_results = race_writes(2, ("writer one", "writer two"))
+            successes = [response for response in competing_results if response.status_code == 200]
+            conflicts = [response for response in competing_results if response.status_code == 409]
+            assert len(successes) == len(conflicts) == 1, [
+                (response.status_code, response.json()) for response in competing_results
+            ]
+            winner = successes[0].json()
+            current = conflicts[0].json()["current"]
+            assert current["revision"] == winner["revision"] == 3
+            assert current["answer_text"] == winner["answer_text"]
+    finally:
+        with SessionLocal() as cleanup:
+            if respondent_id:
+                cleanup.execute(
+                    delete(ResearchRespondent).where(
+                        ResearchRespondent.id == respondent_id
+                    )
+                )
+            cleanup.execute(delete(User).where(User.id == user.id))
+            cleanup.commit()
 
 
 def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(authenticated):

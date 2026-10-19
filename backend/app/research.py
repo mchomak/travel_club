@@ -233,14 +233,18 @@ def _respondent_json(db: Session, respondent: ResearchRespondent) -> dict[str, A
 @router.get("/config")
 def get_config(_: Admin):
     configuration = load_configuration()
+    safe_configuration = configuration if isinstance(configuration, dict) else {}
+    scenarios = safe_configuration.get("scenarios")
+    if not isinstance(scenarios, dict):
+        scenarios = {}
+    optional_modules = scenarios.get("optional_modules")
+    if not isinstance(optional_modules, dict):
+        optional_modules = {}
+    offers = optional_modules.get("offers")
     return {
-        **configuration,
+        **safe_configuration,
         "validation_issues": validate_configuration(configuration),
-        "offers_enabled": configuration["scenarios"]
-        .get("optional_modules", {})
-        .get("offers", {})
-        .get("enabled")
-        is True,
+        "offers_enabled": isinstance(offers, dict) and offers.get("enabled") is True,
     }
 
 
@@ -467,6 +471,18 @@ def append_questions(interview_id: UUID, payload: QuestionAppend, _: Admin, db: 
     added = [code for code in codes if code not in existing]
     if added:
         snapshot.extend(_make_snapshot(configuration, added))
+        brand_module = (
+            configuration["scenarios"].get("optional_modules", {}).get("brand", {})
+        )
+        if isinstance(brand_module, dict) and brand_module.get("append_to_end") is True:
+            brand_codes = set(brand_module.get("question_codes", []))
+            snapshot = [
+                question for question in snapshot
+                if not isinstance(question, dict) or question.get("code") not in brand_codes
+            ] + [
+                question for question in snapshot
+                if isinstance(question, dict) and question.get("code") in brand_codes
+            ]
         interview.question_snapshot = snapshot
         _touch_interview(db, interview)
         _save(db, "Не удалось добавить вопросы")
@@ -545,7 +561,11 @@ def save_answer(
             _touch_interview(db, interview)
             _save(db, "Не удалось сохранить ответ")
             return _answer_json(db.get(ResearchAnswer, updated_id))
-        current = db.scalar(select(ResearchAnswer).where(ResearchAnswer.id == current.id))
+        current = db.scalar(
+            select(ResearchAnswer)
+            .where(ResearchAnswer.id == current.id)
+            .execution_options(populate_existing=True)
+        )
     if current and current.answer_text == payload.answer_text:
         return _answer_json(current)
     raise _http_error(
