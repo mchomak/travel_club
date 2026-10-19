@@ -22,18 +22,88 @@ FRONTEND_UPSTREAM=172.19.0.4:3000
 
 ## Nginx и сертификат
 
-Подготовьте отдельные файлы vhost. HTTP-конфигурация обслуживает ACME challenge и перенаправляет остальной трафик на HTTPS с выбранным портом:
+Подготовьте отдельные файлы vhost. Выполняйте следующие команды из корня checkout на VPS; `realpath` получает абсолютный путь к renderer. Каждый renderer сначала пишет в отдельный временный файл, который не оканчивается на `.conf` и поэтому не попадает под include Nginx. После проверки непустого результата команды сохраняют предыдущий vhost, если он есть, атомарно заменяют его и запускают `nginx -t`. Если проверка не проходит, предыдущий файл восстанавливается (или новый файл удаляется при первой установке); reload выполняется только после успешной проверки.
+
+HTTP-конфигурация обслуживает ACME challenge и перенаправляет остальной трафик на HTTPS с выбранным портом:
 
 ```bash
+(
+set -euo pipefail
 sudo install -d -m 0755 "$ACME_WEBROOT/.well-known/acme-challenge" /etc/nginx/conf.d
-sudo python3 deploy/nginx/render.py http \
+RENDERER="$(realpath deploy/nginx/render.py)"
+VHOST=/etc/nginx/conf.d/tc-research-http.conf
+CANDIDATE="$(sudo mktemp "${VHOST}.candidate.XXXXXX")"
+NEXT=''
+BACKUP=''
+ROLLBACK_CANDIDATE=''
+HAD_VHOST=0
+KEEP_BACKUP=0
+
+cleanup() {
+  [[ -z "$CANDIDATE" ]] || sudo rm -f -- "$CANDIDATE"
+  [[ -z "$NEXT" ]] || sudo rm -f -- "$NEXT"
+  [[ -z "$ROLLBACK_CANDIDATE" ]] || sudo rm -f -- "$ROLLBACK_CANDIDATE"
+  if [[ "$KEEP_BACKUP" -eq 0 && -n "$BACKUP" ]]; then
+    sudo rm -f -- "$BACKUP"
+  fi
+  return 0
+}
+restore_vhost() {
+  if [[ "$HAD_VHOST" -eq 1 ]]; then
+    sudo mv -fT -- "$ROLLBACK_CANDIDATE" "$VHOST"
+    ROLLBACK_CANDIDATE=''
+  else
+    sudo rm -f -- "$VHOST"
+  fi
+}
+trap cleanup EXIT
+
+if ! sudo python3 "$RENDERER" http \
   --public-ip "$PUBLIC_IP" \
   --server-name "$RESEARCH_HOST" \
   --https-port "$HTTPS_PORT" \
   --acme-webroot "$ACME_WEBROOT" \
-  | sudo tee /etc/nginx/conf.d/tc-research-http.conf >/dev/null
-sudo nginx -t
-sudo systemctl reload nginx
+  | sudo tee "$CANDIDATE" >/dev/null; then
+  echo "HTTP vhost rendering or candidate write failed; existing vhost is unchanged." >&2
+  exit 1
+fi
+sudo test -s "$CANDIDATE"
+
+if sudo test -e "$VHOST"; then
+  BACKUP="$(sudo mktemp "${VHOST}.rollback.XXXXXX")"
+  sudo cp -p -- "$VHOST" "$BACKUP"
+  ROLLBACK_CANDIDATE="$(sudo mktemp /etc/nginx/conf.d/tc-research-http.restore.XXXXXX)"
+  sudo install -m 0644 -- "$BACKUP" "$ROLLBACK_CANDIDATE"
+  KEEP_BACKUP=1
+  HAD_VHOST=1
+  printf 'Rollback copy: %s\n' "$BACKUP"
+fi
+NEXT="$(sudo mktemp "${VHOST}.new.XXXXXX")"
+sudo install -m 0644 -- "$CANDIDATE" "$NEXT"
+sudo mv -fT -- "$NEXT" "$VHOST"
+NEXT=''
+
+if ! sudo nginx -t; then
+  restore_vhost
+  if ! sudo nginx -t; then
+    echo "Previous Nginx configuration was restored, but nginx -t still fails; no reload was run." >&2
+  else
+    echo "Candidate rejected; rollback applied. Nginx was not reloaded." >&2
+  fi
+  exit 1
+fi
+if ! sudo systemctl reload nginx; then
+  restore_vhost
+  if sudo nginx -t; then
+    if ! sudo systemctl reload nginx; then
+      echo "Reload failed; rollback was tested, but its reload also failed." >&2
+    fi
+  else
+    echo "Rollback was applied, but nginx -t now fails; inspect the restored configuration." >&2
+  fi
+  exit 1
+fi
+)
 ```
 
 Убедитесь, что DNS уже указывает на этот VPS, входящий TCP/80 открыт в firewall VPS и провайдера, а challenge-файл действительно отдаётся снаружи по `http://$RESEARCH_HOST/.well-known/acme-challenge/...`. Затем выпустите обычный сертификат для DNS-имени:
@@ -49,15 +119,84 @@ sudo certbot certonly --webroot \
 После успешной выдачи сертификата добавьте отдельный TLS-vhost. Он проксирует запросы на существующий frontend; Next.js сохраняет маршрут `/api` и проксирует его к backend внутри Compose:
 
 ```bash
-sudo python3 deploy/nginx/render.py https \
+(
+set -euo pipefail
+sudo install -d -m 0755 /etc/nginx/conf.d
+RENDERER="$(realpath deploy/nginx/render.py)"
+VHOST=/etc/nginx/conf.d/tc-research-https.conf
+CANDIDATE="$(sudo mktemp "${VHOST}.candidate.XXXXXX")"
+NEXT=''
+BACKUP=''
+ROLLBACK_CANDIDATE=''
+HAD_VHOST=0
+KEEP_BACKUP=0
+
+cleanup() {
+  [[ -z "$CANDIDATE" ]] || sudo rm -f -- "$CANDIDATE"
+  [[ -z "$NEXT" ]] || sudo rm -f -- "$NEXT"
+  [[ -z "$ROLLBACK_CANDIDATE" ]] || sudo rm -f -- "$ROLLBACK_CANDIDATE"
+  if [[ "$KEEP_BACKUP" -eq 0 && -n "$BACKUP" ]]; then
+    sudo rm -f -- "$BACKUP"
+  fi
+  return 0
+}
+restore_vhost() {
+  if [[ "$HAD_VHOST" -eq 1 ]]; then
+    sudo mv -fT -- "$ROLLBACK_CANDIDATE" "$VHOST"
+    ROLLBACK_CANDIDATE=''
+  else
+    sudo rm -f -- "$VHOST"
+  fi
+}
+trap cleanup EXIT
+
+if ! sudo python3 "$RENDERER" https \
   --public-ip "$PUBLIC_IP" \
   --server-name "$RESEARCH_HOST" \
   --https-port "$HTTPS_PORT" \
   --frontend-upstream "$FRONTEND_UPSTREAM" \
   --cert-dir "$CERT_DIR" \
-  | sudo tee /etc/nginx/conf.d/tc-research-https.conf >/dev/null
-sudo nginx -t
-sudo systemctl reload nginx
+  | sudo tee "$CANDIDATE" >/dev/null; then
+  echo "HTTPS vhost rendering or candidate write failed; existing vhost is unchanged." >&2
+  exit 1
+fi
+sudo test -s "$CANDIDATE"
+
+if sudo test -e "$VHOST"; then
+  BACKUP="$(sudo mktemp "${VHOST}.rollback.XXXXXX")"
+  sudo cp -p -- "$VHOST" "$BACKUP"
+  ROLLBACK_CANDIDATE="$(sudo mktemp /etc/nginx/conf.d/tc-research-https.restore.XXXXXX)"
+  sudo install -m 0644 -- "$BACKUP" "$ROLLBACK_CANDIDATE"
+  KEEP_BACKUP=1
+  HAD_VHOST=1
+  printf 'Rollback copy: %s\n' "$BACKUP"
+fi
+NEXT="$(sudo mktemp "${VHOST}.new.XXXXXX")"
+sudo install -m 0644 -- "$CANDIDATE" "$NEXT"
+sudo mv -fT -- "$NEXT" "$VHOST"
+NEXT=''
+
+if ! sudo nginx -t; then
+  restore_vhost
+  if ! sudo nginx -t; then
+    echo "Previous Nginx configuration was restored, but nginx -t still fails; no reload was run." >&2
+  else
+    echo "Candidate rejected; rollback applied. Nginx was not reloaded." >&2
+  fi
+  exit 1
+fi
+if ! sudo systemctl reload nginx; then
+  restore_vhost
+  if sudo nginx -t; then
+    if ! sudo systemctl reload nginx; then
+      echo "Reload failed; rollback was tested, but its reload also failed." >&2
+    fi
+  else
+    echo "Rollback was applied, but nginx -t now fails; inspect the restored configuration." >&2
+  fi
+  exit 1
+fi
+)
 ```
 
 Откройте выбранный HTTPS-порт в фактическом firewall VPS и провайдера. Убедитесь, что Certbot timer включён и `sudo certbot renew --dry-run` проходит. Штатный `deploy/certbot/nginx-deploy-hook.sh` обслуживает только lineage `travel-club-preview`, поэтому для Research установите отдельный deploy hook, который перезагружает Nginx только после обновления его сертификата:
