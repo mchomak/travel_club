@@ -2,7 +2,7 @@
 import { deformPage, DEFAULT_SHAPE, PAGE_HEIGHT, PAGE_WIDTH } from "../test_7/deformation";
 
 /** Owns exactly one textured leaf and its finite 1000 ms reading motion. */
-export function createReadingTurn(host: HTMLElement, source: HTMLCanvasElement, target: HTMLCanvasElement, direction: number, complete: () => void): () => void {
+export function createReadingTurn(host: HTMLElement, source: HTMLCanvasElement, target: HTMLCanvasElement, direction: number, complete: () => void, interrupted = complete): () => void {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(host.clientWidth, host.clientHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.setClearColor(0, 0);
@@ -27,7 +27,7 @@ export function createReadingTurn(host: HTMLElement, source: HTMLCanvasElement, 
   const textures = [source, target].map(canvas => {
     const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); return texture;
   });
-  const materials = textures.map(map => new THREE.MeshStandardMaterial({ map, roughness: 1, metalness: 0 }));
+  const materials = textures.map(map => new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: "#ffffff", emissiveIntensity: 0, roughness: 1, metalness: 0 }));
   const leaf = new THREE.Mesh(geometry, materials); leaf.scale.x = direction; leaf.castShadow = true; leaf.frustumCulled = false; scene.add(leaf);
   const receiverGeometry = new THREE.PlaneGeometry(PAGE_WIDTH * 2, PAGE_HEIGHT), shadowMaterial = new THREE.ShadowMaterial({ opacity: .3, depthWrite: false });
   const receiver = new THREE.Mesh(receiverGeometry, shadowMaterial); receiver.receiveShadow = true; receiver.position.z = -.006; scene.add(receiver);
@@ -37,6 +37,12 @@ export function createReadingTurn(host: HTMLElement, source: HTMLCanvasElement, 
   light.shadow.bias = -.00015; light.shadow.normalBias = .005; light.shadow.radius = 3; scene.add(light);
   let disposed = false, frame = 0, elapsed = 0, previous: number | null = null;
   function render(progress: number) {
+    // Flat printed endpoints must use the exact snapshot colors. Lighting is
+    // blended in only while the sheet bends, so removing it cannot flash.
+    const edge = Math.min(1, Math.min(progress, 1 - progress) * 8);
+    const lit = edge * edge * (3 - 2 * edge);
+    materials.forEach(material => { material.color.setScalar(lit); material.emissiveIntensity = 1 - lit; });
+    shadowMaterial.opacity = .3 * lit;
     const centers = deformPage(progress, { ...DEFAULT_SHAPE, bend: 2.4, curl: 1.05, stiffness: .18 }, columns, rows);
     const position = geometry.getAttribute("position") as THREE.BufferAttribute;
     for (let i = 0; i < count; i++) {
@@ -76,7 +82,7 @@ export function createReadingTurn(host: HTMLElement, source: HTMLCanvasElement, 
     geometry.dispose(); receiverGeometry.dispose(); materials.forEach(material => material.dispose()); shadowMaterial.dispose(); textures.forEach(texture => texture.dispose());
     light.shadow.map?.dispose(); renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
   }
-  function lost(event: Event) { event.preventDefault(); if (!disposed) complete(); }
+  function lost(event: Event) { event.preventDefault(); if (!disposed) interrupted(); }
   function tick(now: number) {
     if (disposed) return;
     if (previous !== null) elapsed += now - previous;

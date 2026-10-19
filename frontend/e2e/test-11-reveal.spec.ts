@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("destination aperture is masked before the turn exposes it and opens continuously", async ({ page }) => {
+test("destination aperture keeps its printed landing pose and opens continuously", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_11?spread=1");
   await expect(page.locator('[data-magazine-book] > [data-magazine-page]').first()).toHaveAttribute("data-reveal", "enter");
@@ -22,7 +22,7 @@ test("destination aperture is masked before the turn exposes it and opens contin
   expect(samples.length).toBeGreaterThan(15);
   const radius = (clip: string) => Number(clip.match(/circle\(([\d.]+)%/)?.[1] ?? 100);
   // The old turn printed circle(50%) first, then reset it to circle(0%).
-  expect(radius(samples[0].clip)).toBeLessThan(.1);
+  expect(radius(samples[0].clip)).toBeCloseTo(21, 0);
   const values = samples.map(sample => radius(sample.clip));
   expect(values.some(value => value > 1 && value < 49)).toBe(true);
   expect(values.at(-1)).toBeCloseTo(50, 0);
@@ -48,7 +48,7 @@ test("print, pending, finite entry and reduced motion preserve their visual cont
     expect(printed.every(value => Number(value.opacity) > 0)).toBe(true);
     await setPhase("pending");
     const pending = await states();
-    expect(pending.some(value => value.opacity === "0" || /100%|circle\(0%/.test(value.clip))).toBe(true);
+    expect(pending.some((value, i) => JSON.stringify(value) !== JSON.stringify(printed[i]))).toBe(true);
     expect(await pages.locator("h1,h2,h3").evaluateAll(headings => headings.every(heading => getComputedStyle(heading).opacity === "1"))).toBe(true);
     await setPhase("enter");
     const animations = await pages.evaluateAll(elements => elements.flatMap(element => element.getAnimations({ subtree: true }).map(animation => animation.effect!.getTiming())));
@@ -56,15 +56,16 @@ test("print, pending, finite entry and reduced motion preserve their visual cont
     expect(animations.every(timing => Number.isFinite(timing.iterations) && (timing.iterations ?? 0) > 0 && Number(timing.duration) > 0)).toBe(true);
     expect(Math.max(...animations.map(timing => Number(timing.delay) + Number(timing.duration)))).toBeGreaterThanOrEqual(2400);
     expect(Math.max(...animations.map(timing => Number(timing.delay) + Number(timing.duration)))).toBeLessThanOrEqual(3200);
-    // Zero-time entry is exactly the printed pending pose, including every
-    // deferred photo and text group. Re-entering must restart that same pose.
+    // The captured pending artwork and first live keyframe must be identical.
     const freezeAtStart = async () => pages.evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = 0; })));
     await freezeAtStart();
-    expect(await states()).toEqual(pending);
+    const seed = await states();
+    expect(seed).toEqual(pending);
+    expect(seed.every(value => value.opacity !== "0" && !/100%|circle\(0%/.test(value.clip))).toBe(true);
     await setPhase("static");
     await setPhase("enter");
     await freezeAtStart();
-    expect(await states()).toEqual(pending);
+    expect(await states()).toEqual(seed);
     await pages.evaluateAll(elements => elements.forEach(element => element.getAnimations({ subtree: true }).forEach(animation => animation.play())));
     await page.waitForTimeout(3250);
     expect(await pages.evaluateAll(elements => elements.every(element => element.getAnimations({ subtree: true }).every(animation => animation.playState !== "running")))).toBe(true);

@@ -8,7 +8,7 @@ import { MagazineIntro, type IntroActions } from "./magazine-intro";
 import { ReadingTurn } from "./reading-turn";
 import s from "./magazine.module.css";
 
-type Turn = { id: number; from: number; to: number; direction: number; active: boolean };
+type Turn = { id: number; from: number; to: number; direction: number; active: boolean; landed: boolean };
 
 function queryIndex(values: string[]) {
   const value = values.length === 1 && /^[1-9]\d*$/.test(values[0]) ? Number(values[0]) : 0;
@@ -51,7 +51,7 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
     history.pushState(null, "", url);
     current.current = next; setIndex(next); setReveal("pending");
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { setReveal("static"); return; }
-    busy.current = true; setTurn({ id: ++turnSequence.current, from, to: next, direction: next > from ? 1 : -1, active: false });
+    busy.current = true; setTurn({ id: ++turnSequence.current, from, to: next, direction: next > from ? 1 : -1, active: false, landed: false });
   }, [moveFocus, ready]);
 
   useEffect(() => {
@@ -95,8 +95,8 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
     } else if (!ready && revisiting) introOpenRef.current?.focus({ preventScroll: true });
   }, [ready, revisiting]);
 
-  const left = turn ? !turn.active || turn.direction > 0 ? turn.from : turn.to : index;
-  const right = turn ? !turn.active || turn.direction < 0 ? turn.from : turn.to : index;
+  const left = turn ? turn.landed ? turn.to : !turn.active || turn.direction > 0 ? turn.from : turn.to : index;
+  const right = turn ? turn.landed ? turn.to : !turn.active || turn.direction < 0 ? turn.from : turn.to : index;
   const live = ready && !turn;
   return <main className={s.root} style={createSiteVariables()} data-testid="magazine-experience" data-stage={ready ? "reading" : "opening"} data-spread={index + 1} data-turning={String(Boolean(turn))}>
     <div className={s.desktop}>
@@ -104,12 +104,13 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
         <div ref={bookRef} className={s.book} data-magazine-book inert={!live} aria-hidden={!ready || undefined} tabIndex={-1} aria-label="Travel Club — интерактивный журнал">
           <MagazineSpread index={left} side="left" reveal={turn && left === turn.from ? "static" : reveal} />
           <MagazineSpread index={right} side="right" reveal={turn && right === turn.from ? "static" : reveal} />
-          {turn && <ReadingTurn key={turn.id} from={turn.from} to={turn.to} direction={turn.direction}
-            onPrepared={() => setTurn(value => value ? { ...value, active: true } : null)} onComplete={finish} /> }
+          {turn && <ReadingTurn key={turn.id} from={turn.from} to={turn.to} direction={turn.direction} landed={turn.landed}
+            onPrepared={() => setTurn(value => value ? { ...value, active: true } : null)}
+            onLanded={() => setTurn(value => value ? { ...value, landed: true } : null)} onComplete={finish} /> }
         </div>
         <MagazineIntro bookRef={bookRef} frameRef={frameRef} actionsRef={introActions} disabled={ready} onComplete={introComplete} onMoving={introMovement} />
-        <button className={`${s.edge} ${s.edgeLeft}`} aria-label="Предыдущий разворот" disabled={!live || index === 0} onClick={() => navigate(index - 1)}><span>←</span></button>
-        <button className={`${s.edge} ${s.edgeRight}`} aria-label="Следующий разворот" disabled={!live || index === SPREADS.length - 1} onClick={() => navigate(index + 1)}><span>→</span></button>
+        <button data-testid="spread-previous" className={`${s.edge} ${s.edgeLeft}`} aria-label="Предыдущий разворот" disabled={!live || index === 0} onClick={() => navigate(index - 1)}><span>←</span></button>
+        <button data-testid="spread-next" className={`${s.edge} ${s.edgeRight}`} aria-label="Следующий разворот" disabled={!live || index === SPREADS.length - 1} onClick={() => navigate(index + 1)}><span>→</span></button>
       </div>
       {!ready && <div data-intro-controls>
         <button ref={introOpenRef} className={s.startSurface} type="button" aria-label="Открыть журнал" disabled={introMoving} onClick={() => introActions.current?.open()} />

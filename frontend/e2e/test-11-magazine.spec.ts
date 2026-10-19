@@ -105,7 +105,7 @@ test("reading turns use a curved textured leaf for a full second in both directi
   const root = page.getByTestId("magazine-experience");
   await page.waitForTimeout(3300);
   const time = new Date("2026-10-19T09:00:00Z");
-  await page.clock.install({ time }); await page.clock.pauseAt(time);
+  await page.clock.install({ time }); await page.clock.pauseAt(new Date(time.getTime() + 1000));
   for (const direction of ["ArrowRight", "ArrowLeft"]) {
     await page.keyboard.press(direction);
     const scene = page.locator('[data-reading-turn="webgl"]');
@@ -128,6 +128,8 @@ test("reading turns use a curved textured leaf for a full second in both directi
     await page.clock.runFor(575);
     await expect(root).toHaveAttribute("data-turning", "true");
     await page.clock.runFor(30);
+    await page.locator('[data-magazine-book] > [data-magazine-page] img').evaluateAll(images => Promise.all(images.map(image => (image as HTMLImageElement).decode())));
+    await page.clock.runFor(64);
     await expect(root).toHaveAttribute("data-turning", "false", { timeout: 5000 });
     await expect(root).toHaveAttribute("data-spread", direction === "ArrowRight" ? "2" : "1");
     await expect(page.locator("canvas,[data-reading-turn]")).toHaveCount(0);
@@ -137,6 +139,69 @@ test("reading turns use a curved textured leaf for a full second in both directi
     await expect(page.locator('[data-magazine-book] > [data-magazine-page]')).toHaveCount(2);
     await page.clock.runFor(3300);
   }
+});
+
+test("the destination spread is already committed when the outgoing WebGL leaf is removed", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    const events: { kind: string; turning: string | undefined; spread: string | undefined; reveal: string | null }[] = [];
+    Object.assign(window, { turnLifecycleEvents: events });
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === "childList" && [...record.removedNodes].some(node =>
+          node instanceof HTMLCanvasElement || node instanceof HTMLElement && node.querySelector("canvas"))) {
+          const root = document.querySelector<HTMLElement>('[data-testid="magazine-experience"]');
+          events.push({ kind: "leaf-removed", turning: root?.dataset.turning, spread: root?.dataset.spread,
+            reveal: document.querySelector('[data-magazine-book] > [data-magazine-page]')?.getAttribute("data-reveal") ?? null });
+        }
+      }
+    }).observe(document, { subtree: true, childList: true });
+  });
+  await page.goto("/test_11?spread=1");
+  const root = page.getByTestId("magazine-experience");
+  await expect(root).toHaveAttribute("data-stage", "reading");
+  await page.evaluate(() => { (window as unknown as { turnLifecycleEvents: unknown[] }).turnLifecycleEvents.length = 0; });
+  await page.keyboard.press("ArrowRight");
+  await expect(root).toHaveAttribute("data-turning", "false", { timeout: 8000 });
+  await expect.poll(() => page.evaluate(() => (window as unknown as { turnLifecycleEvents: { kind: string }[] }).turnLifecycleEvents.length)).toBeGreaterThan(0);
+  const events = await page.evaluate(() => (window as unknown as { turnLifecycleEvents: { kind: string; turning: string; spread: string; reveal: string | null }[] }).turnLifecycleEvents);
+  expect(events[0]).toMatchObject({ kind: "leaf-removed", turning: "false", spread: "2", reveal: "enter" });
+  await expect(root).toHaveAttribute("data-spread", "2");
+  await expect(page.locator("canvas,[data-reading-turn]")).toHaveCount(0);
+});
+
+test("edge arrows are prominent, circular, accessible and hidden at their disabled ends", async ({ page }) => {
+  for (const viewport of [{ width: 1100, height: 700 }, { width: 1440, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/test_11?spread=3");
+    for (const id of ["spread-previous", "spread-next"]) {
+      const arrow = page.getByTestId(id);
+      await expect(arrow).toBeVisible();
+      const box = await arrow.boundingBox();
+      const style = await arrow.evaluate(element => ({
+        radius: getComputedStyle(element).borderRadius,
+        opacity: getComputedStyle(element).opacity,
+        background: getComputedStyle(element).backgroundColor,
+        label: element.getAttribute("aria-label"),
+      }));
+      expect(box!.width).toBeGreaterThanOrEqual(60);
+      expect(box!.height).toBeGreaterThanOrEqual(60);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+      expect(style.radius).toBe("50%");
+      expect(style.opacity).toBe("1");
+      expect(style.background).not.toBe("rgba(0, 0, 0, 0)");
+      expect(style.label).toBeTruthy();
+    }
+  }
+  await page.goto("/test_11?spread=1");
+  await expect(page.getByTestId("spread-previous")).toHaveCSS("visibility", "hidden");
+  await expect(page.getByTestId("spread-next")).toBeVisible();
+  await page.goto("/test_11?spread=6");
+  await expect(page.getByTestId("spread-previous")).toBeVisible();
+  await expect(page.getByTestId("spread-next")).toHaveCSS("visibility", "hidden");
 });
 
 test("Back interrupts a turn without leaving a lock or stale article", async ({ page }) => {
@@ -287,7 +352,7 @@ test("capture keeps the source stable, hidden time pauses the mesh, context loss
   let release!: () => void;
   const blocked = new Promise<void>(resolve => { release = resolve; });
   await page.route("**/test/fonts/golos-text-latin.woff2", async route => { await blocked; await route.continue(); });
-  const time = new Date("2026-10-19T11:00:00Z"); await page.clock.install({ time }); await page.clock.pauseAt(time);
+  const time = new Date("2026-10-19T11:00:00Z"); await page.clock.install({ time }); await page.clock.pauseAt(new Date(time.getTime() + 1000));
   await page.keyboard.press("ArrowRight");
   await expect(page.locator('[data-reading-turn="preparing"]')).toHaveCount(1);
   expect(await right.innerText()).toBe(source);
