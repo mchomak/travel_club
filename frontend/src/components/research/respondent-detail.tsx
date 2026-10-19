@@ -36,6 +36,8 @@ export function RespondentDetailPage() {
   const [respondent, setRespondent] = useState<ResearchRespondent | null>(null);
   const [interview, setInterview] = useState<ResearchInterview | null>(null);
   const [config, setConfig] = useState<ResearchConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+  const [configError, setConfigError] = useState("");
   const [localAnswers, setLocalAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -50,10 +52,32 @@ export function RespondentDetailPage() {
   const completionTriggerRef = useRef<HTMLButtonElement>(null);
   const navigationPendingRef = useRef(false);
 
-  useEffect(() => { let active = true; void Promise.all([researchApi.respondent(id), researchApi.config()]).then(([person, settings]) => {
-    if (!active) return;
-    setRespondent(person); setInterview(sortedInterviews(person).at(-1) ?? null); setConfig(settings); setDraftCategory(person.final_category);
-  }).catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Не удалось открыть карточку респондента."); }); return () => { active = false; }; }, [id]);
+  useEffect(() => {
+    let active = true;
+    void researchApi.respondent(id).then((person) => {
+      if (!active) return;
+      setRespondent(person);
+      setInterview(sortedInterviews(person).at(-1) ?? null);
+      setDraftCategory(person.final_category);
+      setError("");
+    }).catch((cause: unknown) => {
+      if (active) setError(cause instanceof Error ? cause.message : "Не удалось открыть карточку респондента.");
+    });
+    void researchApi.config().then((settings) => {
+      if (active) {
+        setConfig(settings);
+        setConfigError("");
+      }
+    }).catch(() => {
+      if (active) {
+        setConfig(null);
+        setConfigError("Актуальная конфигурация не загружена. Сохранённые данные доступны; операции, которым нужны данные конфигурации, временно отключены.");
+      }
+    }).finally(() => {
+      if (active) setConfigLoading(false);
+    });
+    return () => { active = false; };
+  }, [id]);
 
   const onAnswerChange = useCallback((code: string, value: string) => setLocalAnswers((current) => current[code] === value ? current : { ...current, [code]: value }), []);
   const questions = useMemo(() => interview?.question_snapshot ?? [], [interview]);
@@ -71,13 +95,19 @@ export function RespondentDetailPage() {
 
   const labelForAnswer = useCallback((key: string, value: unknown) => {
     const text = String(value ?? "");
-    const fields = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])];
+    const fields = [
+      ...(Array.isArray(config?.screening?.fields) ? config.screening.fields : []),
+      ...(Array.isArray(config?.screening?.additional_fields) ? config.screening.additional_fields : []),
+    ];
     const field = fields.find((item) => item.key === key);
     return field?.options?.find((option) => option.value === text)?.label ?? answerNames[text] ?? text;
   }, [config]);
   const screeningItems = useMemo(() => {
     if (!respondent) return [];
-    const fields = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])];
+    const fields = [
+      ...(Array.isArray(config?.screening?.fields) ? config.screening.fields : []),
+      ...(Array.isArray(config?.screening?.additional_fields) ? config.screening.additional_fields : []),
+    ];
     const fieldMap = new Map<string, string>();
     for (const field of fields) {
       fieldMap.set(field.key, field.label);
@@ -86,6 +116,11 @@ export function RespondentDetailPage() {
     return Object.entries(respondent.screening_answers).filter(([, value]) => value !== "" && value !== null && value !== undefined)
       .map(([key, value]) => [fieldMap.get(key) ?? key, labelForAnswer(key, value)] as const);
   }, [respondent, config, labelForAnswer]);
+  const scenarioOptions = Array.isArray(config?.scenarios?.scenarios) ? config.scenarios.scenarios : [];
+  const hasScenarioOptions = scenarioOptions.length > 0;
+  const screeningConfigAvailable = Array.isArray(config?.screening?.fields) && config.screening.fields.length > 0;
+  const bankQuestionsAvailable = Array.isArray(config?.bank?.questions);
+  const canAppendQuestions = bankQuestionsAvailable && hasScenarioOptions;
 
   const startInterview = async () => {
     if (!respondent || !interview) return;
@@ -133,7 +168,7 @@ export function RespondentDetailPage() {
   };
 
   const appendQuestions = async () => {
-    if (!interview || selectedCodes.length === 0) return;
+    if (!interview || selectedCodes.length === 0 || !canAppendQuestions) return;
     setBusy(true); setError("");
     try {
       const updated = await researchApi.appendQuestions(interview.id, selectedCodes);
@@ -185,17 +220,19 @@ export function RespondentDetailPage() {
     return () => document.removeEventListener("click", guardInternalNavigation, true);
   }, [guardInternalNavigation]);
 
-  const allQuestions = config?.bank.questions ?? [];
+  const allQuestions = bankQuestionsAvailable ? config.bank.questions : [];
   const included = new Set(questions.map((question) => question.code));
   const availableQuestions = allQuestions.filter((question) => !included.has(question.code) && (config?.offers_enabled || !question.code.startsWith("X"))
     && (`${question.code} ${question.text}`.toLocaleLowerCase("ru").includes(questionSearch.toLocaleLowerCase("ru"))));
 
-  if (!respondent || !interview || !config) return <div className={styles.page}>
+  if (!respondent || !interview) return <div className={styles.page}>
     <Link href="/research" className={styles.topLink}><ArrowLeft size={15} aria-hidden /> Все респонденты</Link>
     {error ? <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p> : <div className={`${styles.panel} ${styles.empty}`}><p>Открываем карточку респондента…</p></div>}
   </div>;
 
-  const scenarioName = config.scenarios.scenarios.find((scenario) => scenario.code === interview.scenario_code)?.label ?? categoryNames[interview.scenario_code];
+  const scenarioName = scenarioOptions.find((scenario) => scenario.code === interview.scenario_code)?.label
+    ?? categoryNames[interview.scenario_code]
+    ?? interview.scenario_code;
   const profile = respondent.screening_answers;
   const statusText = statusNames[interview.status];
 
@@ -211,6 +248,7 @@ export function RespondentDetailPage() {
       <span className={styles.muted}>Обновлено {dateLabel(respondent.updated_at)}</span>
     </header>
     {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert"><CircleAlert size={18} aria-hidden />{error}</p>}
+    {(configError || (configLoading && !config)) && <p className={styles.notice} role="status">{configError || "Загружаем актуальную конфигурацию. Сохранённое интервью уже доступно для просмотра."}</p>}
     {message && <p className={styles.notice} role="status"><Check size={17} aria-hidden />{message}</p>}
 
     <section className={`${styles.panel} ${styles.screeningSummary}`} aria-label="Основная информация">
@@ -226,12 +264,13 @@ export function RespondentDetailPage() {
       <details className={styles.details}><summary><ChevronDown size={16} aria-hidden /> Все ответы анкеты ({screeningItems.length})</summary>
         {screeningItems.length ? <dl>{screeningItems.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : <p className={styles.muted}>Дополнительных ответов нет.</p>}
       </details>
-      <div className={styles.inlineActions} style={{ marginTop: 14 }}><button className={styles.secondaryButton} type="button" onClick={() => setShowScreening((show) => !show)}>{showScreening ? "Закрыть редактор анкеты" : "Изменить анкету"}</button></div>
+      <div className={styles.inlineActions} style={{ marginTop: 14 }}><button className={styles.secondaryButton} type="button" onClick={() => setShowScreening((show) => !show)} disabled={!screeningConfigAvailable}>{showScreening ? "Закрыть редактор анкеты" : "Изменить анкету"}</button></div>
+      {!screeningConfigAvailable && <p className={styles.muted} role="status">{configLoading ? "Ожидаем конфигурацию анкеты для редактирования." : "Актуальная конфигурация анкеты недоступна. Изменение ответов анкеты временно отключено."}</p>}
     </section>
 
     {showScreening && <section className={styles.formCard} aria-label="Редактирование анкеты">
       <div className={styles.pageHeader}><div><h2>Изменить ответы анкеты</h2><p>Рекомендация обновится после сохранения. Уже начатые сценарии и ответы сохраняются.</p></div></div>
-      <ScreeningForm config={config} initialAnswers={respondent.screening_answers} initialGoal={respondent.research_goal} submitLabel="Сохранить изменения анкеты" onSubmit={saveScreening} />
+      {config && screeningConfigAvailable && <ScreeningForm config={config} initialAnswers={respondent.screening_answers} initialGoal={respondent.research_goal} submitLabel="Сохранить изменения анкеты" onSubmit={saveScreening} />}
       {screeningSaved && <div className={styles.recommendation}>
         <h2>Новое предложение: {categoryNames[respondent.suggested_category]}</h2>
         {respondent.recommendation.reasons.map((reason) => <p key={reason}>{reason}</p>)}
@@ -244,8 +283,9 @@ export function RespondentDetailPage() {
       <h2>Предлагаем сценарий «{categoryNames[respondent.suggested_category]}»</h2>
       {respondent.recommendation.reasons.map((reason) => <p key={reason}>{reason}</p>)}
       <div className={styles.recommendationGrid}>
-        <label className={styles.label}><span>Сценарий интервью</span><select className={styles.select} value={draftCategory} onChange={(event) => setDraftCategory(event.target.value as ResearchCategory)}>{config.scenarios.scenarios.map((scenario) => <option key={scenario.code} value={scenario.code}>{scenario.label}</option>)}</select></label>
-        <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" onClick={() => void chooseDraftCategory()} disabled={busy || !draftCategory}>Сохранить выбор</button><button className={styles.primaryButton} type="button" onClick={() => void startInterview()} disabled={busy}>{busy ? "Открываем…" : "Начать интервью"}<ArrowRight size={17} aria-hidden /></button></div>
+        <label className={styles.label}><span>Сценарий интервью</span><select className={styles.select} value={draftCategory} onChange={(event) => setDraftCategory(event.target.value as ResearchCategory)} disabled={!hasScenarioOptions}>{scenarioOptions.map((scenario) => <option key={scenario.code} value={scenario.code}>{scenario.label}</option>)}</select></label>
+        {!hasScenarioOptions && <p className={styles.muted} role="status">{configLoading ? "Ожидаем список сценариев для изменения выбора." : "Актуальный список сценариев недоступен. Сохранение нового выбора временно отключено."}</p>}
+        <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" onClick={() => void chooseDraftCategory()} disabled={busy || !draftCategory || !hasScenarioOptions}>Сохранить выбор</button><button className={styles.primaryButton} type="button" onClick={() => void startInterview()} disabled={busy}>{busy ? "Открываем…" : "Начать интервью"}<ArrowRight size={17} aria-hidden /></button></div>
       </div>
     </section> : <>
       <div className={styles.interviewLayout}>
@@ -262,12 +302,13 @@ export function RespondentDetailPage() {
       </div>
       <section className={`${styles.panel} ${styles.addQuestions}`}>
         <h2>Добавить вопрос</h2><p className={styles.muted}>Выберите дополнительные вопросы из банка. Вопросы бренда будут добавлены в конец. Блок предложений пока отключён.</p>
-        <div className={styles.questionPicker}><button className={styles.secondaryButton} type="button" onClick={() => setPickerOpen((open) => !open)}><Plus size={16} aria-hidden />{pickerOpen ? "Скрыть список вопросов" : "Выбрать вопросы"}</button>
+        {!canAppendQuestions && <p className={styles.muted} role="status">{configLoading ? "Ожидаем актуальные данные вопросника. Добавление временно отключено." : !bankQuestionsAvailable ? "Актуальный банк вопросов недоступен. Добавление вопросов временно отключено." : "Актуальный список сценариев недоступен. Добавление вопросов временно отключено."}</p>}
+        <div className={styles.questionPicker}><button className={styles.secondaryButton} type="button" onClick={() => setPickerOpen((open) => bankQuestionsAvailable && !open)} disabled={!bankQuestionsAvailable}><Plus size={16} aria-hidden />{pickerOpen ? "Скрыть список вопросов" : "Выбрать вопросы"}</button>
           {pickerOpen && <>
             <label className={styles.srOnly} htmlFor="question-search">Поиск вопроса</label><input id="question-search" className={styles.input} value={questionSearch} onChange={(event) => setQuestionSearch(event.target.value)} placeholder="Найти по коду или тексту" />
             <div className={styles.pickerOptions}>{availableQuestions.map((question) => <label className={styles.pickerOption} key={question.code}><input type="checkbox" checked={selectedCodes.includes(question.code)} onChange={(event) => setSelectedCodes((current) => event.target.checked ? [...current, question.code] : current.filter((code) => code !== question.code))} /><span><strong>{question.code}</strong> · {question.text}</span></label>)}
               {!availableQuestions.length && <p className={styles.muted}>Подходящих вопросов не найдено.</p>}</div>
-            <button className={styles.primaryButton} type="button" onClick={() => void appendQuestions()} disabled={busy || selectedCodes.length === 0}>{busy ? "Добавляем…" : `Добавить выбранные (${selectedCodes.length})`}<Plus size={16} aria-hidden /></button>
+            <button className={styles.primaryButton} type="button" onClick={() => void appendQuestions()} disabled={busy || selectedCodes.length === 0 || !canAppendQuestions}>{busy ? "Добавляем…" : `Добавить выбранные (${selectedCodes.length})`}<Plus size={16} aria-hidden /></button>
           </>}
         </div>
       </section>
