@@ -32,7 +32,7 @@ describe("AnswerCard", () => {
     fireEvent.change(answer, { target: { value: "Путешествовали по Италии." } });
 
     expect(screen.getByText(/Не сохранено|Сохраняется/)).toBeInTheDocument();
-    await waitFor(() => expect(saveAnswer).toHaveBeenCalledWith("interview-1", "G01", "Путешествовали по Италии.", 0));
+    await waitFor(() => expect(saveAnswer).toHaveBeenCalledWith("interview-1", "G01", "Путешествовали по Италии.", 0, true));
     expect(screen.queryByText("Сохранено")).not.toBeInTheDocument();
 
     confirmSave({ answer_text: "Путешествовали по Италии.", revision: 1, updated_at: "2026-10-19T00:00:00Z" });

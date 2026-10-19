@@ -107,6 +107,13 @@ test("TC Research covers creation, recoverable interview notes, history and whol
   });
 
   await test.step("9. Warn when navigating away with an unsaved draft", async () => {
+    const detailUrl = page.url();
+    await page.getByRole("link", { name: "Респонденты", exact: true }).click();
+    await expect(page).toHaveURL(/\/research$/);
+    await page.evaluate(() => window.history.back());
+    await expect(page).toHaveURL(detailUrl);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Заметка, введённая при временном сбое связи.");
+
     await page.route(answerRoute, (route) => route.abort());
     await page.getByLabel("Ответ G01").fill("Несохранённая заметка перед уходом.");
     await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
@@ -117,6 +124,22 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await navigationDialog.dismiss();
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
     await expect(page).toHaveURL(/\/research\/.+/);
+
+    const forwardPrompt = page.waitForEvent("dialog", { timeout: 5000 });
+    await page.evaluate(() => window.history.forward());
+    const forwardDialog = await forwardPrompt;
+    expect(forwardDialog.message()).toContain("ещё не подтверждены сервером");
+    await forwardDialog.dismiss();
+    await expect(page).toHaveURL(detailUrl);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
+
+    const historyPrompt = page.waitForEvent("dialog");
+    await page.evaluate(() => window.history.back());
+    const historyDialog = await historyPrompt;
+    expect(historyDialog.message()).toContain("ещё не подтверждены сервером");
+    await historyDialog.dismiss();
+    await expect(page).toHaveURL(detailUrl);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
     for (const sharedLink of ["Респонденты", "Travel Club"]) {
       const sharedPrompt = page.waitForEvent("dialog", { timeout: 1500 }).catch(() => null);
       await page.getByRole("link", { name: sharedLink, exact: true }).click();

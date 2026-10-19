@@ -59,7 +59,7 @@ export class ResearchApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, networkErrorMessage = "Не удалось связаться с сервером. Проверьте подключение и повторите попытку."): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`/api/research${path}`, {
@@ -69,7 +69,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       headers: { "Content-Type": "application/json", "X-Requested-With": "TravelClub", ...options.headers },
     });
   } catch {
-    throw new ResearchApiError(0, "Нет связи с сервером. Текст сохранён в черновике браузера.", "NETWORK_ERROR");
+    throw new ResearchApiError(0, networkErrorMessage, "NETWORK_ERROR");
   }
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => ({}));
@@ -99,10 +99,12 @@ export const researchApi = {
   startInterview: (id: string) => request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/start`, { method: "POST" }),
   appendQuestions: (id: string, question_codes: string[]) =>
     request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/questions`, { method: "POST", body: JSON.stringify({ question_codes }) }),
-  saveAnswer: (interviewId: string, code: string, answer_text: string, expected_revision: number) =>
+  saveAnswer: (interviewId: string, code: string, answer_text: string, expected_revision: number, draftStored = false) =>
     request<AnswerVersion>(`/interviews/${encodeURIComponent(interviewId)}/answers/${encodeURIComponent(code)}`, {
       method: "PUT", body: JSON.stringify({ answer_text, expected_revision }),
-    }),
+    }, draftStored
+      ? "Нет связи с сервером. Текст сохранён в черновике браузера."
+      : "Нет связи с сервером. Ответ пока есть только в памяти этой вкладки."),
   completeInterview: (id: string) => request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/complete`, { method: "POST" }),
   export: async () => {
     const response = await fetch("/api/research/export.xlsx", { credentials: "same-origin", cache: "no-store", headers: { "X-Requested-With": "TravelClub" } });
@@ -148,21 +150,35 @@ export function clearAnswerDraft(interviewId: string, questionCode: string, save
   }
 }
 
-type AnswerFlusher = () => Promise<boolean>;
+type AnswerFlusher = { flush: () => Promise<boolean>; isPending: () => boolean };
 const answerFlushers = new Map<string, Set<AnswerFlusher>>();
 
-export function registerAnswerFlusher(interviewId: string, flush: AnswerFlusher): () => void {
+export function registerAnswerFlusher(interviewId: string, flush: () => Promise<boolean>, isPending: () => boolean = () => false): () => void {
   const group = answerFlushers.get(interviewId) ?? new Set<AnswerFlusher>();
-  group.add(flush);
+  const entry = { flush, isPending };
+  group.add(entry);
   answerFlushers.set(interviewId, group);
   return () => {
-    group.delete(flush);
+    group.delete(entry);
     if (group.size === 0) answerFlushers.delete(interviewId);
   };
 }
 
 export async function flushPendingAnswers(interviewId: string): Promise<boolean> {
   const flushers = [...(answerFlushers.get(interviewId) ?? [])];
-  const results = await Promise.all(flushers.map((flush) => flush()));
+  const results = await Promise.all(flushers.map(({ flush }) => flush()));
+  return results.every(Boolean);
+}
+
+export function hasPendingAnswerDrafts(): boolean {
+  for (const flushers of answerFlushers.values()) {
+    if ([...flushers].some(({ isPending }) => isPending())) return true;
+  }
+  return false;
+}
+
+export async function flushAllPendingAnswers(): Promise<boolean> {
+  const flushers = [...answerFlushers.values()].flatMap((entries) => [...entries]);
+  const results = await Promise.all(flushers.map(({ flush }) => flush()));
   return results.every(Boolean);
 }

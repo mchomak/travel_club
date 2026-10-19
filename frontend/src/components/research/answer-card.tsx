@@ -26,6 +26,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
   const inflightRef = useRef<Promise<boolean> | null>(null);
   const [state, setState] = useState<SaveState>(draftIsNewer ? "dirty" : initialAnswer ? "saved" : "idle");
   const [draftAvailable, setDraftAvailable] = useState(true);
+  const draftAvailableRef = useRef(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(draftIsNewer);
   const [conflict, setConflict] = useState<AnswerVersion | null | undefined>(undefined);
 
@@ -48,7 +49,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
         while (sequenceRef.current !== savedSequenceRef.current) {
           const textToSave = valueRef.current;
           const sequenceToSave = sequenceRef.current;
-          const saved = await researchApi.saveAnswer(interviewId, question.code, textToSave, revisionRef.current);
+          const saved = await researchApi.saveAnswer(interviewId, question.code, textToSave, revisionRef.current, draftAvailableRef.current);
           revisionRef.current = saved.revision;
           savedSequenceRef.current = sequenceToSave;
           clearAnswerDraft(interviewId, question.code, textToSave);
@@ -87,7 +88,11 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
   useEffect(() => { flushRef.current = flush; }, [flush]);
 
   useEffect(() => {
-    const unregister = registerAnswerFlusher(interviewId, () => flushRef.current());
+    const unregister = registerAnswerFlusher(
+      interviewId,
+      () => flushRef.current(),
+      () => sequenceRef.current !== savedSequenceRef.current,
+    );
     if (draftIsNewer) void flushRef.current();
     onAnswerChange?.(question.code, initialText);
     return unregister;
@@ -114,7 +119,9 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     setHasUnsavedChanges(true);
     setValue(next);
     setState(conflictRef.current ? "conflict" : "dirty");
-    setDraftAvailable(writeAnswerDraft(interviewId, question.code, next));
+    const draftStored = writeAnswerDraft(interviewId, question.code, next);
+    draftAvailableRef.current = draftStored;
+    setDraftAvailable(draftStored);
     if (conflictRef.current) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => void flushRef.current(), 650);
