@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name @PUBLIC_IP@;
+    server_name @SERVER_NAME@;
 
     location ^~ /.well-known/acme-challenge/ {
         root @ACME_WEBROOT@;
@@ -11,6 +11,6 @@ server {
     }
 
     location / {
-        return 308 https://@PUBLIC_IP@:@HTTPS_PORT@$request_uri;
+        return 308 https://@SERVER_NAME@:@HTTPS_PORT@$request_uri;
     }
 }
