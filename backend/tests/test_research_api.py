@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from threading import Barrier
+from threading import Barrier, Lock
 from uuid import uuid4
 
 import pytest
@@ -408,16 +408,21 @@ def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
 
             def race_writes(expected_revision, texts):
                 gate = Barrier(2)
+                read_hit_lock = Lock()
+                read_hits = 0
 
                 def synchronize_current_answer_read(
                     connection, cursor, statement, parameters, context, executemany
                 ):
+                    nonlocal read_hits
                     normalized = statement.lstrip().upper()
                     if (
                         normalized.startswith("SELECT")
                         and "FROM RESEARCH_ANSWERS" in normalized
                         and "WHERE RESEARCH_ANSWERS.INTERVIEW_ID" in normalized
                     ):
+                        with read_hit_lock:
+                            read_hits += 1
                         gate.wait(timeout=10)
 
                 event.listen(engine, "after_cursor_execute", synchronize_current_answer_read)
@@ -433,7 +438,14 @@ def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
                         )
 
                     with ThreadPoolExecutor(max_workers=2) as executor:
-                        return list(executor.map(write, (0, 1)))
+                        responses = list(executor.map(write, (0, 1)))
+                    with read_hit_lock:
+                        assert read_hits == 2, (
+                            "expected both independent requests to reach the "
+                            "synchronized answer read; "
+                            f"observed {read_hits} hits"
+                        )
+                    return responses
                 finally:
                     event.remove(engine, "after_cursor_execute", synchronize_current_answer_read)
 
