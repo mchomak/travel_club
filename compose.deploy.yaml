@@ -35,6 +35,7 @@ services:
       POSTGRES_HOST: postgres
       APP_ENV: production
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:?Set the verified HTTPS origin in the server .env}
+      RESEARCH_ORIGIN: ${RESEARCH_ORIGIN:-}
       COOKIE_SECURE: "true"
       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
       GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}

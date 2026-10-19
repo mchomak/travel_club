@@ -207,3 +207,91 @@ class TripCurrencyRate(Base):
         UniqueConstraint("trip_id", "currency", name="uq_rate_currency"),
         CheckConstraint("rate > 0", name="rate_positive"),
     )
+
+
+class ResearchRespondent(Base):
+    __tablename__ = "research_respondents"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(200))
+    age_range: Mapped[str | None] = mapped_column(String(80))
+    city: Mapped[str] = mapped_column(String(160), default="")
+    screening_answers: Mapped[dict] = mapped_column(JSONB, default=dict)
+    research_goal: Mapped[str | None] = mapped_column(String(30))
+    suggested_category: Mapped[str] = mapped_column(String(40))
+    final_category: Mapped[str] = mapped_column(String(40))
+    category_override: Mapped[bool] = mapped_column(Boolean, default=False)
+    recommendation: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    interviews: Mapped[list["ResearchInterview"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, order_by="ResearchInterview.created_at"
+    )
+    __table_args__ = (
+        CheckConstraint(
+            "suggested_category IN ('trips_experienced','trips_beginner',"
+            "'travel_design','travel_ready')",
+            name="research_suggested_category",
+        ),
+        CheckConstraint(
+            "final_category IN ('trips_experienced','trips_beginner',"
+            "'travel_design','travel_ready')",
+            name="research_final_category",
+        ),
+        CheckConstraint(
+            "research_goal IS NULL OR research_goal IN ('trips','individual_services')",
+            name="research_goal",
+        ),
+        Index("ix_research_respondents_created_at", "created_at"),
+        Index("ix_research_respondents_updated_at", "updated_at"),
+        Index("ix_research_respondents_final_category", "final_category"),
+    )
+
+
+class ResearchInterview(Base):
+    __tablename__ = "research_interviews"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    respondent_id: Mapped[UUID] = mapped_column(
+        ForeignKey("research_respondents.id", ondelete="CASCADE"), index=True
+    )
+    scenario_code: Mapped[str] = mapped_column(String(40))
+    scenario_version: Mapped[str] = mapped_column(String(40))
+    bank_version: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20), default="draft")
+    question_snapshot: Mapped[list] = mapped_column(JSONB, default=list)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    answers: Mapped[list["ResearchAnswer"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, order_by="ResearchAnswer.question_code"
+    )
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft','in_progress','completed')", name="research_interview_status"
+        ),
+        Index("ix_research_interviews_status", "status"),
+        Index("ix_research_interviews_created_at", "created_at"),
+        Index("ix_research_interviews_updated_at", "updated_at"),
+    )
+
+
+class ResearchAnswer(Base):
+    __tablename__ = "research_answers"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    interview_id: Mapped[UUID] = mapped_column(
+        ForeignKey("research_interviews.id", ondelete="CASCADE"), index=True
+    )
+    question_code: Mapped[str] = mapped_column(String(3))
+    answer_text: Mapped[str] = mapped_column(Text, default="")
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    __table_args__ = (
+        UniqueConstraint("interview_id", "question_code", name="uq_research_answer_question"),
+        CheckConstraint("revision > 0", name="research_answer_revision"),
+    )
