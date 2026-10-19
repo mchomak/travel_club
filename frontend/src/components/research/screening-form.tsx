@@ -22,7 +22,8 @@ export function ScreeningForm({ config, initialAnswers = {}, initialGoal = null,
     const otherLabel = field.details_label ?? (value === "other" ? "Уточните, пожалуйста" : undefined);
     return <div className={`${styles.label} ${wide ? styles.fieldWide : ""}`} key={field.key}>
       <span>{field.label}{field.required ? " *" : ""}</span>
-      {field.control === "text" ? <input className={styles.input} aria-label={field.label} value={value} required={field.required} autoComplete={field.key === "name" ? "off" : undefined} maxLength={field.key === "name" ? 200 : field.key === "city" ? 160 : 120} onChange={(event) => setAnswer(field.key, event.target.value)} />
+      {field.control === "textarea" ? <textarea className={styles.textarea} aria-label={field.label} value={value} required={field.required ?? false} onChange={(event) => setAnswer(field.key, event.target.value)} />
+        : field.control === "text" ? <input className={styles.input} aria-label={field.label} value={value} required={field.required} autoComplete={field.key === "name" ? "off" : undefined} maxLength={field.key === "name" ? 200 : field.key === "city" ? 160 : 120} onChange={(event) => setAnswer(field.key, event.target.value)} />
         : field.control === "radio" ? <div className={styles.radioList} role="group" aria-label={field.label}>
           {(field.options ?? []).map((option) => <label key={option.value} className={styles.radioOption}>
             <input type="radio" name={field.key} value={option.value} checked={value === option.value} onChange={() => setAnswer(field.key, option.value)} />{option.label}

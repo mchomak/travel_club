@@ -3,7 +3,7 @@ export type InterviewStatus = "draft" | "in_progress" | "completed";
 
 export interface ScreeningOption { value: string; label: string }
 export interface ScreeningField {
-  key: string; label: string; control: "text" | "select" | "radio"; required?: boolean;
+  key: string; label: string; control: "text" | "select" | "radio" | "textarea"; required?: boolean;
   options?: ScreeningOption[]; details_key?: string; details_label?: string;
 }
 export interface ResearchQuestion {
