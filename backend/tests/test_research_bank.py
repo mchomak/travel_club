@@ -172,6 +172,77 @@ def test_validator_reports_non_string_scenario_codes():
         assert any("scenario entries must have string codes" in issue for issue in issues)
 
 
+def test_validator_reports_non_object_configuration_root():
+    issues = validate_configuration([])
+
+    assert "research configuration must be a JSON object" in issues
+
+
+def test_validator_reports_non_object_json_roots():
+    for root_name in ("bank", "scenarios", "screening", "classification"):
+        configuration = copy.deepcopy(load_configuration())
+        configuration[root_name] = []
+
+        issues = validate_configuration(configuration)
+
+        assert f"{root_name} JSON root must be an object" in issues
+
+
+def test_validator_reports_non_object_scenario_entries():
+    configuration = copy.deepcopy(load_configuration())
+    configuration["scenarios"]["scenarios"].extend([None, "invalid", []])
+
+    issues = validate_configuration(configuration)
+
+    assert "scenarios contains 3 non-object entries" in issues
+
+
+def test_validator_reports_malformed_nested_sections_without_raising():
+    cases = [
+        ("scenarios", "optional_modules", None, "scenarios optional_modules must be an object"),
+        (
+            "scenarios",
+            "docx_route_comparison",
+            None,
+            "scenarios docx_route_comparison must be a JSON array",
+        ),
+        (
+            "screening",
+            "additional_fields",
+            None,
+            "screening additional_fields must be a JSON array",
+        ),
+        ("screening", "goal", None, "screening goal must be an object"),
+        ("classification", "categories", None, "classification categories must be a JSON array"),
+        ("classification", "rules", None, "classification rules must be a JSON array"),
+        (
+            "classification",
+            "goal_adjustments",
+            [],
+            "classification goal_adjustments must be an object",
+        ),
+        (
+            "classification",
+            "signal_strength",
+            [],
+            "classification signal_strength must be an object",
+        ),
+        (
+            "classification",
+            "no_signal_fallback",
+            [],
+            "classification no_signal_fallback must be an object",
+        ),
+    ]
+    for root_name, section_name, malformed_value, expected_issue in cases:
+        configuration = copy.deepcopy(load_configuration())
+        configuration[root_name][section_name] = malformed_value
+
+        issues = validate_configuration(configuration)
+
+        assert expected_issue in issues
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}

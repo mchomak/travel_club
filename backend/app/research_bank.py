@@ -140,6 +140,26 @@ def _validate_question_refs(
         issues.append(f"{label} references unknown questions: {', '.join(unknown)}")
 
 
+def _object_section(
+    parent: dict[str, Any], key: str, *, label: str, issues: list[str]
+) -> dict[str, Any]:
+    value = parent.get(key)
+    if not isinstance(value, dict):
+        issues.append(f"{label} must be an object")
+        return {}
+    return value
+
+
+def _array_section(
+    parent: dict[str, Any], key: str, *, label: str, issues: list[str]
+) -> list[Any]:
+    value = parent.get(key)
+    if not isinstance(value, list):
+        issues.append(f"{label} must be a JSON array")
+        return []
+    return value
+
+
 def _classification_rule_is_matchable(
     rule: dict[str, Any], screening_fields: dict[str, dict[str, Any]], issues: list[str]
 ) -> None:
@@ -212,12 +232,21 @@ def validate_configuration(
             configuration = load_configuration()
         except (OSError, json.JSONDecodeError) as error:
             return [f"cannot load research JSON: {error}"]
+    if not isinstance(configuration, dict):
+        return ["research configuration must be a JSON object"]
 
     issues: list[str] = []
-    bank = configuration.get("bank", {})
-    scenarios = configuration.get("scenarios", {})
-    screening = configuration.get("screening", {})
-    classification = configuration.get("classification", {})
+    root_sections: dict[str, dict[str, Any]] = {}
+    for root_name in ("bank", "scenarios", "screening", "classification"):
+        section = configuration.get(root_name)
+        if not isinstance(section, dict):
+            issues.append(f"{root_name} JSON root must be an object")
+            section = {}
+        root_sections[root_name] = section
+    bank = root_sections["bank"]
+    scenarios = root_sections["scenarios"]
+    screening = root_sections["screening"]
+    classification = root_sections["classification"]
 
     question_entries = bank.get("questions")
     question_codes = _code_inventory(
@@ -271,10 +300,12 @@ def validate_configuration(
                     f"question {code} references unknown hypotheses: {', '.join(invalid_refs)}"
                 )
 
-    scenario_entries = scenarios.get("scenarios", [])
-    if not isinstance(scenario_entries, list):
-        issues.append("scenarios must be a JSON array")
-        scenario_entries = []
+    scenario_entries = _array_section(
+        scenarios, "scenarios", label="scenarios", issues=issues
+    )
+    non_object_scenarios = sum(1 for entry in scenario_entries if not isinstance(entry, dict))
+    if non_object_scenarios:
+        issues.append(f"scenarios contains {non_object_scenarios} non-object entries")
     expected_scenarios = {"trips_experienced", "trips_beginner", "travel_design", "travel_ready"}
     raw_scenario_names = [
         entry.get("code", "<missing>") for entry in scenario_entries if isinstance(entry, dict)
@@ -325,7 +356,12 @@ def validate_configuration(
                     issues=issues,
                 )
 
-    optional_modules = scenarios.get("optional_modules", {})
+    optional_modules = _object_section(
+        scenarios,
+        "optional_modules",
+        label="scenarios optional_modules",
+        issues=issues,
+    )
     for module_name, module in optional_modules.items():
         if not isinstance(module, dict):
             issues.append(f"optional module {module_name} must be an object")
@@ -348,16 +384,27 @@ def validate_configuration(
                 issues=issues,
             )
         conditional = module.get("conditional_docx_questions", {})
-        if isinstance(conditional, dict):
-            for route, conditional_refs in conditional.items():
-                _validate_question_refs(
-                    conditional_refs,
-                    label=f"optional module {module_name} conditional route {route}",
-                    known_codes=question_codes,
-                    issues=issues,
-                )
-    for comparison in scenarios.get("docx_route_comparison", []):
+        if not isinstance(conditional, dict):
+            issues.append(
+                f"optional module {module_name} conditional_docx_questions must be an object"
+            )
+            continue
+        for route, conditional_refs in conditional.items():
+            _validate_question_refs(
+                conditional_refs,
+                label=f"optional module {module_name} conditional route {route}",
+                known_codes=question_codes,
+                issues=issues,
+            )
+    route_comparisons = _array_section(
+        scenarios,
+        "docx_route_comparison",
+        label="scenarios docx_route_comparison",
+        issues=issues,
+    )
+    for comparison in route_comparisons:
         if not isinstance(comparison, dict):
+            issues.append("DOCX route comparison entries must be objects")
             continue
         for key in ("docx_adds", "conditional_offers", "docx_route"):
             if key in comparison:
@@ -368,16 +415,36 @@ def validate_configuration(
                     issues=issues,
                 )
     offers = optional_modules.get("offers", {})
-    if isinstance(offers, dict) and offers.get("enabled") is not False:
+    if not isinstance(offers, dict):
+        issues.append("optional module offers must be an object")
+    elif offers.get("enabled") is not False:
         issues.append(
             "offers module must remain disabled until real prices and terms are available"
         )
 
-    fields = screening.get("fields", [])
-    if not isinstance(fields, list):
-        issues.append("screening fields must be a JSON array")
-        fields = []
-    field_keys = [entry.get("key") for entry in fields if isinstance(entry, dict)]
+    fields = _array_section(screening, "fields", label="screening fields", issues=issues)
+    additional_fields = _array_section(
+        screening,
+        "additional_fields",
+        label="screening additional_fields",
+        issues=issues,
+    )
+    goal = _object_section(screening, "goal", label="screening goal", issues=issues)
+    goal_options = _array_section(
+        goal, "options", label="screening goal options", issues=issues
+    )
+    non_object_fields = sum(
+        1 for entry in [*fields, *additional_fields] if not isinstance(entry, dict)
+    )
+    if non_object_fields:
+        issues.append(f"screening contains {non_object_fields} non-object fields")
+    raw_field_keys = [entry.get("key", "<missing>") for entry in fields if isinstance(entry, dict)]
+    invalid_field_keys = sorted(
+        repr(key) for key in raw_field_keys if not isinstance(key, str)
+    )
+    if invalid_field_keys:
+        issues.append("screening field keys must be strings: " + ", ".join(invalid_field_keys))
+    field_keys = [key for key in raw_field_keys if isinstance(key, str)]
     missing_fields = sorted(EXPECTED_SCREENING_KEYS - set(field_keys))
     unknown_fields = sorted(set(field_keys) - EXPECTED_SCREENING_KEYS)
     if missing_fields:
@@ -391,19 +458,41 @@ def validate_configuration(
         if not isinstance(field, dict):
             continue
         key = field.get("key", "<unknown>")
-        if field.get("control") not in {"text", "textarea", "select", "radio"}:
+        control = field.get("control")
+        if not isinstance(control, str) or control not in {"text", "textarea", "select", "radio"}:
             issues.append(f"screening field {key} has unsupported control")
         options = field.get("options", [])
-        if field.get("control") in {"radio", "select"}:
+        if isinstance(control, str) and control in {"radio", "select"}:
             if not isinstance(options, list) or not options:
                 issues.append(f"screening field {key} requires options")
                 continue
-            values = {option.get("value") for option in options if isinstance(option, dict)}
+            non_object_options = sum(1 for option in options if not isinstance(option, dict))
+            if non_object_options:
+                issues.append(
+                    f"screening field {key} contains {non_object_options} non-object options"
+                )
+            raw_values = [
+                option.get("value", "<missing>")
+                for option in options
+                if isinstance(option, dict)
+            ]
+            invalid_values = sorted(
+                repr(value) for value in raw_values if not isinstance(value, str)
+            )
+            if invalid_values:
+                issues.append(
+                    f"screening field {key} option values must be strings: "
+                    f"{', '.join(invalid_values)}"
+                )
+            values = {value for value in raw_values if isinstance(value, str)}
             if "other" not in values:
                 issues.append(f"screening field {key} is missing the 'other' option")
             if "unknown" not in values:
                 issues.append(f"screening field {key} is missing the 'unknown' option")
         source = field.get("source", {})
+        if not isinstance(source, dict):
+            issues.append(f"screening field {key} source must be an object")
+            continue
         question_code = source.get("question_code") if isinstance(source, dict) else None
         if question_code:
             question = next(
@@ -419,30 +508,79 @@ def validate_configuration(
             elif source.get("question_text") != question.get("text"):
                 issues.append(f"screening field {key} source text differs from {question_code}")
 
-    categories = classification.get("categories", [])
-    category_codes = (
-        {item.get("code") for item in categories if isinstance(item, dict)}
-        if isinstance(categories, list)
-        else set()
+    goal_option_values = [
+        option.get("value") for option in goal_options if isinstance(option, dict)
+    ]
+    if any(not isinstance(value, str) for value in goal_option_values):
+        issues.append("screening goal option values must be strings")
+
+    categories = _array_section(
+        classification, "categories", label="classification categories", issues=issues
     )
+    non_object_categories = sum(1 for item in categories if not isinstance(item, dict))
+    if non_object_categories:
+        issues.append(f"classification contains {non_object_categories} non-object categories")
+    raw_category_codes = [
+        item.get("code", "<missing>") for item in categories if isinstance(item, dict)
+    ]
+    invalid_category_codes = sorted(
+        repr(code) for code in raw_category_codes if not isinstance(code, str)
+    )
+    if invalid_category_codes:
+        issues.append("classification category codes must be strings")
+    category_codes = {code for code in raw_category_codes if isinstance(code, str)}
     if category_codes != EXPECTED_CATEGORIES:
         issues.append("classification categories must contain the four supported category codes")
-    for priority_key in ("priority", "priority_by_goal"):
-        priority_values = classification.get(priority_key, [])
-        if priority_key == "priority_by_goal" and isinstance(priority_values, dict):
-            priorities = [value for value in priority_values.values()]
-        else:
-            priorities = [priority_values]
+    priority_by_goal = _object_section(
+        classification,
+        "priority_by_goal",
+        label="classification priority_by_goal",
+        issues=issues,
+    )
+    priority_values = _array_section(
+        classification, "priority", label="classification priority", issues=issues
+    )
+    for priority_key, priorities in (
+        ("priority", [priority_values]),
+        ("priority_by_goal", list(priority_by_goal.values())),
+    ):
         for priority in priorities:
-            if not isinstance(priority, list) or set(priority) != EXPECTED_CATEGORIES:
+            if not isinstance(priority, list) or any(
+                not isinstance(category, str) for category in priority
+            ):
                 issues.append(f"classification {priority_key} must order all four category codes")
                 break
+            if set(priority) != EXPECTED_CATEGORIES:
+                issues.append(f"classification {priority_key} must order all four category codes")
+                break
+    goal_adjustments = _object_section(
+        classification,
+        "goal_adjustments",
+        label="classification goal_adjustments",
+        issues=issues,
+    )
+    for goal_name, adjustments in goal_adjustments.items():
+        if not isinstance(adjustments, dict):
+            issues.append(f"classification goal_adjustments entry {goal_name} must be an object")
+    signal_strength = _object_section(
+        classification,
+        "signal_strength",
+        label="classification signal_strength",
+        issues=issues,
+    )
+    for threshold in ("low_max_score", "medium_max_score"):
+        value = signal_strength.get(threshold)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            issues.append(f"classification signal_strength {threshold} must be numeric")
     screening_fields = {
         field.get("key"): field
-        for field in [*fields, *screening.get("additional_fields", [])]
+        for field in [*fields, *additional_fields]
         if isinstance(field, dict) and isinstance(field.get("key"), str)
     }
-    for rule in classification.get("rules", []):
+    classification_rules = _array_section(
+        classification, "rules", label="classification rules", issues=issues
+    )
+    for rule in classification_rules:
         if not isinstance(rule, dict):
             issues.append("classification rules must contain objects")
             continue
@@ -451,14 +589,25 @@ def validate_configuration(
             issues.append(
                 f"classification rule {rule.get('id', '<unknown>')} references an unknown category"
             )
-        if not isinstance(rule.get("points"), int) or rule["points"] <= 0:
+        if (
+            isinstance(rule.get("points"), bool)
+            or not isinstance(rule.get("points"), int)
+            or rule["points"] <= 0
+        ):
             issues.append(
                 f"classification rule {rule.get('id', '<unknown>')} must award positive "
                 "integer points"
             )
-    fallback = classification.get("no_signal_fallback", {})
+    fallback = _object_section(
+        classification,
+        "no_signal_fallback",
+        label="classification no_signal_fallback",
+        issues=issues,
+    )
     if (
-        fallback.get("suggested_category") not in EXPECTED_CATEGORIES
+        not isinstance(fallback.get("suggested_category"), str)
+        or fallback.get("suggested_category") not in EXPECTED_CATEGORIES
+        or not isinstance(fallback.get("alternative_category"), str)
         or fallback.get("alternative_category") not in EXPECTED_CATEGORIES
     ):
         issues.append("classification no-signal fallback must use supported categories")
