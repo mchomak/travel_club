@@ -22,25 +22,23 @@ docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
 
 ## Тестовое восстановление в отдельную базу
 
-Проверка ниже создаёт и удаляет только базу `tc_restore_check`. Не меняйте её имя на рабочую `POSTGRES_DB` и не запускайте эту последовательность на production-базе как способ восстановления.
+Команды ниже рассчитаны на один сеанс Bash на Linux-хосте. `RESTORE_DB` явно задаёт новую отдельную базу; не подставляйте рабочую `POSTGRES_DB`. `createdb` завершится ошибкой, если такая база уже существует. Режим `set -Eeuo pipefail` остановит последовательность на этой или любой другой ошибке, поэтому `pg_restore` и проверки `psql` не запустятся вслед за неудачной командой.
 
 ```bash
-docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
-  sh -lc 'createdb -U "$POSTGRES_USER" tc_restore_check'
-docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
-  sh -lc 'pg_restore -U "$POSTGRES_USER" -d tc_restore_check --clean --if-exists --no-owner --no-privileges' \
+set -Eeuo pipefail
+RESTORE_DB='tc_restore_check'
+
+docker compose -p travel_club -f compose.deploy.yaml exec -T -e RESTORE_DB="$RESTORE_DB" postgres \
+  sh -lc 'createdb -U "$POSTGRES_USER" "$RESTORE_DB"'
+docker compose -p travel_club -f compose.deploy.yaml exec -T -e RESTORE_DB="$RESTORE_DB" postgres \
+  sh -lc 'pg_restore -U "$POSTGRES_USER" -d "$RESTORE_DB" --clean --if-exists --exit-on-error --no-owner --no-privileges' \
   < "$BACKUP_FILE"
-docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
-  sh -lc 'psql -U "$POSTGRES_USER" -d tc_restore_check -v ON_ERROR_STOP=1 -Atc "SELECT version_num FROM alembic_version"'
-docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
-  sh -lc 'psql -U "$POSTGRES_USER" -d tc_restore_check -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM research_respondents"'
+docker compose -p travel_club -f compose.deploy.yaml exec -T -e RESTORE_DB="$RESTORE_DB" postgres \
+  sh -lc 'psql -U "$POSTGRES_USER" -d "$RESTORE_DB" -v ON_ERROR_STOP=1 -Atc "SELECT version_num FROM alembic_version"'
+docker compose -p travel_club -f compose.deploy.yaml exec -T -e RESTORE_DB="$RESTORE_DB" postgres \
+  sh -lc 'psql -U "$POSTGRES_USER" -d "$RESTORE_DB" -v ON_ERROR_STOP=1 -Atc "SELECT count(*) FROM research_respondents"'
 ```
 
-Сверьте версию Alembic и число респондентов с исходной базой; при необходимости сравните также число строк в `research_interviews` и `research_answers`. После проверки удалите только отдельную тестовую базу:
+Сверьте версию Alembic и число респондентов с исходной базой; при необходимости сравните также число строк в `research_interviews` и `research_answers`. Считайте восстановление успешным только после завершения всех проверок с кодом 0. База тестового восстановления остаётся на месте для проверки или разбора ошибок; для следующего прогона задайте новое уникальное `RESTORE_DB`. Этот runbook не удаляет базы или тома.
 
-```bash
-docker compose -p travel_club -f compose.deploy.yaml exec -T postgres \
-  sh -lc 'dropdb -U "$POSTGRES_USER" tc_restore_check'
-```
-
-`--clean --if-exists` удаляет объекты в целевой базе перед восстановлением. Для реального восстановления заранее согласуйте простой и целевую базу, сделайте свежую копию текущего состояния и не подставляйте production DB в тестовые команды. XLSX-экспорт Research — рабочая выгрузка, а не резервная копия: он не сохраняет схему, сессии и всю структуру PostgreSQL.
+`--clean --if-exists` удаляет объекты целевой базы перед восстановлением, поэтому сохранённая ранее база отклоняется командой `createdb` до запуска `pg_restore`. Для реального восстановления заранее согласуйте простой и используйте новую явно названную базу; перед восстановлением сделайте свежую копию текущего состояния. XLSX-экспорт Research — рабочая выгрузка, а не резервная копия: он не сохраняет схему, сессии и всю структуру PostgreSQL.
