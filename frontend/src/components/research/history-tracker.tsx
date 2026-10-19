@@ -34,6 +34,8 @@ export function ResearchHistoryTracker() {
     let historyDestination: string | null = null;
     let restoreDelta: number | null = null;
     let navigationPending = false;
+    let correctingHistory = false;
+    let correctionIndex: number | null = null;
 
     const updateCurrentEntry = () => {
       currentEntry = { href: window.location.href, index: indexFromState(history.state) ?? currentEntry.index };
@@ -72,7 +74,42 @@ export function ResearchHistoryTracker() {
         navigationPending = false;
       }
 
-      if (restoringHistory) {
+      const target = { href: window.location.href, index: indexFromState(event.state) };
+      const currentUrl = new URL(currentEntry.href);
+      const targetUrl = new URL(target.href);
+      const changesRoute = targetUrl.origin === currentUrl.origin
+        && (targetUrl.pathname !== currentUrl.pathname || targetUrl.search !== currentUrl.search);
+      const isCurrentEntry = target.index !== null
+        ? target.index === currentEntry.index
+        : target.href === currentEntry.href;
+
+      if (correctingHistory) {
+        const correctionComplete = correctionIndex !== null
+          ? target.index === correctionIndex
+          : target.href === currentEntry.href;
+        if (correctionComplete) {
+          correctingHistory = false;
+          correctionIndex = null;
+          if (!restoringHistory) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+        } else {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const correctionDelta = target.index !== null
+            ? target.index > currentEntry.index ? -1 : 1
+            : restoreDelta === null ? 1 : -restoreDelta;
+          if (correctionDelta !== 0) {
+            correctionIndex = currentEntry.index;
+            history.go(correctionDelta);
+          }
+          return;
+        }
+      }
+
+      if (restoringHistory && isCurrentEntry) {
         event.preventDefault();
         event.stopImmediatePropagation();
         restoringHistory = false;
@@ -104,13 +141,32 @@ export function ResearchHistoryTracker() {
         return;
       }
 
-      const target = { href: window.location.href, index: indexFromState(event.state) };
-      const currentUrl = new URL(currentEntry.href);
-      const targetUrl = new URL(target.href);
-      const changesRoute = targetUrl.origin === currentUrl.origin
-        && (targetUrl.pathname !== currentUrl.pathname || targetUrl.search !== currentUrl.search);
+      if (navigationPending && !isCurrentEntry) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const correctionDelta = target.index !== null
+          ? target.index > currentEntry.index ? -1 : 1
+          : restoreDelta === null ? 1 : -restoreDelta;
+        if (correctionDelta !== 0) {
+          correctingHistory = true;
+          correctionIndex = currentEntry.index;
+          history.go(correctionDelta);
+        }
+        return;
+      }
 
-      if (!changesRoute || !hasPendingAnswerDrafts() || navigationPending) {
+      if (!changesRoute) {
+        currentEntry = { href: target.href, index: target.index ?? currentEntry.index };
+        return;
+      }
+
+      if (navigationPending) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      if (!hasPendingAnswerDrafts()) {
         currentEntry = { href: target.href, index: target.index ?? currentEntry.index };
         return;
       }

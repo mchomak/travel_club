@@ -144,8 +144,8 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     const navigationDialog = await navigationPrompt;
     expect(navigationDialog.message()).toContain("ещё не подтверждены сервером");
     await navigationDialog.dismiss();
+    await expect(page).toHaveURL(detailUrl);
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
-    await expect(page).toHaveURL(/\/research\/.+/);
 
     const forwardPrompt = page.waitForEvent("dialog", { timeout: 5000 });
     await page.evaluate(() => window.history.forward());
@@ -342,4 +342,100 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     expect(await saving.locator("svg").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
     expect(await page.getByRole("progressbar").locator("div").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
   });
+});
+
+test("TC Research blocks a second browser traversal while the first dirty navigation awaits saving", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.locator("input").nth(0).fill(process.env.RESEARCH_E2E_LOGIN ?? "tc_research_e2e");
+  await page.locator('input[type="password"]').fill(process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026");
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/\/admin\/trips/);
+
+  const respondentName = `History race ${Date.now()}`;
+  const respondent = await page.evaluate(async (name) => {
+    const response = await fetch("/api/research/respondents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "TravelClub" },
+      body: JSON.stringify({ screening_answers: { name } }),
+    });
+    if (!response.ok) throw new Error(`create respondent failed: ${response.status}`);
+    return await response.json() as { id: string; interviews: Array<{ id: string }> };
+  }, respondentName);
+  const started = await page.evaluate(async (interviewId) => {
+    const response = await fetch(`/api/research/interviews/${interviewId}/start`, {
+      method: "POST",
+      headers: { "X-Requested-With": "TravelClub" },
+    });
+    if (!response.ok) throw new Error(`start interview failed: ${response.status}`);
+    return await response.json();
+  }, respondent.interviews[0].id);
+  expect(started).toBeTruthy();
+
+  const detailPath = `/research/${respondent.id}`;
+  await page.goto("/research");
+  await page.getByRole("link", { name: respondentName }).click();
+  await page.waitForURL((url) => url.pathname === detailPath);
+  const answer = page.locator("#answer-G01");
+  await expect(answer).toBeVisible();
+  const detailIndex = await page.evaluate(() => (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex);
+  expect(detailIndex).toEqual(expect.any(Number));
+  await page.locator('a[href="/research"]').first().click();
+  await expect(page).toHaveURL(/\/research$/);
+  await page.evaluate(() => window.history.back());
+  await page.waitForURL((url) => url.pathname === detailPath);
+  await expect.poll(() => page.evaluate(() => (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex)).toBe(detailIndex);
+
+  let releaseHeldSave!: () => void;
+  let signalAnswerRequest!: () => void;
+  const requestStarted = new Promise<void>((resolve) => { signalAnswerRequest = resolve; });
+  const holdAnswerSave = new Promise<void>((resolve) => { releaseHeldSave = resolve; });
+  await page.route(/\/api\/research\/interviews\/[^/]+\/answers\/G01$/, async (route) => {
+    signalAnswerRequest();
+    await holdAnswerSave;
+    await route.abort();
+  });
+
+  await page.evaluate(() => {
+    const instrumented = window as Window & {
+      __tcResearchHistoryGoCalls?: number[];
+    };
+    const originalGo = window.history.go.bind(window.history);
+    instrumented.__tcResearchHistoryGoCalls = [];
+    window.history.go = (delta = 0) => {
+      instrumented.__tcResearchHistoryGoCalls?.push(delta);
+      originalGo(delta);
+    };
+  });
+  await answer.fill("Keep this text while history is guarded.");
+  await requestStarted;
+  const warningEvent = page.waitForEvent("dialog");
+  try {
+    await page.evaluate(() => window.history.forward());
+    await page.waitForFunction(() => (window as Window & { __tcResearchHistoryGoCalls?: number[] }).__tcResearchHistoryGoCalls?.length === 1);
+    await page.waitForFunction(({ path, index }) => location.pathname === path
+      && (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex === index,
+    { path: detailPath, index: detailIndex });
+
+    await page.evaluate(() => window.history.back());
+    await page.waitForFunction(() => (window as Window & { __tcResearchHistoryGoCalls?: number[] }).__tcResearchHistoryGoCalls?.length === 2, undefined, { timeout: 5000 });
+    await page.waitForFunction(({ path, index }) => location.pathname === path
+      && (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex === index,
+    { path: detailPath, index: detailIndex });
+    expect(await page.evaluate(() => (window as Window & { __tcResearchHistoryGoCalls?: number[] }).__tcResearchHistoryGoCalls)).toEqual([-1, 1]);
+    await expect(answer).toHaveValue("Keep this text while history is guarded.");
+  } finally {
+    releaseHeldSave();
+  }
+  const warning = await warningEvent;
+  expect(warning.type()).toBe("confirm");
+  await warning.dismiss();
+  await expect(page).toHaveURL(detailPath);
+  await expect(answer).toHaveValue("Keep this text while history is guarded.");
+
+  const retryWarningEvent = page.waitForEvent("dialog");
+  await page.evaluate(() => window.history.forward());
+  const retryWarning = await retryWarningEvent;
+  expect(retryWarning.type()).toBe("confirm");
+  await retryWarning.accept();
+  await expect(page).toHaveURL(/\/research$/);
 });
