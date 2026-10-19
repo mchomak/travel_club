@@ -17,7 +17,7 @@ function Folio({ number, label }: { number: string; label: string }) {
 }
 
 function Photo({ photo, className = "", decorative = false }: { photo: PhotoValue; className?: string; decorative?: boolean }) {
-  return <div className={`${s.photo} ${className}`}><img src={photo.src} alt={decorative ? "" : photo.alt} decoding="async" loading="eager" /></div>;
+  return <div className={`${s.photo} ${className}`}><img src={photo.src} alt={decorative ? "" : photo.alt} decoding="sync" loading="eager" /></div>;
 }
 
 function Link({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
@@ -27,7 +27,7 @@ function Link({ href, children, className = "" }: { href: string; children: Reac
 export function MagazineCover() {
   return <section className={s.cover} data-magazine-cover="" aria-label="Обложка экспериментального журнала «Между строк», номер 01">
     <div className={s.coverTop}><span>Журнал о путешествиях и людях</span><span>Эксперимент № 01</span></div>
-    <img className={s.coverLogo} src="/test_9/TC_Logo_Editorial_Signature_Navy.svg" width="452" height="215" alt="Travel Club" decoding="async" />
+    <img className={s.coverLogo} src="/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg" width="452" height="215" alt="Travel Club" decoding="sync" />
     <div className={s.coverArt}>
       <Photo photo={PHOTOS.coast} className={s.coverPhoto} />
       <h2 className={s.coverTitle}><span>МЕЖДУ</span><span>СТРОК</span></h2>
@@ -42,12 +42,13 @@ function HeroPage({ reveal }: PageProps) {
   return <section className={`${s.page} ${s.heroPage}`} data-magazine-page="left" data-reveal={reveal} aria-label="Travel Club — знакомство">
     <Head left="Между строк" right="The art of going together" />
     <div className={s.heroArt}>
-      <img className={s.heroLogo} src="/test_9/TC_Logo_Editorial_Signature_Cream.svg" width="452" height="215" alt="Travel Club" decoding="async" />
-      <div className={s.heroPhotoReveal} data-reveal-object="hero-photo"><Photo photo={PHOTOS.coast} className={s.heroPhoto} /></div>
-      <h1 className={s.heroSlogan}><span><span>Куда —</span></span><span><span>важно.</span></span><span><span>С кем —</span></span><span><span>важнее.</span></span></h1>
+      <div className={s.heroPhotoReveal} data-reveal-object="hero-photo"><Photo photo={PHOTOS.hero} className={s.heroPhoto} /></div>
+      <div className={s.heroFog} aria-hidden="true"><img src={PHOTOS.hero.src} alt="" decoding="sync" /><span /></div>
+      <img className={s.heroLogo} src="/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg" width="452" height="215" alt="Travel Club" decoding="sync" />
+      <h1 className={s.heroSlogan}><span><span>Куда — важно.</span></span><span><span>С кем — важнее.</span></span></h1>
       <span className={s.heroSideNote} data-reveal-object="hero-note" data-motion="ink" data-beat="4">Путешествия начинаются с людей</span>
     </div>
-    <p className={s.credit}>Dusan Stupar / Pexels<span>Иллюстративная фотография</span></p>
+    <p className={s.credit}>{PHOTOS.hero.author} / Pexels<span>Иллюстративная фотография</span></p>
     <p className={s.heroDescription} data-reveal-object="hero-description" data-motion="ink" data-beat="2">Создаём индивидуальные маршруты, организуем путешествия под ключ и собираем небольшие компании для совместных поездок.</p>
     <Link href="/start">Обсудить поездку</Link>
     <Folio number="02" label="Travel Club / Независимая редакция путешествий" />
@@ -58,7 +59,7 @@ function FormatsPage({ reveal }: PageProps) {
   const icons = [Route, Sparkles, Users];
   return <section className={`${s.page} ${s.formatsPage}`} data-magazine-page="right" data-reveal={reveal} aria-label="Три формата путешествий">
     <Head left="Способ отправиться" right="Travel Club" />
-    <div className={s.formatsIntro}><h2>Как<br />поедем?</h2><p>От первой идеи до общей дороги.<br />Выберите свой формат.</p></div>
+    <div className={s.formatsIntro}><h2>С нами в путь</h2><p>Соберём маршрут, подготовим поездку или отправимся вместе.</p></div>
     <div className={s.formatsTable}>
       {FORMATS.map((format, index) => { const Icon = icons[index]; return <a className={s.formatRow} href="/formats" key={format.number} aria-label={`${format.title} — ${format.price}. Подробнее о формате`}>
         <span className={s.formatNumber} aria-hidden="true"><Icon /><span>{format.number}</span></span>
@@ -67,7 +68,6 @@ function FormatsPage({ reveal }: PageProps) {
         <p data-reveal-object="format-details">{format.description}</p><ArrowUpRight className={s.formatArrow} aria-hidden="true" />
       </a>; })}
     </div>
-    <p className={s.priceNote} data-reveal-object="price-note" data-motion="ink" data-beat="4">Указана стоимость формата работы, а не самого путешествия.</p>
     <Link href="/formats">Подробнее о форматах</Link>
     <Folio number="03" label="Ваше путешествие. Наше внимание к деталям." />
   </section>;
@@ -108,13 +108,13 @@ function ThailandLeft({ reveal }: PageProps) {
   return <section className={`${s.page} ${s.thailandCover}`} data-magazine-page="left" data-reveal={reveal} aria-label="Thailand ’26 — поездка друзей до запуска Travel Club">
     <Head left="Field Notes / 2026" right="До запуска Travel Club" />
     <div className={s.thaiArt}>
-      <div className={s.thaiStrips} aria-hidden="true">{[0, 1, 2].map(index => <div key={index} data-reveal-object="thai-strip"><img src={PHOTOS.nature.src} alt="" decoding="async" loading="eager" /></div>)}</div>
-      <h2 className={s.thaiDisplay} aria-label="Thailand ’26"><span className={s.thaiWord} aria-hidden="true"><img src={PHOTOS.nature.src} alt="" decoding="async" loading="eager" /></span><span className={s.landWord} aria-hidden="true"><img src={PHOTOS.nature.src} alt="" decoding="async" loading="eager" /></span></h2>
+      <div className={s.thaiStrips} aria-hidden="true">{[0, 1, 2].map(index => <div key={index} data-reveal-object="thai-strip"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></div>)}</div>
+      <h2 className={s.thaiDisplay} aria-label="Thailand ’26"><span className={s.thaiWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span><span className={s.landWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span></h2>
       <div className={s.thaiArtLine} data-reveal-object="thai-line" data-motion="ink" data-beat="3" aria-hidden="true" />
       <div className={s.thaiYear}>’26<span>Таиланд<br />в двух ритмах</span></div>
     </div>
     <div className={s.thaiRoute}><span><MapPin aria-hidden="true" />От островов до Бангкока</span><p>Четверо друзей.<br />Одна поездка.</p></div>
-    <p className={s.credit}>youseflns / Pexels<span>Иллюстративная фотография</span></p>
+    <p className={s.credit}>{PHOTOS.thailandCover.author} / Pexels<span>Иллюстративная фотография</span></p>
     <Folio number="06" label="Личный опыт друзей до запуска клуба" />
   </section>;
 }
@@ -194,7 +194,7 @@ function PovLeft({ reveal }: PageProps) {
     <Head left="Point of View" right="Подход к делу" />
     <div className={s.povHeading}><h2>Не только<br />куда.</h2><span data-reveal-object="pov-also" data-motion="ink" data-beat="1">Ещё и как.</span></div>
     <div className={s.principles}>{PRINCIPLES.map((principle, i) => <article key={principle.title}><span aria-hidden="true">0{i + 1}</span><div><h3>{principle.title}</h3><p data-reveal-object={`principle-${i}`} data-motion="ink" data-beat={i + 1}>{principle.text}</p></div></article>)}</div>
-    <div className={s.povSign} data-reveal-object="pov-sign" data-motion="rise" data-beat="4"><span>Место × люди × память</span><img src="/test_9/TC_Logo_Editorial_Signature_Cream.svg" width="452" height="215" alt="Travel Club" decoding="async" /></div>
+    <div className={s.povSign} data-reveal-object="pov-sign" data-motion="rise" data-beat="4"><span>Место × люди × память</span><img src="/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg" width="452" height="215" alt="Travel Club" decoding="sync" /></div>
     <Folio number="12" label="Три принципа одной общей дороги" />
   </section>;
 }
@@ -203,14 +203,14 @@ function StartRight({ reveal }: PageProps) {
   return <section className={`${s.page} ${s.startPage}`} data-magazine-page="right" data-reveal={reveal} aria-label="Начнём с разговора — Travel Club">
     <Head left="Ваша следующая история" right="Start / Travel Club" />
     <h2 className={s.startTitle}>Начнём<br /><span data-reveal-object="start-title" data-motion="rise" data-beat="1">с разговора.</span></h2>
-    <p className={s.startLead} data-reveal-object="start-lead" data-motion="ink" data-beat="2">Расскажите, куда хотите поехать, с кем и в каком формате. Обсудим ваши пожелания, возможности и подходящий вариант работы.</p>
-    <div className={s.startActions}><Link href="/start">Обсудить поездку</Link><a href="/formats">Сначала сравнить форматы <ArrowUpRight aria-hidden="true" /></a></div>
+    <p className={s.startLead} data-reveal-object="start-lead" data-motion="ink" data-beat="2">От первой идеи к понятному плану. Вот как строится наша работа.</p>
     <div className={s.startProcess}>{[
-      ["Рассказываете.", "Направление, сроки, состав компании, примерный бюджет и пожелания."],
-      ["Обсуждаем.", "Выбираем формат, уточняем детали и предварительно оцениваем состав услуг."],
-      ["Договариваемся.", "Фиксируем условия и дальнейшие шаги. После согласования приступаем к работе."],
+      ["Разговор", "Обсуждаем направление, сроки, компанию, бюджет и ваши пожелания."],
+      ["Предложение", "Готовим подходящий формат работы и предварительный состав услуг."],
+      ["Согласование", "Вместе уточняем предложение и договариваемся о дальнейших действиях."],
     ].map(([title, body], i) => <div key={title} data-reveal-object={`start-step-${i}`} data-motion="rise" data-beat={i + 1}><span>0{i + 1}</span><h3>{title}</h3><p>{body}</p></div>)}</div>
-    <p className={s.prototypeNote}>Форма /start — прототип. Ответы не отправляются и не сохраняются.</p>
+    <div className={s.startActions}><Link href="/start">Обсудить поездку</Link><a href="/formats">Сначала сравнить форматы <ArrowUpRight aria-hidden="true" /></a></div>
+    <p className={s.prototypeNote}>Форма поможет сформулировать запрос. Сейчас это прототип: ответы не отправляются и не сохраняются.</p>
     <Folio number="13" label="Конец номера / Продолжение следует" />
   </section>;
 }
