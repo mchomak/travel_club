@@ -1,0 +1,375 @@
+{
+  "origin": "http://localhost:3000",
+  "checkedAt": "2026-10-19T20:55:14.845Z",
+  "results": [
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 1,
+      "pages": [
+        {
+          "name": "Travel Club — знакомство",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Три формата путешествий",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 3,
+      "pages": [
+        {
+          "name": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Thailand ’26 — история и фотографии",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 6,
+      "pages": [
+        {
+          "name": "Point of View — три принципа Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Начнём с разговора — Travel Club",
+          "overflowX": 0,
+          "overflowY": 1,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "spread": 1,
+      "pages": [
+        {
+          "name": "Travel Club — знакомство",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Три формата путешествий",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "spread": 3,
+      "pages": [
+        {
+          "name": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Thailand ’26 — история и фотографии",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "spread": 6,
+      "pages": [
+        {
+          "name": "Point of View — три принципа Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Начнём с разговора — Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1314,
+        "height": 1244
+      },
+      "spread": 1,
+      "pages": [
+        {
+          "name": "Travel Club — знакомство",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Три формата путешествий",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1314,
+        "height": 1244
+      },
+      "spread": 3,
+      "pages": [
+        {
+          "name": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Thailand ’26 — история и фотографии",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1314,
+        "height": 1244
+      },
+      "spread": 6,
+      "pages": [
+        {
+          "name": "Point of View — три принципа Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Начнём с разговора — Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 1,
+      "pages": [
+        {
+          "name": "Travel Club — знакомство",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Три формата путешествий",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 3,
+      "pages": [
+        {
+          "name": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Thailand ’26 — история и фотографии",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 6,
+      "pages": [
+        {
+          "name": "Point of View — три принципа Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Начнём с разговора — Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "spread": 1,
+      "pages": [
+        {
+          "name": "Travel Club — знакомство",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Три формата путешествий",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "spread": 3,
+      "pages": [
+        {
+          "name": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Thailand ’26 — история и фотографии",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "spread": 6,
+      "pages": [
+        {
+          "name": "Point of View — три принципа Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        },
+        {
+          "name": "Начнём с разговора — Travel Club",
+          "overflowX": 0,
+          "overflowY": 0,
+          "clipped": []
+        }
+      ],
+      "broken": [],
+      "overflow": false,
+      "canvases": 0
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "compact": true,
+      "link": "/test_8",
+      "overflow": false
+    }
+  ]
+}

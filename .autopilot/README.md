@@ -41,3 +41,5 @@
 
 | 2026-10-17 | `2026-10-17-test-10-interactive-magazine` | сдан 18 октября | /test_10: три разворота, Living Issue, 450ms перелистывание;119 unit/23 browser passed |
 | 2026-10-18 | `2026-10-18-test-11-editorial` | сдан 19 октября | /test_11: шесть глав, пластичный лист и медленные появления; 119 unit / 48 browser, 33 PNG; push main и local rebuild |
+
+| 2026-10-19 | `2026-10-19-test-11-comments` | сдан | Девять комментариев: новые фото, туман и слоган, услуги, Thailand, принципы и процесс; push main, production rebuild и browser acceptance. |
