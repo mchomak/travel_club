@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "fields": [
     {
       "key": "name",
@@ -60,7 +60,9 @@
         "kind": "docx",
         "question_code": "S02",
         "question_text": "В каком городе вы живёте и откуда обычно вылетаете в путешествия?"
-      }
+      },
+      "details_key": "departure_city",
+      "details_label": "Откуда обычно вылетаете в путешествия?"
     },
     {
       "key": "independent_trips_24m",
@@ -97,7 +99,9 @@
           "value": "unknown",
           "label": "Затрудняюсь ответить"
         }
-      ]
+      ],
+      "details_key": "last_trip_organizer",
+      "details_label": "Бронировали сами, с друзьями или через организатора?"
     },
     {
       "key": "group_experience",

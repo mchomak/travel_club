@@ -78,7 +78,11 @@ export function RespondentDetailPage() {
   const screeningItems = useMemo(() => {
     if (!respondent) return [];
     const fields = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])];
-    const fieldMap = new Map(fields.map((field) => [field.key, field.label]));
+    const fieldMap = new Map<string, string>();
+    for (const field of fields) {
+      fieldMap.set(field.key, field.label);
+      if (field.details_key && field.details_label) fieldMap.set(field.details_key, field.details_label);
+    }
     return Object.entries(respondent.screening_answers).filter(([, value]) => value !== "" && value !== null && value !== undefined)
       .map(([key, value]) => [fieldMap.get(key) ?? key, labelForAnswer(key, value)] as const);
   }, [respondent, config, labelForAnswer]);
