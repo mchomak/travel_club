@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus, Send } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus } from "lucide-react";
 import {
   InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchQuestion,
   ResearchRespondent, flushPendingAnswers, researchApi,
 } from "@/lib/research";
 import { AnswerCard } from "./answer-card";
+import { CompletionDialog } from "./completion-dialog";
 import { ScreeningForm } from "./screening-form";
 import styles from "./research.module.css";
 
@@ -30,6 +31,7 @@ const sortedInterviews = (respondent: ResearchRespondent) => [...respondent.inte
 
 export function RespondentDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params.id;
   const [respondent, setRespondent] = useState<ResearchRespondent | null>(null);
   const [interview, setInterview] = useState<ResearchInterview | null>(null);
@@ -45,6 +47,8 @@ export function RespondentDetailPage() {
   const [questionSearch, setQuestionSearch] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const completionTriggerRef = useRef<HTMLButtonElement>(null);
+  const navigationPendingRef = useRef(false);
 
   useEffect(() => { let active = true; void Promise.all([researchApi.respondent(id), researchApi.config()]).then(([person, settings]) => {
     if (!active) return;
@@ -149,6 +153,29 @@ export function RespondentDetailPage() {
     finally { setBusy(false); }
   };
 
+  const guardInternalNavigation = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const activeInterview = interview;
+    if (!activeInterview) return;
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const clicked = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+    if (!clicked || clicked.hasAttribute("download") || (clicked.target && clicked.target !== "_self")) return;
+    const currentUrl = new URL(window.location.href);
+    const destination = new URL(clicked.href, currentUrl);
+    if (destination.origin !== currentUrl.origin || (destination.pathname === currentUrl.pathname && destination.search === currentUrl.search)) return;
+
+    event.preventDefault();
+    if (navigationPendingRef.current) return;
+    navigationPendingRef.current = true;
+    void (async () => {
+      const saved = await flushPendingAnswers(activeInterview.id).catch(() => false);
+      if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) {
+        navigationPendingRef.current = false;
+        return;
+      }
+      router.push(`${destination.pathname}${destination.search}${destination.hash}`);
+    })();
+  };
+
   const allQuestions = config?.bank.questions ?? [];
   const included = new Set(questions.map((question) => question.code));
   const availableQuestions = allQuestions.filter((question) => !included.has(question.code) && (config?.offers_enabled || !question.code.startsWith("X"))
@@ -163,10 +190,10 @@ export function RespondentDetailPage() {
   const profile = respondent.screening_answers;
   const statusText = statusNames[interview.status];
 
-  return <div className={styles.page}>
+  return <div className={styles.page} onClickCapture={guardInternalNavigation}>
     <div className={styles.stickyHeader}>
       <div className={styles.stickyInner}>
-        <div className={styles.stickyName}><strong>{respondent.name}{respondent.age_range ? `, ${respondent.age_range}` : ""}</strong><div className={styles.stickyMeta}><span>{respondent.city || "Город не указан"}</span><span>{scenarioName}</span><span>{statusText}</span></div></div>
+        <div className={styles.stickyName}><strong>{respondent.name}{respondent.age_range ? `, ${respondent.age_range}` : ""}</strong><div className={styles.stickyMeta} aria-label="Сводка интервью"><span>{respondent.city || "Город не указан"}</span><span>Самостоятельные поездки: {labelForAnswer("independent_trips_24m", profile.independent_trips_24m) || "не указано"}</span><span>Опыт групповых поездок: {labelForAnswer("group_experience", profile.group_experience) || "не указано"}</span><span>Итоговая категория: {categoryNames[respondent.final_category]}</span><span>{scenarioName}</span><span>{statusText}</span></div></div>
         <div className={styles.inlineActions}><Link className={styles.textButton} href="/research"><ArrowLeft size={15} aria-hidden /> К списку</Link><span className={styles.badge} data-status={interview.status}>{statusText}</span></div>
       </div>
     </div>
@@ -237,16 +264,9 @@ export function RespondentDetailPage() {
       </section>
       <div className={styles.completionBar}>
         <p>{interview.status === "completed" ? `Завершено ${dateLabel(interview.completed_at)} · ответы по-прежнему можно менять.` : "Можно завершить интервью, даже если часть ответов осталась пустой."}</p>
-        <button type="button" className={interview.status === "completed" ? styles.secondaryButton : styles.primaryButton} onClick={() => setConfirmComplete(true)}>{interview.status === "completed" ? "Завершено" : "Завершить интервью"}<Check size={17} aria-hidden /></button>
+        <button ref={completionTriggerRef} type="button" className={interview.status === "completed" ? styles.secondaryButton : styles.primaryButton} onClick={() => setConfirmComplete(true)}>{interview.status === "completed" ? "Завершено" : "Завершить интервью"}<Check size={17} aria-hidden /></button>
       </div>
-      {confirmComplete && <div className={styles.modalBackdrop}>
-        <section className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="complete-title" aria-describedby="complete-copy">
-          <h2 id="complete-title">Завершить интервью?</h2>
-          <p id="complete-copy">Вы уверены, что хотите завершить интервью? Некоторые вопросы могут остаться без ответа. Все сохранённые данные останутся доступны для просмотра и редактирования.</p>
-          {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
-          <div className={styles.modalActions}><button className={styles.secondaryButton} type="button" onClick={() => { setConfirmComplete(false); setError(""); }} disabled={busy}>Отмена</button><button className={styles.primaryButton} type="button" onClick={() => void complete()} disabled={busy}>{busy ? "Сохраняем ответы…" : "Да, завершить"}<Send size={16} aria-hidden /></button></div>
-        </section>
-      </div>}
+      {confirmComplete && <CompletionDialog returnFocusRef={completionTriggerRef} busy={busy} error={error} onClose={() => { setConfirmComplete(false); setError(""); }} onConfirm={() => void complete()} />}
     </>}
   </div>;
 }

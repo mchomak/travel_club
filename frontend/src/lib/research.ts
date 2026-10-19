@@ -123,11 +123,12 @@ export function readAnswerDraft(interviewId: string, questionCode: string): Answ
   }
 }
 
-export function writeAnswerDraft(interviewId: string, questionCode: string, answer_text: string): void {
+export function writeAnswerDraft(interviewId: string, questionCode: string, answer_text: string): boolean {
   try {
     window.localStorage.setItem(draftKey(interviewId, questionCode), JSON.stringify({ answer_text, updated_at: new Date().toISOString() }));
+    return true;
   } catch {
-    // The controlled textarea still holds the text if browser storage is unavailable.
+    return false;
   }
 }
 

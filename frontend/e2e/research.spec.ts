@@ -102,6 +102,13 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.route(answerRoute, (route) => route.abort());
     await page.getByLabel("Ответ G01").fill("Несохранённая заметка перед уходом.");
     await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
+    const navigationPrompt = page.waitForEvent("dialog");
+    await page.getByRole("link", { name: "К списку" }).click();
+    const navigationDialog = await navigationPrompt;
+    expect(navigationDialog.message()).toContain("ещё не подтверждены сервером");
+    await navigationDialog.dismiss();
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
+    await expect(page).toHaveURL(/\/research\/.+/);
     const prevented = await page.evaluate(() => {
       const event = new Event("beforeunload", { cancelable: true });
       window.dispatchEvent(event);
@@ -117,6 +124,17 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await expect(page.getByText("Заполнено 1 из 11")).toBeVisible();
     await page.getByRole("button", { name: "Завершить интервью" }).click();
     await expect(page.getByRole("dialog")).toContainText("Некоторые вопросы могут остаться без ответа");
+    const cancelButton = page.getByRole("button", { name: "Отмена" });
+    const confirmButton = page.getByRole("button", { name: "Да, завершить" });
+    await expect(cancelButton).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(confirmButton).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(cancelButton).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Завершить интервью" })).toBeFocused();
+    await page.getByRole("button", { name: "Завершить интервью" }).click();
     await page.getByRole("button", { name: "Отмена" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByRole("button", { name: "Завершить интервью" }).click();
@@ -186,11 +204,35 @@ test("TC Research covers creation, recoverable interview notes, history and whol
   await test.step("Responsive list and interview layout at phone widths", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Респонденты" })).toBeVisible();
+    await expect(page.getByRole("table")).toBeHidden();
+    await expect(page.getByRole("listitem", { name: "Респондент " + respondentName })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(page.getByRole("list", { name: "Респонденты" })).toBeVisible();
+    await expect(page.getByRole("table")).toBeHidden();
+    await expect(page.getByRole("listitem", { name: "Респондент " + respondentName })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole("link", { name: respondentName }).click();
     await expect(page.getByLabel("Ответ G01")).toBeVisible();
+    const stickyMeta = page.getByLabel("Сводка интервью");
+    await expect(stickyMeta).toBeVisible();
+    await expect(stickyMeta).toContainText("Самостоятельные поездки:");
+    await expect(stickyMeta).toContainText("Итоговая категория:");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.setViewportSize({ width: 320, height: 720 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(stickyMeta).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.route(answerRoute, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1400));
+      await route.continue();
+    });
+    await page.getByLabel("Ответ G01").fill("Проверка системной настройки уменьшения движения.");
+    const saving = page.getByText("Сохраняется").first();
+    await expect(saving).toBeVisible();
+    expect(await saving.locator("svg").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+    expect(await page.getByRole("progressbar").locator("div").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
   });
 });

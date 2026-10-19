@@ -25,6 +25,8 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
   const conflictRef = useRef(false);
   const inflightRef = useRef<Promise<boolean> | null>(null);
   const [state, setState] = useState<SaveState>(draftIsNewer ? "dirty" : initialAnswer ? "saved" : "idle");
+  const [draftAvailable, setDraftAvailable] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(draftIsNewer);
   const [conflict, setConflict] = useState<AnswerVersion | null | undefined>(undefined);
 
   const flushRef = useRef<() => Promise<boolean>>(async () => false);
@@ -53,6 +55,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
           setConflict(undefined);
           conflictRef.current = false;
         }
+        setHasUnsavedChanges(false);
         setState("saved");
         return true;
       } catch (error) {
@@ -108,9 +111,10 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     valueRef.current = next;
     onAnswerChange?.(question.code, next);
     sequenceRef.current += 1;
+    setHasUnsavedChanges(true);
     setValue(next);
     setState(conflictRef.current ? "conflict" : "dirty");
-    writeAnswerDraft(interviewId, question.code, next);
+    setDraftAvailable(writeAnswerDraft(interviewId, question.code, next));
     if (conflictRef.current) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => void flushRef.current(), 650);
@@ -120,9 +124,11 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     const text = conflict?.answer_text ?? "";
     valueRef.current = text;
     setValue(text);
+    onAnswerChange?.(question.code, text);
     revisionRef.current = conflict?.revision ?? 0;
     sequenceRef.current += 1;
     savedSequenceRef.current = sequenceRef.current;
+    setHasUnsavedChanges(false);
     setConflict(undefined);
     conflictRef.current = false;
     setState("saved");
@@ -137,7 +143,14 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     void flushRef.current();
   };
 
-  const status = state === "saved" ? "Сохранено" : state === "saving" ? "Сохраняется" : state === "dirty" ? "Не сохранено" : state === "idle" ? "Пока пусто" : state === "offline" ? "Нет связи · черновик сохранён" : state === "conflict" ? "Конфликт версий" : "Ошибка сохранения";
+  const volatileStatus = hasUnsavedChanges && !draftAvailable
+    ? state === "offline" ? "Нет связи · черновик недоступен"
+      : state === "saving" ? "Сохраняется · текст только в памяти"
+        : state === "conflict" ? "Конфликт версий · текст только в памяти"
+          : state === "error" ? "Ошибка · текст только в памяти"
+            : "Черновик недоступен · текст только в памяти"
+    : null;
+  const status = volatileStatus ?? (state === "saved" ? "Сохранено" : state === "saving" ? "Сохраняется" : state === "dirty" ? "Не сохранено" : state === "idle" ? "Пока пусто" : state === "offline" ? "Нет связи · черновик сохранён" : state === "conflict" ? "Конфликт версий" : "Ошибка сохранения");
   return <article className={styles.questionCard} id={`question-${question.code}`}>
     <div className={styles.questionTitleRow}>
       <span className={styles.questionCode}>{question.code}</span>
@@ -150,7 +163,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     <label className={styles.srOnly} htmlFor={`answer-${question.code}`}>Ответ {question.code}</label>
     <textarea id={`answer-${question.code}`} value={value} onChange={(event) => changeValue(event.target.value)} onBlur={() => void flushRef.current()} placeholder="Запишите ответ или ключевые мысли…" rows={5} />
     {state === "conflict" && <div className={styles.conflictBox} role="alert">
-      <p>Ответ в другой вкладке уже изменён. Ваш текст сохранён отдельно в этом браузере.</p>
+      <p>Ответ в другой вкладке уже изменён. {draftAvailable ? "Ваш текст сохранён отдельно в этом браузере." : "Ваш текст пока есть только в памяти этой вкладки."}</p>
       <div className={styles.inlineActions}>
         <button type="button" className={styles.secondaryButton} onClick={useOtherVersion}>Взять серверную версию</button>
         <button type="button" className={styles.primaryButton} onClick={saveMyVersion}>Сохранить мой текст</button>

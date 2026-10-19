@@ -91,6 +91,20 @@ export function RespondentListPage() {
             <td><span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span></td><td>{dateLabel(respondent.updated_at)}</td>
           </tr>)}</tbody>
         </table>
+        <div className={styles.mobileCards} role="list" aria-label="Респонденты">
+          {result.items.map((respondent: RespondentSummary) => <article key={respondent.id} className={styles.mobileCard} role="listitem" aria-label={"Респондент " + respondent.name}>
+            <div className={styles.mobileCardHead}>
+              <Link className={styles.rowLink} href={"/research/" + respondent.id}>{respondent.name}</Link>
+              <span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span>
+            </div>
+            <dl className={styles.mobileCardDetails}>
+              <div><dt>Возраст</dt><dd>{respondent.age_range || "—"}</dd></div>
+              <div><dt>Город</dt><dd>{respondent.city || "—"}</dd></div>
+              <div><dt>Категория</dt><dd>{categoryLabel(respondent.final_category)}{respondent.category_override ? " · вручную" : ""}</dd></div>
+              <div><dt>Последнее изменение</dt><dd>{dateLabel(respondent.updated_at)}</dd></div>
+            </dl>
+          </article>)}
+        </div>
         <div className={styles.pagination}><span>{result.total} из {result.total_count === result.total ? result.total : `${result.total_count} совпадений`}</span>
           <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Назад</button><span>Страница {result.page} из {Math.max(result.pages, 1)}</span><button className={styles.secondaryButton} type="button" disabled={page >= result.pages} onClick={() => setPage((current) => current + 1)}>Дальше</button></div>
         </div>

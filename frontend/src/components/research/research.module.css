@@ -50,6 +50,13 @@
 .hint { color: var(--research-muted); font-size: .8rem; font-weight: 400; line-height: 1.45; }
 .tableWrap { overflow-x: auto; }
 .table { width: 100%; border-collapse: collapse; min-width: 820px; }
+.mobileCards { display: none; }
+.mobileCard { min-width: 0; border: 1px solid var(--research-line); border-radius: 10px; padding: 13px; background: white; }
+.mobileCardHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.mobileCardHead .rowLink { min-width: 0; overflow-wrap: anywhere; }
+.mobileCardDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin: 13px 0 0; }
+.mobileCardDetails dt { color: var(--research-muted); font-size: .68rem; }
+.mobileCardDetails dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: .78rem; line-height: 1.4; }
 .table th { padding: 13px 16px; color: var(--research-muted); font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-align: left; white-space: nowrap; }
 .table td { padding: 15px 16px; border-top: 1px solid #e9edf3; font-size: .89rem; vertical-align: middle; }
 .table tbody tr:hover { background: #f8faff; }
@@ -164,9 +171,18 @@
   .stickyHeader { margin-bottom: 15px; }
   .stickyInner { align-items: flex-start; }
   .stickyInner > .inlineActions { flex-direction: column; }
-  .stickyMeta { display: none; }
+  .stickyMeta { gap: 3px 7px; font-size: .68rem; line-height: 1.35; }
+  .tableWrap { overflow: visible; }
+  .table { display: none; }
+  .mobileCards { display: grid; gap: 9px; padding: 12px; }
+  .pagination { align-items: flex-start; flex-direction: column; }
+  .pagination > .inlineActions { align-items: center; justify-content: space-between; width: 100%; }
   .sidePanel { grid-template-columns: minmax(0, 1fr); }
   .toc { max-height: 125px; }
   .pickerOptions { grid-template-columns: minmax(0, 1fr); }
   .screeningSummary dl { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: none !important; }
+  .progressBar { transition: none !important; }
 }
