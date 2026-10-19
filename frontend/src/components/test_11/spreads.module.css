@@ -120,7 +120,7 @@
 .thaiStrips > div:nth-child(2) { transform: translateY(10%); }
 .thaiStrips > div:nth-child(3) { transform: translateY(5%); }
 .thaiStrips img { height: 100%; width: 100%; object-fit: cover; object-position: 48% 50%; filter: saturate(.5); }
-.thaiArtLine { position: absolute; bottom: 27%; left: -1%; width: 103%; height: 1px; background: #d3dbaf; transform: rotate(-12deg); opacity: .6; z-index: 2; }
+.thaiArtLine { --reveal-opacity: .6; position: absolute; bottom: 27%; left: -1%; width: 103%; height: 1px; background: #d3dbaf; transform: rotate(-12deg); opacity: .6; z-index: 2; }
 .thaiYear { position: absolute; bottom: -1%; left: 0; font-family: "TC Lora", Georgia, serif; font-size: 17cqw; line-height: 1; letter-spacing: -.06em; display: flex; align-items: center; gap: 8cqw; }
 .thaiYear > span { font-family: "TC Golos", Arial, sans-serif; font-size: clamp(14px, 2.7cqw, 18px); line-height: 1.5; letter-spacing: 0; }
 .thaiRoute { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
@@ -165,43 +165,132 @@
 .coverBottom > :last-child { align-self: end; max-width: 52%; font-size: 11px; }
 .coverBottom span { display: block; margin-top: 1cqh; }
 
-/* Print/capture is complete by default. The parent marks destination pages
-   pending BEFORE either face is exposed. These poses exactly match keyframe 0;
-   changing pending → enter never paints a complete page followed by a reset.
-   Display type, service identities/prices and running heads stay as anchors. */
+/* Three further chapters use the same running furniture, with their own material. */
+.chinaCover { background: #26343e; color: #dce8e9; }
+.chinaArt { flex: 1; position: relative; min-height: 0; }
+.chinaDisplay { position: absolute; inset: 1% 0 auto; z-index: 2; font-size: 23cqw; font-weight: 700; letter-spacing: -.07em; line-height: .9; }
+.chinaDisplay > span { display: block; margin-top: 6%; font-family: "TC Lora", Georgia, serif; font-size: .7em; font-weight: 400; letter-spacing: -.07em; }
+.chinaVertical { position: absolute; top: 22%; bottom: 0; right: 7%; width: 57%; }
+.chinaVertical .photo { width: 100%; height: 100%; }
+.chinaVertical img { object-position: 50% 57%; filter: saturate(.38) contrast(1.08); }
+.chinaVerticalLabel { position: absolute; right: -1%; top: 30%; writing-mode: vertical-rl; font-size: 11px; letter-spacing: .1em; }
+.chinaArtNote { position: absolute; left: 0; bottom: 6%; z-index: 2; max-width: 73%; font-family: "TC Lora", Georgia, serif; font-size: 6.4cqw; line-height: 1.12; text-shadow: 0 1px 20px #26343e; }
+.chinaRoute { display: flex; justify-content: space-between; align-items: center; padding-block: 1cqh; font-size: 4.6cqw; font-weight: 500; }
+.chinaStory { background: #dce5e8; color: #26343e; }
+.chinaStoryTitle { padding-block: 1cqh; font-size: 12.3cqw; font-weight: 500; letter-spacing: -.06em; line-height: .93; }
+.chinaStoryColumns { display: grid; grid-template-columns: 1fr 26%; gap: 8%; padding-top: 1cqh; }
+.chinaBody { display: flex; flex-direction: column; gap: 1.8cqh; font-size: clamp(14px, 2.55cqw, 17px); line-height: 1.55; }
+.chinaAside { display: flex; flex-direction: column; gap: 2cqh; border-left: 1px solid #6f828c; padding-left: 16%; }
+.chinaAside strong { display: block; font-family: "TC Lora", Georgia, serif; font-size: 11cqw; font-weight: 400; line-height: 1; }
+.chinaAside strong span { display: block; padding-top: 1cqh; font-family: "TC Golos", Arial, sans-serif; font-size: 11px; line-height: 1.4; }
+.chinaDetail { display: flex; flex-direction: column; gap: .8cqh; min-height: 0; flex: 1; padding-top: .5cqh; }
+.chinaDetail .photo { flex: 1; min-height: 60px; }
+.chinaDetail img { object-position: 50% 54%; filter: saturate(.45); }
+.chapterAction { display: flex; flex-wrap: wrap; gap: .7cqh 15px; align-items: center; justify-content: space-between; }
+.chapterAction > p { font-size: 11px; }
+.chinaStory .folio { margin-top: 0; }
+.archiveCover { background: #bd934d; color: #252c2e; }
+.archiveDisplay { position: relative; font-size: 18.6cqw; line-height: 1; letter-spacing: -.075em; font-weight: 600; padding-top: 1cqh; }
+.archiveDisplay > span { display: block; text-align: right; font-family: "TC Lora", Georgia, serif; font-weight: 400; font-size: .8em; line-height: .9; padding-top: 1%; }
+.contactSheet { position: relative; flex: 1; min-height: 0; margin-top: -3cqh; }
+.contactSheet figure { position: absolute; width: 45%; height: 57%; display: flex; flex-direction: column; gap: .7cqh; padding: 1.5%; background: #e5d7b8; box-shadow: 0 4px 9px #30291633; }
+.contactSheet figure:nth-child(1) { top: 1%; left: 2%; height: 43%; transform: rotate(-8deg); }
+.contactSheet figure:nth-child(2) { top: 24%; right: 1%; transform: rotate(7deg); }
+.contactSheet figure:nth-child(3) { bottom: 0; left: 5%; height: 48%; transform: rotate(-3deg); }
+.contactSheet .photo { flex: 1; }
+.contactSheet img { filter: saturate(.5) contrast(.94); }
+.contactSheet figcaption { display: flex; justify-content: space-between; font-size: 11px; white-space: nowrap; }
+.archiveStatement { font-family: "TC Lora", Georgia, serif; font-size: 5cqw; line-height: 1.15; }
+.archiveCredit { font-size: 11px; line-height: 1.35; }
+.archiveIndex { background: #e9e3d5; color: #34312a; }
+.archiveIntro h2 { padding-top: 1cqh; font-family: "TC Lora", Georgia, serif; font-size: 9.5cqw; font-weight: 400; letter-spacing: -.045em; line-height: 1.03; }
+.archiveIntro > p { max-width: 41ch; font-size: clamp(14px, 2.55cqw, 17px); line-height: 1.5; margin-top: 2cqh; }
+.archiveEntries { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 1cqh; }
+.archiveEntries article { flex: 1; display: grid; grid-template-columns: 10% 1fr; gap: 4%; border-top: 1px solid #7a715f; padding-block: 1.5cqh; align-content: center; }
+.archiveEntryNumber { font-size: 11px; padding-top: .3cqh; }
+.archiveEntries h3 { font-size: 5.3cqw; font-weight: 500; line-height: 1.1; letter-spacing: -.04em; }
+.archiveEntries p { margin-top: .7cqh; font-size: clamp(14px, 2.5cqw, 16px); line-height: 1.4; }
+.archiveEntries article div div > span { display: block; font-size: 11px; margin-top: .8cqh; }
+.archiveCaveat { font-size: 11px; line-height: 1.4; max-width: 56ch; }
+.povPage { background: #5b233e; color: #f2deda; gap: 1.5cqh; }
+.povHeading { padding-block: 1cqh 1.5cqh; }
+.povHeading h2 { font-size: 10cqw; font-weight: 500; letter-spacing: -.055em; line-height: .97; }
+.povHeading > span { display: block; font-family: "TC Lora", Georgia, serif; font-size: 5cqw; margin-top: 1.5cqh; color: #f2bfaa; }
+.principles { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.principles article { flex: 1; display: grid; grid-template-columns: 8% 1fr; gap: 4%; border-top: 1px solid #bc849d; padding-block: 1.6cqh; align-content: center; }
+.principles article > span { font-size: 11px; padding-top: .4cqh; color: #f2bfaa; }
+.principles h3 { font-family: "TC Lora", Georgia, serif; font-size: 4cqw; font-weight: 400; line-height: 1.2; }
+.principles p { margin-top: 1cqh; font-size: clamp(14px, 2.45cqw, 16px); line-height: 1.5; }
+.povSign { display: flex; justify-content: space-between; align-items: end; gap: 20px; padding-block: .7cqh; }
+.povSign > span { font-size: 11px; }
+.povSign img { width: 27%; height: auto; }
+.startPage { background: #ecd8d6; color: #5b233e; gap: 1.8cqh; }
+.startTitle { padding-block: 2cqh 1cqh; font-family: "TC Lora", Georgia, serif; font-size: 10.7cqw; line-height: 1.08; letter-spacing: -.06em; font-weight: 400; }
+.startTitle > span { display: block; font-size: .83em; }
+.startLead { max-width: 43ch; font-size: clamp(14px, 2.65cqw, 18px); line-height: 1.55; }
+.startActions { display: flex; flex-direction: column; align-items: start; gap: 1.5cqh; padding-block: 1.4cqh; }
+.startActions .link { font-size: 4cqw; min-height: 42px; }
+.startActions > a:last-child { display: flex; gap: 15px; align-items: center; font-size: 14px; }
+.startActions > a:last-child svg { width: 17px; height: 17px; }
+.startActions > a:last-child:hover { text-decoration: underline; text-underline-offset: 4px; }
+.startProcess { display: flex; flex-direction: column; gap: 1.5cqh; margin-top: auto; }
+.startProcess > div { display: grid; grid-template-columns: 7% 1fr; gap: .5cqh 4%; border-top: 1px solid #a26c82; padding-top: 1.2cqh; }
+.startProcess > div > span { font-size: 11px; grid-row: 1 / 3; padding-top: .3cqh; }
+.startProcess h3 { font-size: clamp(14px, 3cqw, 19px); font-weight: 500; line-height: 1.2; }
+.startProcess p { grid-column: 2; font-size: clamp(14px, 2.45cqw, 16px); line-height: 1.45; max-width: 46ch; }
+.prototypeNote { font-size: 11px; line-height: 1.4; }
+.startPage .folio { margin-top: 0; }
+
+/* Source/capture is the full printed state. Destination pending matches the
+   first keyframe before exposure; small anchors and every CTA remain readable.
+   Each chapter assembles over 2.4?3.0s, with overlapping, finite object reveals. */
+.page [data-beat="1"] { --reveal-delay: 160ms; }
+.page [data-beat="2"] { --reveal-delay: 440ms; }
+.page [data-beat="3"] { --reveal-delay: 760ms; }
+.page [data-beat="4"] { --reveal-delay: 1100ms; }
+.page[data-reveal="pending"] [data-motion="ink"] { opacity: 0; }
+.page[data-reveal="pending"] [data-motion="rise"] { opacity: 0; transform: translateY(16px); }
+.page[data-reveal="enter"] [data-motion="ink"] { animation: annotationEnter 1800ms ease-out var(--reveal-delay, 0ms) backwards; }
+.page[data-reveal="enter"] [data-motion="rise"] { animation: paragraphEnter 1900ms cubic-bezier(.2,.65,.25,1) var(--reveal-delay, 0ms) backwards; }
 .heroPage[data-reveal="pending"] .heroSlogan > span:nth-child(n+3) > span { transform: translateY(110%); }
 .heroPage[data-reveal="pending"] .heroPhotoReveal { clip-path: inset(0 100% 0 0); }
 .formatsPage[data-reveal="pending"] .formatRow > p { opacity: 0; transform: translateX(16px); }
 .nextPage[data-reveal="pending"] .nextAperture { clip-path: circle(0%); }
-.nextStoryPage[data-reveal="pending"] .nextStoryBody,
-.nextStoryPage[data-reveal="pending"] .nextAction { opacity: 0; }
+.nextStoryPage[data-reveal="pending"] .nextStoryBody { opacity: 0; }
 .thailandCover[data-reveal="pending"] .thaiStrips > div { clip-path: inset(100% 0 0); }
 .thailandStory[data-reveal="pending"] .thaiProse { opacity: 0; }
 .thailandStory[data-reveal="pending"] .peopleFigure { clip-path: inset(0 0 100%); }
 .thailandStory[data-reveal="pending"] .cityFigure { clip-path: inset(0 100% 0 0); }
-
-.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(n+3) > span { animation: typeEnter 760ms cubic-bezier(.16,1,.3,1) backwards; }
-.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(4) > span { animation-delay: 100ms; }
-.heroPage[data-reveal="enter"] .heroPhotoReveal { animation: photoSweep 1050ms cubic-bezier(.16,1,.3,1) backwards; }
-.formatsPage[data-reveal="enter"] .formatRow > p { animation: formatEnter 650ms cubic-bezier(.16,1,.3,1) backwards; }
-.formatsPage[data-reveal="enter"] .formatRow:nth-child(2) > p { animation-delay: 90ms; }
-.formatsPage[data-reveal="enter"] .formatRow:nth-child(3) > p { animation-delay: 180ms; }
-.nextPage[data-reveal="enter"] .nextAperture { animation: irisEnter 1150ms cubic-bezier(.16,1,.3,1) backwards; }
-.nextStoryPage[data-reveal="enter"] .nextStoryBody { animation: annotationEnter 800ms ease-out backwards; }
-.nextStoryPage[data-reveal="enter"] .nextAction { animation: annotationEnter 650ms ease-out 140ms backwards; }
-.thailandCover[data-reveal="enter"] .thaiStrips > div { animation: stripEnter 900ms cubic-bezier(.16,1,.3,1) backwards; }
-.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(2) { animation-delay: 100ms; }
-.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(3) { animation-delay: 200ms; }
-.thailandStory[data-reveal="enter"] .thaiProse { animation: annotationEnter 750ms ease-out backwards; }
-.thailandStory[data-reveal="enter"] .peopleFigure { animation: lettersEnter 900ms cubic-bezier(.16,1,.3,1) 80ms backwards; }
-.thailandStory[data-reveal="enter"] .cityFigure { animation: photoSweep 1000ms cubic-bezier(.16,1,.3,1) 160ms backwards; }
+.chinaCover[data-reveal="pending"] .chinaVertical { clip-path: inset(0 50%); }
+.chinaStory[data-reveal="pending"] .chinaDetail { clip-path: inset(0 100% 0 0); }
+.archiveCover[data-reveal="pending"] .contactSheet figure { opacity: 0; clip-path: inset(0 0 100%); }
+.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(n+3) > span { animation: typeEnter 2000ms cubic-bezier(.2,.65,.25,1) 300ms backwards; }
+.heroPage[data-reveal="enter"] .heroSlogan > span:nth-child(4) > span { animation-delay: 650ms; }
+.heroPage[data-reveal="enter"] .heroPhotoReveal { animation: photoSweep 2600ms cubic-bezier(.2,.65,.25,1) backwards; }
+.formatsPage[data-reveal="enter"] .formatRow > p { animation: formatEnter 2050ms cubic-bezier(.2,.65,.25,1) 150ms backwards; }
+.formatsPage[data-reveal="enter"] .formatRow:nth-child(2) > p { animation-delay: 500ms; }
+.formatsPage[data-reveal="enter"] .formatRow:nth-child(3) > p { animation-delay: 850ms; }
+.nextPage[data-reveal="enter"] .nextAperture { animation: irisEnter 2800ms cubic-bezier(.2,.65,.25,1) backwards; }
+.nextStoryPage[data-reveal="enter"] .nextStoryBody { animation: annotationEnter 2200ms ease-out 350ms backwards; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div { animation: stripEnter 2200ms cubic-bezier(.2,.65,.25,1) backwards; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(2) { animation-delay: 350ms; }
+.thailandCover[data-reveal="enter"] .thaiStrips > div:nth-child(3) { animation-delay: 700ms; }
+.thailandStory[data-reveal="enter"] .thaiProse { animation: annotationEnter 2050ms ease-out 100ms backwards; }
+.thailandStory[data-reveal="enter"] .peopleFigure { animation: lettersEnter 2300ms cubic-bezier(.2,.65,.25,1) 200ms backwards; }
+.thailandStory[data-reveal="enter"] .cityFigure { animation: photoSweep 2300ms cubic-bezier(.2,.65,.25,1) 650ms backwards; }
+.chinaCover[data-reveal="enter"] .chinaVertical { animation: urbanEnter 2800ms cubic-bezier(.2,.65,.25,1) backwards; }
+.chinaStory[data-reveal="enter"] .chinaDetail { animation: photoSweep 2400ms cubic-bezier(.2,.65,.25,1) 500ms backwards; }
+.archiveCover[data-reveal="enter"] .contactSheet figure { animation: contactEnter 2100ms cubic-bezier(.2,.65,.25,1) var(--reveal-delay, 0ms) backwards; }
 @keyframes typeEnter { from { transform: translateY(110%); } to { transform: none; } }
 @keyframes photoSweep { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 @keyframes formatEnter { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 @keyframes irisEnter { from { clip-path: circle(0%); } to { clip-path: circle(50%); } }
-@keyframes annotationEnter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes annotationEnter { from { opacity: 0; } to { opacity: var(--reveal-opacity, 1); } }
+@keyframes paragraphEnter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes lettersEnter { from { clip-path: inset(0 0 100%); } to { clip-path: inset(0); } }
 @keyframes stripEnter { from { clip-path: inset(100% 0 0); } to { clip-path: inset(0); } }
+@keyframes urbanEnter { from { clip-path: inset(0 50%); } to { clip-path: inset(0); } }
+@keyframes contactEnter { from { opacity: 0; clip-path: inset(0 0 100%); } to { opacity: 1; clip-path: inset(0); } }
 
 @media (max-height: 790px) {
   .page { gap: 1.3cqh; }
@@ -217,15 +306,19 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; }
+  .page[data-reveal="pending"] [data-motion] { opacity: var(--reveal-opacity, 1); }
+  .page[data-reveal="pending"] [data-motion="rise"],
   .page[data-reveal="pending"] .heroSlogan > span > span,
   .page[data-reveal="pending"] .formatRow > p { transform: none; opacity: 1; }
   .page[data-reveal="pending"] .heroPhotoReveal,
   .page[data-reveal="pending"] .thaiStrips > div,
   .page[data-reveal="pending"] .peopleFigure,
-  .page[data-reveal="pending"] .cityFigure { clip-path: inset(0); }
+  .page[data-reveal="pending"] .cityFigure,
+  .page[data-reveal="pending"] .chinaVertical,
+  .page[data-reveal="pending"] .chinaDetail,
+  .page[data-reveal="pending"] .contactSheet figure { clip-path: inset(0); opacity: 1; }
   .page[data-reveal="pending"] .nextAperture { clip-path: circle(50%); }
   .page[data-reveal="pending"] .nextStoryBody,
-  .page[data-reveal="pending"] .nextAction,
   .page[data-reveal="pending"] .thaiProse { opacity: 1; }
 }
 
