@@ -243,6 +243,41 @@ def test_validator_reports_malformed_nested_sections_without_raising():
         assert expected_issue in issues
 
 
+def test_validator_rejects_invalid_goal_adjustment_categories_and_points():
+    cases = [
+        ("not_a_category", 1, "references unknown category not_a_category"),
+        (
+            "trips_beginner",
+            "1",
+            "points for trips_beginner must be a positive integer",
+        ),
+        (
+            "trips_beginner",
+            0,
+            "points for trips_beginner must be a positive integer",
+        ),
+        (
+            "trips_beginner",
+            -1,
+            "points for trips_beginner must be a positive integer",
+        ),
+        (
+            "trips_beginner",
+            True,
+            "points for trips_beginner must be a positive integer",
+        ),
+    ]
+    for category, points, expected_issue in cases:
+        configuration = copy.deepcopy(load_configuration())
+        configuration["classification"]["goal_adjustments"]["trips"] = {
+            category: points
+        }
+
+        issues = validate_configuration(configuration)
+
+        assert any(expected_issue in issue for issue in issues)
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}

@@ -559,9 +559,28 @@ def validate_configuration(
         label="classification goal_adjustments",
         issues=issues,
     )
+    supported_goal_codes = {
+        option["value"]
+        for option in goal_options
+        if isinstance(option, dict) and isinstance(option.get("value"), str)
+    }
     for goal_name, adjustments in goal_adjustments.items():
         if not isinstance(adjustments, dict):
             issues.append(f"classification goal_adjustments entry {goal_name} must be an object")
+            continue
+        if goal_name not in supported_goal_codes:
+            issues.append(f"classification goal_adjustments references unknown goal {goal_name}")
+        for category, points in adjustments.items():
+            if category not in EXPECTED_CATEGORIES:
+                issues.append(
+                    f"classification goal_adjustments {goal_name} references unknown category "
+                    f"{category}"
+                )
+            if isinstance(points, bool) or not isinstance(points, int) or points <= 0:
+                issues.append(
+                    f"classification goal_adjustments {goal_name} points for {category} "
+                    "must be a positive integer"
+                )
     signal_strength = _object_section(
         classification,
         "signal_strength",
