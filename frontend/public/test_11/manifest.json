@@ -123,5 +123,41 @@
     "role": "Archive 2025 Madagascar contact print; not a journey photograph",
     "modifications": "WebP conversion, bounded to 1600x2200; CSS crops and color grading.",
     "usage": "Illustrative stock photography; not photographs of Travel Club, its team, clients, or the friends journeys."
+  },
+  {
+    "file": "hero-mountain.webp",
+    "src": "/test_11/hero-mountain.webp",
+    "width": 1350,
+    "height": 1800,
+    "bytes": 333440,
+    "alt": "Скалистая гора справа под чистым голубым небом. Иллюстративная фотография, не анонс направления.",
+    "author": "Muharrem Alper",
+    "source": "https://www.pexels.com/photo/majestic-mountain-peak-against-clear-blue-sky-35870582/",
+    "download": "https://images.pexels.com/photos/35870582/pexels-photo-35870582.jpeg?auto=compress&cs=tinysrgb&w=1500",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
+    "verified": "2026-10-19",
+    "verification": "Primary photo page identifies author and free license; Pexels license verified. Download and final local WebP visually inspected.",
+    "role": "Hero only; clean sky at upper left and rocky mountain at right/bottom. No location asserted.",
+    "modifications": "Local WebP conversion at quality 88; maximum 1800px long edge, no upscaling. CSS crop and fog overlay for hero, photo-letter masking for Thailand.",
+    "usage": "Illustrative stock photography; not photographs of Travel Club, its team, clients or the friends journeys."
+  },
+  {
+    "file": "thailand-bright.webp",
+    "src": "/test_11/thailand-bright.webp",
+    "width": 1500,
+    "height": 844,
+    "bytes": 213048,
+    "alt": "Светлая бирюзовая вода, лодки и песчаный берег в Таиланде. Иллюстративная фотография, не кадр поездки друзей.",
+    "author": "Anastasia Yudin",
+    "source": "https://www.pexels.com/photo/white-and-black-boat-on-sea-under-blue-sky-4070513/",
+    "download": "https://images.pexels.com/photos/4070513/pexels-photo-4070513.jpeg?auto=compress&cs=tinysrgb&w=1500",
+    "license": "Pexels License",
+    "licenseUrl": "https://www.pexels.com/license/",
+    "verified": "2026-10-19",
+    "verification": "Primary photo page identifies author and free license; Pexels license verified. Download and final local WebP visually inspected.",
+    "role": "Thailand cover photo letters and strips only; source identifies Thailand, no precise location or itinerary stop asserted.",
+    "modifications": "Local WebP conversion at quality 88; maximum 1800px long edge, no upscaling. CSS crop and fog overlay for hero, photo-letter masking for Thailand.",
+    "usage": "Illustrative stock photography; not photographs of Travel Club, its team, clients or the friends journeys."
   }
 ]

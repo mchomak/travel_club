@@ -20,3 +20,15 @@ The new files were downloaded from Pexels image URLs, converted locally to WebP 
 `beijing-hutong.webp` is a locally optimized copy of `/test_4/beijing-hutong.jpg`, by [Sean Xu](https://www.pexels.com/photo/traditional-hutong-alleyway-in-beijing-36355093/). It illustrates the China urban chapter and the printed archive; it is not evidence of the friends’ route or a photograph taken in 2025/2026.
 
 `madagascar-baobabs.webp` is a locally optimized copy of `/test_4/madagascar-baobabs.jpg`, by [Herve Meftah](https://www.pexels.com/photo/majestic-baobabs-lining-a-dusty-road-in-madagascar-32265190/). It illustrates the archive, not the friends’ actual trip. Both primary pages and the Pexels license were rechecked on 2026-10-19. The original shared files and manifest remain untouched. WebP conversion uses a 1600×2200 bounding box at quality 87; CSS applies the final crops and grading. All archive prints carry an explicit illustrative-stock caption.
+
+
+## Comment revisions — 19 October 2026
+
+Two additional photographs were downloaded, their primary pages and the [Pexels License](https://www.pexels.com/license/) checked on 2026-10-19, and both source JPEGs and final WebP files visually inspected. The license permits website use and modifications. The files are separate from the existing cover and archive assets, which are preserved.
+
+| Local file | Author / primary photo page | Composition |
+| --- | --- | --- |
+| `hero-mountain.webp` | [Muharrem Alper](https://www.pexels.com/photo/majestic-mountain-peak-against-clear-blue-sky-35870582/) | 1350 × 1800, 333440 bytes. Rocky mountain at the right and bottom, clear sky above and to the left for the fog overlay and actual brand SVG. No geographic location asserted. |
+| `thailand-bright.webp` | [Anastasia Yudin](https://www.pexels.com/photo/white-and-black-boat-on-sea-under-blue-sky-4070513/) | 1500 × 844, 213048 bytes. Bright turquoise water, blue sky, boats and a narrow sandy shore. The source identifies Thailand; no particular island or itinerary stop is asserted. Used only inside the Thailand cover lettering and strips. |
+
+Converted locally with Sharp at WebP quality 88, bounded to 1800px on the long edge without upscaling. No photo generation, retouching, background removal or compositing was used in the files themselves. Fog and photo-letter masks are presentation effects. Both photos remain illustrative stock, not records of Travel Club trips.
