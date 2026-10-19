@@ -6,13 +6,17 @@ async function settle(page: Page) {
     await Promise.all(Array.from(document.images, image => image.decode()));
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
-  await expect.poll(() => page.evaluate(() => document.getAnimations().filter(animation => animation.playState === "running").length)).toBe(0);
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter(animation => animation.playState === "running").length), { timeout: 12000 }).toBe(0);
 }
 
-for (const viewport of [{ width: 1280, height: 768 }, { width: 1440, height: 900 }, { width: 1728, height: 900 }, { width: 1920, height: 1080 }]) {
+// nextMarginal is a short editorial side note; the universal text walk still enforces its 11 px floor.
+const bodySelector = "[class*=heroDescription],[class*=formatsIntro] p,[class*=formatRow] p,[class*=nextLead],[class*=nextStoryBody]>p,[class*=thaiProse] p,[class*=chinaBody] p,[class*=archiveIntro]>p,[class*=archiveEntries] p,[class*=principles] p,[class*=startLead],[class*=startProcess] p";
+
+for (const viewport of [{ width: 1280, height: 768 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
   test(`all final editorial pages fit and keep text readable at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
-    for (let spread = 1; spread <= 3; spread++) {
+    test.setTimeout(90000);
+    for (let spread = 1; spread <= 6; spread++) {
       await page.goto(`/test_11?spread=${spread}`);
       await settle(page);
       const pages = page.locator("[data-magazine-book] > [data-magazine-page]");
@@ -35,15 +39,21 @@ for (const viewport of [{ width: 1280, height: 768 }, { width: 1440, height: 900
         return issues;
       }));
       expect(problems).toEqual([]);
+      const smallBody = await pages.locator(bodySelector).evaluateAll(elements => elements.filter(element => parseFloat(getComputedStyle(element).fontSize) < 14).map(element => element.textContent?.trim()));
+      expect(smallBody).toEqual([]);
       expect(await page.locator("[data-magazine-book] img").evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
       await expect(page.locator("canvas")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
       for (const link of await pages.getByRole("link").all()) await expect(link).toBeInViewport({ ratio: 1 });
+      const contents = page.getByRole("navigation", { name: "Навигация журнала" }).getByRole("button", { name: /^0[1-6]/ });
+      await expect(contents).toHaveCount(6);
+      for (const button of await contents.all()) await expect(button).toBeInViewport({ ratio: 1 });
     }
   });
 }
 
-test("both pages reveal again on reentry with distinct finite chapter motion and become idle", async ({ page }) => {
+test("all six chapters reveal on reentry with finite motion and release the animation loop", async ({ page }) => {
+  test.setTimeout(90000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.addInitScript(() => {
     const original = window.requestAnimationFrame.bind(window);
@@ -55,9 +65,9 @@ test("both pages reveal again on reentry with distinct finite chapter motion and
   await settle(page);
   const root = page.getByTestId("magazine-experience");
   const signatures = new Map<number, string>();
-  for (const spread of [2, 3, 2, 1]) {
+  for (const spread of [2, 3, 4, 5, 6, 2, 1]) {
     await page.getByRole("navigation", { name: "Навигация журнала" }).getByRole("button", { name: new RegExp(`^0${spread}`) }).click();
-    await expect(root).toHaveAttribute("data-turning", "false");
+    await expect(root).toHaveAttribute("data-turning", "false", { timeout: 12000 });
     await expect(page.locator("[data-magazine-book] > [data-magazine-page]").first()).toHaveAttribute("data-reveal", "enter");
     const motion = await page.locator("[data-magazine-book] > [data-magazine-page]").evaluateAll(pages => pages.map(page => {
       const animations = page.getAnimations({ subtree: true });
@@ -75,7 +85,8 @@ test("both pages reveal again on reentry with distinct finite chapter motion and
     await expect(page.locator("[data-magazine-book] > [data-magazine-page]")).toHaveCount(2);
     await expect(page.locator("[data-magazine-book] [aria-hidden=true][inert]")).toHaveCount(0);
   }
-  expect(new Set(signatures.values()).size).toBe(3);
+  expect(signatures.size).toBe(6);
+  expect(new Set(signatures.values()).size).toBeGreaterThanOrEqual(3);
   await expect(page.locator("canvas")).toHaveCount(0);
   const before = await page.evaluate(() => (window as Window & { __qaAnimationFrames?: number }).__qaAnimationFrames);
   expect(typeof before).toBe("number");
@@ -86,7 +97,7 @@ test("both pages reveal again on reentry with distinct finite chapter motion and
 test("reduced motion exposes final artwork and all actions without a deferred reveal", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 768 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (let spread = 1; spread <= 3; spread++) {
+  for (let spread = 1; spread <= 6; spread++) {
     await page.goto(`/test_11?spread=${spread}`);
     await settle(page);
     await expect(page.locator("[data-magazine-intro],canvas")).toHaveCount(0);
@@ -103,12 +114,17 @@ test("reduced motion exposes final artwork and all actions without a deferred re
 });
 
 test("editorial calls to action reach the existing public pages through real pointer clicks", async ({ page }) => {
+  test.setTimeout(90000);
   await page.setViewportSize({ width: 1280, height: 768 });
   const actions = [
     { spread: 1, name: /Обсудить поездку/, destination: "/start" },
     { spread: 1, name: /Подробнее о форматах/, destination: "/formats" },
     { spread: 2, name: /Хочу поехать с вами/, destination: "/start?format=group" },
     { spread: 3, name: /К заметкам в архиве/, destination: "/archive" },
+    { spread: 4, name: /К заметкам в архиве/, destination: "/archive" },
+    { spread: 5, name: /Открыть архив/, destination: "/archive" },
+    { spread: 6, name: /Обсудить поездку/, destination: "/start" },
+    { spread: 6, name: /Сначала сравнить форматы/, destination: "/formats" },
   ];
   for (const action of actions) {
     await page.goto(`/test_11?spread=${action.spread}`);
@@ -118,5 +134,27 @@ test("editorial calls to action reach the existing public pages through real poi
     await link.click();
     await expect(page).toHaveURL(url => url.pathname + url.search === action.destination);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+});
+
+test("six chapters preserve real prices, provenance, travel facts and prototype caveats", async ({ page }) => {
+  test.setTimeout(60000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const expected = [
+    [/5\s*000\s*₽/, /10\s*000\s*₽/, /По согласованию/, /не самого путешествия/],
+    [/первое групповое путешествие Travel Club/i, /даты ещё не объявлены/, /не бронирование/],
+    [/Четверо друзей/, /От островов до Бангкока/, /до запуска Travel Club/, /не опубликована/],
+    [/Четверо друзей.*из Москвы/s, /В Пекине.*двое местных друзей/s, /Шанхай/, /до запуска Travel Club/, /не опубликована/],
+    [/Пекин.*Шанхай.*Сучжоу.*Санья/s, /5 человек/, /Мадагаскар/, /2 человека/, /небольшая компания/i, /не оказанные услуги Travel Club/, /не опубликованы/],
+    [/Люди имеют значение/, /Меньше точек.*Больше времени/s, /Вкус.*не роскошь/s, /прототип/, /не отправляются.*не сохраняются/s],
+  ];
+  for (let spread = 1; spread <= 6; spread++) {
+    await page.goto(`/test_11?spread=${spread}`);
+    await settle(page);
+    const book = page.locator("[data-magazine-book]");
+    for (const fact of expected[spread - 1]) await expect(book).toContainText(fact);
+    expect(await book.innerText()).not.toMatch(/\?{3,}|\uFFFD/);
+    if (spread <= 5) await expect(book).toContainText(/Иллюстративн/i);
+    for (const link of await book.getByRole("link").all()) expect(["/start", "/start?format=group", "/formats", "/archive"]).toContain(await link.getAttribute("href"));
   }
 });

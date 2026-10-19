@@ -1,6 +1,29 @@
 ﻿# /test_11 — refinement acceptance
 
-Текущая доработка снята **18 октября 2026, 19:11 UTC** с пересобранного локального production Docker frontend: [Между строк](http://localhost:3000/test_11). Chromium **153.0.8010.12**, device scale 1. [Capture metadata](capture-results.json) содержит origin, время, реальные состояния и геометрию. Dev3001 использовался отдельно; его снимки не входят в этот каталог. [Прежняя слепая приёмка](blind-acceptance.md) сохранена как историческая и не подтверждает новую версию.
+## 19 октября — шесть глав: production evidence
+
+Новый контракт содержит **6 разворотов / 12 страниц**. Финальный capture после production rebuild с `PCFShadowMap` **19 октября, 02:08:27–02:10:18 UTC** завершился exit 0: **33 PNG**. Все 18 финальных пар в трёх размерах, оба curved turn и выбранные кадры обложки/intro/reveal лично просмотрены заново. [Текущая приёмка и таблица PNG](completion-acceptance.md), [актуальный manifest](completion-production/capture-results.json). Финальный production browser-прогон: **48/48 passed**, exit 0, **4.8 минуты**, 1 worker, output `frontend/test-results/test-11-completion-final-stable`: 25 текущих test_11 (15 magazine + 3 reveal + 7 visual), 23 legacy (6 test_10 + 11 test_7 + 6 test_8).
+
+Координатор подтвердил lint/typecheck, **119 unit tests в 26 файлах**, production build (35 маршрутов), Docker rebuild и HTTP 200; **30 защищённых SHA256** не изменены. [Независимая приёмка](completion-blind-acceptance.md) — PASS, 18 шагов без ошибок. История первых неуспешных QA-попыток и runtime-reset старого image optimizer сохранена в текущей приёмке; финальный полный прогон зелёный.
+
+Новые кадры сохранены отдельно в `completion-production/`; dev-контент туда не попадает. JSON фиксирует origin, время UTC, URL и время sample каждого PNG, `evidenceStatus`, `final`, reading progress/source/target/geometry, reveal, bounds, изображения, canvas и console. `visualReview` фиксирует личный просмотр. Все 21 settled reading states: 0 clipped text, overflow, broken images, running animations, canvas и idle-rAF drift; минимальный текст 11 px.
+
+Сняты все шесть финальных пар и обложка в 1280×768 / 1440×900 / 1920×1080; intro, curved reading leaf вперёд/назад, ранняя/средняя редакционная сборка и settled endpoint в 1440×900. Curvature 0.789285 / 0.783188, spine error 0, source/back правильные. Reveal-suite проверяет no-flash по кадрам. Финальный PNG ждёт fonts, decode и отсутствие running animations (bounded timeout 12 s). Ошибок JavaScript и предупреждения PCFSoftShadowMap нет; ReadPixels, CSS preload и Canvas2D readback сохранены в manifest. FPS/GPU memory не измерялись; история неуспешного первого capture отражена в текущей приёмке.
+
+```powershell
+$env:NO_COLOR=$null
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3000'
+$env:TEST_11_SOURCE_LABEL='local Docker production after final PCFShadowMap rebuild 2026-10-19'
+$env:TEST_11_EVIDENCE_STATUS='production-awaiting-visual-review'
+npm.cmd exec playwright test e2e/test-11-visual.spec.ts -- --workers=1 --output=test-results/test-11-completion-production-qa
+node scripts/capture-test-11.mjs
+```
+
+## Историческая приёмка трёх глав — 18 октября
+
+Все приведённые ниже **21 PNG, 45 browser checks и 119 unit baseline относятся к предыдущей версии из трёх глав**. Они не подтверждают текущие шесть глав или curved reading turn.
+
+Доработка ниже снята **18 октября 2026, 19:11 UTC** с пересобранного локального production Docker frontend: [Между строк](http://localhost:3000/test_11). Chromium **153.0.8010.12**, device scale 1. [Capture metadata](capture-results.json) содержит origin, время, реальные состояния и геометрию. Dev3001 использовался отдельно; его снимки не входят в этот каталог. [Прежняя слепая приёмка](blind-acceptance.md) сохранена как историческая.
 
 ## Production screenshots
 
