@@ -56,11 +56,16 @@ def build_research_workbook(
     hypotheses_sheet = workbook.create_sheet("Hypotheses")
 
     screening_fields = load_screening().get("fields", [])
-    screening_keys = [
-        (field["key"], field.get("label", field["key"]))
-        for field in screening_fields
-        if isinstance(field, dict) and isinstance(field.get("key"), str)
-    ]
+    screening_keys = []
+    for field in screening_fields:
+        if not isinstance(field, dict) or not isinstance(field.get("key"), str):
+            continue
+        screening_keys.append((field["key"], field.get("label", field["key"])))
+        details_key = field.get("details_key")
+        if isinstance(details_key, str):
+            screening_keys.append(
+                (details_key, field.get("details_label", details_key))
+            )
     known_screening = {key for key, _ in screening_keys}
     historical_screening = sorted(
         {

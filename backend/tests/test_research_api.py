@@ -490,7 +490,10 @@ def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(aut
         json={
             "screening_answers": {
                 "name": "=1+1",
+                "city": "Тверь",
+                "departure_city": "Москва",
                 "independent_trips_24m": "3_plus",
+                "last_trip_organizer": "С друзьями",
             }
         },
     ).json()
@@ -526,6 +529,20 @@ def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(aut
     respondent_headers = [cell.value for cell in respondents[1]]
     assert respondents.cell(2, respondent_headers.index("Name") + 1).value == "=1+1"
     assert respondents.cell(2, respondent_headers.index("Name") + 1).data_type != "f"
+    departure_city_header = "Screening: Откуда обычно вылетаете в путешествия?"
+    last_trip_organizer_header = "Screening: Бронировали сами, с друзьями или через организатора?"
+    assert departure_city_header in respondent_headers
+    assert last_trip_organizer_header in respondent_headers
+    assert "departure_city" not in respondent_headers
+    assert "last_trip_organizer" not in respondent_headers
+    assert (
+        respondents.cell(2, respondent_headers.index(departure_city_header) + 1).value
+        == "Москва"
+    )
+    assert (
+        respondents.cell(2, respondent_headers.index(last_trip_organizer_header) + 1).value
+        == "С друзьями"
+    )
 
     answers = workbook["Answers"]
     answer_headers = [cell.value for cell in answers[1]]
