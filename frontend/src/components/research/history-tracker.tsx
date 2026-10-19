@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { flushAllPendingAnswers, hasPendingAnswerDrafts } from "@/lib/research";
 
 const historyIndexKey = "__tcResearchHistoryIndex";
@@ -21,8 +20,6 @@ function indexFromState(state: unknown): number | null {
 }
 
 export function ResearchHistoryTracker() {
-  const router = useRouter();
-
   useEffect(() => {
     const history = window.history;
     const originalPushState = history.pushState;
@@ -33,7 +30,9 @@ export function ResearchHistoryTracker() {
     };
     latestHistoryIndex = Math.max(latestHistoryIndex, currentEntry.index);
     let restoringHistory = false;
+    let replayingHistory = false;
     let historyDestination: string | null = null;
+    let restoreDelta: number | null = null;
     let navigationPending = false;
 
     const updateCurrentEntry = () => {
@@ -59,28 +58,47 @@ export function ResearchHistoryTracker() {
     history.replaceState = trackedReplaceState;
 
     const guardBrowserHistory = (event: PopStateEvent) => {
+      if (replayingHistory) {
+        const expected = historyDestination;
+        if (expected && window.location.href === expected) {
+          replayingHistory = false;
+          historyDestination = null;
+          restoreDelta = null;
+          navigationPending = false;
+          updateCurrentEntry();
+          return;
+        }
+        replayingHistory = false;
+        navigationPending = false;
+      }
+
       if (restoringHistory) {
         event.preventDefault();
         event.stopImmediatePropagation();
         restoringHistory = false;
         updateCurrentEntry();
         const destination = historyDestination;
-        historyDestination = null;
         if (destination) {
           window.setTimeout(() => {
             void (async () => {
-              try {
-                const saved = await flushAllPendingAnswers().catch(() => false);
-                if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) return;
-                const target = new URL(destination);
-                await router.push(`${target.pathname}${target.search}${target.hash}`);
-              } finally {
+              const saved = await flushAllPendingAnswers().catch(() => false);
+              if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) {
+                historyDestination = null;
+                restoreDelta = null;
                 navigationPending = false;
-                updateCurrentEntry();
+                return;
               }
+              if (restoreDelta === null) {
+                historyDestination = null;
+                navigationPending = false;
+                return;
+              }
+              replayingHistory = true;
+              history.go(-restoreDelta);
             })();
           }, 0);
         } else {
+          restoreDelta = null;
           navigationPending = false;
         }
         return;
@@ -102,7 +120,7 @@ export function ResearchHistoryTracker() {
       navigationPending = true;
       historyDestination = target.href;
       restoringHistory = true;
-      const restoreDelta = target.index !== null && target.index > currentEntry.index ? -1 : 1;
+      restoreDelta = target.index !== null && target.index > currentEntry.index ? -1 : 1;
       history.go(restoreDelta);
     };
 
@@ -112,7 +130,7 @@ export function ResearchHistoryTracker() {
       if (history.pushState === trackedPushState) history.pushState = originalPushState;
       if (history.replaceState === trackedReplaceState) history.replaceState = originalReplaceState;
     };
-  }, [router]);
+  }, []);
 
   return null;
 }

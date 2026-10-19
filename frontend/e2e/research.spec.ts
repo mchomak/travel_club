@@ -30,6 +30,10 @@ test("TC Research covers creation, recoverable interview notes, history and whol
   const password = process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026";
   const respondentName = `Test interview ${Date.now()}`;
   let originalG01 = "";
+  let respondentDetailPath = "";
+  let detailHistoryIndex: number | null = null;
+  let listHistoryIndex: number | null = null;
+  let interviewHistoryLength = 0;
 
   await test.step("1. Sign in and create a fake respondent", async () => {
     await page.goto("/admin/login");
@@ -108,10 +112,28 @@ test("TC Research covers creation, recoverable interview notes, history and whol
 
   await test.step("9. Warn when navigating away with an unsaved draft", async () => {
     const detailUrl = page.url();
+    respondentDetailPath = new URL(detailUrl).pathname;
+    const detailEntry = await page.evaluate(() => ({
+      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
+      length: history.length,
+    }));
+    detailHistoryIndex = detailEntry.index;
     await page.getByRole("link", { name: "Респонденты", exact: true }).click();
     await expect(page).toHaveURL(/\/research$/);
+    const listEntry = await page.evaluate(() => ({
+      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
+      length: history.length,
+    }));
+    listHistoryIndex = listEntry.index;
+    interviewHistoryLength = listEntry.length;
     await page.evaluate(() => window.history.back());
     await expect(page).toHaveURL(detailUrl);
+    const restoredEntry = await page.evaluate(() => ({
+      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
+      length: history.length,
+    }));
+    expect(restoredEntry.index).toBe(detailHistoryIndex);
+    expect(restoredEntry.length).toBe(interviewHistoryLength);
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Заметка, введённая при временном сбое связи.");
 
     await page.route(answerRoute, (route) => route.abort());
@@ -162,6 +184,41 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
   });
 
+  await test.step("9b. Confirm browser Forward without creating a history entry", async () => {
+    await page.getByLabel("Ответ G01").fill("Confirmed browser history note.");
+    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+    await page.route(answerRoute, (route) => route.abort());
+    await page.getByLabel("Ответ G01").fill("Unsaved note before confirmed browser navigation.");
+    await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
+
+    const confirmForward = page.waitForEvent("dialog");
+    await page.evaluate(() => window.history.forward());
+    const forwardDialog = await confirmForward;
+    expect(forwardDialog.message()).toContain("ещё не подтверждены сервером");
+    await forwardDialog.accept();
+    await expect(page).toHaveURL(/\/research$/);
+
+    const destinationEntry = await page.evaluate(() => ({
+      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
+      length: history.length,
+    }));
+    expect(destinationEntry.index).toBe(listHistoryIndex);
+    expect(destinationEntry.length).toBe(interviewHistoryLength);
+
+    await page.evaluate(() => window.history.back());
+    await page.waitForURL((url) => url.pathname === respondentDetailPath);
+    const returnedEntry = await page.evaluate(() => ({
+      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
+      length: history.length,
+    }));
+    expect(returnedEntry.index).toBe(detailHistoryIndex);
+    expect(returnedEntry.length).toBe(interviewHistoryLength);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
+    await page.unroute(answerRoute);
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+  });
+
   await test.step("10–11. Confirm completion with empty questions and test cancellation first", async () => {
     await expect(page.getByText("Заполнено 1 из 11")).toBeVisible();
     await page.getByRole("button", { name: "Завершить интервью" }).click();
@@ -199,7 +256,7 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.getByLabel("Категория").selectOption("travel_design");
     await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
     await page.getByRole("link", { name: respondentName }).click();
-    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
     await page.getByLabel("Ответ G01").fill("Позднее дополнение к завершённому интервью.");
     await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
     await page.getByRole("button", { name: "Изменить анкету" }).click();
