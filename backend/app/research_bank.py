@@ -513,6 +513,9 @@ def validate_configuration(
     ]
     if any(not isinstance(value, str) for value in goal_option_values):
         issues.append("screening goal option values must be strings")
+    supported_goal_codes = {
+        value for value in goal_option_values if isinstance(value, str)
+    }
 
     categories = _array_section(
         classification, "categories", label="classification categories", issues=issues
@@ -537,6 +540,9 @@ def validate_configuration(
         label="classification priority_by_goal",
         issues=issues,
     )
+    for goal_name in priority_by_goal:
+        if goal_name not in supported_goal_codes:
+            issues.append(f"classification priority_by_goal references unknown goal {goal_name}")
     priority_values = _array_section(
         classification, "priority", label="classification priority", issues=issues
     )
@@ -559,11 +565,6 @@ def validate_configuration(
         label="classification goal_adjustments",
         issues=issues,
     )
-    supported_goal_codes = {
-        option["value"]
-        for option in goal_options
-        if isinstance(option, dict) and isinstance(option.get("value"), str)
-    }
     for goal_name, adjustments in goal_adjustments.items():
         if not isinstance(adjustments, dict):
             issues.append(f"classification goal_adjustments entry {goal_name} must be an object")
@@ -587,10 +588,20 @@ def validate_configuration(
         label="classification signal_strength",
         issues=issues,
     )
+    threshold_values: dict[str, int | float] = {}
     for threshold in ("low_max_score", "medium_max_score"):
         value = signal_strength.get(threshold)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             issues.append(f"classification signal_strength {threshold} must be numeric")
+        else:
+            threshold_values[threshold] = value
+    if (
+        len(threshold_values) == 2
+        and threshold_values["low_max_score"] >= threshold_values["medium_max_score"]
+    ):
+        issues.append(
+            "classification signal_strength low_max_score must be less than medium_max_score"
+        )
     screening_fields = {
         field.get("key"): field
         for field in [*fields, *additional_fields]

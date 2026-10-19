@@ -278,6 +278,35 @@ def test_validator_rejects_invalid_goal_adjustment_categories_and_points():
         assert any(expected_issue in issue for issue in issues)
 
 
+def test_validator_rejects_unknown_priority_by_goal_keys():
+    configuration = copy.deepcopy(load_configuration())
+    configuration["classification"]["priority_by_goal"]["trip"] = list(
+        configuration["classification"]["priority_by_goal"]["trips"]
+    )
+
+    issues = validate_configuration(configuration)
+
+    assert any("priority_by_goal references unknown goal trip" in issue for issue in issues)
+
+
+def test_validator_requires_ordered_signal_strength_thresholds():
+    cases = [
+        ("2", 4, "classification signal_strength low_max_score must be numeric"),
+        (2, 2, "low_max_score must be less than medium_max_score"),
+        (4, 2, "low_max_score must be less than medium_max_score"),
+    ]
+    for low_threshold, medium_threshold, expected_issue in cases:
+        configuration = copy.deepcopy(load_configuration())
+        configuration["classification"]["signal_strength"] = {
+            "low_max_score": low_threshold,
+            "medium_max_score": medium_threshold,
+        }
+
+        issues = validate_configuration(configuration)
+
+        assert any(expected_issue in issue for issue in issues)
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}
