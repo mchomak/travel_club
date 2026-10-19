@@ -532,8 +532,12 @@ def validate_configuration(
     if invalid_category_codes:
         issues.append("classification category codes must be strings")
     category_codes = {code for code in raw_category_codes if isinstance(code, str)}
-    if category_codes != EXPECTED_CATEGORIES:
-        issues.append("classification categories must contain the four supported category codes")
+    if (
+        len(raw_category_codes) != len(EXPECTED_CATEGORIES)
+        or len(category_codes) != len(raw_category_codes)
+        or category_codes != EXPECTED_CATEGORIES
+    ):
+        issues.append("classification categories must contain each category exactly once")
     priority_by_goal = _object_section(
         classification,
         "priority_by_goal",
@@ -553,11 +557,14 @@ def validate_configuration(
         for priority in priorities:
             if not isinstance(priority, list) or any(
                 not isinstance(category, str) for category in priority
+            ) or (
+                len(priority) != len(EXPECTED_CATEGORIES)
+                or len(set(priority)) != len(priority)
+                or set(priority) != EXPECTED_CATEGORIES
             ):
-                issues.append(f"classification {priority_key} must order all four category codes")
-                break
-            if set(priority) != EXPECTED_CATEGORIES:
-                issues.append(f"classification {priority_key} must order all four category codes")
+                issues.append(
+                    f"classification {priority_key} must order each category exactly once"
+                )
                 break
     goal_adjustments = _object_section(
         classification,

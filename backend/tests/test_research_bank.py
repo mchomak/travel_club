@@ -307,6 +307,31 @@ def test_validator_requires_ordered_signal_strength_thresholds():
         assert any(expected_issue in issue for issue in issues)
 
 
+def test_validator_rejects_duplicate_categories_in_goal_priority():
+    configuration = copy.deepcopy(load_configuration())
+    priority = configuration["classification"]["priority_by_goal"]["trips"]
+    priority.append(priority[0])
+
+    issues = validate_configuration(configuration)
+
+    assert any(
+        "priority_by_goal must order each category exactly once" in issue for issue in issues
+    )
+
+
+def test_validator_rejects_duplicate_category_entries():
+    configuration = copy.deepcopy(load_configuration())
+    categories = configuration["classification"]["categories"]
+    categories.append(copy.deepcopy(categories[0]))
+
+    issues = validate_configuration(configuration)
+
+    assert any(
+        "classification categories must contain each category exactly once" in issue
+        for issue in issues
+    )
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}
