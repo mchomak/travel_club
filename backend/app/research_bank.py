@@ -43,11 +43,11 @@ EXPECTED_SCREENING_KEYS = {
 }
 
 
-def _numeric_value(value: Any) -> float | None:
+def normalize_classification_number(value: Any) -> int | float | None:
     if isinstance(value, bool) or value is None:
         return None
     if isinstance(value, (int, float)):
-        return float(value)
+        return value
     normalized = str(value).strip().lower().replace(" ", "")
     if normalized in {"3+", "3_plus", "3ormore", "threeplus"}:
         return 3.0
@@ -161,7 +161,7 @@ def _classification_rule_is_matchable(
             issues.append(f"classification rule {rule_id} operator 'in' requires a non-empty list")
             return
     elif operator.startswith("numeric_"):
-        if _numeric_value(expected) is None:
+        if normalize_classification_number(expected) is None:
             issues.append(f"classification rule {rule_id} has a non-numeric comparison value")
             return
     elif not isinstance(expected, (str, int, float)) or isinstance(expected, bool):
@@ -185,9 +185,11 @@ def _classification_rule_is_matchable(
         }
         can_match = any(str(option).strip().casefold() in expected_values for option in options)
     else:
-        expected_number = _numeric_value(expected)
+        expected_number = normalize_classification_number(expected)
         option_numbers = [
-            number for option in options if (number := _numeric_value(option)) is not None
+            number
+            for option in options
+            if (number := normalize_classification_number(option)) is not None
         ]
         if operator == "numeric_gte":
             can_match = any(number >= expected_number for number in option_numbers)
@@ -231,6 +233,15 @@ def validate_configuration(
         issues=issues,
     )
 
+    hypotheses = bank.get("hypotheses")
+    if isinstance(hypotheses, list):
+        for hypothesis in hypotheses:
+            if not isinstance(hypothesis, dict):
+                continue
+            code = hypothesis.get("code", "<unknown>")
+            if not isinstance(hypothesis.get("text"), str) or not hypothesis["text"].strip():
+                issues.append(f"hypothesis {code} has no text")
+
     if isinstance(question_entries, list):
         for question in question_entries:
             if not isinstance(question, dict):
@@ -265,7 +276,17 @@ def validate_configuration(
         issues.append("scenarios must be a JSON array")
         scenario_entries = []
     expected_scenarios = {"trips_experienced", "trips_beginner", "travel_design", "travel_ready"}
-    scenario_names = [entry.get("code") for entry in scenario_entries if isinstance(entry, dict)]
+    raw_scenario_names = [
+        entry.get("code", "<missing>") for entry in scenario_entries if isinstance(entry, dict)
+    ]
+    invalid_scenario_names = sorted(
+        repr(code) for code in raw_scenario_names if not isinstance(code, str)
+    )
+    if invalid_scenario_names:
+        issues.append(
+            "scenario entries must have string codes: " + ", ".join(invalid_scenario_names)
+        )
+    scenario_names = [code for code in raw_scenario_names if isinstance(code, str)]
     duplicate_scenarios = sorted(
         code for code, count in Counter(scenario_names).items() if count > 1
     )

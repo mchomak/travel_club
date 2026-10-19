@@ -148,6 +148,30 @@ def test_validator_reports_non_string_scenario_and_hypothesis_refs():
     assert any("question S01 has non-string hypothesis references" in issue for issue in issues)
 
 
+def test_validator_rejects_missing_or_blank_hypothesis_descriptions():
+    for missing in (False, True):
+        configuration = copy.deepcopy(load_configuration())
+        hypothesis = configuration["bank"]["hypotheses"][0]
+        if missing:
+            hypothesis.pop("text")
+        else:
+            hypothesis["text"] = "   "
+
+        issues = validate_configuration(configuration)
+
+        assert any("hypothesis H01 has no text" in issue for issue in issues)
+
+
+def test_validator_reports_non_string_scenario_codes():
+    for invalid_code in (["trips_experienced"], {"code": "trips_experienced"}, 17, None):
+        configuration = copy.deepcopy(load_configuration())
+        configuration["scenarios"]["scenarios"][0]["code"] = invalid_code
+
+        issues = validate_configuration(configuration)
+
+        assert any("scenario entries must have string codes" in issue for issue in issues)
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}

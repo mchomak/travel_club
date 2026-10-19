@@ -1,5 +1,6 @@
 import pytest
 
+from app.research_bank import load_configuration, validate_configuration
 from app.research_domain import recommend_category
 
 
@@ -76,3 +77,39 @@ def test_upcoming_plans_alone_are_a_weak_trips_signal():
     assert result["scores"]["trips_beginner"] > 0
     assert result["signal_strength"] == "low"
     assert any("планы" in reason.lower() for reason in result["reasons"])
+
+
+def test_validator_and_scorer_agree_when_integer_precision_matters():
+    configuration = load_configuration()
+    rules = configuration["classification"]
+    rule = rules["rules"][0]
+    rule["operator"] = "numeric_equals"
+    rule["value"] = 9007199254740993
+    independent_trips = next(
+        field
+        for field in configuration["screening"]["fields"]
+        if field["key"] == "independent_trips_24m"
+    )
+    independent_trips["options"].append(
+        {"value": "9007199254740992", "label": "precision boundary"}
+    )
+
+    issues = validate_configuration(configuration)
+    result = recommend_category(
+        {"independent_trips_24m": "9007199254740992"}, rules=rules
+    )
+
+    assert any("cannot match any configured option" in issue for issue in issues)
+    assert result["scores"]["trips_experienced"] == 0
+
+
+def test_numeric_alias_accepted_by_validator_scores_equivalently():
+    configuration = load_configuration()
+    rules = configuration["classification"]
+    rules["rules"][0]["value"] = "threeplus"
+
+    assert validate_configuration(configuration) == []
+    alias_result = recommend_category({"independent_trips_24m": "3_plus"}, rules=rules)
+    numeric_result = recommend_category({"independent_trips_24m": 3}, rules=rules)
+
+    assert alias_result["scores"] == numeric_result["scores"]

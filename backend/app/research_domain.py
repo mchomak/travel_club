@@ -3,23 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from app.research_bank import load_classification_rules
-
-
-def _number(value: Any) -> int | float | None:
-    if isinstance(value, bool) or value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return value
-    normalized = str(value).strip().lower().replace(" ", "")
-    if normalized in {"3+", "3_plus", "3ormore", "threeplus"}:
-        return 3
-    if normalized.endswith("+"):
-        normalized = normalized[:-1]
-    try:
-        return float(normalized)
-    except ValueError:
-        return None
+from app.research_bank import load_classification_rules, normalize_classification_number
 
 
 def _matches(value: Any, operator: str, expected: Any) -> bool:
@@ -33,8 +17,8 @@ def _matches(value: Any, operator: str, expected: Any) -> bool:
         return str(value).strip().casefold() in {
             str(option).strip().casefold() for option in expected
         }
-    actual_number = _number(value)
-    expected_number = _number(expected)
+    actual_number = normalize_classification_number(value)
+    expected_number = normalize_classification_number(expected)
     if actual_number is None or expected_number is None:
         return False
     if operator == "numeric_gte":
