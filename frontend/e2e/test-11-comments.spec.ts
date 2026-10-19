@@ -1,5 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+test("format prices stay clear of the visible edge navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 768 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/test_11?spread=1");
+  await page.evaluate(() => document.fonts.ready);
+  const next = page.getByRole("button", { name: "Следующий разворот", exact: true });
+  await expect(next).toBeVisible();
+  const edge = (await next.boundingBox())!;
+  const prices = await page.locator("[class*=formatPrice]").all();
+  expect(prices).toHaveLength(3);
+  for (const price of prices) {
+    const box = (await price.boundingBox())!;
+    const overlapWidth = Math.min(box.x + box.width, edge.x + edge.width) - Math.max(box.x, edge.x);
+    const overlapHeight = Math.min(box.y + box.height, edge.y + edge.height) - Math.max(box.y, edge.y);
+    expect(overlapWidth <= 0 || overlapHeight <= 0, await price.innerText()).toBe(true);
+  }
+});
+
 test("reduced motion keeps both hero lines inside every clipping ancestor", async ({ page }) => {
   await page.setViewportSize({ width: 1314, height: 1244 });
   await page.emulateMedia({ reducedMotion: "reduce" });
