@@ -1,0 +1,179 @@
+{
+  "version": "1.0",
+  "categories": [
+    {
+      "code": "trips_experienced",
+      "label": "TC Trips / опытный путешественник"
+    },
+    {
+      "code": "trips_beginner",
+      "label": "TC Trips / начинающий путешественник"
+    },
+    {
+      "code": "travel_design",
+      "label": "Travel Design"
+    },
+    {
+      "code": "travel_ready",
+      "label": "Travel Ready"
+    }
+  ],
+  "priority": [
+    "trips_beginner",
+    "trips_experienced",
+    "travel_design",
+    "travel_ready"
+  ],
+  "priority_by_goal": {
+    "trips": [
+      "trips_beginner",
+      "trips_experienced",
+      "travel_design",
+      "travel_ready"
+    ],
+    "individual_services": [
+      "travel_design",
+      "travel_ready",
+      "trips_beginner",
+      "trips_experienced"
+    ]
+  },
+  "goal_adjustments": {
+    "trips": {
+      "trips_experienced": 1,
+      "trips_beginner": 1
+    },
+    "individual_services": {
+      "travel_design": 1,
+      "travel_ready": 1
+    }
+  },
+  "rules": [
+    {
+      "id": "three_or_more_independent_trips",
+      "field": "independent_trips_24m",
+      "operator": "numeric_gte",
+      "value": 3,
+      "category": "trips_experienced",
+      "points": 3,
+      "reason": "За последние 24 месяца было не менее трёх самостоятельных зарубежных поездок."
+    },
+    {
+      "id": "two_independent_trips",
+      "field": "independent_trips_24m",
+      "operator": "numeric_equals",
+      "value": 2,
+      "category": "trips_experienced",
+      "points": 2,
+      "reason": "За последние 24 месяца было две самостоятельные зарубежные поездки."
+    },
+    {
+      "id": "zero_or_one_independent_trip",
+      "field": "independent_trips_24m",
+      "operator": "numeric_lte",
+      "value": 1,
+      "category": "trips_beginner",
+      "points": 3,
+      "reason": "За последние 24 месяца была одна или ни одной самостоятельной зарубежной поездки."
+    },
+    {
+      "id": "group_trip_experience",
+      "field": "group_experience",
+      "operator": "equals",
+      "value": "yes",
+      "category": "trips_experienced",
+      "points": 1,
+      "reason": "Есть опыт организованных групповых путешествий."
+    },
+    {
+      "id": "no_group_trip_experience",
+      "field": "group_experience",
+      "operator": "equals",
+      "value": "no",
+      "category": "trips_beginner",
+      "points": 1,
+      "reason": "Нет опыта организованных групповых путешествий."
+    },
+    {
+      "id": "route_planning_difficulty",
+      "field": "preparation_difficulty",
+      "operator": "equals",
+      "value": "itinerary_design",
+      "category": "travel_design",
+      "points": 3,
+      "reason": "Наибольшая трудность связана с составлением маршрута."
+    },
+    {
+      "id": "booking_difficulty",
+      "field": "preparation_difficulty",
+      "operator": "in",
+      "value": [
+        "booking_logistics",
+        "documents_language"
+      ],
+      "category": "travel_ready",
+      "points": 2,
+      "reason": "Трудности связаны с бронированием или организационными задачами."
+    },
+    {
+      "id": "coordination_difficulty",
+      "field": "preparation_difficulty",
+      "operator": "equals",
+      "value": "coordination",
+      "category": "travel_ready",
+      "points": 2,
+      "reason": "Согласование поездки с попутчиками требует дополнительной организации."
+    },
+    {
+      "id": "time_difficulty",
+      "field": "preparation_difficulty",
+      "operator": "equals",
+      "value": "time_cost",
+      "category": "travel_ready",
+      "points": 2,
+      "reason": "Нехватка времени на подготовку может указывать на ценность организации."
+    },
+    {
+      "id": "paid_route_design",
+      "field": "paid_planning_services",
+      "operator": "equals",
+      "value": "route_design",
+      "category": "travel_design",
+      "points": 3,
+      "reason": "Уже оплачивались разработка маршрута или готовый маршрут."
+    },
+    {
+      "id": "paid_trip_organization",
+      "field": "paid_planning_services",
+      "operator": "equals",
+      "value": "trip_organization",
+      "category": "travel_ready",
+      "points": 3,
+      "reason": "Уже оплачивалась организация поездки."
+    },
+    {
+      "id": "usually_uses_organizer",
+      "field": "organization_style",
+      "operator": "equals",
+      "value": "organizer",
+      "category": "travel_ready",
+      "points": 1,
+      "reason": "Обычно поездка организуется через организатора."
+    }
+  ],
+  "signal_strength": {
+    "low_max_score": 2,
+    "medium_max_score": 4
+  },
+  "no_signal_fallback": {
+    "suggested_category": "trips_beginner",
+    "alternative_category": "travel_design",
+    "reason": "Мало данных для рекомендации; это слабый стартовый вариант, а не вывод о человеке.",
+    "signal_strength": "low"
+  },
+  "disclaimer": "Рекомендация сценария не является диагнозом или достоверным определением типа человека; интервьюер может выбрать другую категорию.",
+  "assumptions": [
+    "Начальные баллы и пороги не подтверждены исследованиями; они заданы для первого запуска и должны пересматриваться по результатам интервью.",
+    "Если данных для классификации недостаточно, основной вариант — trips_beginner, альтернативный — travel_design, сигнал слабый."
+  ]
+}
