@@ -73,8 +73,8 @@ def recommend_category(
             if category in scores and isinstance(points, int) and points > 0:
                 scores[category] += points
         if goal_adjustments:
-            goal_label = "Trips" if goal == "trips" else "?????????????? ??????"
-            reasons.append(f"???? ????????????: {goal_label}.")
+            goal_label = "Trips" if goal == "trips" else "индивидуальные услуги"
+            reasons.append(f"Цель исследования: {goal_label}.")
 
     if not evidence_matched:
         fallback = config["no_signal_fallback"]

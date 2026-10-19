@@ -95,6 +95,15 @@
       "reason": "Нет опыта организованных групповых путешествий."
     },
     {
+      "id": "upcoming_trip_plans",
+      "field": "has_upcoming_plans",
+      "operator": "equals",
+      "value": "yes",
+      "category": "trips_beginner",
+      "points": 1,
+      "reason": "Есть конкретные планы путешествия в ближайшие месяцы."
+    },
+    {
       "id": "route_planning_difficulty",
       "field": "preparation_difficulty",
       "operator": "equals",

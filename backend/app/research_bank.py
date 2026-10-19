@@ -23,6 +23,13 @@ EXPECTED_CATEGORIES = {
     "travel_design",
     "travel_ready",
 }
+SUPPORTED_CLASSIFICATION_OPERATORS = {
+    "equals",
+    "in",
+    "numeric_gte",
+    "numeric_lte",
+    "numeric_equals",
+}
 EXPECTED_SCREENING_KEYS = {
     "name",
     "age_range",
@@ -34,6 +41,22 @@ EXPECTED_SCREENING_KEYS = {
     "organization_style",
     "preparation_difficulty",
 }
+
+
+def _numeric_value(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    normalized = str(value).strip().lower().replace(" ", "")
+    if normalized in {"3+", "3_plus", "3ormore", "threeplus"}:
+        return 3.0
+    if normalized.endswith("+"):
+        normalized = normalized[:-1]
+    try:
+        return float(normalized)
+    except ValueError:
+        return None
 
 
 def _read_json(filename: str) -> dict[str, Any]:
@@ -107,9 +130,75 @@ def _validate_question_refs(
     if not isinstance(refs, list):
         issues.append(f"{label} must be a JSON array")
         return
+    non_string_refs = sorted(repr(ref) for ref in refs if not isinstance(ref, str))
+    if non_string_refs:
+        issues.append(
+            f"{label} has non-string question codes: {', '.join(non_string_refs)}"
+        )
     unknown = sorted({ref for ref in refs if isinstance(ref, str) and ref not in known_codes})
     if unknown:
         issues.append(f"{label} references unknown questions: {', '.join(unknown)}")
+
+
+def _classification_rule_is_matchable(
+    rule: dict[str, Any], screening_fields: dict[str, dict[str, Any]], issues: list[str]
+) -> None:
+    rule_id = rule.get("id", "<unknown>")
+    operator = rule.get("operator")
+    if not isinstance(operator, str) or operator not in SUPPORTED_CLASSIFICATION_OPERATORS:
+        issues.append(f"classification rule {rule_id} has unsupported operator")
+        return
+
+    field_key = rule.get("field")
+    field = screening_fields.get(field_key) if isinstance(field_key, str) else None
+    if field is None:
+        issues.append(f"classification rule {rule_id} references an unknown screening field")
+        return
+
+    expected = rule.get("value")
+    if operator == "in":
+        if not isinstance(expected, list) or not expected:
+            issues.append(f"classification rule {rule_id} operator 'in' requires a non-empty list")
+            return
+    elif operator.startswith("numeric_"):
+        if _numeric_value(expected) is None:
+            issues.append(f"classification rule {rule_id} has a non-numeric comparison value")
+            return
+    elif not isinstance(expected, (str, int, float)) or isinstance(expected, bool):
+        issues.append(f"classification rule {rule_id} has an unsupported comparison value")
+        return
+
+    raw_options = field.get("options", [])
+    if not isinstance(raw_options, list) or not raw_options:
+        return
+    options = [option.get("value") for option in raw_options if isinstance(option, dict)]
+    if operator == "equals":
+        expected_value = str(expected).strip().casefold()
+        can_match = any(
+            str(option).strip().casefold() == expected_value for option in options
+        )
+    elif operator == "in":
+        expected_values = {
+            str(value).strip().casefold()
+            for value in expected
+            if isinstance(value, (str, int, float)) and not isinstance(value, bool)
+        }
+        can_match = any(str(option).strip().casefold() in expected_values for option in options)
+    else:
+        expected_number = _numeric_value(expected)
+        option_numbers = [
+            number for option in options if (number := _numeric_value(option)) is not None
+        ]
+        if operator == "numeric_gte":
+            can_match = any(number >= expected_number for number in option_numbers)
+        elif operator == "numeric_lte":
+            can_match = any(number <= expected_number for number in option_numbers)
+        else:
+            can_match = any(number == expected_number for number in option_numbers)
+    if not can_match:
+        issues.append(
+            f"classification rule {rule_id} cannot match any configured option for {field_key}"
+        )
 
 
 def validate_configuration(
@@ -157,7 +246,15 @@ def validate_configuration(
             if not isinstance(refs, list):
                 issues.append(f"question {code} hypothesis_ids must be an array")
                 continue
-            invalid_refs = sorted({ref for ref in refs if ref not in hypothesis_codes})
+            non_string_refs = sorted(repr(ref) for ref in refs if not isinstance(ref, str))
+            if non_string_refs:
+                issues.append(
+                    f"question {code} has non-string hypothesis references: "
+                    f"{', '.join(non_string_refs)}"
+                )
+            invalid_refs = sorted(
+                {ref for ref in refs if isinstance(ref, str) and ref not in hypothesis_codes}
+            )
             if invalid_refs:
                 issues.append(
                     f"question {code} references unknown hypotheses: {', '.join(invalid_refs)}"
@@ -194,7 +291,8 @@ def validate_configuration(
             known_codes=question_codes,
             issues=issues,
         )
-        duplicates = sorted(ref for ref, count in Counter(refs).items() if count > 1)
+        string_refs = [ref for ref in refs if isinstance(ref, str)]
+        duplicates = sorted(ref for ref, count in Counter(string_refs).items() if count > 1)
         if duplicates:
             issues.append(f"scenario {code} repeats question codes: {', '.join(duplicates)}")
         for key in ("screening_question_codes", "docx_route_codes", "provided_route_codes"):
@@ -318,11 +416,17 @@ def validate_configuration(
             if not isinstance(priority, list) or set(priority) != EXPECTED_CATEGORIES:
                 issues.append(f"classification {priority_key} must order all four category codes")
                 break
+    screening_fields = {
+        field.get("key"): field
+        for field in [*fields, *screening.get("additional_fields", [])]
+        if isinstance(field, dict) and isinstance(field.get("key"), str)
+    }
     for rule in classification.get("rules", []):
         if not isinstance(rule, dict):
             issues.append("classification rules must contain objects")
             continue
-        if rule.get("category") not in EXPECTED_CATEGORIES:
+        _classification_rule_is_matchable(rule, screening_fields, issues)
+        if not isinstance(rule.get("category"), str) or rule["category"] not in EXPECTED_CATEGORIES:
             issues.append(
                 f"classification rule {rule.get('id', '<unknown>')} references an unknown category"
             )

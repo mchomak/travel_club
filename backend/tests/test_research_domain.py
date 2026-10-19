@@ -63,3 +63,16 @@ def test_missing_evidence_uses_explicit_weak_fallback():
         "travel_ready": 0,
     }
     assert "мало данных" in result["reasons"][0].lower()
+
+
+def test_goal_reason_is_readable_russian():
+    result = recommend_category({"independent_trips_24m": 2}, goal="trips")
+    assert "Цель исследования: Trips." in result["reasons"]
+
+
+def test_upcoming_plans_alone_are_a_weak_trips_signal():
+    result = recommend_category({"has_upcoming_plans": "yes"})
+    assert result["suggested_category"] == "trips_beginner"
+    assert result["scores"]["trips_beginner"] > 0
+    assert result["signal_strength"] == "low"
+    assert any("планы" in reason.lower() for reason in result["reasons"])

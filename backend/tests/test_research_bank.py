@@ -85,6 +85,69 @@ def test_validator_reports_missing_duplicate_unknown_and_broken_links():
     )
 
 
+def test_validator_rejects_classification_rules_that_cannot_match():
+    for operator in (None, "unsupported"):
+        configuration = copy.deepcopy(load_configuration())
+        rule = configuration["classification"]["rules"][0]
+        if operator is None:
+            rule.pop("operator")
+        else:
+            rule["operator"] = operator
+
+        issues = validate_configuration(configuration)
+        assert any(
+            "classification rule three_or_more_independent_trips has unsupported operator"
+            in issue
+            for issue in issues
+        )
+
+
+def test_validator_rejects_unmatchable_rule_fields_and_values():
+    cases = [
+        ("field", "not_a_screening_field", "equals", "yes", "unknown screening field"),
+        ("field", "group_experience", "equals", "purple", "cannot match any configured option"),
+        (
+            "field",
+            "independent_trips_24m",
+            "numeric_gte",
+            100,
+            "cannot match any configured option",
+        ),
+        ("field", "preparation_difficulty", "in", [], "requires a non-empty list"),
+    ]
+    for target, value, operator, comparison, expected_issue in cases:
+        configuration = copy.deepcopy(load_configuration())
+        rule = configuration["classification"]["rules"][0]
+        rule[target] = value
+        rule["operator"] = operator
+        rule["value"] = comparison
+
+        issues = validate_configuration(configuration)
+        assert any(expected_issue in issue for issue in issues)
+
+
+def test_validator_accepts_numeric_aliases_supported_by_classifier():
+    configuration = copy.deepcopy(load_configuration())
+    configuration["classification"]["rules"][0]["value"] = "threeplus"
+
+    assert validate_configuration(configuration) == []
+
+
+def test_validator_reports_non_string_scenario_and_hypothesis_refs():
+    configuration = copy.deepcopy(load_configuration())
+    scenario = configuration["scenarios"]["scenarios"][0]
+    scenario["question_codes"].extend([123, {"unexpected": "G02"}])
+    question = configuration["bank"]["questions"][0]
+    question["hypothesis_ids"].append(["H01"])
+
+    issues = validate_configuration(configuration)
+
+    assert any(
+        "scenario trips_experienced has non-string question codes" in issue for issue in issues
+    )
+    assert any("question S01 has non-string hypothesis references" in issue for issue in issues)
+
+
 def test_screening_keeps_source_questions_separate_from_added_fields():
     configuration = load_configuration()
     bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}
