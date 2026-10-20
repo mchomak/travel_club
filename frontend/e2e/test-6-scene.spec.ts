@@ -11,6 +11,152 @@ async function ready(page: Page) {
   await expect(page.getByRole("button", { name: "Final State", exact: true })).toBeEnabled({ timeout: 30000 });
 }
 
+test("switching animation presets replays six faster leaves and preserves camera tuning", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await ready(page);
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
+  await page.getByText("Camera", { exact: true }).click();
+  await range(page, "Yaw", 12);
+  const fast = page.getByRole("button", { name: "Анимация 2 · Свой темп", exact: true });
+  const start = await fast.evaluate(element => {
+    (element as HTMLButtonElement).click();
+    const host = document.querySelector('[data-testid="magazine-scene"]') as HTMLElement;
+    return { elapsed: host.dataset.elapsed, paused: host.dataset.paused };
+  });
+  expect(start).toEqual({ elapsed: "0.0000", paused: "false" });
+  await expect(fast).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("slider", { name: "Yaw", exact: true })).toHaveValue("12");
+  const scene = page.getByTestId("magazine-scene");
+  await expect(scene).toHaveAttribute("data-leaf-count", "24");
+  await page.getByRole("button", { name: "Ровно", exact: true }).click();
+  await range(page, "Количество листов", 6);
+  for (let leaf = 0; leaf < 6; leaf++) {
+    await range(page, "Sequence progress", (.93 + leaf * .41 + .17) / 3.39 * 100);
+    await expect(scene).toHaveAttribute("data-phase", `FLIP_${leaf + 1}`);
+    expect(Number(await scene.getAttribute("data-active-progress"))).toBeCloseTo(.5, 2);
+  }
+  await page.getByRole("button", { name: "Reset", exact: true }).click();
+  await expect(fast).toHaveAttribute("aria-pressed", "true");
+  await expect(scene).toHaveAttribute("data-leaf-count", "24");
+  await page.getByRole("button", { name: "Ровно", exact: true }).click();
+  await range(page, "Количество листов", 6);
+  await range(page, "Sequence progress", (3.15 / 3.39) * 100);
+  await expect(scene).toHaveAttribute("data-phase", "FLIP_6");
+  await page.getByText("Animation", { exact: true }).click();
+  await expect(page.getByRole("slider", { name: "Flip duration", exact: true })).toHaveValue("0.34");
+  await expect(page.getByRole("slider", { name: "Delay between flips", exact: true })).toHaveValue("0.07");
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  await expect(scene).toHaveAttribute("data-phase", "TARGET");
+  await expect(scene).toHaveAttribute("data-paused", "true");
+  const fastTarget = await page.screenshot({ clip: { x: 300, y: 250, width: 650, height: 400 } });
+  await page.getByRole("button", { name: "Анимация 1 · 3 листа", exact: true }).click();
+  await expect(page.getByRole("slider", { name: "Flip duration", exact: true })).toHaveValue("0.68");
+  await range(page, "Sequence progress", 38.73);
+  await expect(scene).toHaveAttribute("data-phase", "FLIP_1");
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  expect((await page.screenshot({ clip: { x: 300, y: 250, width: 650, height: 400 } })).equals(fastTarget)).toBe(true);
+});
+
+test("both animation choices respect reduced motion and fit the mobile controls", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await ready(page);
+  for (const name of ["Анимация 2 · Свой темп", "Анимация 1 · 3 листа"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-phase", "TARGET");
+    await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-paused", "true");
+    await expect(page.getByRole("button", { name, exact: true })).toBeInViewport();
+  }
+  expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight])).toEqual([390, 844]);
+});
+
+test("custom count and draggable speed curve persist across variant switches", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 }); await ready(page);
+  const scene = page.getByTestId("magazine-scene");
+  await page.getByRole("button", { name: "Анимация 2 · Свой темп", exact: true }).click();
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
+  await page.getByRole("spinbutton", { name: "Количество листов числом" }).fill("120");
+  await expect(scene).toHaveAttribute("data-leaf-count", "120");
+  await page.getByRole("button", { name: "Ровно", exact: true }).click();
+  expect(Number(await scene.getAttribute("data-total"))).toBeCloseTo(50.13, 3);
+  await range(page, "Sequence progress", 49.89 / 50.13 * 100);
+  await expect(scene).toHaveAttribute("data-phase", "FLIP_120");
+  expect(Number(await scene.getAttribute("data-active-progress"))).toBeCloseTo(.5, 2);
+  await page.getByRole("button", { name: "Точка кривой 2", exact: true }).click();
+  await range(page, "Позиция точки", 38);
+  await range(page, "Темп точки", 3);
+  await expect(page.getByRole("slider", { name: "Позиция точки" })).toHaveValue("38");
+  await page.getByRole("button", { name: "Быстро → медленно", exact: true }).click();
+  const graph = page.getByRole("img", { name: "Кривая темпа" });
+  await graph.scrollIntoViewIfNeeded();
+  const box = (await graph.boundingBox())!, circle = (await graph.locator('[data-curve-point="4"]').boundingBox())!;
+  await page.mouse.move(circle.x + circle.width / 2, circle.y + circle.height / 2);
+  await page.mouse.down();
+  // Drag the endpoint left/down: its position stays pinned to the final leaf.
+  await page.mouse.move(box.x + box.width * .8, box.y + 119 / 148 * box.height, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.getByRole("slider", { name: "Позиция точки" })).toBeDisabled();
+  await expect(page.getByRole("slider", { name: "Позиция точки" })).toHaveValue("100");
+  const tempo = await page.getByRole("slider", { name: "Темп точки" }).inputValue();
+  expect(Number(tempo)).toBeLessThan(.45);
+  const duration = await scene.getAttribute("data-total");
+  await page.screenshot({ path: info.outputPath("custom-speed-curve.png") });
+  await page.getByRole("button", { name: "Анимация 1 · 3 листа", exact: true }).click();
+  await expect(page.getByRole("slider", { name: "Количество листов" })).toHaveCount(0);
+  await expect(scene).toHaveAttribute("data-leaf-count", "3");
+  await page.getByRole("button", { name: "Анимация 2 · Свой темп", exact: true }).click();
+  await expect(scene).toHaveAttribute("data-leaf-count", "120");
+  await expect(scene).toHaveAttribute("data-total", duration!);
+  await page.getByRole("button", { name: "Точка кривой 5", exact: true }).click();
+  await expect(page.getByRole("slider", { name: "Темп точки" })).toHaveValue(tempo);
+  await page.getByRole("button", { name: "Final State", exact: true }).click();
+  await expect(scene).toHaveAttribute("data-phase", "TARGET");
+  const frames = await scene.getAttribute("data-frames"); await page.waitForTimeout(180);
+  expect(await scene.getAttribute("data-frames")).toBe(frames);
+});
+
+test("mobile count and curve edits retain the stationary reduced-motion target", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ reducedMotion: "reduce" }); await ready(page);
+  await page.getByRole("button", { name: "Анимация 2 · Свой темп", exact: true }).click();
+  await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
+  await range(page, "Количество листов", 80);
+  await page.getByRole("button", { name: "Точка кривой 3", exact: true }).click();
+  const tempo = page.getByRole("slider", { name: "Темп точки" });
+  await tempo.scrollIntoViewIfNeeded(); await tempo.focus(); await tempo.press("End");
+  await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-leaf-count", "80");
+  await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-phase", "TARGET");
+  await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-paused", "true");
+  await expect(page.getByRole("slider", { name: "Темп точки" })).toBeInViewport();
+  expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight])).toEqual([390, 844]);
+});
+
+test("opening does not reveal a second printed cover behind the moving leaf", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await ready(page);
+  // At this time the cover has passed vertical, but has not landed on the left.
+  await range(page, "Sequence progress", 19);
+  await expect(page.getByTestId("magazine-scene")).toHaveAttribute("data-phase", "OPENING");
+  await page.screenshot({ path: info.outputPath("opening-before-touchdown.png") });
+  // This patch lies outside the turning cover. It must remain Cloud space;
+  // the prematurely visible duplicate used to fill it with black printed paper.
+  const patch = await page.screenshot({ clip: { x: 250, y: 590, width: 32, height: 40 } });
+  const darkFraction = await page.evaluate(async bytes => {
+    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: "image/png" }));
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext("2d")!;
+    context.drawImage(bitmap, 0, 0); bitmap.close();
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let dark = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i] < 100 && pixels[i + 1] < 100 && pixels[i + 2] < 100) dark++;
+    }
+    return dark / (pixels.length / 4);
+  }, [...patch]);
+  expect(darkFraction).toBeLessThan(.02);
+});
+
 test("seek, replay, pause, final, reset and immediate tuning", async ({ page }, info) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   const warnings: string[] = [];
@@ -116,8 +262,8 @@ test("every tuning group wakes the stationary renderer without restarting the se
   await page.getByRole("button", { name: "Final State", exact: true }).click();
   await page.getByRole("button", { name: "Tuning controls +", exact: true }).click();
   const groups = [
-    ["Camera", [["Distance", 11], ["FOV", 34], ["Pitch", 21], ["Yaw", 5], ["Roll", 0]]],
-    ["Magazine", [["Scale", .9], ["Overall tilt", 0], ["Page thickness", .006]]],
+    ["Camera", [["Distance", 11], ["FOV", 34], ["Pitch", 21], ["Yaw", 5], ["Roll", 3]]],
+    ["Magazine", [["Scale", .9], ["Overall tilt", 2], ["Page thickness", .006]]],
     ["Page", [["Bend", 2.3], ["Curl", 1], ["Stiffness", .3], ["Lift", .5]]],
     ["Light & shadow", [["Ambient intensity", 2], ["Main light intensity", 2.5], ["Light X", -1], ["Light Y", 2], ["Light Z", 10], ["Shadow strength", .22], ["Shadow softness", 5]]],
     ["Animation", [["Flip duration", .8], ["Delay between flips", .2]]],
