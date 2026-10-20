@@ -1,0 +1,156 @@
+{
+  "time": "2026-10-20T23:37:24.484Z",
+  "origin": "http://localhost:3113",
+  "pairs": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 1,
+      "elements": 116,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 2,
+      "elements": 80,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 3,
+      "elements": 81,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 4,
+      "elements": 95,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 5,
+      "elements": 80,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 6,
+      "elements": 98,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "spread": 7,
+      "elements": 92,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 1,
+      "elements": 116,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 2,
+      "elements": 80,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 3,
+      "elements": 81,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 4,
+      "elements": 95,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 5,
+      "elements": 80,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 6,
+      "elements": 98,
+      "domEqual": true,
+      "pngByteEqual": true
+    },
+    {
+      "viewport": {
+        "width": 1100,
+        "height": 700
+      },
+      "spread": 7,
+      "elements": 92,
+      "domEqual": true,
+      "pngByteEqual": true
+    }
+  ],
+  "behavior": [
+    "WebGL intro ready → Enter → target reading chapter1 + book focus",
+    "ArrowRight → chapter2: GPU turn, handoff endpoint error<1, canvas cleanup",
+    "ArrowLeft → chapter1: GPU turn, handoff endpoint error<1, canvas cleanup",
+    "Back→2 / Forward→1",
+    "Repeated spread normalizes to1; unrelated query preserved",
+    "1099x700 original fallback + /test_8 link"
+  ],
+  "errors": [],
+  "pass": true
+}

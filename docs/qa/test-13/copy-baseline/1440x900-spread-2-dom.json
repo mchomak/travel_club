@@ -1,0 +1,2242 @@
+[
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": "Travel Club — интерактивный журнал",
+    "current": null,
+    "bounds": [
+      51.203,
+      10,
+      1337.594,
+      835.984
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "16px",
+      "24px",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgb(241, 237, 223)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      40.094,
+      608.609,
+      25.953
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "02 / О НАС",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      40.094,
+      61.766,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "People behind the journey",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      542.203,
+      40.094,
+      147.703,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      79.547,
+      608.609,
+      81.219
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "31.952px",
+      "36.7448px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BR",
+    "text": "",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      323.297,
+      84.297,
+      0,
+      41
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "31.952px",
+      "36.7448px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      174.266,
+      608.609,
+      118.281
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "H2",
+    "text": "Василиса",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      182.016,
+      608.609,
+      79.609
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "77.2934px",
+      "79.6122px",
+      "500"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Сооснователь Travel Club",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      266.266,
+      608.609,
+      18.531
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "12.7808px",
+      "18.5322px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      306.047,
+      608.609,
+      368.016
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "FIGURE",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      309.922,
+      298.203,
+      360.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      309.922,
+      298.203,
+      360.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgb(223, 229, 231)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "В",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      91.172,
+      325.25,
+      117.359,
+      188.672
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "188.669px",
+      "188.669px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "0.12",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Фото Василисы",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      106.141,
+      604.578,
+      248.516,
+      19.719
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "16.4325px",
+      "19.7189px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SMALL",
+    "text": "Место для настоящего портрета",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      106.141,
+      630.5,
+      248.516,
+      14.844
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11px",
+      "14.85px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      409.922,
+      309.922,
+      279.984,
+      360.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "H3",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      409.922,
+      309.922,
+      279.984,
+      56.469
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "24.3444px",
+      "28.2395px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BR",
+    "text": "",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      593.969,
+      307.922,
+      0,
+      31
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "24.3444px",
+      "28.2395px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Знакомство и общение с путешественниками, атмосфера и социальная сторона поездок.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      409.922,
+      380.344,
+      279.984,
+      65.719
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Сопровождение участников и участие в разработке travel-продуктов.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      409.922,
+      460.016,
+      279.984,
+      43.813
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      695.313,
+      608.609,
+      79.5
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Сначала — поездки друзей",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      707.938,
+      608.609,
+      17.641
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "12.1722px",
+      "17.6497px",
+      "500"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Мы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      731,
+      515.953,
+      43.813
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "FOOTER",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      788.313,
+      608.609,
+      27.578
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Travel Club / Люди и путешествия",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      81.297,
+      800.625,
+      194.422,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "04",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      673.906,
+      799,
+      16,
+      16.891
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "13px",
+      "16.9px",
+      "400"
+    ],
+    "paint": [
+      "rgb(23, 47, 80)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      40.094,
+      608.609,
+      25.953
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Travel Club / Основатели",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      40.094,
+      143.297,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Два равноправных взгляда",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1201.438,
+      40.094,
+      157.266,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      79.547,
+      608.609,
+      81.219
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "31.952px",
+      "36.7448px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BR",
+    "text": "",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1007.813,
+      84.297,
+      0,
+      41
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "31.952px",
+      "36.7448px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      174.266,
+      608.609,
+      118.281
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "H2",
+    "text": "Рамиль",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      182.016,
+      608.609,
+      79.609
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "77.2934px",
+      "79.6122px",
+      "500"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Сооснователь Travel Club",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      266.266,
+      608.609,
+      18.531
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "12.7808px",
+      "18.5322px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      306.047,
+      608.609,
+      346.109
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "FIGURE",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1060.5,
+      309.922,
+      298.203,
+      338.359
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1060.5,
+      309.922,
+      298.203,
+      338.359
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgb(48, 72, 100)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Р",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1070.375,
+      324.375,
+      114.328,
+      188.672
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "188.669px",
+      "188.669px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "0.12",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Фото Рамиля",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1085.344,
+      582.672,
+      248.516,
+      19.719
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "16.4325px",
+      "19.7189px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SMALL",
+    "text": "Место для настоящего портрета",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1085.344,
+      608.594,
+      248.516,
+      14.844
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11px",
+      "14.85px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      309.922,
+      279.984,
+      338.359
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "H3",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      309.922,
+      279.984,
+      56.469
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "24.3444px",
+      "28.2395px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BR",
+    "text": "",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      852.328,
+      307.922,
+      0,
+      31
+    ],
+    "type": [
+      "\"TC Lora\", Georgia, serif",
+      "24.3444px",
+      "28.2395px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Технологии, цифровая инфраструктура, финансы и организационные процессы.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      380.344,
+      279.984,
+      65.719
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Развитие проекта и участие в разработке travel-продуктов.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      460.016,
+      279.984,
+      43.813
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      673.406,
+      608.609,
+      101.406
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "17px",
+      "24.65px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Из этого опыта вырос Travel Club",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      686.031,
+      608.609,
+      17.641
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "12.1722px",
+      "17.6497px",
+      "500"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "P",
+    "text": "Индивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      709.094,
+      515.953,
+      65.719
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "14.6066px",
+      "21.9099px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "FOOTER",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      788.313,
+      608.609,
+      27.578
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Travel Club / Системы и путешествия",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      750.094,
+      800.625,
+      213.797,
+      15.266
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "11.7462px",
+      "15.27px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "05",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1343.094,
+      799,
+      15.609,
+      16.891
+    ],
+    "type": [
+      "\"TC Golos\", Arial, sans-serif",
+      "13px",
+      "16.9px",
+      "400"
+    ],
+    "paint": [
+      "rgb(242, 240, 234)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "NAV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": "Навигация журнала",
+    "current": null,
+    "bounds": [
+      51.203,
+      853.984,
+      1337.594,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "16px",
+      "24px",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      51.203,
+      853.984,
+      119.469,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "16px",
+      "24px",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": "Обложка",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      51.203,
+      853.984,
+      73.469,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(223, 202, 188)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": "←",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": "Previous",
+    "current": null,
+    "bounds": [
+      126.672,
+      853.984,
+      44,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "20px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      432.969,
+      853.984,
+      649.531,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "16px",
+      "24px",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      432.969,
+      853.984,
+      79.453,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "01",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      440.969,
+      869.484,
+      13.641,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Услуги",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      460.609,
+      867.984,
+      43.813,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": "page",
+    "bounds": [
+      519.609,
+      853.984,
+      71.484,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "600"
+    ],
+    "paint": [
+      "rgb(255, 245, 233)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "02",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      527.609,
+      869.484,
+      13.625,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "600"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "О нас",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      547.234,
+      867.984,
+      35.859,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "600"
+    ],
+    "paint": [
+      "rgb(255, 245, 233)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      598.281,
+      853.984,
+      138.422,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "03",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      606.281,
+      869.484,
+      13.266,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Первая поездка",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      625.547,
+      867.984,
+      103.156,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      743.891,
+      853.984,
+      88.563,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "04",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      751.891,
+      869.484,
+      13.641,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Таиланд",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      771.531,
+      867.984,
+      52.922,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      839.641,
+      853.984,
+      73.625,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "05",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      847.641,
+      869.484,
+      13.203,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Китай",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      866.844,
+      867.984,
+      38.422,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      920.453,
+      853.984,
+      74.359,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "06",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      928.453,
+      869.484,
+      13.484,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Архив",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      947.938,
+      867.984,
+      38.875,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1002,
+      853.984,
+      80.5,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "07",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1010,
+      869.484,
+      13.641,
+      13
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(203, 180, 167)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Начать",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1029.641,
+      867.984,
+      44.859,
+      16
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "13px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "DIV",
+    "text": null,
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      1344.797,
+      853.984,
+      44,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "16px",
+      "24px",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "SPAN",
+    "text": "Листайте стрелками",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": null,
+    "current": null,
+    "bounds": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "11px",
+      "16.5px",
+      "400"
+    ],
+    "paint": [
+      "rgb(193, 187, 169)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  },
+  {
+    "tag": "BUTTON",
+    "text": "→",
+    "href": null,
+    "src": null,
+    "alt": null,
+    "label": "Next",
+    "current": null,
+    "bounds": [
+      1344.797,
+      853.984,
+      44,
+      44
+    ],
+    "type": [
+      "\"TC Golos\", \"Segoe UI\", sans-serif",
+      "20px",
+      "normal",
+      "400"
+    ],
+    "paint": [
+      "rgb(241, 223, 209)",
+      "rgba(0, 0, 0, 0)",
+      "1",
+      "none",
+      "none"
+    ]
+  }
+]
