@@ -16,3 +16,9 @@
 - Complete initial test_11 copy parity: copy-parity.md. Intro/capture/reading engines unchanged.
 - Shell nav uses optional navLabel ?? title; count from SPREADS.length. Full book CTA area preserved; finite closed-state CSS pulse applies to ready GPU canvas and waiting DOM, removed on open.
 - Executor checks: lint/typecheck, 113 unit tests, GPU ready cue + Space target, reduced Enter, 44px nav and viewport fit.
+
+## Ticket02 built
+- SPREADS seven readonly title/navLabel entries; physical folios02-15.
+- FOUNDER_PHOTOS: Record<vasilisa|ramil,{src:string|null,alt:string,position:string}>; named honest placeholders switch to supplied real portraits via config.
+- Printable MagazineCover/MagazineSpread contracts unchanged. Old10chapter pages differ only folio numbers.
+- Source reviewed by Manifest/Spec and Craft; stale copied README and missing CSS class corrected. Root lint/typecheck113unit pass.
