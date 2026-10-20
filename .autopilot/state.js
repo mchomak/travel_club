@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "test-12",
-  "dir": "2026-10-20-test-12--wip",
+  "dir": "2026-10-20-test-12",
   "title": "Travel Club TEST_12",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-20T02:25:14+03:00",
-  "updatedAt": "2026-10-20T05:07:58+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-20T05:10:56+03:00",
+  "finishedAt": "2026-10-20T05:10:56+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -59,15 +59,16 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-10-20T05:02:04+03:00",
-      "note": "Production checks and blind acceptance; source complete."
+      "note": "Production checks and blind acceptance; source complete.",
+      "finishedAt": "2026-10-20T05:10:56+03:00"
     }
   ],
   "requirements": {
     "total": 73,
-    "done": 72,
-    "inTicket": 1,
+    "done": 73,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -290,11 +291,20 @@ window.STATE =
       "zone": [
         "test-12 tests/docs"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-10-20T02:35:16+03:00"
+      "startedAt": "2026-10-20T02:35:16+03:00",
+      "commit": "bf17f3d",
+      "finishedAt": "2026-10-20T05:10:56+03:00",
+      "tests": {
+        "productionBrowser": 36,
+        "postPushBrowser": 4,
+        "productionCaptures": 39,
+        "controlComparisons": 15,
+        "unit": 113
+      }
     }
   ],
   "singlePass": null,
@@ -315,7 +325,9 @@ window.STATE =
     "productionHTTP": 200,
     "finalLint": "passed",
     "finalTypecheck": "passed",
-    "finalUnit": 113
+    "finalUnit": 113,
+    "postPushBrowser": 4,
+    "postPushHTTP": 200
   },
   "debt": {
     "placeholders": [
@@ -356,9 +368,16 @@ window.STATE =
   },
   "blind": {
     "agent": "/root/blind",
-    "verdict": "PASS",
+    "verdict": "PASS; source committed, pushed, production rebuilt after push",
     "drift": [],
     "evidence": "docs/qa/test-12/blind-acceptance.md",
-    "remaining": "Coordinator commit/push/post-push rebuild"
+    "remaining": null
+  },
+  "git": {
+    "branch": "codex/test-12",
+    "sourceCommit": "bf17f3d5409c50cddf9d6f32c22b0ea0199a396e",
+    "sourcePush": "remote HEAD matched source commit",
+    "postPushRebuild": "Docker production build exit0, isolated container restarted, HTTP200,4browser smoke passed",
+    "preview": "http://localhost:3013/test_12"
   }
 }

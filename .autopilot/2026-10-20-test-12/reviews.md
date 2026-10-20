@@ -34,3 +34,6 @@ Autopilot sync.py автоматически запускает сервер ч�
 Fresh agent `/root/blind` получил только первоначальный бриф и готовый repo/runtime. Spec/manifest/tickets/наши тесты/QA summaries не читались. Результат: PASS, функциональных расхождений нет. Реальный путь 1→7→1, direct selection, ArrowLeft/Right, history, 21 URL×viewport samples без выходов текста/CTA или broken images, Enter/Space, reduced motion, оба CTA и old TEST_11 opening/Next. Отчёт `docs/qa/test-12/blind-acceptance.md`.
 
 Предел независимой проверки: сам агент lint/build не повторял; эти команды отдельно выполнены координатором с exit 0. Некритичные favicon404/CSS preload/Canvas readback warnings записаны, без критических ошибок приложения. Портреты признаны разрешёнными честными placeholders. Drift с манифестом отсутствует.
+
+## Доставка
+`bf17f3d` отправлен в origin/codex/test-12, remote HEAD совпал. После push повторный Docker production build прошёл; перезапущен только собственный preview контейнер без mounts, identity проверена перед удалением. HTTP 200; post-push browser smoke 4 passed / 26.2 s: все семь URL, Enter, Space, GPU turn. Старый frontend 3000 оставался запущен. G03 выполнено. Итоговая техническая запись сохраняется отдельным коммитом без изменений исполняемого кода.
