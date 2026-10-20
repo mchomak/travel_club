@@ -1,41 +1,56 @@
-# /test_11 — Между строк
+﻿# /test_12 — Между строк
 
-Изолированный noindex editorial experiment для окна от **1100 × 700 px**. Основной сайт и `/test_10` не меняет. Шесть разворотов / двенадцать страниц: Hero + Formats, Next Issue, Thailand ’26, China ’26, Archive ’25, Point of View + Start. Фотографии иллюстративные; Field Notes описывают поездки друзей до запуска клуба. Next Issue остаётся в подготовке.
+Independent noindex iteration of `/test_11`, supported from **1100 × 700 px**. The original routes, shared design system, assets and backend remain read-only. Seven spreads / fourteen reading pages:
 
-## Карта
+| Chapter | Contents label | Editorial title | Folios |
+| --- | --- | --- | --- |
+| 1 | Услуги | Hero + Formats | 02–03 |
+| 2 | О нас | О нас | 04–05 |
+| 3 | Первая поездка | Next Issue | 06–07 |
+| 4 | Таиланд | Thailand ’26 | 08–09 |
+| 5 | Китай | China ’26 | 10–11 |
+| 6 | Архив | Archive ’25 | 12–13 |
+| 7 | Начать | Point of View + Start | 14–15 |
 
-- `../../app/test_11/page.tsx` — metadata и серверный разбор `spread=1`–`6`; query открывает журнал сразу. Неизвестные/повторённые значения нормализуются в 1 с сохранением остальных query.
-- `magazine-experience.tsx` — единственный владелец индекса, turn lock, history, клавиатуры, краевых кнопок, оглавления и фокуса. Количество глав берётся из `SPREADS.length`. Временные страницы `inert` и `aria-hidden`.
-- `magazine-intro.tsx` — distant cover, ожидающая нажатия без таймера. Прозрачная семантическая кнопка на весь viewport принимает клик по обложке/фону и Enter/Space; ранний клик сохраняется до загрузки. «Обложка» сохраняет текущую главу при повторном открытии.
-- `intro-scene.ts`, `capture-page.ts` — локальная физическая WebGL-сцена на основе read-only test_7/test_8 fast preset: настоящая обложка, восемь декоративных листов, движение камеры к первому живому Hero + Formats. Листы не становятся главами. На TARGET сцена, canvas и её ресурсы освобождаются; skip, resize, context loss и reduced motion дают читаемый fallback. В скрытой вкладке часы сцены приостановлены.
-- `reading-turn.tsx` — захватывает настоящие source-static и target-pending страницы. До готовности текстур сохраняет исходный разворот. Таймаут capture 6 s и ошибки запускают CSS fallback; resize, reduced motion и unmount безопасно завершают/освобождают переход.
-- `reading-turn-engine.ts` — transient WebGL-лист: `deformPage` из read-only `test_7`, 64×16 сегментов, отдельные лицо/оборот и тень, фиксированная ортографическая камера. Движение занимает 1000 ms после подготовки. Скрытая вкладка приостанавливает часы. После финала/context loss уничтожаются geometry, materials, textures, renderer, canvas и rAF. Hooks `data-reading-turn`, `data-progress`, `data-front/back`, `data-geometry` описывают реальный кадр и деформацию.
-- `magazine.module.css` — тёплое oxblood/plum окружение, размеры книги, сгиб/края, CSS fallback reading turn, навигация, малый viewport и reduced motion. В спокойном чтении нет canvas и rAF.
-- `spreads.tsx` — `MagazineCover()` и `MagazineSpread({ index, side?, animate?, reveal? })`; `side` — `left | right`, `index` — 0–5; `RevealPhase` — `static | pending | enter`. По умолчанию финальная печатная `static` композиция безопасна для capture.
-- `spreads.module.css` — двенадцать страниц, printable cover и конечные редакционные reveal примерно 2.4–3.2 s. `pending` с первого paint сохраняет якорные объекты и скрывает только отложенные; `enter` раскрывает их из той же позы. Shell применяет pending также к обороту листа и проекции intro, затем enter без промежуточного финального кадра. Hero — маски строк/горизонтальный кадр, Next — ирис, Thailand — буквы и полосы, China — вертикальный городской кадр/текст, Archive — последовательность отпечатков, финал — принципы и шаги разговора. Reduced motion сразу показывает финал.
-- `data.ts` — `SPREADS`, `FORMATS`, `PHOTOS`. Фотографии локальны в `public/test_11`; источники/лицензии — в его `manifest.json` и `README.md`. Логотипы читаются из `public/test_9`, TC Golos/TC Lora — из существующего набора шрифтов.
+The cover is separate from these chapters. Field Notes describe private trips with friends before the club launched; the photographs remain illustrative. Next Issue is in preparation. Existing functional `/formats`, `/start` and `/archive` pages are unchanged; `/start` remains a prototype.
 
-Книга имеет aspect ratio 1.6 и размер `min(100vw - 72px, (100svh - 64px) * 1.6)`. Ниже поддержанного размера показывается ссылка на `/test_8`. CTA ведут на существующие `/start`, `/formats`, `/start?format=group`, `/archive`; `/start` остаётся прототипом.
+## Files and contracts
 
-Правки по комментариям 19 октября: hero использует отдельный `PHOTOS.hero` на всю площадь artwork, navy SVG и две уменьшенные строки слогана. Настоящий DOM-слой `heroFog` содержит размытую копию фото и светлый градиент: его можно захватить в текстуру листания без `backdrop-filter` и псевдоэлементов. Тайская обложка использует `PHOTOS.thailandCover`; `coast` на обложке журнала и `nature` в архиве сохранены. Заголовок услуг и тайский маршрут однострочные. В финале CTA расположен после трёх шагов, рядом с пояснением о демонстрационной форме. `e2e/test-11-comments.spec.ts` проверяет геометрию этих строк, порядок CTA и переход в `/start`.
+- `../../app/test_12/page.tsx` owns metadata and the server parser for `spread=1`–`7`. A spread query opens reading directly. Invalid/repeated values normalize to 1 while preserving unrelated query parameters.
+- `data.ts` centralizes `SPREADS` (`title`, `navLabel`), `FORMATS`, `FOUNDER_PHOTOS`, existing `PHOTOS`, archive records and principles. The navigation uses `navLabel`; the printed chapters retain their editorial titles.
+- `magazine-experience.tsx` owns the single chapter index, navigation lock, keyboard, edge controls, compact contents, focus and browser history. It derives the chapter count from `SPREADS.length`. Temporary pages are inert and aria-hidden.
+- `magazine-intro.tsx` and `magazine.module.css` add a visible opening cue and a finite closed-cover pulse. Opening remains a semantic keyboard-accessible button. The effects stop during opening; reduced motion presents a static state. Returning to the cover retains the current chapter.
+- `intro-scene.ts`, `capture-page.ts`, `reading-turn.tsx`, `reading-turn-engine.ts` preserve the copied TEST_11 camera, timing, capture, physical page deformation, fallback and cleanup contracts. They read existing geometry from test_7/test_8. Idle reading has no engine canvas or requestAnimationFrame loop.
+- `spreads.tsx` exports `MagazineCover()` and `MagazineSpread({ index, side?, animate?, reveal? })`. `index` is 0–6, `side` is `left | right`, and exported `RevealPhase` is `static | pending | enter`. Static is the complete printable capture state.
+- `spreads.module.css` owns cover and reading compositions, including the new founder pair and refined service list. Existing Next Issue, Thailand, China, Archive and Point of View + Start retain their content, artwork, type and reveal, with only the folios shifted.
 
-## Проверка и screenshots
+## Editorial changes
 
-Из `frontend/` в PowerShell, при работающем production frontend:
+Hero retains the existing mountain, original navy SVG signature and slogan. Its short caption identifies Travel Club as an independent travel editorial project. Services lead with Travel Design / Travel Ready / TC Trips, Russian purpose, concrete benefit and price. Travel Design and Travel Ready prices explicitly cover the club's services; travel expenses are separate. A compact top-right `/start` link and a separate lower `/formats` link replace the duplicated hero action.
+
+About uses the existing Cloud (`#F2F0EA`), Navy (`#172F50`) and Ink palette, bundled TC Golos / TC Lora, large names and mirrored portrait/text columns. Василиса / Рамиль are equal cofounders. The shared origin follows real independent travel with friends, organizing trips, planning routes and exploring places. It introduces individual services and authored group journeys without turning earlier trips into commercial work.
+
+## Replace the two founder portraits
+
+There are no verified founder portraits in the available assets. Each page deliberately displays a named portrait area and states that the real portrait will appear later. No stock or generated person stands in for either founder.
+
+In `data.ts`, set `FOUNDER_PHOTOS.vasilisa.src` and `FOUNDER_PHOTOS.ramil.src` to the paths of the supplied real images. Set each `alt` to an accurate description and adjust `position` (CSS object-position, default `50% 50%`) to frame the face. For example, a supplied file in `public/test_12/` uses a `/test_12/...` source. The `FounderPortrait` component switches automatically from the labelled area to the photograph; no layout changes are needed. Do not relabel an illustrative travel photo as a founder.
+
+Travel photographs remain in `public/test_11/`; their manifest and credits remain there. Logos are read from `public/test_9/`. No new package or environment variable is required.
+
+## Local preview and verification
+
+Use the isolated preview supplied by the coordinator (development `http://localhost:3012/test_12`), not the main checkout's running site. The planned production preview uses a separate container and port. Do not restart other sessions' servers.
+
+From this worktree's `frontend/` in PowerShell:
 
 ```powershell
-$env:NO_COLOR=$null
-$env:PLAYWRIGHT_BASE_URL='http://localhost:3000'
-npm.cmd exec playwright test e2e/test-11-magazine.spec.ts e2e/test-11-reveal.spec.ts e2e/test-11-visual.spec.ts -- --workers=1 --output=test-results/test-11-completion-production
-$env:TEST_11_SOURCE_LABEL='local Docker production after final PCFShadowMap rebuild 2026-10-19'
-$env:TEST_11_EVIDENCE_STATUS='production-awaiting-visual-review'
-node scripts/capture-test-11.mjs
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test -- --run --testTimeout=15000
+npm.cmd run build
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3012'
+npm.cmd exec playwright test e2e/test-12-magazine.spec.ts -- --workers=1
 ```
 
-Capture ждёт fonts.ready, decode картинок и окончания конечных reveal для финальных кадров (bounded timeout 12 s). Сохраняет все шесть пар в 1280×768 / 1440×900 / 1920×1080, distant waiting cover, intro, curved reading leaf в двух направлениях и фазы reveal в 1440. В `docs/qa/test-11/completion-production/capture-results.json` записываются origin/UTC, URL и время каждого sample, размеры, bounds, leaf geometry/progress, phase, canvas, idle frame count и console; промежуточные кадры явно помечены `final:false`. Для dev задавать отдельный `TEST_11_CAPTURE_DIR`. Скрипт требует настоящий WebGL midturn; CSS fallback не выдаётся за curved evidence. Итоги и screenshots — в [QA README](../../../../docs/qa/test-11/README.md).
-
-Финальный production capture 19 октября 2026, 02:08:27–02:10:18 UTC: 33 PNG, exit 0, все 18 пар лично просмотрены в трёх размерах. Все 21 settled reading samples имеют 0 clipped text/overflow/broken images/running animations/canvas и 0 idle-rAF drift за 750 ms; min text 11 px. Оба направления сняты с настоящим WebGL curved leaf, curvature 0.789285 / 0.783188, spine error 0. Предупреждение PCFSoftShadowMap после rebuild отсутствует; ограничения GPU и остальные предупреждения сохранены в QA.
-
-Финальные проверки координатора: **48/48 browser tests**, exit 0, 4.8 минуты, 1 worker (`test-results/test-11-completion-final-stable`): 25 test_11 и 23 legacy test_10/test_7/test_8. Lint/typecheck, 119 unit tests в 26 файлах, production build (35 маршрутов), Docker rebuild/HTTP 200 прошли; 30 защищённых SHA256 не изменены. Независимая приёмка — PASS, 18 шагов. Полный разбор результатов и прежних QA/runtime попыток — в текущей приёмке.
-
-Историческая приёмка 18 октября относится к прежним трём главам: 22 targeted + 23 regression browser checks, 21 PNG и 119 unit baseline. Она не подтверждает шесть глав и новый reading engine. Текущие полные проверки и независимая приёмка перечислены в QA README.
+Editorial executor verification on 20 October 2026: lint and typecheck passed; Vitest passed all 113 tests in 26 files (same as the starting baseline). A direct Chromium check of chapters 1–2 at 1366×768, 1440×900 and 1920×1080 found no page overflow or clipped text; the 1366×768 compositions were visually reviewed. Production and independent browser evidence belong to the isolated TEST_12 QA report; previous-version counts are not evidence for this iteration.

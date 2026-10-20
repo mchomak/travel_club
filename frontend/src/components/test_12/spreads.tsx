@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- Print artwork uses decoded local images for exact page snapshots. */
-import { ARCHIVE, FORMATS, PHOTOS, PRINCIPLES } from "./data";
+import { ARCHIVE, FORMATS, FOUNDER_PHOTOS, PHOTOS, PRINCIPLES } from "./data";
 import { ArrowUpRight, Compass, MapPin, Route, Sparkles, Users } from "lucide-react";
 import s from "./spreads.module.css";
 
@@ -8,7 +8,7 @@ export type RevealPhase = "static" | "pending" | "enter";
 type PageProps = { reveal: RevealPhase };
 type PhotoValue = { src: string; alt: string };
 
-function Head({ left, right }: { left: string; right: string }) {
+function Head({ left, right }: { left: string; right: React.ReactNode }) {
   return <div className={s.runningHead}><span>{left}</span><span>{right}</span></div>;
 }
 
@@ -49,8 +49,7 @@ function HeroPage({ reveal }: PageProps) {
       <span className={s.heroSideNote} data-reveal-object="hero-note" data-motion="ink" data-beat="4">Путешествия начинаются с людей</span>
     </div>
     <p className={s.credit}>{PHOTOS.hero.author} / Pexels<span>Иллюстративная фотография</span></p>
-    <p className={s.heroDescription} data-reveal-object="hero-description" data-motion="ink" data-beat="2">Создаём индивидуальные маршруты, организуем путешествия под ключ и собираем небольшие компании для совместных поездок.</p>
-    <Link href="/start">Обсудить поездку</Link>
+    <p className={s.heroDescription} data-reveal-object="hero-description" data-motion="ink" data-beat="2">Travel Club — независимая редакция путешествий</p>
     <Folio number="02" label="Travel Club / Независимая редакция путешествий" />
   </section>;
 }
@@ -58,18 +57,57 @@ function HeroPage({ reveal }: PageProps) {
 function FormatsPage({ reveal }: PageProps) {
   const icons = [Route, Sparkles, Users];
   return <section className={`${s.page} ${s.formatsPage}`} data-magazine-page="right" data-reveal={reveal} aria-label="Три формата путешествий">
-    <Head left="Способ отправиться" right="Travel Club" />
-    <div className={s.formatsIntro}><h2>С нами в путь</h2><p>Соберём маршрут, подготовим поездку или отправимся вместе.</p></div>
+    <Head left="Способ отправиться" right={<a className={s.headLink} href="/start">Обсудить поездку ↗</a>} />
+    <div className={s.formatsIntro}><h2>С нами в путь</h2><p>Создаём индивидуальные маршруты, помогаем организовывать путешествия и собираем небольшие компании для совместных поездок.</p></div>
     <div className={s.formatsTable}>
-      {FORMATS.map((format, index) => { const Icon = icons[index]; return <a className={s.formatRow} href="/formats" key={format.number} aria-label={`${format.title} — ${format.price}. Подробнее о формате`}>
+      {FORMATS.map((format, index) => { const Icon = icons[index]; return <a className={s.formatRow} href="/formats" key={format.number} aria-label={`${format.english} — ${format.title} — ${format.price}. Подробнее о формате`}>
         <span className={s.formatNumber} aria-hidden="true"><Icon /><span>{format.number}</span></span>
-        <div className={s.formatName}><h3>{format.title}</h3><span>{format.english}</span></div>
+        <div className={s.formatName}><h3>{format.english}</h3><span>{format.title}</span></div>
         <span className={`${s.formatPrice} ${format.number === "03" ? s.agreedPrice : ""}`}>{format.price}</span>
         <p data-reveal-object="format-details">{format.description}</p><ArrowUpRight className={s.formatArrow} aria-hidden="true" />
       </a>; })}
     </div>
+    <p className={s.formatTerms}>5 000 ₽ и 10 000 ₽ — стоимость услуг Travel Design и Travel Ready. Транспорт, проживание и прочие расходы оплачиваются отдельно.</p>
     <Link href="/formats">Подробнее о форматах</Link>
     <Folio number="03" label="Ваше путешествие. Наше внимание к деталям." />
+  </section>;
+}
+
+function FounderPortrait({ founder, label }: { founder: keyof typeof FOUNDER_PHOTOS; label: string }) {
+  const photo = FOUNDER_PHOTOS[founder];
+  return <figure className={s.founderPortrait} data-founder-photo={founder}>
+    {photo.src
+      ? <img src={photo.src} alt={photo.alt} style={{ objectPosition: photo.position }} decoding="sync" loading="eager" />
+      : <div className={s.portraitPlaceholder}><span aria-hidden="true">{founder === "vasilisa" ? "В" : "Р"}</span><p>{label}</p><small>Место для настоящего портрета</small></div>}
+    <figcaption>{photo.src ? "Личный портрет" : "Портрет появится здесь"}</figcaption>
+  </figure>;
+}
+
+function AboutLeft({ reveal }: PageProps) {
+  return <section className={`${s.page} ${s.aboutPage}`} data-magazine-page="left" data-reveal={reveal} aria-label="О нас — Василиса, сооснователь Travel Club">
+    <Head left="02 / О НАС" right="People behind the journey" />
+    <p className={s.aboutHeadline}>Люди, с которых<br />начался Travel Club</p>
+    <div className={s.founderIdentity}><h2>Василиса</h2><span>Сооснователь Travel Club</span></div>
+    <div className={s.founderBody}>
+      <FounderPortrait founder="vasilisa" label="Фото Василисы" />
+      <div className={s.founderCopy} data-reveal-object="vasilisa-role" data-motion="ink" data-beat="1"><h3>Сопровождение<br />и люди</h3><p>Знакомство и общение с путешественниками, атмосфера и социальная сторона поездок.</p><p>Сопровождение участников и участие в разработке travel-продуктов.</p></div>
+    </div>
+    <div className={s.founderOrigin} data-reveal-object="founder-origin" data-motion="ink" data-beat="2"><span>Сначала — поездки друзей</span><p>Мы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.</p></div>
+    <Folio number="04" label="Travel Club / Люди и путешествия" />
+  </section>;
+}
+
+function AboutRight({ reveal }: PageProps) {
+  return <section className={`${s.page} ${s.aboutPage} ${s.aboutRight}`} data-magazine-page="right" data-reveal={reveal} aria-label="О нас — Рамиль, сооснователь Travel Club">
+    <Head left="Travel Club / Основатели" right="Два равноправных взгляда" />
+    <p className={s.aboutHeadline}>Одна общая идея.<br />Два разных фокуса.</p>
+    <div className={s.founderIdentity}><h2>Рамиль</h2><span>Сооснователь Travel Club</span></div>
+    <div className={s.founderBody}>
+      <FounderPortrait founder="ramil" label="Фото Рамиля" />
+      <div className={s.founderCopy} data-reveal-object="ramil-role" data-motion="ink" data-beat="1"><h3>Системы<br />и организация</h3><p>Технологии, цифровая инфраструктура, финансы и организационные процессы.</p><p>Развитие проекта и участие в разработке travel-продуктов.</p></div>
+    </div>
+    <div className={s.founderOrigin} data-reveal-object="founder-partnership" data-motion="ink" data-beat="2"><span>Из этого опыта вырос Travel Club</span><p>Индивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.</p></div>
+    <Folio number="05" label="Travel Club / Системы и путешествия" />
   </section>;
 }
 
@@ -85,7 +123,7 @@ function NextLeft({ reveal }: PageProps) {
     </div>
     <p className={s.credit}>Joseph Ruwa / Pexels<span>Иллюстративная фотография</span></p>
     <p className={s.nextDisclaimer} data-reveal-object="next-disclaimer" data-motion="ink" data-beat="4">Этот кадр передаёт настроение и не анонсирует направление поездки.</p>
-    <Folio number="04" label="Программа в подготовке" />
+    <Folio number="06" label="Программа в подготовке" />
   </section>;
 }
 
@@ -100,7 +138,7 @@ function NextRight({ reveal }: PageProps) {
     </div>
     <div className={s.nextPlanning} data-reveal-object="next-planning" data-motion="ink" data-beat="4"><span><Compass aria-hidden="true" />В подготовке</span><p>Направление и даты ещё не объявлены.</p></div>
     <div className={s.nextAction}><Link href="/start?format=group">Хочу поехать с вами</Link><p>Расскажите о своём интересе. Это не бронирование.</p></div>
-    <Folio number="05" label="Первое путешествие начинается с разговора" />
+    <Folio number="07" label="Первое путешествие начинается с разговора" />
   </section>;
 }
 
@@ -115,7 +153,7 @@ function ThailandLeft({ reveal }: PageProps) {
     </div>
     <div className={s.thaiRoute}><span><MapPin aria-hidden="true" />От островов до Бангкока</span><p>Четверо друзей.<br />Одна поездка.</p></div>
     <p className={s.credit}>{PHOTOS.thailandCover.author} / Pexels<span>Иллюстративная фотография</span></p>
-    <Folio number="06" label="Личный опыт друзей до запуска клуба" />
+    <Folio number="08" label="Личный опыт друзей до запуска клуба" />
   </section>;
 }
 
@@ -132,7 +170,7 @@ function ThailandRight({ reveal }: PageProps) {
       <figure className={s.cityFigure} data-reveal-object="thai-city"><Photo photo={PHOTOS.city} /><figcaption>Бангкок. Margarita K / Pexels<br />Иллюстративная фотография</figcaption></figure>
     </div>
     <div className={s.thaiAction}><Link href="/archive">К заметкам в архиве</Link><p>Полная история пока не опубликована.</p></div>
-    <Folio number="07" label="Фотографии иллюстративные, не кадры команды" />
+    <Folio number="09" label="Фотографии иллюстративные, не кадры команды" />
   </section>;
 }
 
@@ -147,7 +185,7 @@ function ChinaLeft({ reveal }: PageProps) {
     </div>
     <div className={s.chinaRoute}><span>Пекин</span><span aria-hidden="true">↗</span><span>Шанхай</span></div>
     <p className={s.credit} data-reveal-object="china-credit" data-motion="ink" data-beat="4">Sean Xu / Pexels<span>Иллюстративная фотография</span></p>
-    <Folio number="08" label="Личная история друзей / China ’26" />
+    <Folio number="10" label="Личная история друзей / China ’26" />
   </section>;
 }
 
@@ -161,7 +199,7 @@ function ChinaRight({ reveal }: PageProps) {
     </div>
     <figure className={s.chinaDetail} data-reveal-object="china-detail"><Photo photo={PHOTOS.beijing} /><figcaption data-motion="ink" data-beat="3">Пекин. Sean Xu / Pexels. Иллюстративный кадр, не фотография поездки.</figcaption></figure>
     <div className={s.chapterAction}><Link href="/archive">К заметкам в архиве</Link><p>Полная история пока не опубликована.</p></div>
-    <Folio number="09" label="Field Notes — поездки друзей до запуска клуба" />
+    <Folio number="11" label="Field Notes — поездки друзей до запуска клуба" />
   </section>;
 }
 
@@ -172,7 +210,7 @@ function ArchiveLeft({ reveal }: PageProps) {
     <div className={s.contactSheet}>{ARCHIVE.map((record, i) => <figure key={record.english} data-reveal-object={`archive-print-${i}`} data-beat={i + 1}><Photo photo={record.photo} /><figcaption><span>0{i + 1} / {record.english}</span><span>2025</span></figcaption></figure>)}</div>
     <p className={s.archiveStatement} data-reveal-object="archive-note" data-motion="ink" data-beat="3">До клуба были<br />поездки с друзьями.</p>
     <p className={s.archiveCredit} data-reveal-object="archive-credit" data-motion="ink" data-beat="4">Иллюстративные фотографии / Pexels<br />Sean Xu · Herve Meftah · youseflns</p>
-    <Folio number="10" label="Три истории / один год" />
+    <Folio number="12" label="Три истории / один год" />
   </section>;
 }
 
@@ -185,7 +223,7 @@ function ArchiveRight({ reveal }: PageProps) {
     </article>)}</div>
     <p className={s.archiveCaveat} data-reveal-object="archive-caveat" data-motion="ink" data-beat="4">Это личные путешествия, а не оказанные услуги Travel Club. Полные истории пока не опубликованы.</p>
     <Link href="/archive">Открыть архив</Link>
-    <Folio number="11" label="Field Notes / Опыт, из которого вырос клуб" />
+    <Folio number="13" label="Field Notes / Опыт, из которого вырос клуб" />
   </section>;
 }
 
@@ -195,7 +233,7 @@ function PovLeft({ reveal }: PageProps) {
     <div className={s.povHeading}><h2>Не только<br />куда.</h2><span data-reveal-object="pov-also" data-motion="ink" data-beat="1">Ещё и как.</span></div>
     <div className={s.principles}>{PRINCIPLES.map((principle, i) => <article key={principle.title}><span aria-hidden="true">0{i + 1}</span><div><h3>{principle.title}</h3><p data-reveal-object={`principle-${i}`} data-motion="ink" data-beat={i + 1}>{principle.text}</p></div></article>)}</div>
     <div className={s.povSign} data-reveal-object="pov-sign" data-motion="rise" data-beat="4"><span>Место × люди × память</span><img src="/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg" width="452" height="215" alt="Travel Club" decoding="sync" /></div>
-    <Folio number="12" label="Три принципа одной общей дороги" />
+    <Folio number="14" label="Три принципа одной общей дороги" />
   </section>;
 }
 
@@ -211,14 +249,14 @@ function StartRight({ reveal }: PageProps) {
     ].map(([title, body], i) => <div key={title} data-reveal-object={`start-step-${i}`} data-motion="rise" data-beat={i + 1}><span>0{i + 1}</span><h3>{title}</h3><p>{body}</p></div>)}</div>
     <div className={s.startActions}><Link href="/start">Обсудить поездку</Link><a href="/formats">Сначала сравнить форматы <ArrowUpRight aria-hidden="true" /></a></div>
     <p className={s.prototypeNote}>Форма поможет сформулировать запрос. Сейчас это прототип: ответы не отправляются и не сохраняются.</p>
-    <Folio number="13" label="Конец номера / Продолжение следует" />
+    <Folio number="15" label="Конец номера / Продолжение следует" />
   </section>;
 }
 
 export function MagazineSpread({ index, side, animate = false, reveal }: { index: number; side?: Side; animate?: boolean; reveal?: RevealPhase }) {
   const phase = reveal ?? (animate ? "enter" : "static");
   const chapters = [
-    [HeroPage, FormatsPage], [NextLeft, NextRight], [ThailandLeft, ThailandRight],
+    [HeroPage, FormatsPage], [AboutLeft, AboutRight], [NextLeft, NextRight], [ThailandLeft, ThailandRight],
     [ChinaLeft, ChinaRight], [ArchiveLeft, ArchiveRight], [PovLeft, StartRight],
   ];
   const [Left, Right] = chapters[index] ?? chapters[0];

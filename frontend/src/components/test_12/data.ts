@@ -1,10 +1,11 @@
 export const SPREADS = [
-  { title: "Hero + Formats" },
-  { title: "Next Issue" },
-  { title: "Thailand ’26" },
-  { title: "China ’26" },
-  { title: "Archive ’25" },
-  { title: "Point of View + Start" },
+  { title: "Hero + Formats", navLabel: "Услуги" },
+  { title: "О нас", navLabel: "О нас" },
+  { title: "Next Issue", navLabel: "Первая поездка" },
+  { title: "Thailand ’26", navLabel: "Таиланд" },
+  { title: "China ’26", navLabel: "Китай" },
+  { title: "Archive ’25", navLabel: "Архив" },
+  { title: "Point of View + Start", navLabel: "Начать" },
 ] as const;
 
 export const PHOTOS = {
@@ -20,10 +21,19 @@ export const PHOTOS = {
 } as const;
 
 export const FORMATS = [
-  { number: "01", title: "Маршрут", english: "Travel Design", price: "5 000 ₽", description: "Проектируем маршрут и бюджет: транспорт, жильё, культурные места и рекомендации. Бронируете и оплачиваете всё вы." },
-  { number: "02", title: "Под ключ", english: "Travel Ready", price: "10 000 ₽", description: "Подбираем варианты и ссылки, согласуем их с вами, координируем брони, составляем календарь оплат и поддерживаем. Поставщикам платите вы напрямую." },
-  { number: "03", title: "В компании", english: "TC Trips / Issues", price: "По согласованию", description: "Авторские поездки для 6–9 человек: знакомство и подбор группы, программа и кураторское сопровождение. Каждая поездка — отдельный выпуск, Issue." },
+  { number: "01", title: "Индивидуальный маршрут", english: "Travel Design", price: "5 000 ₽", description: "Транспорт, районы проживания, интересные места и примерный бюджет под ваш запрос. Экономим время на поиске, убираем хаос планирования. Бронируете и оплачиваете сами." },
+  { number: "02", title: "Подготовка и организация поездки", english: "Travel Ready", price: "10 000 ₽", description: "Превращаем идею в план и берём согласованные задачи подготовки и координации. Снимаем с вас часть организационной нагрузки." },
+  { number: "03", title: "Авторские групповые путешествия", english: "TC Trips", price: "По согласованию", description: "Небольшие путешествия с сопровождением, продуманной программой и вниманием к компании, с которой вы отправляетесь в путь." },
 ] as const;
+
+type FounderPhoto = { src: string | null; alt: string; position: string };
+
+// Replace only these fields when the founders supply their real portraits.
+// An empty src deliberately renders an honest labelled area, never a stock face.
+export const FOUNDER_PHOTOS: Record<"vasilisa" | "ramil", FounderPhoto> = {
+  vasilisa: { src: null, alt: "Василиса, сооснователь Travel Club", position: "50% 50%" },
+  ramil: { src: null, alt: "Рамиль, сооснователь Travel Club", position: "50% 50%" },
+};
 
 
 // Read-only factual sources: test_8/concept-home.tsx and public-site/archive-data.ts.
