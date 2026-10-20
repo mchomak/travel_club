@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ResearchConfig, ResearchInterview, ResearchQuestion, ResearchRespondent } from "@/lib/research";
 import { researchApi } from "@/lib/research";
@@ -12,17 +12,17 @@ const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "respondent-1" }), useRouter: () => ({ push }) }));
 vi.mock("next/link", () => ({ default: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a> }));
 
-const screening = JSON.parse(
-  readFileSync(resolve(process.cwd(), "../backend/app/research_data/screening.json"), "utf8"),
-) as ResearchConfig["screening"];
+const readResearchData = <T,>(filename: string): T => JSON.parse(
+  readFileSync(resolve(process.cwd(), `../backend/app/research_data/${filename}`), "utf8"),
+) as T;
 const config = {
-  bank: { bank_version: "1", questions: [], hypotheses: [] },
-  scenarios: { version: "1", scenarios: [{ code: "trips_beginner", label: "Trips / Начинающий путешественник", question_codes: [] }] },
-  screening,
-  classification: {},
+  bank: readResearchData<ResearchConfig["bank"]>("questions.json"),
+  scenarios: readResearchData<ResearchConfig["scenarios"]>("scenarios.json"),
+  screening: readResearchData<ResearchConfig["screening"]>("screening.json"),
+  classification: readResearchData<ResearchConfig["classification"]>("classification.json"),
   validation_issues: [],
   offers_enabled: false,
-} as ResearchConfig;
+} satisfies ResearchConfig;
 const interview = {
   id: "interview-1",
   respondent_id: "respondent-1",
@@ -180,19 +180,95 @@ describe("Respondent interview snapshot fallback", () => {
     expect(screen.getByLabelText("Ответ G01")).toHaveValue("Ответ из старого интервью");
   });
 
-  it("keeps draft scenario actions unavailable when the loaded scenario list is empty", async () => {
+  it("blocks starting a draft interview when the loaded scenario list is empty", async () => {
     vi.mocked(researchApi.respondent).mockResolvedValueOnce(respondent);
     vi.mocked(researchApi.config).mockResolvedValueOnce({
       ...config,
       scenarios: { version: "2", scenarios: [] },
     });
+    const startInterview = vi.spyOn(researchApi, "startInterview");
 
     render(<RespondentDetailPage />);
 
     expect(await screen.findByLabelText("Сценарий интервью")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Сохранить выбор" })).toBeDisabled();
     expect(screen.getByText("Актуальный список сценариев недоступен. Сохранение нового выбора временно отключено.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Начать интервью/ })).toBeEnabled();
+    const startButton = screen.getByRole("button", { name: /Начать интервью/ });
+    expect(startButton).toBeDisabled();
+    expect(screen.getByText("Сначала загрузите корректный сценарий интервью, чтобы его начать.")).toBeInTheDocument();
+    await userEvent.setup().click(startButton);
+    expect(startInterview).not.toHaveBeenCalled();
+  });
+
+  it("blocks starting a draft interview when loading the current config fails", async () => {
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce(respondent);
+    let rejectConfig!: (cause: Error) => void;
+    const configRequest = new Promise<ResearchConfig>((_resolve, reject) => { rejectConfig = reject; });
+    vi.mocked(researchApi.config).mockReturnValueOnce(configRequest);
+    const startInterview = vi.spyOn(researchApi, "startInterview");
+
+    render(<RespondentDetailPage />);
+
+    await act(async () => {
+      rejectConfig(new Error("Config unavailable"));
+      await configRequest.catch(() => undefined);
+    });
+    const startButton = screen.getByRole("button", { name: /\u041d\u0430\u0447\u0430\u0442\u044c \u0438\u043d\u0442\u0435\u0440\u0432\u044c\u044e/ });
+    expect(startButton).toBeDisabled();
+    await userEvent.setup().click(startButton);
+    expect(startInterview).not.toHaveBeenCalled();
+  });
+
+  it("blocks a locally selectable scenario when the loaded configuration has validation issues", async () => {
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce(respondent);
+    vi.mocked(researchApi.config).mockResolvedValueOnce({
+      ...config,
+      bank: {
+        ...config.bank,
+        questions: [{ code: "G99", section: "G", text: "Вопрос из банка", type: "text" }],
+      },
+      scenarios: {
+        version: "2",
+        scenarios: [{ code: "trips_beginner", label: "Trips / Начинающий путешественник", question_codes: ["G99"] }],
+      },
+      validation_issues: ["missing scenarios: travel_design"],
+    });
+    const startInterview = vi.spyOn(researchApi, "startInterview");
+
+    render(<RespondentDetailPage />);
+
+    const startButton = await screen.findByRole("button", { name: /Начать интервью/ });
+    expect(startButton).toBeDisabled();
+    expect(screen.getByText("Текущая конфигурация вопросника неполная или содержит ошибки. Исправьте её, прежде чем начинать интервью.")).toBeInTheDocument();
+    await userEvent.setup().click(startButton);
+    expect(startInterview).not.toHaveBeenCalled();
+  });
+
+  it("starts a valid scenario with no preset questions", async () => {
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce(respondent);
+    const emptyQuestionScenarioConfig: ResearchConfig = {
+      ...config,
+      scenarios: {
+        ...config.scenarios,
+        scenarios: config.scenarios.scenarios.map((scenario) => scenario.code === "trips_beginner"
+          ? { ...scenario, question_codes: [] }
+          : scenario),
+      },
+    };
+    vi.mocked(researchApi.config).mockResolvedValueOnce(emptyQuestionScenarioConfig);
+    const startInterview = vi.spyOn(researchApi, "startInterview").mockResolvedValueOnce({
+      ...interview,
+      status: "in_progress",
+      question_snapshot: [],
+    });
+
+    render(<RespondentDetailPage />);
+
+    const startButton = await screen.findByRole("button", { name: /Начать интервью/ });
+    expect(startButton).toBeEnabled();
+    await userEvent.setup().click(startButton);
+    expect(startInterview).toHaveBeenCalledWith("interview-1");
+    expect(await screen.findByText("Сценарий сохранён. Можно вести заметки по ходу разговора или внести их позже.")).toBeInTheDocument();
   });
 
   it("keeps the saved interview visible and blocks screening editing when screening fields are empty", async () => {

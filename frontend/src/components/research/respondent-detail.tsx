@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus } from "lucide-react";
 import {
-  InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchQuestion,
+  InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchQuestion, ResearchScenario,
   ResearchRespondent, flushPendingAnswers, researchApi, scrollResearchToTop,
 } from "@/lib/research";
 import { AnswerCard } from "./answer-card";
@@ -116,14 +116,27 @@ export function RespondentDetailPage() {
     return Object.entries(respondent.screening_answers).filter(([, value]) => value !== "" && value !== null && value !== undefined)
       .map(([key, value]) => [fieldMap.get(key) ?? key, labelForAnswer(key, value)] as const);
   }, [respondent, config, labelForAnswer]);
-  const scenarioOptions = Array.isArray(config?.scenarios?.scenarios) ? config.scenarios.scenarios : [];
+  const bankQuestionCodes = new Set(Array.isArray(config?.bank?.questions)
+    ? config.bank.questions.map((question) => question?.code).filter((code): code is string => typeof code === "string" && code.trim() !== "")
+    : []);
+  const scenarioOptions = Array.isArray(config?.scenarios?.scenarios) ? config.scenarios.scenarios.filter((scenario): scenario is ResearchScenario =>
+    !!scenario
+    && typeof scenario === "object"
+    && Object.keys(categoryNames).includes(scenario.code)
+    && typeof scenario.label === "string"
+    && scenario.label.trim() !== ""
+    && Array.isArray(scenario.question_codes)
+    && scenario.question_codes.every((code) => typeof code === "string" && code.trim() !== "" && bankQuestionCodes.has(code))
+  ) : [];
   const hasScenarioOptions = scenarioOptions.length > 0;
+  const configIsValid = Array.isArray(config?.validation_issues) && config.validation_issues.length === 0;
+  const canStartInterview = configIsValid && scenarioOptions.some((scenario) => scenario.code === draftCategory);
   const screeningConfigAvailable = Array.isArray(config?.screening?.fields) && config.screening.fields.length > 0;
   const bankQuestionsAvailable = Array.isArray(config?.bank?.questions);
   const canAppendQuestions = bankQuestionsAvailable && hasScenarioOptions;
 
   const startInterview = async () => {
-    if (!respondent || !interview) return;
+    if (!respondent || !interview || !canStartInterview) return;
     setBusy(true); setError(""); setMessage("");
     try {
       if (draftCategory && draftCategory !== respondent.final_category) await researchApi.updateCategory(respondent.id, draftCategory);
@@ -285,7 +298,8 @@ export function RespondentDetailPage() {
       <div className={styles.recommendationGrid}>
         <label className={styles.label}><span>Сценарий интервью</span><select className={styles.select} value={draftCategory} onChange={(event) => setDraftCategory(event.target.value as ResearchCategory)} disabled={!hasScenarioOptions}>{scenarioOptions.map((scenario) => <option key={scenario.code} value={scenario.code}>{scenario.label}</option>)}</select></label>
         {!hasScenarioOptions && <p className={styles.muted} role="status">{configLoading ? "Ожидаем список сценариев для изменения выбора." : "Актуальный список сценариев недоступен. Сохранение нового выбора временно отключено."}</p>}
-        <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" onClick={() => void chooseDraftCategory()} disabled={busy || !draftCategory || !hasScenarioOptions}>Сохранить выбор</button><button className={styles.primaryButton} type="button" onClick={() => void startInterview()} disabled={busy}>{busy ? "Открываем…" : "Начать интервью"}<ArrowRight size={17} aria-hidden /></button></div>
+        {!canStartInterview && <p className={styles.muted} role="status">{configLoading ? "Ожидаем актуальную конфигурацию, чтобы начать интервью." : !configIsValid ? "Текущая конфигурация вопросника неполная или содержит ошибки. Исправьте её, прежде чем начинать интервью." : "Сначала загрузите корректный сценарий интервью, чтобы его начать."}</p>}
+        <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" onClick={() => void chooseDraftCategory()} disabled={busy || !draftCategory || !hasScenarioOptions}>Сохранить выбор</button><button className={styles.primaryButton} type="button" onClick={() => void startInterview()} disabled={busy || !canStartInterview}>{busy ? "Открываем…" : "Начать интервью"}<ArrowRight size={17} aria-hidden /></button></div>
       </div>
     </section> : <>
       <div className={styles.interviewLayout}>
