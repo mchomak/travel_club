@@ -1,0 +1,1931 @@
+diff --git a/frontend/e2e/research.spec.ts b/frontend/e2e/research.spec.ts
+new file mode 100644
+index 0000000..6c1b892
+--- /dev/null
++++ b/frontend/e2e/research.spec.ts
+@@ -0,0 +1,345 @@
++import { expect, test } from "@playwright/test";
++import { readFile } from "node:fs/promises";
++import { inflateRawSync } from "node:zlib";
++
++function workbookXml(buffer: Buffer): string {
++  const documents: string[] = [];
++  let offset = 0;
++  while (offset + 30 < buffer.length) {
++    const signature = buffer.readUInt32LE(offset);
++    if (signature !== 0x04034b50) { offset += 1; continue; }
++    const method = buffer.readUInt16LE(offset + 8);
++    const compressedSize = buffer.readUInt32LE(offset + 18);
++    const nameLength = buffer.readUInt16LE(offset + 26);
++    const extraLength = buffer.readUInt16LE(offset + 28);
++    const name = buffer.subarray(offset + 30, offset + 30 + nameLength).toString("utf8");
++    const dataStart = offset + 30 + nameLength + extraLength;
++    const data = buffer.subarray(dataStart, dataStart + compressedSize);
++    if (name.endsWith(".xml")) {
++      const xml = method === 0 ? data.toString("utf8") : inflateRawSync(data).toString("utf8");
++      documents.push(xml);
++    }
++    offset = dataStart + compressedSize;
++  }
++  return documents.join("\n");
++}
++
++test("TC Research covers creation, recoverable interview notes, history and whole-base export", async ({ page }) => {
++  await page.emulateMedia({ reducedMotion: "reduce" });
++  const login = process.env.RESEARCH_E2E_LOGIN ?? "tc_research_e2e";
++  const password = process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026";
++  const respondentName = `Test interview ${Date.now()}`;
++  let originalG01 = "";
++  let respondentDetailPath = "";
++  let detailHistoryIndex: number | null = null;
++  let listHistoryIndex: number | null = null;
++  let interviewHistoryLength = 0;
++
++  await test.step("1. Sign in and create a fake respondent", async () => {
++    await page.goto("/admin/login");
++    await page.getByRole("button", { name: "Показать пароль" }).click();
++    await expect(page.getByRole("textbox", { name: "Пароль" })).toHaveAttribute("type", "text");
++    await page.getByRole("button", { name: "Скрыть пароль" }).click();
++    await expect(page.getByRole("textbox", { name: "Пароль" })).toHaveAttribute("type", "password");
++    await page.getByLabel("Логин").fill(login);
++    await page.getByRole("textbox", { name: "Пароль" }).fill(password);
++    await page.getByRole("button", { name: "Войти в кабинет" }).click();
++    await page.waitForURL(/\/admin\/trips/);
++    await page.goto("/research/new");
++    await page.evaluate(() => {
++      window.scrollTo = ((target: ScrollToOptions | number) => {
++        const behavior = typeof target === "number" ? "positional" : target.behavior ?? "auto";
++        document.documentElement.setAttribute("data-research-scroll-behavior", behavior);
++      }) as typeof window.scrollTo;
++    });
++    await page.getByLabel("Имя респондента или псевдоним").fill(respondentName);
++  });
++
++  await test.step("2. Save a screening questionnaire before the interview starts", async () => {
++    await page.getByLabel("Возраст или возрастная категория").selectOption("23_29");
++    await page.getByLabel("Город проживания").fill("Казань");
++    await page.getByLabel("Количество самостоятельных зарубежных путешествий за последние 24 месяца").selectOption("3_plus");
++    await page.getByRole("group", { name: "Опыт участия в организованных групповых путешествиях" }).getByLabel("Нет").check();
++    await page.getByRole("group", { name: "Есть ли конкретные планы путешествий в ближайшие месяцы?" }).getByLabel("Нет").check();
++    await page.getByRole("group", { name: "Пользовались ли платными услугами планирования или организации поездок?" }).getByLabel("Нет").check();
++    await page.getByLabel("Как обычно организуете путешествия?").selectOption("self");
++    await page.getByLabel("Какая часть подготовки поездки вызывает наибольшие трудности?").selectOption("coordination");
++    await page.getByLabel(/Цель исследования/).selectOption("trips");
++    await page.getByRole("button", { name: "Сохранить анкету и выбрать сценарий" }).click();
++    await expect(page.getByText(respondentName)).toBeVisible();
++    await expect(page.getByText("Анкета уже сохранена в базе. Статус: черновик.")).toBeVisible();
++    await expect(page.locator("html")).toHaveAttribute("data-research-scroll-behavior", "auto");
++  });
++
++  await test.step("3–5. Review a transparent recommendation, override it and start its route", async () => {
++    await expect(page.getByRole("heading", { name: /Рекомендуем начать с/ })).toBeVisible();
++    await expect(page.getByText(/Альтернативный сценарий:/)).toBeVisible();
++    await page.getByLabel("Сценарий интервью").selectOption("travel_design");
++    const configResponse = await page.evaluate(async () => await (await fetch("/api/research/config")).json());
++    originalG01 = configResponse.bank.questions.find((question: { code: string }) => question.code === "G01").text;
++    await page.route("**/api/research/config", async (route) => {
++      const response = await route.fetch();
++      const changed = await response.json();
++      changed.bank.questions.find((question: { code: string }) => question.code === "G01").text = "Новое тестовое описание банка G01";
++      await route.fulfill({ response, body: JSON.stringify(changed) });
++    });
++    await page.getByRole("button", { name: "Перейти к интервью" }).click();
++    await expect(page).toHaveURL(/\/research\/.+/);
++    await expect(page.getByRole("heading", { name: originalG01, exact: true })).toBeVisible();
++    await expect(page.getByText("Новое тестовое описание банка G01", { exact: true })).toHaveCount(0);
++  });
++
++  const answer = page.getByLabel("Ответ G01");
++  const answerCard = page.locator("#question-G01");
++  const answerRoute = /\/api\/research\/interviews\/[^/]+\/answers\/G01$/;
++
++  await test.step("6–7. Save a note on the server and restore it after reloading", async () => {
++    await answer.fill("Последняя поездка — самостоятельный маршрут по Италии.");
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++    await page.reload();
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Последняя поездка — самостоятельный маршрут по Италии.");
++  });
++
++  await test.step("8. Keep typing through a network failure and retry on reconnect", async () => {
++    await page.route(answerRoute, (route) => route.abort());
++    await page.getByLabel("Ответ G01").fill("Заметка, введённая при временном сбое связи.");
++    await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Заметка, введённая при временном сбое связи.");
++    await page.unroute(answerRoute);
++    await page.evaluate(() => window.dispatchEvent(new Event("online")));
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++  });
++
++  await test.step("9. Warn when navigating away with an unsaved draft", async () => {
++    const detailUrl = page.url();
++    respondentDetailPath = new URL(detailUrl).pathname;
++    const detailEntry = await page.evaluate(() => ({
++      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
++      length: history.length,
++    }));
++    detailHistoryIndex = detailEntry.index;
++    await page.getByRole("link", { name: "Респонденты", exact: true }).click();
++    await expect(page).toHaveURL(/\/research$/);
++    const listEntry = await page.evaluate(() => ({
++      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
++      length: history.length,
++    }));
++    listHistoryIndex = listEntry.index;
++    interviewHistoryLength = listEntry.length;
++    await page.evaluate(() => window.history.back());
++    await expect(page).toHaveURL(detailUrl);
++    const restoredEntry = await page.evaluate(() => ({
++      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
++      length: history.length,
++    }));
++    expect(restoredEntry.index).toBe(detailHistoryIndex);
++    expect(restoredEntry.length).toBe(interviewHistoryLength);
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Заметка, введённая при временном сбое связи.");
++
++    await page.route(answerRoute, (route) => route.abort());
++    await page.getByLabel("Ответ G01").fill("Несохранённая заметка перед уходом.");
++    await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
++    const navigationPrompt = page.waitForEvent("dialog");
++    await page.getByRole("link", { name: "К списку" }).click();
++    const navigationDialog = await navigationPrompt;
++    expect(navigationDialog.message()).toContain("ещё не подтверждены сервером");
++    await navigationDialog.dismiss();
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
++    await expect(page).toHaveURL(/\/research\/.+/);
++
++    const forwardPrompt = page.waitForEvent("dialog", { timeout: 5000 });
++    await page.evaluate(() => window.history.forward());
++    const forwardDialog = await forwardPrompt;
++    expect(forwardDialog.message()).toContain("ещё не подтверждены сервером");
++    await forwardDialog.dismiss();
++    await expect(page).toHaveURL(detailUrl);
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
++
++    const historyPrompt = page.waitForEvent("dialog");
++    await page.evaluate(() => window.history.back());
++    const historyDialog = await historyPrompt;
++    expect(historyDialog.message()).toContain("ещё не подтверждены сервером");
++    await historyDialog.dismiss();
++    await expect(page).toHaveURL(detailUrl);
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
++    for (const sharedLink of ["Респонденты", "Travel Club"]) {
++      const sharedPrompt = page.waitForEvent("dialog", { timeout: 1500 }).catch(() => null);
++      await page.getByRole("link", { name: sharedLink, exact: true }).click();
++      const sharedDialog = await sharedPrompt;
++      expect(sharedDialog, `Shared link ${sharedLink} should warn before leaving a dirty answer`).not.toBeNull();
++      if (!sharedDialog) break;
++      expect(sharedDialog.message()).toContain("ещё не подтверждены сервером");
++      await sharedDialog.dismiss();
++      await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
++      await expect(page).toHaveURL(/\/research\/.+/);
++    }
++    const prevented = await page.evaluate(() => {
++      const event = new Event("beforeunload", { cancelable: true });
++      window.dispatchEvent(event);
++      return event.defaultPrevented;
++    });
++    expect(prevented).toBe(true);
++    await page.unroute(answerRoute);
++    await page.evaluate(() => window.dispatchEvent(new Event("online")));
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++  });
++
++  await test.step("9b. Confirm browser Forward without creating a history entry", async () => {
++    await page.getByLabel("Ответ G01").fill("Confirmed browser history note.");
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++    await page.route(answerRoute, (route) => route.abort());
++    await page.getByLabel("Ответ G01").fill("Unsaved note before confirmed browser navigation.");
++    await expect(answerCard.getByText(/Нет связи · черновик сохранён/)).toBeVisible({ timeout: 7000 });
++
++    const confirmForward = page.waitForEvent("dialog");
++    await page.evaluate(() => window.history.forward());
++    const forwardDialog = await confirmForward;
++    expect(forwardDialog.message()).toContain("ещё не подтверждены сервером");
++    await forwardDialog.accept();
++    await expect(page).toHaveURL(/\/research$/);
++
++    const destinationEntry = await page.evaluate(() => ({
++      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
++      length: history.length,
++    }));
++    expect(destinationEntry.index).toBe(listHistoryIndex);
++    expect(destinationEntry.length).toBe(interviewHistoryLength);
++
++    await page.evaluate(() => window.history.back());
++    await page.waitForURL((url) => url.pathname === respondentDetailPath);
++    const returnedEntry = await page.evaluate(() => ({
++      index: (history.state as { __tcResearchHistoryIndex?: number } | null)?.__tcResearchHistoryIndex ?? null,
++      length: history.length,
++    }));
++    expect(returnedEntry.index).toBe(detailHistoryIndex);
++    expect(returnedEntry.length).toBe(interviewHistoryLength);
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
++    await page.unroute(answerRoute);
++    await page.evaluate(() => window.dispatchEvent(new Event("online")));
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++  });
++
++  await test.step("10–11. Confirm completion with empty questions and test cancellation first", async () => {
++    await expect(page.getByText("Заполнено 1 из 11")).toBeVisible();
++    await page.getByRole("button", { name: "Завершить интервью" }).click();
++    await expect(page.getByRole("dialog")).toContainText("Некоторые вопросы могут остаться без ответа");
++    const cancelButton = page.getByRole("button", { name: "Отмена" });
++    const confirmButton = page.getByRole("button", { name: "Да, завершить" });
++    await expect(cancelButton).toBeFocused();
++    await page.keyboard.press("Shift+Tab");
++    await expect(confirmButton).toBeFocused();
++    await page.keyboard.press("Tab");
++    await expect(cancelButton).toBeFocused();
++    await page.keyboard.press("Escape");
++    await expect(page.getByRole("dialog")).toHaveCount(0);
++    await expect(page.getByRole("button", { name: "Завершить интервью" })).toBeFocused();
++    await page.getByRole("button", { name: "Завершить интервью" }).click();
++    await page.getByRole("button", { name: "Отмена" }).click();
++    await expect(page.getByRole("dialog")).toHaveCount(0);
++    await page.getByRole("button", { name: "Завершить интервью" }).click();
++    await page.evaluate(() => {
++      window.scrollTo = ((target: ScrollToOptions | number) => {
++        const behavior = typeof target === "number" ? "positional" : target.behavior ?? "auto";
++        document.documentElement.setAttribute("data-research-scroll-behavior", behavior);
++      }) as typeof window.scrollTo;
++      document.documentElement.removeAttribute("data-research-scroll-behavior");
++    });
++    await page.getByRole("button", { name: "Да, завершить" }).click();
++    await expect(page.getByRole("status").filter({ hasText: "Все заметки останутся доступны" })).toBeVisible({ timeout: 7000 });
++    await expect(page.locator("html")).toHaveAttribute("data-research-scroll-behavior", "auto");
++  });
++
++  await test.step("12–15. Reopen, edit a completed answer and screening without replacing the snapshot", async () => {
++    await page.goto("/research");
++    await page.getByPlaceholder("Имя или псевдоним").fill(respondentName);
++    await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
++    await page.getByLabel("Категория").selectOption("travel_design");
++    await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
++    await page.getByRole("link", { name: respondentName }).click();
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
++    await page.getByLabel("Ответ G01").fill("Позднее дополнение к завершённому интервью.");
++    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++    await page.getByRole("button", { name: "Изменить анкету" }).click();
++    await page.getByLabel("Город проживания").fill("Екатеринбург");
++    await page.getByRole("button", { name: "Сохранить изменения анкеты" }).click();
++    await expect(page.getByText(/Предложение пересчитано; текущий сценарий и ответы не менялись\./)).toBeVisible();
++    await expect(page.getByRole("button", { name: "Обновить категорию по рекомендации" })).toBeVisible();
++    await page.getByRole("button", { name: "Обновить категорию по рекомендации" }).click();
++    await expect(page.getByRole("status")).toContainText("Сценарий и ответы проведённого интервью остались прежними.");
++    await expect(page.getByText(/категория Trips \/ Опытный путешественник/)).toBeVisible();
++    await expect(page.getByRole("heading", { name: "Travel Design" })).toBeVisible();
++    await expect(page.getByRole("heading", { name: originalG01, exact: true })).toBeVisible();
++    await expect(page.getByLabel("Ответ G01")).toHaveValue("Позднее дополнение к завершённому интервью.");
++  });
++
++  await test.step("16. Search and filter the respondent list", async () => {
++    await page.goto("/research");
++    await page.getByPlaceholder("Имя или псевдоним").fill(respondentName);
++    await page.getByLabel("Категория").selectOption("trips_experienced");
++    await page.getByLabel("Статус").selectOption("completed");
++    await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
++  });
++
++  await test.step("17–18. Export all records with actual answer data, then export after another edit", async () => {
++    await page.getByLabel("Категория").selectOption("trips_beginner");
++    await expect(page.getByRole("link", { name: respondentName })).toHaveCount(0);
++    const firstDownload = page.waitForEvent("download");
++    await page.getByRole("button", { name: "Экспорт в Excel" }).click();
++    const firstFile = await firstDownload;
++    const firstBuffer = await readFile(await firstFile.path() ?? "");
++    const firstXml = workbookXml(firstBuffer);
++    expect(firstFile.suggestedFilename()).toMatch(/^tc-research-\d{4}-\d{2}-\d{2}\.xlsx$/);
++    expect(firstXml).toContain(respondentName);
++    expect(firstXml).toContain("Позднее дополнение к завершённому интервью.");
++    expect(firstXml).toContain(originalG01);
++    expect(firstXml).toContain("H01");
++
++    await page.getByLabel("Категория").selectOption("trips_experienced");
++    await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
++    await page.getByRole("link", { name: respondentName }).click();
++    await page.getByLabel("Ответ G01").fill("Новая версия для повторной выгрузки.");
++    await expect(page.locator("#question-G01").getByText("Сохранено")).toBeVisible({ timeout: 7000 });
++    await page.goto("/research");
++    await page.getByPlaceholder("Имя или псевдоним").fill(respondentName);
++    const secondDownload = page.waitForEvent("download");
++    await page.getByRole("button", { name: "Экспорт в Excel" }).click();
++    const secondFile = await secondDownload;
++    const secondXml = workbookXml(await readFile(await secondFile.path() ?? ""));
++    expect(secondXml).toContain("Новая версия для повторной выгрузки.");
++
++  });
++  await test.step("Responsive list and interview layout at phone widths", async () => {
++    await page.setViewportSize({ width: 390, height: 844 });
++    await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
++    await expect(page.getByRole("list", { name: "Респонденты" })).toBeVisible();
++    await expect(page.getByRole("table")).toBeHidden();
++    await expect(page.getByRole("listitem", { name: "Респондент " + respondentName })).toBeVisible();
++    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++    await page.setViewportSize({ width: 320, height: 720 });
++    await expect(page.getByRole("list", { name: "Респонденты" })).toBeVisible();
++    await expect(page.getByRole("table")).toBeHidden();
++    await expect(page.getByRole("listitem", { name: "Респондент " + respondentName })).toBeVisible();
++    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++    await page.getByRole("link", { name: respondentName }).click();
++    await expect(page.getByLabel("Ответ G01")).toBeVisible();
++    const stickyMeta = page.getByLabel("Сводка интервью");
++    await expect(stickyMeta).toBeVisible();
++    await expect(stickyMeta).toContainText("Самостоятельные поездки:");
++    await expect(stickyMeta).toContainText("Итоговая категория:");
++    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++    await page.setViewportSize({ width: 390, height: 844 });
++    await expect(stickyMeta).toBeVisible();
++    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
++
++    await page.emulateMedia({ reducedMotion: "reduce" });
++    await page.route(answerRoute, async (route) => {
++      await new Promise((resolve) => setTimeout(resolve, 1400));
++      await route.continue();
++    });
++    await page.getByLabel("Ответ G01").fill("Проверка системной настройки уменьшения движения.");
++    const saving = page.getByText("Сохраняется").first();
++    await expect(saving).toBeVisible();
++    expect(await saving.locator("svg").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
++    expect(await page.getByRole("progressbar").locator("div").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
++  });
++});
+diff --git a/frontend/src/app/research/[id]/page.tsx b/frontend/src/app/research/[id]/page.tsx
+new file mode 100644
+index 0000000..8a5bea4
+--- /dev/null
++++ b/frontend/src/app/research/[id]/page.tsx
+@@ -0,0 +1,3 @@
++import { RespondentDetailPage } from "@/components/research/respondent-detail";
++
++export default function ResearchRespondentPage() { return <RespondentDetailPage />; }
+diff --git a/frontend/src/app/research/layout.tsx b/frontend/src/app/research/layout.tsx
+new file mode 100644
+index 0000000..803fa48
+--- /dev/null
++++ b/frontend/src/app/research/layout.tsx
+@@ -0,0 +1,21 @@
++import Link from "next/link";
++import { ArrowLeft } from "lucide-react";
++import { requireAdmin } from "@/lib/server-auth";
++import styles from "@/components/research/research.module.css";
++import { ResearchHistoryTracker } from "@/components/research/history-tracker";
++
++export default async function ResearchLayout({ children }: { children: React.ReactNode }) {
++  await requireAdmin();
++  return <>
++    <ResearchHistoryTracker />
++    <div className={styles.root}>
++    <header className={styles.shell}>
++      <nav className={styles.topbar} aria-label="TC Research">
++        <Link className={styles.brand} href="/research"><span className={styles.brandMark}>TC</span>TC Research</Link>
++        <div className={styles.topLinks}><Link className={styles.topLink} href="/research">Респонденты</Link><Link className={styles.topLink} href="/admin/trips"><ArrowLeft size={15} aria-hidden /> Travel Club</Link></div>
++      </nav>
++    </header>
++    <main className={styles.shell}>{children}</main>
++    </div>
++  </>;
++}
+diff --git a/frontend/src/app/research/new/page.tsx b/frontend/src/app/research/new/page.tsx
+new file mode 100644
+index 0000000..aa09dd0
+--- /dev/null
++++ b/frontend/src/app/research/new/page.tsx
+@@ -0,0 +1,3 @@
++import { RespondentNewPage } from "@/components/research/respondent-new";
++
++export default function ResearchNewPage() { return <RespondentNewPage />; }
+diff --git a/frontend/src/app/research/page.tsx b/frontend/src/app/research/page.tsx
+new file mode 100644
+index 0000000..e7baad4
+--- /dev/null
++++ b/frontend/src/app/research/page.tsx
+@@ -0,0 +1,3 @@
++import { RespondentListPage } from "@/components/research/respondent-list";
++
++export default function ResearchPage() { return <RespondentListPage />; }
+diff --git a/frontend/src/components/research/answer-card.test.tsx b/frontend/src/components/research/answer-card.test.tsx
+new file mode 100644
+index 0000000..80da195
+--- /dev/null
++++ b/frontend/src/components/research/answer-card.test.tsx
+@@ -0,0 +1,82 @@
++import { useState } from "react";
++import { fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { ResearchApiError, researchApi } from "@/lib/research";
++import { AnswerCard } from "./answer-card";
++
++describe("AnswerCard", () => {
++  afterEach(() => {
++    vi.restoreAllMocks();
++    localStorage.clear();
++    Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
++  });
++
++  it("keeps a changed answer pending until PostgreSQL confirms it", async () => {
++    let confirmSave!: (value: { answer_text: string; revision: number; updated_at: string }) => void;
++    const saveAnswer = vi.spyOn(researchApi, "saveAnswer").mockReturnValue(new Promise((resolve) => { confirmSave = resolve; }));
++
++    render(<AnswerCard interviewId="interview-1" question={{
++      code: "G01",
++      section: "general",
++      text: "Расскажите о последнем путешествии.",
++      type: "long_text",
++      options: [],
++      follow_ups: [],
++      hypothesis_ids: ["H01"],
++      interpretation: "",
++      answer_guidance: "",
++      bank_version: "1.0",
++    }} initialAnswer={null} />);
++
++    const answer = screen.getByLabelText("Ответ G01");
++    fireEvent.change(answer, { target: { value: "Путешествовали по Италии." } });
++
++    expect(screen.getByText(/Не сохранено|Сохраняется/)).toBeInTheDocument();
++    await waitFor(() => expect(saveAnswer).toHaveBeenCalledWith("interview-1", "G01", "Путешествовали по Италии.", 0, true));
++    expect(screen.queryByText("Сохранено")).not.toBeInTheDocument();
++
++    confirmSave({ answer_text: "Путешествовали по Италии.", revision: 1, updated_at: "2026-10-19T00:00:00Z" });
++    expect(await screen.findByText("Сохранено")).toBeInTheDocument();
++  });
++
++  it("does not claim an offline draft was saved when browser storage rejects it", async () => {
++    Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
++    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new DOMException("Storage full", "QuotaExceededError"); });
++    vi.spyOn(researchApi, "saveAnswer").mockRejectedValue(new Error("should stay offline"));
++
++    render(<AnswerCard interviewId="interview-storage-failure" question={{
++      code: "G01", section: "general", text: "Расскажите о последнем путешествии.", type: "long_text",
++      options: [], follow_ups: [], hypothesis_ids: [], interpretation: "", answer_guidance: "", bank_version: "1.0",
++    }} initialAnswer={null} />);
++
++    const answer = screen.getByLabelText("Ответ G01");
++    fireEvent.change(answer, { target: { value: "Пока в памяти вкладки." } });
++    expect(await screen.findByText("Нет связи · черновик недоступен")).toBeInTheDocument();
++    expect(answer).toHaveValue("Пока в памяти вкладки.");
++    expect(screen.queryByText("Нет связи · черновик сохранён")).not.toBeInTheDocument();
++  });
++
++  it("updates the parent progress when the interviewer chooses the server version", async () => {
++    vi.spyOn(researchApi, "saveAnswer").mockRejectedValue(new ResearchApiError(409, "Changed elsewhere", "REVISION_CONFLICT", {
++      current: { answer_text: "", revision: 2, updated_at: "2026-10-19T00:00:00Z" },
++    }));
++    function ProgressHarness() {
++      const [answer, setAnswer] = useState("");
++      return <>
++        <p>{`Заполнено ${answer.trim() ? 1 : 0} из 1`}</p>
++        <AnswerCard interviewId="interview-conflict" question={{
++          code: "G01", section: "general", text: "Расскажите о последнем путешествии.", type: "long_text",
++          options: [], follow_ups: [], hypothesis_ids: [], interpretation: "", answer_guidance: "", bank_version: "1.0",
++        }} initialAnswer={null} onAnswerChange={(_, value) => setAnswer(value)} />
++      </>;
++    }
++
++    render(<ProgressHarness />);
++    fireEvent.change(screen.getByLabelText("Ответ G01"), { target: { value: "Локальный ответ" } });
++    await screen.findByText("Конфликт версий");
++    fireEvent.click(screen.getByRole("button", { name: "Взять серверную версию" }));
++
++    expect(screen.getByLabelText("Ответ G01")).toHaveValue("");
++    await waitFor(() => expect(screen.getByText("Заполнено 0 из 1")).toBeInTheDocument());
++  });
++});
+diff --git a/frontend/src/components/research/answer-card.tsx b/frontend/src/components/research/answer-card.tsx
+new file mode 100644
+index 0000000..43a3c54
+--- /dev/null
++++ b/frontend/src/components/research/answer-card.tsx
+@@ -0,0 +1,190 @@
++"use client";
++
++import { useCallback, useEffect, useRef, useState } from "react";
++import { ChevronDown, CircleAlert, CircleCheck, CloudOff, LoaderCircle, Save } from "lucide-react";
++import { AnswerVersion, ResearchApiError, ResearchQuestion, clearAnswerDraft, readAnswerDraft, registerAnswerFlusher, researchApi, writeAnswerDraft } from "@/lib/research";
++import styles from "./research.module.css";
++
++type SaveState = "idle" | "saved" | "dirty" | "saving" | "offline" | "error" | "conflict";
++
++export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChange }: {
++  interviewId: string; question: ResearchQuestion; initialAnswer: AnswerVersion | null; onAnswerChange?: (code: string, value: string) => void;
++}) {
++  const storedDraft = readAnswerDraft(interviewId, question.code);
++  const serverText = initialAnswer?.answer_text ?? "";
++  const draftIsNewer = storedDraft !== null && (!initialAnswer?.updated_at || Date.parse(storedDraft.updated_at) > Date.parse(initialAnswer.updated_at));
++  const initialText = draftIsNewer ? storedDraft.answer_text : serverText;
++  const [value, setValue] = useState(initialText);
++  const valueRef = useRef(initialText);
++  const revisionRef = useRef(initialAnswer?.revision ?? 0);
++  const sequenceRef = useRef(draftIsNewer ? 1 : 0);
++  const savedSequenceRef = useRef(draftIsNewer ? 0 : 0);
++  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++  const savingRef = useRef(false);
++  const retryRef = useRef(false);
++  const conflictRef = useRef(false);
++  const inflightRef = useRef<Promise<boolean> | null>(null);
++  const [state, setState] = useState<SaveState>(draftIsNewer ? "dirty" : initialAnswer ? "saved" : "idle");
++  const [draftAvailable, setDraftAvailable] = useState(true);
++  const draftAvailableRef = useRef(true);
++  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(draftIsNewer);
++  const [conflict, setConflict] = useState<AnswerVersion | null | undefined>(undefined);
++
++  const flushRef = useRef<() => Promise<boolean>>(async () => false);
++  const flush = useCallback(async (): Promise<boolean> => {
++    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
++    if (inflightRef.current) {
++      retryRef.current = true;
++      const inFlightResult = await inflightRef.current;
++      if (!inFlightResult || conflictRef.current) return false;
++      return await flushRef.current();
++    }
++    if (sequenceRef.current === savedSequenceRef.current) return true;
++    if (typeof navigator !== "undefined" && !navigator.onLine) { setState("offline"); return false; }
++    savingRef.current = true;
++    retryRef.current = false;
++    setState("saving");
++    const operation = (async () => {
++      try {
++        while (sequenceRef.current !== savedSequenceRef.current) {
++          const textToSave = valueRef.current;
++          const sequenceToSave = sequenceRef.current;
++          const saved = await researchApi.saveAnswer(interviewId, question.code, textToSave, revisionRef.current, draftAvailableRef.current);
++          revisionRef.current = saved.revision;
++          savedSequenceRef.current = sequenceToSave;
++          clearAnswerDraft(interviewId, question.code, textToSave);
++          setConflict(undefined);
++          conflictRef.current = false;
++        }
++        setHasUnsavedChanges(false);
++        setState("saved");
++        return true;
++      } catch (error) {
++        if (error instanceof ResearchApiError && error.status === 409) {
++          const details = error.details as { current?: AnswerVersion | null } | undefined;
++          conflictRef.current = true;
++          setConflict(details?.current ?? null);
++          setState("conflict");
++        } else if (!navigator.onLine || (error instanceof ResearchApiError && error.status === 0)) {
++          setState("offline");
++        } else {
++          setState("error");
++        }
++        return false;
++      } finally {
++        savingRef.current = false;
++      }
++    })();
++    inflightRef.current = operation;
++    const result = await operation;
++    if (inflightRef.current === operation) inflightRef.current = null;
++    if (retryRef.current && result && !conflictRef.current && sequenceRef.current !== savedSequenceRef.current) {
++      retryRef.current = false;
++      return await flushRef.current();
++    }
++    retryRef.current = false;
++    return result;
++  }, [interviewId, question.code]);
++  useEffect(() => { flushRef.current = flush; }, [flush]);
++
++  useEffect(() => {
++    const unregister = registerAnswerFlusher(
++      interviewId,
++      () => flushRef.current(),
++      () => sequenceRef.current !== savedSequenceRef.current,
++    );
++    if (draftIsNewer) void flushRef.current();
++    onAnswerChange?.(question.code, initialText);
++    return unregister;
++  // Initial reconciliation must run only once for a newly opened question.
++  // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [interviewId, question.code, initialText, onAnswerChange]);
++
++  useEffect(() => {
++    const onOnline = () => { if (sequenceRef.current !== savedSequenceRef.current) void flushRef.current(); };
++    const onBeforeUnload = (event: BeforeUnloadEvent) => {
++      if (sequenceRef.current !== savedSequenceRef.current) { event.preventDefault(); event.returnValue = ""; }
++    };
++    window.addEventListener("online", onOnline);
++    window.addEventListener("beforeunload", onBeforeUnload);
++    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("beforeunload", onBeforeUnload); };
++  }, []);
++
++  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
++
++  const changeValue = (next: string) => {
++    valueRef.current = next;
++    onAnswerChange?.(question.code, next);
++    sequenceRef.current += 1;
++    setHasUnsavedChanges(true);
++    setValue(next);
++    setState(conflictRef.current ? "conflict" : "dirty");
++    const draftStored = writeAnswerDraft(interviewId, question.code, next);
++    draftAvailableRef.current = draftStored;
++    setDraftAvailable(draftStored);
++    if (conflictRef.current) return;
++    if (timerRef.current) clearTimeout(timerRef.current);
++    timerRef.current = setTimeout(() => void flushRef.current(), 650);
++  };
++
++  const useOtherVersion = () => {
++    const text = conflict?.answer_text ?? "";
++    valueRef.current = text;
++    setValue(text);
++    onAnswerChange?.(question.code, text);
++    revisionRef.current = conflict?.revision ?? 0;
++    sequenceRef.current += 1;
++    savedSequenceRef.current = sequenceRef.current;
++    setHasUnsavedChanges(false);
++    setConflict(undefined);
++    conflictRef.current = false;
++    setState("saved");
++    clearAnswerDraft(interviewId, question.code);
++  };
++
++  const saveMyVersion = () => {
++    revisionRef.current = conflict?.revision ?? 0;
++    setConflict(undefined);
++    conflictRef.current = false;
++    setState("dirty");
++    void flushRef.current();
++  };
++
++  const volatileStatus = hasUnsavedChanges && !draftAvailable
++    ? state === "offline" ? "Нет связи · черновик недоступен"
++      : state === "saving" ? "Сохраняется · текст только в памяти"
++        : state === "conflict" ? "Конфликт версий · текст только в памяти"
++          : state === "error" ? "Ошибка · текст только в памяти"
++            : "Черновик недоступен · текст только в памяти"
++    : null;
++  const status = volatileStatus ?? (state === "saved" ? "Сохранено" : state === "saving" ? "Сохраняется" : state === "dirty" ? "Не сохранено" : state === "idle" ? "Пока пусто" : state === "offline" ? "Нет связи · черновик сохранён" : state === "conflict" ? "Конфликт версий" : "Ошибка сохранения");
++  return <article className={styles.questionCard} id={`question-${question.code}`}>
++    <div className={styles.questionTitleRow}>
++      <span className={styles.questionCode}>{question.code}</span>
++      <div className={styles.saveState} aria-live="polite" data-state={state}>
++        {state === "saved" ? <CircleCheck size={16} aria-hidden /> : state === "saving" ? <LoaderCircle size={16} aria-hidden className={styles.spin} /> : state === "offline" ? <CloudOff size={16} aria-hidden /> : state === "conflict" || state === "error" ? <CircleAlert size={16} aria-hidden /> : <Save size={16} aria-hidden />}
++        {status}
++      </div>
++    </div>
++    <h3>{question.text}</h3>
++    <label className={styles.srOnly} htmlFor={`answer-${question.code}`}>Ответ {question.code}</label>
++    <textarea id={`answer-${question.code}`} value={value} onChange={(event) => changeValue(event.target.value)} onBlur={() => void flushRef.current()} placeholder="Запишите ответ или ключевые мысли…" rows={5} />
++    {state === "conflict" && <div className={styles.conflictBox} role="alert">
++      <p>Ответ в другой вкладке уже изменён. {draftAvailable ? "Ваш текст сохранён отдельно в этом браузере." : "Ваш текст пока есть только в памяти этой вкладки."}</p>
++      <div className={styles.inlineActions}>
++        <button type="button" className={styles.secondaryButton} onClick={useOtherVersion}>Взять серверную версию</button>
++        <button type="button" className={styles.primaryButton} onClick={saveMyVersion}>Сохранить мой текст</button>
++      </div>
++    </div>}
++    {state === "error" && <button type="button" className={styles.textButton} onClick={() => void flushRef.current()}>Повторить сохранение</button>}
++    {(question.follow_ups?.length || question.hypothesis_ids?.length || question.interpretation || question.answer_guidance) ? <details className={styles.hints}>
++      <summary><ChevronDown size={16} aria-hidden /> Подсказки интервьюеру</summary>
++      <div className={styles.hintContent}>
++        {question.follow_ups?.length ? <section><strong>Уточнить</strong><ul>{question.follow_ups.map((hint) => <li key={hint}>{hint}</li>)}</ul></section> : null}
++        {question.hypothesis_ids?.length ? <p><strong>Гипотезы:</strong> {question.hypothesis_ids.join(", ")}</p> : null}
++        {question.interpretation ? <p><strong>Как читать ответ:</strong> {question.interpretation}</p> : null}
++        {question.answer_guidance ? <p><strong>Подсказка:</strong> {question.answer_guidance}</p> : null}
++      </div>
++    </details> : null}
++  </article>;
++}
+diff --git a/frontend/src/components/research/completion-dialog.test.tsx b/frontend/src/components/research/completion-dialog.test.tsx
+new file mode 100644
+index 0000000..c024a3f
+--- /dev/null
++++ b/frontend/src/components/research/completion-dialog.test.tsx
+@@ -0,0 +1,34 @@
++import { useRef, useState } from "react";
++import { fireEvent, render, screen } from "@testing-library/react";
++import { describe, expect, it } from "vitest";
++import { CompletionDialog } from "./completion-dialog";
++
++function DialogHarness() {
++  const [open, setOpen] = useState(false);
++  const triggerRef = useRef<HTMLButtonElement>(null);
++  return <>
++    <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>Open completion</button>
++    {open && <CompletionDialog returnFocusRef={triggerRef} onClose={() => setOpen(false)} onConfirm={() => undefined} />}
++  </>;
++}
++
++describe("CompletionDialog", () => {
++  it("moves focus in, traps keyboard navigation, closes on Escape, and restores focus", () => {
++    render(<DialogHarness />);
++    const trigger = screen.getByRole("button", { name: "Open completion" });
++    fireEvent.click(trigger);
++
++    const cancel = screen.getByRole("button", { name: "Отмена" });
++    const confirm = screen.getByRole("button", { name: "Да, завершить" });
++    expect(cancel).toHaveFocus();
++
++    fireEvent.keyDown(cancel, { key: "Tab", shiftKey: true });
++    expect(confirm).toHaveFocus();
++    fireEvent.keyDown(confirm, { key: "Tab" });
++    expect(cancel).toHaveFocus();
++
++    fireEvent.keyDown(cancel, { key: "Escape" });
++    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
++    expect(trigger).toHaveFocus();
++  });
++});
+diff --git a/frontend/src/components/research/completion-dialog.tsx b/frontend/src/components/research/completion-dialog.tsx
+new file mode 100644
+index 0000000..1c6a0f7
+--- /dev/null
++++ b/frontend/src/components/research/completion-dialog.tsx
+@@ -0,0 +1,70 @@
++"use client";
++
++import { KeyboardEvent, useEffect, useRef } from "react";
++import { Send } from "lucide-react";
++import styles from "./research.module.css";
++
++export function CompletionDialog({ returnFocusRef, busy, error, onClose, onConfirm }: {
++  returnFocusRef: { current: HTMLButtonElement | null };
++  busy?: boolean;
++  error?: string;
++  onClose: () => void;
++  onConfirm: () => void;
++}) {
++  const dialogRef = useRef<HTMLElement>(null);
++
++  useEffect(() => {
++    const dialog = dialogRef.current;
++    const returnFocusTarget = returnFocusRef.current;
++    const firstButton = dialog?.querySelector<HTMLButtonElement>("button:not(:disabled)");
++    (firstButton ?? dialog)?.focus();
++    return () => {
++      if (returnFocusTarget?.isConnected) returnFocusTarget.focus();
++    };
++  }, [returnFocusRef]);
++
++  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
++    if (event.key === "Escape") {
++      if (!busy) {
++        event.preventDefault();
++        onClose();
++      }
++      return;
++    }
++    if (event.key !== "Tab") return;
++
++    const dialog = dialogRef.current;
++    if (!dialog) return;
++    const focusable = [...dialog.querySelectorAll<HTMLElement>(
++      'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
++    )].filter((element) => !element.hasAttribute("hidden"));
++    if (focusable.length === 0) {
++      event.preventDefault();
++      dialog.focus();
++      return;
++    }
++
++    const first = focusable[0];
++    const last = focusable[focusable.length - 1];
++    const active = document.activeElement;
++    if (event.shiftKey && (active === first || active === dialog)) {
++      event.preventDefault();
++      last.focus();
++    } else if (!event.shiftKey && (active === last || !dialog.contains(active))) {
++      event.preventDefault();
++      first.focus();
++    }
++  };
++
++  return <div className={styles.modalBackdrop}>
++    <section ref={dialogRef} className={styles.modal} role="dialog" aria-modal="true" aria-labelledby="complete-title" aria-describedby="complete-copy" tabIndex={-1} onKeyDown={handleKeyDown}>
++      <h2 id="complete-title">Завершить интервью?</h2>
++      <p id="complete-copy">Вы уверены, что хотите завершить интервью? Некоторые вопросы могут остаться без ответа. Все сохранённые данные останутся доступны для просмотра и редактирования.</p>
++      {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
++      <div className={styles.modalActions}>
++        <button className={styles.secondaryButton} type="button" onClick={onClose} disabled={busy}>Отмена</button>
++        <button className={styles.primaryButton} type="button" onClick={onConfirm} disabled={busy}>{busy ? "Сохраняем ответы…" : "Да, завершить"}<Send size={16} aria-hidden /></button>
++      </div>
++    </section>
++  </div>;
++}
+diff --git a/frontend/src/components/research/history-tracker.tsx b/frontend/src/components/research/history-tracker.tsx
+new file mode 100644
+index 0000000..3b39044
+--- /dev/null
++++ b/frontend/src/components/research/history-tracker.tsx
+@@ -0,0 +1,136 @@
++"use client";
++
++import { useEffect } from "react";
++import { flushAllPendingAnswers, hasPendingAnswerDrafts } from "@/lib/research";
++
++const historyIndexKey = "__tcResearchHistoryIndex";
++let latestHistoryIndex = 0;
++
++function stateWithIndex(state: unknown, index: number): Record<string, unknown> {
++  return {
++    ...(state && typeof state === "object" ? state as Record<string, unknown> : {}),
++    [historyIndexKey]: index,
++  };
++}
++
++function indexFromState(state: unknown): number | null {
++  if (!state || typeof state !== "object") return null;
++  const index = (state as Record<string, unknown>)[historyIndexKey];
++  return typeof index === "number" ? index : null;
++}
++
++export function ResearchHistoryTracker() {
++  useEffect(() => {
++    const history = window.history;
++    const originalPushState = history.pushState;
++    const originalReplaceState = history.replaceState;
++    let currentEntry = {
++      href: window.location.href,
++      index: indexFromState(history.state) ?? Math.max(++latestHistoryIndex, history.length),
++    };
++    latestHistoryIndex = Math.max(latestHistoryIndex, currentEntry.index);
++    let restoringHistory = false;
++    let replayingHistory = false;
++    let historyDestination: string | null = null;
++    let restoreDelta: number | null = null;
++    let navigationPending = false;
++
++    const updateCurrentEntry = () => {
++      currentEntry = { href: window.location.href, index: indexFromState(history.state) ?? currentEntry.index };
++    };
++
++    originalReplaceState.call(history, stateWithIndex(history.state, currentEntry.index), "", window.location.href);
++
++    const trackedPushState: History["pushState"] = function (data, unused, url) {
++      const nextIndex = ++latestHistoryIndex;
++      const result = originalPushState.call(history, stateWithIndex(data, nextIndex), unused, url);
++      updateCurrentEntry();
++      return result;
++    };
++    const trackedReplaceState: History["replaceState"] = function (data, unused, url) {
++      const nextIndex = indexFromState(data) ?? currentEntry.index;
++      const result = originalReplaceState.call(history, stateWithIndex(data, nextIndex), unused, url);
++      updateCurrentEntry();
++      return result;
++    };
++
++    history.pushState = trackedPushState;
++    history.replaceState = trackedReplaceState;
++
++    const guardBrowserHistory = (event: PopStateEvent) => {
++      if (replayingHistory) {
++        const expected = historyDestination;
++        if (expected && window.location.href === expected) {
++          replayingHistory = false;
++          historyDestination = null;
++          restoreDelta = null;
++          navigationPending = false;
++          updateCurrentEntry();
++          return;
++        }
++        replayingHistory = false;
++        navigationPending = false;
++      }
++
++      if (restoringHistory) {
++        event.preventDefault();
++        event.stopImmediatePropagation();
++        restoringHistory = false;
++        updateCurrentEntry();
++        const destination = historyDestination;
++        if (destination) {
++          window.setTimeout(() => {
++            void (async () => {
++              const saved = await flushAllPendingAnswers().catch(() => false);
++              if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) {
++                historyDestination = null;
++                restoreDelta = null;
++                navigationPending = false;
++                return;
++              }
++              if (restoreDelta === null) {
++                historyDestination = null;
++                navigationPending = false;
++                return;
++              }
++              replayingHistory = true;
++              history.go(-restoreDelta);
++            })();
++          }, 0);
++        } else {
++          restoreDelta = null;
++          navigationPending = false;
++        }
++        return;
++      }
++
++      const target = { href: window.location.href, index: indexFromState(event.state) };
++      const currentUrl = new URL(currentEntry.href);
++      const targetUrl = new URL(target.href);
++      const changesRoute = targetUrl.origin === currentUrl.origin
++        && (targetUrl.pathname !== currentUrl.pathname || targetUrl.search !== currentUrl.search);
++
++      if (!changesRoute || !hasPendingAnswerDrafts() || navigationPending) {
++        currentEntry = { href: target.href, index: target.index ?? currentEntry.index };
++        return;
++      }
++
++      event.preventDefault();
++      event.stopImmediatePropagation();
++      navigationPending = true;
++      historyDestination = target.href;
++      restoringHistory = true;
++      restoreDelta = target.index !== null && target.index > currentEntry.index ? -1 : 1;
++      history.go(restoreDelta);
++    };
++
++    window.addEventListener("popstate", guardBrowserHistory, true);
++    return () => {
++      window.removeEventListener("popstate", guardBrowserHistory, true);
++      if (history.pushState === trackedPushState) history.pushState = originalPushState;
++      if (history.replaceState === trackedReplaceState) history.replaceState = originalReplaceState;
++    };
++  }, []);
++
++  return null;
++}
+diff --git a/frontend/src/components/research/research.module.css b/frontend/src/components/research/research.module.css
+new file mode 100644
+index 0000000..4693a0d
+--- /dev/null
++++ b/frontend/src/components/research/research.module.css
+@@ -0,0 +1,188 @@
++.root {
++  --research-bg: #f5f7fb;
++  --research-surface: #fff;
++  --research-text: #17253b;
++  --research-muted: #5d6b80;
++  --research-line: #dce3ed;
++  --research-blue: #173f7a;
++  --research-blue-soft: #edf3fb;
++  --research-success: #14795d;
++  --research-danger: #a83232;
++  min-height: 100dvh;
++  background: var(--research-bg);
++  color: var(--research-text);
++  font-family: system-ui, "Segoe UI", Aptos, Arial, sans-serif;
++}
++.shell { max-width: 1440px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 40px) 80px; }
++.topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 54px; margin-bottom: 42px; }
++.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--research-text); text-decoration: none; font-weight: 750; letter-spacing: -.02em; }
++.brandMark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: var(--research-blue); color: white; font-size: .82rem; letter-spacing: -.04em; }
++.topLinks { display: flex; align-items: center; gap: 20px; }
++.topLink { color: var(--research-muted); text-decoration: none; font-size: .9rem; }
++.topLink:hover, .textButton:hover { color: var(--research-blue); }
++.page { max-width: 1160px; margin: 0 auto; }
++.pageHeader { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
++.eyebrow { color: var(--research-muted); font-size: .78rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
++.pageHeader h1 { margin: 6px 0 0; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.12; letter-spacing: -.045em; }
++.pageHeader p { max-width: 660px; margin: 10px 0 0; color: var(--research-muted); }
++.primaryButton, .secondaryButton, .dangerButton, .textButton {
++  display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 9px;
++  border: 1px solid transparent; border-radius: 9px; padding: 10px 16px; font: inherit; font-size: .9rem; font-weight: 650; text-decoration: none; cursor: pointer;
++}
++.primaryButton { background: var(--research-blue); color: white; box-shadow: 0 5px 14px rgb(23 63 122 / .13); }
++.primaryButton:hover { background: #0e3267; }
++.secondaryButton { border-color: var(--research-line); background: var(--research-surface); color: var(--research-text); }
++.secondaryButton:hover { border-color: #b7c7dc; background: #f9fbfe; }
++.dangerButton { background: var(--research-danger); color: white; }
++.textButton { min-height: 36px; padding: 4px 8px; background: transparent; color: var(--research-muted); }
++.primaryButton:disabled, .secondaryButton:disabled { opacity: .55; cursor: not-allowed; }
++.panel { border: 1px solid var(--research-line); border-radius: 14px; background: var(--research-surface); box-shadow: 0 7px 24px rgb(25 43 69 / .035); }
++.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
++.stat { padding: 17px 20px; }
++.statLabel { color: var(--research-muted); font-size: .82rem; }
++.statValue { display: block; margin-top: 4px; font-size: 1.6rem; font-weight: 720; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
++.toolbar { display: grid; grid-template-columns: minmax(190px, 1fr) 210px 190px 185px; gap: 10px; padding: 14px; margin-bottom: 12px; }
++.input, .select, .textarea { width: 100%; border: 1px solid #ccd6e3; border-radius: 8px; background: white; color: var(--research-text); font: inherit; }
++.input, .select { min-height: 44px; padding: 9px 12px; }
++.textarea { min-height: 152px; padding: 13px 14px; line-height: 1.6; resize: vertical; }
++.input:focus-visible, .select:focus-visible, .textarea:focus-visible { outline: 3px solid rgb(41 105 178 / .23); border-color: #527cae; }
++.label { display: flex; flex-direction: column; gap: 7px; min-width: 0; font-size: .86rem; font-weight: 650; }
++.hint { color: var(--research-muted); font-size: .8rem; font-weight: 400; line-height: 1.45; }
++.tableWrap { overflow-x: auto; }
++.table { width: 100%; border-collapse: collapse; min-width: 820px; }
++.mobileCards { display: none; }
++.mobileCard { min-width: 0; border: 1px solid var(--research-line); border-radius: 10px; padding: 13px; background: white; }
++.mobileCardHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
++.mobileCardHead .rowLink { min-width: 0; overflow-wrap: anywhere; }
++.mobileCardDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin: 13px 0 0; }
++.mobileCardDetails dt { color: var(--research-muted); font-size: .68rem; }
++.mobileCardDetails dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: .78rem; line-height: 1.4; }
++.table th { padding: 13px 16px; color: var(--research-muted); font-size: .74rem; font-weight: 700; letter-spacing: .04em; text-align: left; white-space: nowrap; }
++.table td { padding: 15px 16px; border-top: 1px solid #e9edf3; font-size: .89rem; vertical-align: middle; }
++.table tbody tr:hover { background: #f8faff; }
++.rowLink { color: var(--research-text); font-weight: 680; text-decoration: none; }
++.rowLink:hover { color: var(--research-blue); }
++.muted { color: var(--research-muted); }
++.badge { display: inline-flex; align-items: center; min-height: 26px; border-radius: 99px; padding: 4px 9px; background: #eff2f6; color: #48566b; font-size: .75rem; font-weight: 650; white-space: nowrap; }
++.badge[data-status="completed"] { background: #e7f5ef; color: #146449; }
++.badge[data-status="in_progress"] { background: #edf3fb; color: #204e87; }
++.badge[data-status="draft"] { background: #f5f0e6; color: #78602e; }
++.category { color: var(--research-blue); font-weight: 650; }
++.empty { padding: 60px 24px; text-align: center; }
++.empty h2 { margin: 0 0 8px; font-size: 1.25rem; }
++.empty p { max-width: 460px; margin: 0 auto 20px; color: var(--research-muted); }
++.pagination { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 15px 18px; color: var(--research-muted); font-size: .85rem; }
++.inlineActions { display: flex; flex-wrap: wrap; gap: 9px; }
++.notice { display: flex; align-items: flex-start; gap: 10px; border: 1px solid #d5e1f0; border-radius: 9px; padding: 13px 15px; background: var(--research-blue-soft); color: #25466d; font-size: .88rem; }
++.noticeError { border-color: #ecc9c6; background: #fff1ef; color: #852d29; }
++.formCard { padding: clamp(19px, 3vw, 30px); }
++.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
++.fieldWide { grid-column: 1 / -1; }
++.radioList { display: flex; flex-wrap: wrap; gap: 9px; }
++.radioOption { display: flex; align-items: center; gap: 8px; min-height: 42px; border: 1px solid var(--research-line); border-radius: 9px; padding: 8px 12px; background: white; font-size: .87rem; font-weight: 450; }
++.radioOption input { width: 16px; height: 16px; min-height: 0; padding: 0; accent-color: var(--research-blue); }
++.details { margin-top: 24px; border-top: 1px solid var(--research-line); padding-top: 14px; }
++.details summary { cursor: pointer; min-height: 40px; padding: 8px 0; color: var(--research-blue); font-weight: 650; }
++.formFooter { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 26px; border-top: 1px solid var(--research-line); padding-top: 18px; }
++.recommendation { padding: 20px; margin: 18px 0; border: 1px solid #cfdaea; border-radius: 12px; background: linear-gradient(130deg, #f0f5fc, #fff); }
++.recommendation h2 { margin: 0 0 6px; font-size: 1.05rem; }
++.recommendation p { margin: 4px 0; color: var(--research-muted); font-size: .89rem; }
++.recommendationGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: end; margin-top: 18px; }
++.profileStrip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
++.profileChip { border-radius: 7px; padding: 7px 10px; background: #edf1f6; color: #42526a; font-size: .8rem; }
++.stickyHeader { position: sticky; top: 0; z-index: 8; margin: 0 calc(clamp(16px, 3vw, 40px) * -1) 22px; border-bottom: 1px solid var(--research-line); background: rgb(245 247 251 / .94); backdrop-filter: blur(10px); }
++.stickyInner { display: flex; max-width: 1440px; min-height: 66px; align-items: center; justify-content: space-between; gap: 14px; margin: auto; padding: 10px clamp(16px, 3vw, 40px); }
++.stickyName { min-width: 0; }
++.stickyName strong { display: block; overflow: hidden; font-size: .98rem; text-overflow: ellipsis; white-space: nowrap; }
++.stickyMeta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; color: var(--research-muted); font-size: .75rem; }
++.interviewLayout { display: grid; grid-template-columns: minmax(0, 1fr) 265px; gap: 22px; align-items: start; }
++.questionList { display: grid; gap: 14px; min-width: 0; }
++.questionCard { scroll-margin-top: 100px; border: 1px solid var(--research-line); border-radius: 12px; padding: clamp(16px, 2.5vw, 23px); background: white; box-shadow: 0 5px 15px rgb(25 43 69 / .025); }
++.questionTitleRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 11px; }
++.questionCode { display: inline-flex; align-items: center; justify-content: center; min-width: 46px; min-height: 28px; border-radius: 6px; padding: 3px 8px; background: #eaf0f8; color: var(--research-blue); font-size: .75rem; font-weight: 760; letter-spacing: .04em; }
++.questionCard h3 { margin: 0 0 16px; font-size: 1.04rem; line-height: 1.45; letter-spacing: -.01em; }
++.questionCard textarea { display: block; width: 100%; min-height: 150px; border: 1px solid #ccd6e3; border-radius: 9px; padding: 13px 14px; background: #fcfdff; color: var(--research-text); font: inherit; line-height: 1.6; resize: vertical; }
++.questionCard textarea:focus-visible { outline: 3px solid rgb(41 105 178 / .23); border-color: #527cae; }
++.saveState { display: inline-flex; align-items: center; gap: 6px; color: var(--research-muted); font-size: .76rem; }
++.saveState[data-state="saved"] { color: var(--research-success); }
++.saveState[data-state="offline"], .saveState[data-state="error"], .saveState[data-state="conflict"] { color: var(--research-danger); }
++.spin { animation: spin 1s linear infinite; }
++@keyframes spin { to { transform: rotate(360deg); } }
++.conflictBox { display: grid; gap: 10px; margin-top: 12px; border: 1px solid #e8c5a1; border-radius: 9px; padding: 13px; background: #fff8ed; color: #67491e; font-size: .84rem; }
++.conflictBox p { margin: 0; }
++.hints { margin-top: 12px; border-top: 1px solid #edf0f5; padding-top: 8px; }
++.hints summary { display: flex; align-items: center; gap: 7px; min-height: 36px; cursor: pointer; color: var(--research-muted); font-size: .82rem; font-weight: 620; list-style: none; }
++.hints summary::-webkit-details-marker { display: none; }
++.hints[open] summary svg { transform: rotate(180deg); }
++.hintContent { display: grid; gap: 7px; padding: 5px 0 2px 23px; color: #536177; font-size: .82rem; line-height: 1.55; }
++.hintContent p, .hintContent ul { margin: 0; }
++.hintContent ul { padding-left: 17px; }
++.sidePanel { position: sticky; top: 88px; display: grid; gap: 12px; }
++.sideCard { padding: 17px; }
++.sideCard h2 { margin: 0 0 12px; font-size: .9rem; }
++.progressTrack { height: 7px; overflow: hidden; border-radius: 99px; background: #e8edf4; }
++.progressBar { width: 100%; height: 100%; border-radius: inherit; background: var(--research-blue); transform-origin: left center; transition: transform 180ms ease-out; }
++.toc { display: grid; max-height: 50vh; gap: 2px; overflow: auto; }
++.toc a { display: flex; gap: 8px; border-radius: 6px; padding: 6px; color: var(--research-muted); font-size: .76rem; line-height: 1.35; text-decoration: none; }
++.toc a:hover { background: #f0f4fa; color: var(--research-blue); }
++.toc code { color: var(--research-blue); font: inherit; font-weight: 720; }
++.completionBar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 22px; border: 1px solid var(--research-line); border-radius: 12px; padding: 17px; background: white; }
++.completionBar p { margin: 0; color: var(--research-muted); font-size: .85rem; }
++.modalBackdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgb(16 29 48 / .42); }
++.modal { width: min(510px, 100%); border-radius: 15px; padding: 24px; background: white; box-shadow: 0 22px 80px rgb(17 32 54 / .25); }
++.modal h2 { margin: 0 0 9px; font-size: 1.2rem; }
++.modal p { color: var(--research-muted); line-height: 1.6; }
++.modalActions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
++.screeningSummary { padding: 16px; }
++.screeningSummary dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin: 0; }
++.screeningSummary dt { color: var(--research-muted); font-size: .74rem; }
++.screeningSummary dd { margin: 3px 0 0; font-size: .86rem; overflow-wrap: anywhere; }
++.addQuestions { margin: 20px 0; padding: 18px; }
++.addQuestions h2 { margin: 0 0 5px; font-size: 1rem; }
++.questionPicker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 13px; }
++.pickerOptions { display: grid; max-height: 260px; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; overflow: auto; border: 1px solid var(--research-line); border-radius: 8px; padding: 8px; }
++.pickerOption { display: flex; align-items: flex-start; gap: 8px; padding: 7px; border-radius: 6px; font-size: .79rem; line-height: 1.35; }
++.pickerOption:hover { background: #f4f7fb; }
++.pickerOption input { width: 16px; min-height: 16px; height: 16px; margin-top: 2px; accent-color: var(--research-blue); }
++.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
++@media (max-width: 900px) {
++  .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .interviewLayout { grid-template-columns: minmax(0, 1fr); }
++  .sidePanel { position: static; order: -1; grid-template-columns: 1fr auto; align-items: start; }
++  .toc { max-height: 180px; }
++}
++@media (max-width: 600px) {
++  .shell { padding-top: 12px; }
++  .topbar { margin-bottom: 28px; }
++  .topLinks { gap: 11px; }
++  .topLink { font-size: .81rem; }
++  .pageHeader { align-items: stretch; flex-direction: column; gap: 16px; }
++  .pageHeader > .primaryButton, .pageHeader > .secondaryButton { width: 100%; }
++  .stats { gap: 7px; }
++  .stat { padding: 12px; }
++  .statLabel { font-size: .7rem; }
++  .statValue { font-size: 1.3rem; }
++  .toolbar { grid-template-columns: minmax(0, 1fr); }
++  .formGrid { grid-template-columns: minmax(0, 1fr); gap: 17px; }
++  .fieldWide { grid-column: auto; }
++  .recommendationGrid { grid-template-columns: minmax(0, 1fr); }
++  .formFooter, .completionBar { align-items: stretch; flex-direction: column; }
++  .formFooter > button, .completionBar > button { width: 100%; }
++  .stickyHeader { margin-bottom: 15px; }
++  .stickyInner { align-items: flex-start; }
++  .stickyInner > .inlineActions { flex-direction: column; }
++  .stickyMeta { gap: 3px 7px; font-size: .68rem; line-height: 1.35; }
++  .tableWrap { overflow: visible; }
++  .table { display: none; }
++  .mobileCards { display: grid; gap: 9px; padding: 12px; }
++  .pagination { align-items: flex-start; flex-direction: column; }
++  .pagination > .inlineActions { align-items: center; justify-content: space-between; width: 100%; }
++  .sidePanel { grid-template-columns: minmax(0, 1fr); }
++  .toc { max-height: 125px; }
++  .pickerOptions { grid-template-columns: minmax(0, 1fr); }
++  .screeningSummary dl { grid-template-columns: minmax(0, 1fr); }
++}
++@media (prefers-reduced-motion: reduce) {
++  .spin { animation: none !important; }
++  .progressBar { transition: none !important; }
++}
+diff --git a/frontend/src/components/research/respondent-detail.tsx b/frontend/src/components/research/respondent-detail.tsx
+new file mode 100644
+index 0000000..10b05bb
+--- /dev/null
++++ b/frontend/src/components/research/respondent-detail.tsx
+@@ -0,0 +1,277 @@
++"use client";
++
++import { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import Link from "next/link";
++import { useParams, useRouter } from "next/navigation";
++import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus } from "lucide-react";
++import {
++  InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchQuestion,
++  ResearchRespondent, flushPendingAnswers, researchApi, scrollResearchToTop,
++} from "@/lib/research";
++import { AnswerCard } from "./answer-card";
++import { CompletionDialog } from "./completion-dialog";
++import { ScreeningForm } from "./screening-form";
++import styles from "./research.module.css";
++
++const categoryNames: Record<ResearchCategory, string> = {
++  trips_experienced: "Trips / Опытный путешественник", trips_beginner: "Trips / Начинающий путешественник",
++  travel_design: "Travel Design", travel_ready: "Travel Ready",
++};
++const statusNames: Record<InterviewStatus, string> = { draft: "Анкета сохранена", in_progress: "Интервью в процессе", completed: "Интервью завершено" };
++const answerNames: Record<string, string> = {
++  yes: "Да", no: "Нет", other: "Другое", unknown: "Затрудняюсь ответить", self: "Самостоятельно", jointly: "Совместно с попутчиками",
++  organizer: "Через организатора", route_design: "Покупал(а) готовый маршрут или его разработку", trip_organization: "Оплачивал(а) организацию поездки",
++  itinerary_design: "Составление маршрута и выбор мест", booking_logistics: "Поиск и бронирование поездок", coordination: "Согласование с попутчиками",
++  time_cost: "Нехватка времени", budget: "Планирование бюджета", documents_language: "Документы или язык", none: "Ничего не вызывает трудностей",
++  "0": "Ни одного", "1": "Одно", "2": "Два", "3_plus": "Три и больше",
++};
++const sectionNames: Record<string, string> = { G: "Общие вопросы", T: "TC Trips", D: "Travel Design", R: "Travel Ready", B: "Бренд Travel Club", X: "Проверка предложений" };
++const dateLabel = (value?: string | null) => value ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
++const sortedInterviews = (respondent: ResearchRespondent) => [...respondent.interviews].sort((a, b) => a.created_at.localeCompare(b.created_at));
++
++export function RespondentDetailPage() {
++  const params = useParams<{ id: string }>();
++  const router = useRouter();
++  const id = params.id;
++  const [respondent, setRespondent] = useState<ResearchRespondent | null>(null);
++  const [interview, setInterview] = useState<ResearchInterview | null>(null);
++  const [config, setConfig] = useState<ResearchConfig | null>(null);
++  const [localAnswers, setLocalAnswers] = useState<Record<string, string>>({});
++  const [error, setError] = useState("");
++  const [message, setMessage] = useState("");
++  const [busy, setBusy] = useState(false);
++  const [showScreening, setShowScreening] = useState(false);
++  const [screeningSaved, setScreeningSaved] = useState(false);
++  const [draftCategory, setDraftCategory] = useState<ResearchCategory | "">("");
++  const [pickerOpen, setPickerOpen] = useState(false);
++  const [questionSearch, setQuestionSearch] = useState("");
++  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
++  const [confirmComplete, setConfirmComplete] = useState(false);
++  const completionTriggerRef = useRef<HTMLButtonElement>(null);
++  const navigationPendingRef = useRef(false);
++
++  useEffect(() => { let active = true; void Promise.all([researchApi.respondent(id), researchApi.config()]).then(([person, settings]) => {
++    if (!active) return;
++    setRespondent(person); setInterview(sortedInterviews(person).at(-1) ?? null); setConfig(settings); setDraftCategory(person.final_category);
++  }).catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Не удалось открыть карточку респондента."); }); return () => { active = false; }; }, [id]);
++
++  const onAnswerChange = useCallback((code: string, value: string) => setLocalAnswers((current) => current[code] === value ? current : { ...current, [code]: value }), []);
++  const questions = useMemo(() => interview?.question_snapshot ?? [], [interview]);
++  const questionsBySection = useMemo(() => {
++    const groups: { key: string; label: string; questions: ResearchQuestion[] }[] = [];
++    for (const question of questions) {
++      const key = question.code.slice(0, 1);
++      const last = groups.at(-1);
++      if (last?.key === key) last.questions.push(question);
++      else groups.push({ key, label: sectionNames[key] ?? "Дополнительные вопросы", questions: [question] });
++    }
++    return groups;
++  }, [questions]);
++  const answeredCount = questions.filter((question) => (localAnswers[question.code] ?? interview?.answers?.[question.code]?.answer_text ?? "").trim().length > 0).length;
++
++  const labelForAnswer = useCallback((key: string, value: unknown) => {
++    const text = String(value ?? "");
++    const fields = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])];
++    const field = fields.find((item) => item.key === key);
++    return field?.options?.find((option) => option.value === text)?.label ?? answerNames[text] ?? text;
++  }, [config]);
++  const screeningItems = useMemo(() => {
++    if (!respondent) return [];
++    const fields = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])];
++    const fieldMap = new Map(fields.map((field) => [field.key, field.label]));
++    return Object.entries(respondent.screening_answers).filter(([, value]) => value !== "" && value !== null && value !== undefined)
++      .map(([key, value]) => [fieldMap.get(key) ?? key, labelForAnswer(key, value)] as const);
++  }, [respondent, config, labelForAnswer]);
++
++  const startInterview = async () => {
++    if (!respondent || !interview) return;
++    setBusy(true); setError(""); setMessage("");
++    try {
++      if (draftCategory && draftCategory !== respondent.final_category) await researchApi.updateCategory(respondent.id, draftCategory);
++      const started = await researchApi.startInterview(interview.id);
++      setInterview(started);
++      const person = await researchApi.respondent(respondent.id);
++      setRespondent(person);
++      setMessage("Сценарий сохранён. Можно вести заметки по ходу разговора или внести их позже.");
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось начать интервью."); }
++    finally { setBusy(false); }
++  };
++
++  const saveScreening = async (answers: Record<string, unknown>, goal: ResearchRespondent["research_goal"]) => {
++    if (!respondent) return;
++    const updated = await researchApi.updateScreening(respondent.id, answers, goal, false);
++    setRespondent(updated);
++    setScreeningSaved(true);
++    setMessage("Анкета сохранена. Предложение пересчитано; текущий сценарий и ответы не менялись.");
++    setError("");
++  };
++
++  const applyScreeningSuggestion = async () => {
++    if (!respondent) return;
++    setBusy(true);
++    try {
++      const updated = await researchApi.updateScreening(respondent.id, respondent.screening_answers, respondent.research_goal, true);
++      setRespondent(updated); setDraftCategory(updated.final_category); setScreeningSaved(false);
++      if (interview?.status === "draft") setInterview(sortedInterviews(updated).at(-1) ?? null);
++      setMessage(interview?.status === "draft" ? "Рекомендация применена к черновику сценария." : "Категория обновлена. Сценарий и ответы проведённого интервью остались прежними.");
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось применить категорию."); }
++    finally { setBusy(false); }
++  };
++
++  const chooseDraftCategory = async () => {
++    if (!respondent || !draftCategory) return;
++    setBusy(true);
++    try {
++      const updated = await researchApi.updateCategory(respondent.id, draftCategory);
++      setRespondent(updated); setInterview(sortedInterviews(updated).at(-1) ?? null); setMessage("Категория сценария сохранена.");
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось сохранить сценарий."); }
++    finally { setBusy(false); }
++  };
++
++  const appendQuestions = async () => {
++    if (!interview || selectedCodes.length === 0) return;
++    setBusy(true); setError("");
++    try {
++      const updated = await researchApi.appendQuestions(interview.id, selectedCodes);
++      setInterview(updated); setSelectedCodes([]); setPickerOpen(false); setQuestionSearch("");
++      const person = await researchApi.respondent(id); setRespondent(person);
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось добавить вопросы."); }
++    finally { setBusy(false); }
++  };
++
++  const complete = async () => {
++    if (!interview) return;
++    setBusy(true); setError("");
++    try {
++      const flushed = await flushPendingAnswers(interview.id);
++      if (!flushed) throw new Error("Есть ответы, которые ещё не подтверждены сервером. Проверьте индикаторы сохранения и повторите завершение.");
++      const completed = await researchApi.completeInterview(interview.id);
++      setInterview(completed); setConfirmComplete(false); setMessage("Интервью завершено. Все заметки останутся доступны для просмотра и редактирования.");
++      const person = await researchApi.respondent(id); setRespondent(person);
++      scrollResearchToTop();
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось завершить интервью."); }
++    finally { setBusy(false); }
++  };
++
++  const guardInternalNavigation = useCallback((event: MouseEvent) => {
++    const activeInterviewId = interview?.id;
++    if (!activeInterviewId) return;
++    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
++    const clicked = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
++    if (!clicked || clicked.hasAttribute("download") || (clicked.target && clicked.target !== "_self")) return;
++    const currentUrl = new URL(window.location.href);
++    const destination = new URL(clicked.href, currentUrl);
++    if (destination.origin !== currentUrl.origin || (destination.pathname === currentUrl.pathname && destination.search === currentUrl.search)) return;
++
++    event.preventDefault();
++    if (navigationPendingRef.current) return;
++    navigationPendingRef.current = true;
++    void (async () => {
++      const saved = await flushPendingAnswers(activeInterviewId).catch(() => false);
++      if (!saved && !window.confirm("Есть несохранённые изменения. Ответы ещё не подтверждены сервером, и текст может быть потерян. Перейти?")) {
++        navigationPendingRef.current = false;
++        return;
++      }
++      router.push(`${destination.pathname}${destination.search}${destination.hash}`);
++    })();
++  }, [interview?.id, router]);
++
++  useEffect(() => {
++    document.addEventListener("click", guardInternalNavigation, true);
++    return () => document.removeEventListener("click", guardInternalNavigation, true);
++  }, [guardInternalNavigation]);
++
++  const allQuestions = config?.bank.questions ?? [];
++  const included = new Set(questions.map((question) => question.code));
++  const availableQuestions = allQuestions.filter((question) => !included.has(question.code) && (config?.offers_enabled || !question.code.startsWith("X"))
++    && (`${question.code} ${question.text}`.toLocaleLowerCase("ru").includes(questionSearch.toLocaleLowerCase("ru"))));
++
++  if (!respondent || !interview || !config) return <div className={styles.page}>
++    <Link href="/research" className={styles.topLink}><ArrowLeft size={15} aria-hidden /> Все респонденты</Link>
++    {error ? <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p> : <div className={`${styles.panel} ${styles.empty}`}><p>Открываем карточку респондента…</p></div>}
++  </div>;
++
++  const scenarioName = config.scenarios.scenarios.find((scenario) => scenario.code === interview.scenario_code)?.label ?? categoryNames[interview.scenario_code];
++  const profile = respondent.screening_answers;
++  const statusText = statusNames[interview.status];
++
++  return <div className={styles.page}>
++    <div className={styles.stickyHeader}>
++      <div className={styles.stickyInner}>
++        <div className={styles.stickyName}><strong>{respondent.name}{respondent.age_range ? `, ${respondent.age_range}` : ""}</strong><div className={styles.stickyMeta} aria-label="Сводка интервью"><span>{respondent.city || "Город не указан"}</span><span>Самостоятельные поездки: {labelForAnswer("independent_trips_24m", profile.independent_trips_24m) || "не указано"}</span><span>Опыт групповых поездок: {labelForAnswer("group_experience", profile.group_experience) || "не указано"}</span><span>Итоговая категория: {categoryNames[respondent.final_category]}</span><span>{scenarioName}</span><span>{statusText}</span></div></div>
++        <div className={styles.inlineActions}><Link className={styles.textButton} href="/research"><ArrowLeft size={15} aria-hidden /> К списку</Link><span className={styles.badge} data-status={interview.status}>{statusText}</span></div>
++      </div>
++    </div>
++    <header className={styles.pageHeader}>
++      <div><div className={styles.eyebrow}>Карточка респондента</div><h1>{respondent.name}{respondent.age_range ? ` · ${respondent.age_range}` : ""}</h1><p>{respondent.city || "Город не указан"} · сценарий «{scenarioName}» · категория {categoryNames[respondent.final_category]}</p></div>
++      <span className={styles.muted}>Обновлено {dateLabel(respondent.updated_at)}</span>
++    </header>
++    {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert"><CircleAlert size={18} aria-hidden />{error}</p>}
++    {message && <p className={styles.notice} role="status"><Check size={17} aria-hidden />{message}</p>}
++
++    <section className={`${styles.panel} ${styles.screeningSummary}`} aria-label="Основная информация">
++      <h2>Анкета перед интервью</h2>
++      <dl>{[
++        ["Возраст", respondent.age_range ?? "не указан"], ["Город", respondent.city || "не указан"],
++        ["Самостоятельные поездки", labelForAnswer("independent_trips_24m", profile.independent_trips_24m) || "не указано"],
++        ["Групповые путешествия", labelForAnswer("group_experience", profile.group_experience) || "не указано"],
++        ["Цель исследования", respondent.research_goal === "trips" ? "Trips" : respondent.research_goal === "individual_services" ? "Индивидуальные услуги" : "не выбрана"],
++        ["Рекомендация", categoryNames[respondent.suggested_category]], ["Итоговая категория", `${categoryNames[respondent.final_category]}${respondent.category_override ? " · выбрана вручную" : ""}`],
++        ["Создан", dateLabel(respondent.created_at)], ["Последнее изменение", dateLabel(respondent.updated_at)],
++      ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
++      <details className={styles.details}><summary><ChevronDown size={16} aria-hidden /> Все ответы анкеты ({screeningItems.length})</summary>
++        {screeningItems.length ? <dl>{screeningItems.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : <p className={styles.muted}>Дополнительных ответов нет.</p>}
++      </details>
++      <div className={styles.inlineActions} style={{ marginTop: 14 }}><button className={styles.secondaryButton} type="button" onClick={() => setShowScreening((show) => !show)}>{showScreening ? "Закрыть редактор анкеты" : "Изменить анкету"}</button></div>
++    </section>
++
++    {showScreening && <section className={styles.formCard} aria-label="Редактирование анкеты">
++      <div className={styles.pageHeader}><div><h2>Изменить ответы анкеты</h2><p>Рекомендация обновится после сохранения. Уже начатые сценарии и ответы сохраняются.</p></div></div>
++      <ScreeningForm config={config} initialAnswers={respondent.screening_answers} initialGoal={respondent.research_goal} submitLabel="Сохранить изменения анкеты" onSubmit={saveScreening} />
++      {screeningSaved && <div className={styles.recommendation}>
++        <h2>Новое предложение: {categoryNames[respondent.suggested_category]}</h2>
++        {respondent.recommendation.reasons.map((reason) => <p key={reason}>{reason}</p>)}
++        {respondent.suggested_category !== respondent.final_category ? <button type="button" className={styles.secondaryButton} onClick={() => void applyScreeningSuggestion()} disabled={busy}>{interview.status === "draft" ? "Применить рекомендацию к черновику" : "Обновить категорию по рекомендации"}</button> : null}
++        {interview.status !== "draft" && respondent.suggested_category !== respondent.final_category ? <p>Сценарий интервью и сохранённые ответы останутся прежними.</p> : null}
++      </div>}
++    </section>}
++
++    {interview.status === "draft" ? <section className={styles.recommendation}>
++      <h2>Предлагаем сценарий «{categoryNames[respondent.suggested_category]}»</h2>
++      {respondent.recommendation.reasons.map((reason) => <p key={reason}>{reason}</p>)}
++      <div className={styles.recommendationGrid}>
++        <label className={styles.label}><span>Сценарий интервью</span><select className={styles.select} value={draftCategory} onChange={(event) => setDraftCategory(event.target.value as ResearchCategory)}>{config.scenarios.scenarios.map((scenario) => <option key={scenario.code} value={scenario.code}>{scenario.label}</option>)}</select></label>
++        <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" onClick={() => void chooseDraftCategory()} disabled={busy || !draftCategory}>Сохранить выбор</button><button className={styles.primaryButton} type="button" onClick={() => void startInterview()} disabled={busy}>{busy ? "Открываем…" : "Начать интервью"}<ArrowRight size={17} aria-hidden /></button></div>
++      </div>
++    </section> : <>
++      <div className={styles.interviewLayout}>
++        <div className={styles.questionList}>
++          {questions.length === 0 ? <section className={`${styles.panel} ${styles.empty}`}><h2>Вопросы ещё не добавлены</h2><p>Выберите разделы или отдельные вопросы из банка.</p></section> : questionsBySection.map((group) => <section key={`${group.key}-${group.questions[0]?.code}`} aria-label={group.label}>
++            <h2 className={styles.eyebrow}>{group.label}</h2>
++            {group.questions.map((question) => <AnswerCard key={question.code} interviewId={interview.id} question={question} initialAnswer={interview.answers?.[question.code] ?? null} onAnswerChange={onAnswerChange} />)}
++          </section>)}
++        </div>
++        <aside className={styles.sidePanel} aria-label="Прогресс и переход к вопросам">
++          <section className={`${styles.panel} ${styles.sideCard}`}><h2>Прогресс интервью</h2><strong>{`Заполнено ${answeredCount} из ${questions.length}`}</strong><div className={styles.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={answeredCount} aria-label="Заполнено вопросов"><div className={styles.progressBar} style={{ transform: `scaleX(${questions.length ? answeredCount / questions.length : 0})` }} /></div></section>
++          <nav className={`${styles.panel} ${styles.sideCard}`} aria-label="Вопросы интервью"><h2>К вопросам</h2><div className={styles.toc}>{questions.map((question) => <a key={question.code} href={`#question-${question.code}`}><code>{question.code}</code><span>{question.text}</span></a>)}</div></nav>
++        </aside>
++      </div>
++      <section className={`${styles.panel} ${styles.addQuestions}`}>
++        <h2>Добавить вопрос</h2><p className={styles.muted}>Выберите дополнительные вопросы из банка. Вопросы бренда будут добавлены в конец. Блок предложений пока отключён.</p>
++        <div className={styles.questionPicker}><button className={styles.secondaryButton} type="button" onClick={() => setPickerOpen((open) => !open)}><Plus size={16} aria-hidden />{pickerOpen ? "Скрыть список вопросов" : "Выбрать вопросы"}</button>
++          {pickerOpen && <>
++            <label className={styles.srOnly} htmlFor="question-search">Поиск вопроса</label><input id="question-search" className={styles.input} value={questionSearch} onChange={(event) => setQuestionSearch(event.target.value)} placeholder="Найти по коду или тексту" />
++            <div className={styles.pickerOptions}>{availableQuestions.map((question) => <label className={styles.pickerOption} key={question.code}><input type="checkbox" checked={selectedCodes.includes(question.code)} onChange={(event) => setSelectedCodes((current) => event.target.checked ? [...current, question.code] : current.filter((code) => code !== question.code))} /><span><strong>{question.code}</strong> · {question.text}</span></label>)}
++              {!availableQuestions.length && <p className={styles.muted}>Подходящих вопросов не найдено.</p>}</div>
++            <button className={styles.primaryButton} type="button" onClick={() => void appendQuestions()} disabled={busy || selectedCodes.length === 0}>{busy ? "Добавляем…" : `Добавить выбранные (${selectedCodes.length})`}<Plus size={16} aria-hidden /></button>
++          </>}
++        </div>
++      </section>
++      <div className={styles.completionBar}>
++        <p>{interview.status === "completed" ? `Завершено ${dateLabel(interview.completed_at)} · ответы по-прежнему можно менять.` : "Можно завершить интервью, даже если часть ответов осталась пустой."}</p>
++        <button ref={completionTriggerRef} type="button" className={interview.status === "completed" ? styles.secondaryButton : styles.primaryButton} onClick={() => setConfirmComplete(true)}>{interview.status === "completed" ? "Завершено" : "Завершить интервью"}<Check size={17} aria-hidden /></button>
++      </div>
++      {confirmComplete && <CompletionDialog returnFocusRef={completionTriggerRef} busy={busy} error={error} onClose={() => { setConfirmComplete(false); setError(""); }} onConfirm={() => void complete()} />}
++    </>}
++  </div>;
++}
+diff --git a/frontend/src/components/research/respondent-list.tsx b/frontend/src/components/research/respondent-list.tsx
+new file mode 100644
+index 0000000..964c39c
+--- /dev/null
++++ b/frontend/src/components/research/respondent-list.tsx
+@@ -0,0 +1,113 @@
++"use client";
++
++import { useEffect, useState } from "react";
++import Link from "next/link";
++import { Download, Plus, Search, SlidersHorizontal } from "lucide-react";
++import { ResearchApiError, ResearchCategory, RespondentList, RespondentSummary, researchApi } from "@/lib/research";
++import styles from "./research.module.css";
++
++const categories: { code: ResearchCategory; label: string }[] = [
++  { code: "trips_experienced", label: "Trips / Опытный" }, { code: "trips_beginner", label: "Trips / Начинающий" },
++  { code: "travel_design", label: "Travel Design" }, { code: "travel_ready", label: "Travel Ready" },
++];
++const statusLabel = { draft: "Анкета", in_progress: "В процессе", completed: "Завершено" } as const;
++const categoryLabel = (code: ResearchCategory) => categories.find((category) => category.code === code)?.label ?? code;
++const dateLabel = (value: string) => new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
++
++export function RespondentListPage() {
++  const [query, setQuery] = useState("");
++  const [category, setCategory] = useState("");
++  const [status, setStatus] = useState("");
++  const [sort, setSort] = useState("updated_at");
++  const [order, setOrder] = useState("desc");
++  const [page, setPage] = useState(1);
++  const [result, setResult] = useState<RespondentList | null>(null);
++  const [error, setError] = useState("");
++  const [exporting, setExporting] = useState(false);
++
++  useEffect(() => {
++    let active = true;
++    const timer = setTimeout(() => {
++      const params = new URLSearchParams({ sort, order, page: String(page), page_size: "25" });
++      if (query.trim()) params.set("q", query.trim());
++      if (category) params.set("category", category);
++      if (status) params.set("status", status);
++      void researchApi.respondents(params).then((data) => { if (active) { setResult(data); setError(""); } })
++        .catch((cause: unknown) => { if (active) setError(cause instanceof ResearchApiError || cause instanceof Error ? cause.message : "Не удалось загрузить список."); });
++    }, 160);
++    return () => { active = false; clearTimeout(timer); };
++  }, [query, category, status, sort, order, page]);
++
++  const download = async () => {
++    setExporting(true);
++    setError("");
++    try {
++      const blob = await researchApi.export();
++      const url = URL.createObjectURL(blob);
++      const anchor = document.createElement("a");
++      anchor.href = url;
++      anchor.download = `tc-research-${new Date().toISOString().slice(0, 10)}.xlsx`;
++      anchor.click();
++      setTimeout(() => URL.revokeObjectURL(url), 1000);
++    } catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось подготовить экспорт."); }
++    finally { setExporting(false); }
++  };
++
++  return <div className={styles.page}>
++    <header className={styles.pageHeader}>
++      <div><div className={styles.eyebrow}>Исследовательская база</div><h1>Респонденты</h1><p>Интервью, заметки и возвращение к разговору в любой момент.</p></div>
++      <div className={styles.inlineActions}>
++        <button className={styles.secondaryButton} onClick={() => void download()} disabled={exporting}><Download size={17} aria-hidden />{exporting ? "Готовим файл…" : "Экспорт в Excel"}</button>
++        <Link className={styles.primaryButton} href="/research/new"><Plus size={18} aria-hidden />Новый респондент</Link>
++      </div>
++    </header>
++
++    {result && <div className={styles.stats} aria-label="Сводка по респондентам">
++      <div className={`${styles.panel} ${styles.stat}`}><span className={styles.statLabel}>Всего респондентов</span><strong className={styles.statValue}>{result.total_count}</strong></div>
++      <div className={`${styles.panel} ${styles.stat}`}><span className={styles.statLabel}>Завершённые</span><strong className={styles.statValue}>{result.completed_count}</strong></div>
++      <div className={`${styles.panel} ${styles.stat}`}><span className={styles.statLabel}>Незавершённые</span><strong className={styles.statValue}>{result.incomplete_count}</strong></div>
++    </div>}
++
++    <section className={`${styles.panel} ${styles.toolbar}`} aria-label="Поиск и фильтры">
++      <label className={styles.label}><span>Поиск по имени</span><div className={styles.inlineActions}><Search size={17} aria-hidden /><input className={styles.input} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Имя или псевдоним" /></div></label>
++      <label className={styles.label}><span>Категория</span><select className={styles.select} value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }}><option value="">Все категории</option>{categories.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></label>
++      <label className={styles.label}><span>Статус</span><select className={styles.select} value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">Все статусы</option><option value="draft">Анкета</option><option value="in_progress">В процессе</option><option value="completed">Завершено</option></select></label>
++      <label className={styles.label}><span><SlidersHorizontal size={14} aria-hidden /> Сортировка</span><select className={styles.select} value={`${sort}:${order}`} onChange={(event) => { const [nextSort, nextOrder] = event.target.value.split(":"); setSort(nextSort); setOrder(nextOrder); }}><option value="updated_at:desc">Недавно изменялись</option><option value="created_at:desc">Сначала новые</option><option value="created_at:asc">Сначала старые</option><option value="updated_at:asc">Давно не менялись</option></select></label>
++    </section>
++
++    {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
++    {!result ? <div className={`${styles.panel} ${styles.empty}`}><p>Загружаем исследовательскую базу…</p></div>
++      : result.items.length === 0 ? <div className={`${styles.panel} ${styles.empty}`}>
++        <h2>{result.total_count === 0 ? "Здесь появятся ваши интервью" : "Ничего не найдено"}</h2>
++        <p>{result.total_count === 0 ? "Создайте карточку респондента, чтобы сохранить анкету и выбрать сценарий беседы." : "Измените запрос или фильтры, чтобы увидеть записи."}</p>
++        {result.total_count === 0 && <Link className={styles.primaryButton} href="/research/new"><Plus size={17} aria-hidden />Новый респондент</Link>}
++      </div> : <div className={`${styles.panel} ${styles.tableWrap}`}>
++        <table className={styles.table}>
++          <thead><tr><th>Имя</th><th>Возраст</th><th>Город</th><th>Категория</th><th>Статус</th><th>Последнее изменение</th></tr></thead>
++          <tbody>{result.items.map((respondent: RespondentSummary) => <tr key={respondent.id}>
++            <td><Link className={styles.rowLink} href={`/research/${respondent.id}`}>{respondent.name}</Link></td>
++            <td>{respondent.age_range || <span className={styles.muted}>—</span>}</td><td>{respondent.city || <span className={styles.muted}>—</span>}</td>
++            <td className={styles.category}>{categoryLabel(respondent.final_category)}{respondent.category_override ? " · вручную" : ""}</td>
++            <td><span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span></td><td>{dateLabel(respondent.updated_at)}</td>
++          </tr>)}</tbody>
++        </table>
++        <div className={styles.mobileCards} role="list" aria-label="Респонденты">
++          {result.items.map((respondent: RespondentSummary) => <article key={respondent.id} className={styles.mobileCard} role="listitem" aria-label={"Респондент " + respondent.name}>
++            <div className={styles.mobileCardHead}>
++              <Link className={styles.rowLink} href={"/research/" + respondent.id}>{respondent.name}</Link>
++              <span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span>
++            </div>
++            <dl className={styles.mobileCardDetails}>
++              <div><dt>Возраст</dt><dd>{respondent.age_range || "—"}</dd></div>
++              <div><dt>Город</dt><dd>{respondent.city || "—"}</dd></div>
++              <div><dt>Категория</dt><dd>{categoryLabel(respondent.final_category)}{respondent.category_override ? " · вручную" : ""}</dd></div>
++              <div><dt>Последнее изменение</dt><dd>{dateLabel(respondent.updated_at)}</dd></div>
++            </dl>
++          </article>)}
++        </div>
++        <div className={styles.pagination}><span>{result.total} из {result.total_count === result.total ? result.total : `${result.total_count} совпадений`}</span>
++          <div className={styles.inlineActions}><button className={styles.secondaryButton} type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Назад</button><span>Страница {result.page} из {Math.max(result.pages, 1)}</span><button className={styles.secondaryButton} type="button" disabled={page >= result.pages} onClick={() => setPage((current) => current + 1)}>Дальше</button></div>
++        </div>
++      </div>}
++  </div>;
++}
+diff --git a/frontend/src/components/research/respondent-new.tsx b/frontend/src/components/research/respondent-new.tsx
+new file mode 100644
+index 0000000..062d910
+--- /dev/null
++++ b/frontend/src/components/research/respondent-new.tsx
+@@ -0,0 +1,78 @@
++"use client";
++
++import { useEffect, useState } from "react";
++import Link from "next/link";
++import { useRouter } from "next/navigation";
++import { ArrowRight, ArrowUpRight } from "lucide-react";
++import { ResearchApiError, ResearchCategory, ResearchConfig, ResearchRespondent, researchApi, scrollResearchToTop } from "@/lib/research";
++import { ScreeningForm } from "./screening-form";
++import styles from "./research.module.css";
++
++const categoryNames: Record<ResearchCategory, string> = {
++  trips_experienced: "Trips / Опытный путешественник", trips_beginner: "Trips / Начинающий путешественник",
++  travel_design: "Travel Design", travel_ready: "Travel Ready",
++};
++
++export function RespondentNewPage() {
++  const router = useRouter();
++  const [config, setConfig] = useState<ResearchConfig | null>(null);
++  const [respondent, setRespondent] = useState<ResearchRespondent | null>(null);
++  const [selected, setSelected] = useState<ResearchCategory | "">("");
++  const [error, setError] = useState("");
++  const [starting, setStarting] = useState(false);
++
++  useEffect(() => { let active = true; void researchApi.config().then((data) => { if (active) setConfig(data); }).catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Не удалось загрузить анкету."); }); return () => { active = false; }; }, []);
++
++  const create = async (answers: Record<string, unknown>, goal: ResearchRespondent["research_goal"]) => {
++    const created = await researchApi.createRespondent(answers, goal ?? undefined);
++    setRespondent(created);
++    setSelected(created.suggested_category);
++    setError("");
++    scrollResearchToTop();
++  };
++
++  const begin = async () => {
++    if (!respondent || !selected) return;
++    setStarting(true);
++    setError("");
++    try {
++      if (selected !== respondent.final_category) await researchApi.updateCategory(respondent.id, selected);
++      const interview = respondent.interviews[0];
++      if (!interview) throw new Error("Черновик интервью не найден. Обновите страницу и попробуйте снова.");
++      await researchApi.startInterview(interview.id);
++      router.push(`/research/${respondent.id}`);
++    } catch (cause) { setError(cause instanceof ResearchApiError || cause instanceof Error ? cause.message : "Не удалось начать интервью."); }
++    finally { setStarting(false); }
++  };
++
++  const scenarioLabel = (category: ResearchCategory) => config?.scenarios.scenarios.find((scenario) => scenario.code === category)?.label ?? categoryNames[category];
++  const answerLabel = (key: string) => {
++    const field = [...(config?.screening.fields ?? []), ...(config?.screening.additional_fields ?? [])].find((candidate) => candidate.key === key);
++    if (field?.options) return field.options.find((option) => option.value === String(respondent?.screening_answers[key]))?.label ?? String(respondent?.screening_answers[key] ?? "");
++    return String(respondent?.screening_answers[key] ?? "");
++  };
++
++  return <div className={styles.page}>
++    <Link href="/research" className={styles.topLink}><ArrowUpRight size={15} aria-hidden /> Вернуться к респондентам</Link>
++    <header className={styles.pageHeader}>
++      <div><div className={styles.eyebrow}>TC Research / Новый респондент</div><h1>{respondent ? "Выберите сценарий интервью" : "Новый респондент"}</h1><p>{respondent ? "Рекомендация помогает начать разговор. Окончательный выбор остаётся за интервьюером." : "Заполните короткую анкету перед разговором. Созданная запись сохранится, даже если начать интервью позже."}</p></div>
++    </header>
++    {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
++    {!config ? <div className={`${styles.panel} ${styles.empty}`}><p>{error ? "Не удалось открыть анкету." : "Загружаем вопросы и варианты ответов…"}</p></div>
++      : config.validation_issues.length > 0 ? <div className={`${styles.notice} ${styles.noticeError}`} role="alert"><div><strong>Банк вопросов нужно исправить перед созданием интервью.</strong><ul>{config.validation_issues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div></div>
++        : respondent ? <>
++          <div className={styles.profileStrip}><span className={styles.profileChip}><strong>{respondent.name}</strong>{respondent.age_range ? ` · ${respondent.age_range}` : ""}</span><span className={styles.profileChip}>{respondent.city || "Город не указан"}</span>
++            <span className={styles.profileChip}>Самостоятельные поездки: {answerLabel("independent_trips_24m") || "не указано"}</span><span className={styles.profileChip}>Групповые поездки: {answerLabel("group_experience") || "не указано"}</span></div>
++          <section className={styles.recommendation} aria-label="Рекомендация сценария">
++            <h2>Рекомендуем начать с «{scenarioLabel(respondent.recommendation.suggested_category)}»</h2>
++            {respondent.recommendation.reasons.map((reason) => <p key={reason}>{reason}</p>)}
++            <p>Альтернативный сценарий: <strong>{scenarioLabel(respondent.recommendation.alternative_category)}</strong>. Сила сигнала: {respondent.recommendation.signal_strength === "high" ? "выраженная" : respondent.recommendation.signal_strength === "medium" ? "умеренная" : "слабая"}.</p>
++            <div className={styles.recommendationGrid}>
++              <label className={styles.label}><span>Сценарий интервью</span><select className={styles.select} value={selected} onChange={(event) => setSelected(event.target.value as ResearchCategory)}>{config.scenarios.scenarios.map((scenario) => <option key={scenario.code} value={scenario.code}>{scenario.label}</option>)}</select></label>
++              <div className={styles.hint}>Предложены основной и альтернативный маршрут. Вы можете выбрать любой из четырёх сценариев.</div>
++            </div>
++          </section>
++          <div className={styles.formFooter}><span className={styles.hint}>Анкета уже сохранена в базе. Статус: черновик.</span><button className={styles.primaryButton} onClick={() => void begin()} disabled={starting || !selected}>{starting ? "Открываем интервью…" : "Перейти к интервью"}<ArrowRight size={17} aria-hidden /></button></div>
++        </> : <ScreeningForm config={config} submitLabel="Сохранить анкету и выбрать сценарий" onSubmit={create} />}
++  </div>;
++}
+diff --git a/frontend/src/components/research/screening-form.tsx b/frontend/src/components/research/screening-form.tsx
+new file mode 100644
+index 0000000..d32b7be
+--- /dev/null
++++ b/frontend/src/components/research/screening-form.tsx
+@@ -0,0 +1,75 @@
++"use client";
++
++import { FormEvent, useState } from "react";
++import { ChevronLeft, ChevronRight } from "lucide-react";
++import { ResearchConfig, ResearchRespondent, ScreeningField } from "@/lib/research";
++import styles from "./research.module.css";
++
++export function ScreeningForm({ config, initialAnswers = {}, initialGoal = null, onSubmit, submitLabel = "Сохранить анкету" }: {
++  config: ResearchConfig; initialAnswers?: Record<string, unknown>; initialGoal?: ResearchRespondent["research_goal"];
++  onSubmit: (answers: Record<string, unknown>, goal: ResearchRespondent["research_goal"]) => Promise<void>;
++  submitLabel?: string;
++}) {
++  const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers);
++  const [goal, setGoal] = useState<ResearchRespondent["research_goal"]>(initialGoal);
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState("");
++
++  const setAnswer = (key: string, value: unknown) => setAnswers((current) => ({ ...current, [key]: value }));
++  const renderField = (field: ScreeningField, wide = false) => {
++    const value = String(answers[field.key] ?? "");
++    const otherField = field.details_key ?? (value === "other" ? `${field.key}_other_details` : undefined);
++    const otherLabel = field.details_label ?? (value === "other" ? "Уточните, пожалуйста" : undefined);
++    return <div className={`${styles.label} ${wide ? styles.fieldWide : ""}`} key={field.key}>
++      <span>{field.label}{field.required ? " *" : ""}</span>
++      {field.control === "text" ? <input className={styles.input} aria-label={field.label} value={value} required={field.required} autoComplete={field.key === "name" ? "off" : undefined} maxLength={field.key === "name" ? 200 : field.key === "city" ? 160 : 120} onChange={(event) => setAnswer(field.key, event.target.value)} />
++        : field.control === "radio" ? <div className={styles.radioList} role="group" aria-label={field.label}>
++          {(field.options ?? []).map((option) => <label key={option.value} className={styles.radioOption}>
++            <input type="radio" name={field.key} value={option.value} checked={value === option.value} onChange={() => setAnswer(field.key, option.value)} />{option.label}
++          </label>)}
++        </div>
++          : <select className={styles.select} aria-label={field.label} value={value} onChange={(event) => setAnswer(field.key, event.target.value)}>
++            <option value="">Выберите вариант</option>
++            {(field.options ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
++          </select>}
++      {otherField && otherLabel && (value === "other" || field.details_key) ? <label className={styles.label}>
++        <span>{otherLabel}</span><input className={styles.input} value={String(answers[otherField] ?? "")} onChange={(event) => setAnswer(otherField, event.target.value)} />
++      </label> : null}
++    </div>;
++  };
++
++  const submit = async (event: FormEvent<HTMLFormElement>) => {
++    event.preventDefault();
++    setBusy(true);
++    setError("");
++    try { await onSubmit(answers, goal); }
++    catch (cause) { setError(cause instanceof Error ? cause.message : "Не удалось сохранить анкету. Повторите попытку."); }
++    finally { setBusy(false); }
++  };
++
++  return <form onSubmit={submit} className={styles.panel}>
++    <div className={styles.formCard}>
++      <div className={styles.formGrid}>
++        {config.screening.fields.map((field) => renderField(field, ["name", "city"].includes(field.key)))}
++        <label className={styles.label}>
++          <span>Цель исследования <span className={styles.hint}>(необязательно)</span></span>
++          <select className={styles.select} value={goal ?? ""} onChange={(event) => setGoal((event.target.value || null) as ResearchRespondent["research_goal"])}>
++            <option value="">Пока не выбрана</option><option value="trips">Trips</option><option value="individual_services">Индивидуальные услуги</option>
++          </select>
++          <span className={styles.hint}>Помогает выбрать маршрут разговора, но не влияет на ответы.</span>
++        </label>
++      </div>
++      {(config.screening.additional_fields?.length ?? 0) > 0 && <details className={styles.details}>
++        <summary><ChevronRight size={16} aria-hidden /> Дополнительный вопрос из исходной анкеты</summary>
++        <div className={styles.formGrid}>{config.screening.additional_fields?.map((field) => renderField(field, true))}</div>
++      </details>}
++      {error && <p className={`${styles.notice} ${styles.noticeError}`} role="alert">{error}</p>}
++      <div className={styles.formFooter}>
++        <span className={styles.hint}>Достаточно имени. Остальные ответы можно оставить пустыми.</span>
++        <button className={styles.primaryButton} type="submit" disabled={busy || !config.screening.fields.some((field) => field.key === "name")}>
++          {busy ? "Сохраняем…" : submitLabel}<ChevronLeft size={16} aria-hidden />
++        </button>
++      </div>
++    </div>
++  </form>;
++}
+diff --git a/frontend/src/lib/research.test.ts b/frontend/src/lib/research.test.ts
+new file mode 100644
+index 0000000..1174ff9
+--- /dev/null
++++ b/frontend/src/lib/research.test.ts
+@@ -0,0 +1,27 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { ResearchApiError, researchApi } from "@/lib/research";
++
++describe("research API network errors", () => {
++  afterEach(() => vi.restoreAllMocks());
++
++  it("does not claim a screening answer was saved to a browser draft", async () => {
++    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
++
++    await expect(researchApi.updateScreening("respondent-1", { city: "Казань" }, "trips", false))
++      .rejects.toMatchObject({
++        status: 0,
++        code: "NETWORK_ERROR",
++        message: "Не удалось связаться с сервером. Проверьте подключение и повторите попытку.",
++      } satisfies Partial<ResearchApiError>);
++  });
++
++  it.each([
++    [true, "Нет связи с сервером. Текст сохранён в черновике браузера."],
++    [false, "Нет связи с сервером. Ответ пока есть только в памяти этой вкладки."],
++  ] as const)("reports answer draft persistence accurately (draft stored: %s)", async (draftStored, message) => {
++    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
++
++    await expect(researchApi.saveAnswer("interview-1", "G01", "Заметка", 0, draftStored))
++      .rejects.toMatchObject({ status: 0, code: "NETWORK_ERROR", message });
++  });
++});
+diff --git a/frontend/src/lib/research.ts b/frontend/src/lib/research.ts
+new file mode 100644
+index 0000000..4643ec7
+--- /dev/null
++++ b/frontend/src/lib/research.ts
+@@ -0,0 +1,184 @@
++export type ResearchCategory = "trips_experienced" | "trips_beginner" | "travel_design" | "travel_ready";
++export type InterviewStatus = "draft" | "in_progress" | "completed";
++
++export interface ScreeningOption { value: string; label: string }
++export interface ScreeningField {
++  key: string; label: string; control: "text" | "select" | "radio"; required?: boolean;
++  options?: ScreeningOption[]; details_key?: string; details_label?: string;
++}
++export interface ResearchQuestion {
++  code: string; section: string; text: string; type: string; options?: unknown[];
++  follow_ups?: string[]; hypothesis_ids?: string[]; interpretation?: string;
++  answer_guidance?: string; bank_version?: string;
++}
++export interface ResearchScenario { code: ResearchCategory; label: string; question_codes: string[] }
++export interface ResearchConfig {
++  bank: { bank_version: string; questions: ResearchQuestion[]; hypotheses: { code: string; text?: string; description?: string }[] };
++  scenarios: { version: string; scenarios: ResearchScenario[]; optional_modules?: { brand?: { question_codes?: string[] }; offers?: { enabled: boolean; question_codes?: string[] } } };
++  screening: { fields: ScreeningField[]; additional_fields?: ScreeningField[] };
++  classification: { categories?: { code: ResearchCategory; label?: string }[] };
++  validation_issues: string[];
++  offers_enabled: boolean;
++}
++export interface Recommendation {
++  suggested_category: ResearchCategory; alternative_category: ResearchCategory; scores: Record<ResearchCategory, number>;
++  suggested_score: number; reasons: string[]; signal_strength: "low" | "medium" | "high";
++}
++export interface AnswerVersion { answer_text: string; revision: number; updated_at: string }
++export interface ResearchInterview {
++  id: string; respondent_id: string; scenario_code: ResearchCategory; scenario_version: string;
++  bank_version: string; status: InterviewStatus; question_snapshot: ResearchQuestion[];
++  started_at: string | null; completed_at: string | null; created_at: string; updated_at: string;
++  answers: Record<string, AnswerVersion | null>;
++}
++export interface ResearchRespondent {
++  id: string; name: string; age_range: string | null; city: string; screening_answers: Record<string, unknown>;
++  research_goal: "trips" | "individual_services" | null; suggested_category: ResearchCategory; final_category: ResearchCategory;
++  category_override: boolean; recommendation: Recommendation; created_at: string; updated_at: string;
++  interviews: ResearchInterview[];
++}
++export interface RespondentSummary {
++  id: string; name: string; age_range: string | null; city: string; suggested_category: ResearchCategory;
++  final_category: ResearchCategory; category_override: boolean; status: InterviewStatus; created_at: string; updated_at: string;
++}
++export interface RespondentList {
++  items: RespondentSummary[]; total: number; total_count: number; completed_count: number;
++  incomplete_count: number; page: number; page_size: number; pages: number;
++}
++export interface AnswerDraft { answer_text: string; updated_at: string }
++
++export function scrollResearchToTop(): void {
++  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
++  window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
++}
++
++export class ResearchApiError extends Error {
++  constructor(public status: number, message: string, public code?: string, public details?: unknown) {
++    super(message);
++    this.name = "ResearchApiError";
++  }
++}
++
++async function request<T>(path: string, options: RequestInit = {}, networkErrorMessage = "Не удалось связаться с сервером. Проверьте подключение и повторите попытку."): Promise<T> {
++  let response: Response;
++  try {
++    response = await fetch(`/api/research${path}`, {
++      ...options,
++      credentials: "same-origin",
++      cache: "no-store",
++      headers: { "Content-Type": "application/json", "X-Requested-With": "TravelClub", ...options.headers },
++    });
++  } catch {
++    throw new ResearchApiError(0, networkErrorMessage, "NETWORK_ERROR");
++  }
++  if (!response.ok) {
++    const body: unknown = await response.json().catch(() => ({}));
++    const outer = body && typeof body === "object" ? body as Record<string, unknown> : {};
++    const detail = outer.detail && typeof outer.detail === "object" ? outer.detail as Record<string, unknown> : outer;
++    throw new ResearchApiError(
++      response.status,
++      typeof detail.message === "string" ? detail.message : "Не удалось выполнить действие. Попробуйте ещё раз.",
++      typeof detail.code === "string" ? detail.code : undefined,
++      detail,
++    );
++  }
++  if (response.status === 204) return undefined as T;
++  return response.json() as Promise<T>;
++}
++
++export const researchApi = {
++  config: () => request<ResearchConfig>("/config"),
++  respondents: (params: URLSearchParams) => request<RespondentList>(`/respondents?${params}`),
++  createRespondent: (screening_answers: Record<string, unknown>, research_goal?: "trips" | "individual_services") =>
++    request<ResearchRespondent>("/respondents", { method: "POST", body: JSON.stringify({ screening_answers, research_goal }) }),
++  respondent: (id: string) => request<ResearchRespondent>(`/respondents/${encodeURIComponent(id)}`),
++  updateScreening: (id: string, screening_answers: Record<string, unknown>, research_goal: ResearchRespondent["research_goal"], apply_suggestion: boolean) =>
++    request<ResearchRespondent>(`/respondents/${encodeURIComponent(id)}/screening`, { method: "PATCH", body: JSON.stringify({ screening_answers, research_goal, apply_suggestion }) }),
++  updateCategory: (id: string, final_category: ResearchCategory) =>
++    request<ResearchRespondent>(`/respondents/${encodeURIComponent(id)}/category`, { method: "PATCH", body: JSON.stringify({ final_category }) }),
++  startInterview: (id: string) => request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/start`, { method: "POST" }),
++  appendQuestions: (id: string, question_codes: string[]) =>
++    request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/questions`, { method: "POST", body: JSON.stringify({ question_codes }) }),
++  saveAnswer: (interviewId: string, code: string, answer_text: string, expected_revision: number, draftStored = false) =>
++    request<AnswerVersion>(`/interviews/${encodeURIComponent(interviewId)}/answers/${encodeURIComponent(code)}`, {
++      method: "PUT", body: JSON.stringify({ answer_text, expected_revision }),
++    }, draftStored
++      ? "Нет связи с сервером. Текст сохранён в черновике браузера."
++      : "Нет связи с сервером. Ответ пока есть только в памяти этой вкладки."),
++  completeInterview: (id: string) => request<ResearchInterview>(`/interviews/${encodeURIComponent(id)}/complete`, { method: "POST" }),
++  export: async () => {
++    const response = await fetch("/api/research/export.xlsx", { credentials: "same-origin", cache: "no-store", headers: { "X-Requested-With": "TravelClub" } });
++    if (!response.ok) throw new ResearchApiError(response.status, "Не удалось подготовить Excel-файл.");
++    return response.blob();
++  },
++};
++
++function draftKey(interviewId: string, questionCode: string): string {
++  return `tc-research:answer:${interviewId}:${questionCode}`;
++}
++
++export function readAnswerDraft(interviewId: string, questionCode: string): AnswerDraft | null {
++  try {
++    const value = window.localStorage.getItem(draftKey(interviewId, questionCode));
++    if (!value) return null;
++    const parsed = JSON.parse(value) as Partial<AnswerDraft>;
++    return typeof parsed.answer_text === "string" && typeof parsed.updated_at === "string"
++      ? { answer_text: parsed.answer_text, updated_at: parsed.updated_at }
++      : null;
++  } catch {
++    return null;
++  }
++}
++
++export function writeAnswerDraft(interviewId: string, questionCode: string, answer_text: string): boolean {
++  try {
++    window.localStorage.setItem(draftKey(interviewId, questionCode), JSON.stringify({ answer_text, updated_at: new Date().toISOString() }));
++    return true;
++  } catch {
++    return false;
++  }
++}
++
++export function clearAnswerDraft(interviewId: string, questionCode: string, savedText?: string): void {
++  try {
++    const current = readAnswerDraft(interviewId, questionCode);
++    if (!current || savedText === undefined || current.answer_text === savedText) {
++      window.localStorage.removeItem(draftKey(interviewId, questionCode));
++    }
++  } catch {
++    // Browser storage cleanup is best effort; a later matching server load is authoritative.
++  }
++}
++
++type AnswerFlusher = { flush: () => Promise<boolean>; isPending: () => boolean };
++const answerFlushers = new Map<string, Set<AnswerFlusher>>();
++
++export function registerAnswerFlusher(interviewId: string, flush: () => Promise<boolean>, isPending: () => boolean = () => false): () => void {
++  const group = answerFlushers.get(interviewId) ?? new Set<AnswerFlusher>();
++  const entry = { flush, isPending };
++  group.add(entry);
++  answerFlushers.set(interviewId, group);
++  return () => {
++    group.delete(entry);
++    if (group.size === 0) answerFlushers.delete(interviewId);
++  };
++}
++
++export async function flushPendingAnswers(interviewId: string): Promise<boolean> {
++  const flushers = [...(answerFlushers.get(interviewId) ?? [])];
++  const results = await Promise.all(flushers.map(({ flush }) => flush()));
++  return results.every(Boolean);
++}
++
++export function hasPendingAnswerDrafts(): boolean {
++  for (const flushers of answerFlushers.values()) {
++    if ([...flushers].some(({ isPending }) => isPending())) return true;
++  }
++  return false;
++}
++
++export async function flushAllPendingAnswers(): Promise<boolean> {
++  const flushers = [...answerFlushers.values()].flatMap((entries) => [...entries]);
++  const results = await Promise.all(flushers.map(({ flush }) => flush()));
++  return results.every(Boolean);
++}
