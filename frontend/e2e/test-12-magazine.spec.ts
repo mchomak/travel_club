@@ -78,7 +78,7 @@ test("services expose the agreed product names, purpose, prices, caveat and real
   await page.goto("/test_12?spread=1");
   const left = page.locator(`${pages}[data-magazine-page="left"]`);
   const right = page.locator(`${pages}[data-magazine-page="right"]`);
-  await expect(left).toContainText("Travel Club — независимая редакция путешествий");
+  await expect(left).not.toContainText("Travel Club — независимая редакция путешествий");
   await expect(left.locator('a[href="/start"]')).toHaveCount(0);
   await expect(right.getByRole("heading", { name: "С нами в путь", exact: true })).toBeVisible();
   await expect(right).toContainText("Создаём индивидуальные маршруты, помогаем организовывать путешествия и собираем небольшие компании для совместных поездок");

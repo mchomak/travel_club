@@ -54,7 +54,7 @@
 .startSurface { position:fixed; inset:0; width:100%; height:100%; z-index:8; border:0; padding:0; background:transparent; cursor:pointer; }
 .startSurface:disabled { visibility:hidden; }
 .root .startSurface:focus-visible { outline:2px solid #f6d7ac; outline-offset:-14px; }
-.openCue { position:absolute; top:calc(50% + 100svh * .29); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid #e8c6b280; color:#f5dfcf; font:400 13px/1.4 var(--pub-font-sans); white-space:nowrap; transition:color 180ms ease,border-color 180ms ease; }
+.openCue { position:absolute; top:calc(50% - 100svh * .29); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid #e8c6b280; color:#f5dfcf; font:400 13px/1.4 var(--pub-font-sans); white-space:nowrap; transition:color 180ms ease,border-color 180ms ease; }
 .openCue>span { font-size:17px; }
 .startSurface:hover .openCue,.startSurface:focus-visible .openCue { color:#fff5e9; border-color:currentColor; }
 .skip { position:fixed; z-index:9; bottom:18px; right:36px; color:#eedaca; padding:5px 0; border:0; border-bottom:1px solid #cda79a; background:transparent; font:400 11px var(--pub-font-sans); }

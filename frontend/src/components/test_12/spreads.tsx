@@ -48,8 +48,6 @@ function HeroPage({ reveal }: PageProps) {
       <h1 className={s.heroSlogan}><span><span>Куда — важно.</span></span><span><span>С кем — важнее.</span></span></h1>
       <span className={s.heroSideNote} data-reveal-object="hero-note" data-motion="ink" data-beat="4">Путешествия начинаются с людей</span>
     </div>
-    <p className={s.credit}>{PHOTOS.hero.author} / Pexels<span>Иллюстративная фотография</span></p>
-    <p className={s.heroDescription} data-reveal-object="hero-description" data-motion="ink" data-beat="2">Travel Club — независимая редакция путешествий</p>
     <Folio number="02" label="Travel Club / Независимая редакция путешествий" />
   </section>;
 }
@@ -64,7 +62,8 @@ function FormatsPage({ reveal }: PageProps) {
         <span className={s.formatNumber} aria-hidden="true"><Icon /><span>{format.number}</span></span>
         <div className={s.formatName}><h3>{format.english}</h3><span>{format.title}</span></div>
         <span className={`${s.formatPrice} ${format.number === "03" ? s.agreedPrice : ""}`}>{format.price}</span>
-        <p data-reveal-object="format-details">{format.description}</p><ArrowUpRight className={s.formatArrow} aria-hidden="true" />
+        <p data-reveal-object="format-details">{format.description}</p>
+        <span className={s.formatAction}>Подробнее о формате <ArrowUpRight aria-hidden="true" /></span>
       </a>; })}
     </div>
     <p className={s.formatTerms}>5 000 ₽ и 10 000 ₽ — стоимость услуг Travel Design и Travel Ready. Транспорт, проживание и прочие расходы оплачиваются отдельно.</p>
@@ -79,7 +78,6 @@ function FounderPortrait({ founder, label }: { founder: keyof typeof FOUNDER_PHO
     {photo.src
       ? <img src={photo.src} alt={photo.alt} style={{ objectPosition: photo.position }} decoding="sync" loading="eager" />
       : <div className={s.portraitPlaceholder}><span aria-hidden="true">{founder === "vasilisa" ? "В" : "Р"}</span><p>{label}</p><small>Место для настоящего портрета</small></div>}
-    <figcaption>{photo.src ? "Личный портрет" : "Портрет появится здесь"}</figcaption>
   </figure>;
 }
 
@@ -148,7 +146,6 @@ function ThailandLeft({ reveal }: PageProps) {
     <div className={s.thaiArt}>
       <div className={s.thaiStrips} aria-hidden="true">{[0, 1, 2].map(index => <div key={index} data-reveal-object="thai-strip"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></div>)}</div>
       <h2 className={s.thaiDisplay} aria-label="Thailand ’26"><span className={s.thaiWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span><span className={s.landWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span></h2>
-      <div className={s.thaiArtLine} data-reveal-object="thai-line" data-motion="ink" data-beat="3" aria-hidden="true" />
       <div className={s.thaiYear}>’26<span>Таиланд<br />в двух ритмах</span></div>
     </div>
     <div className={s.thaiRoute}><span><MapPin aria-hidden="true" />От островов до Бангкока</span><p>Четверо друзей.<br />Одна поездка.</p></div>
