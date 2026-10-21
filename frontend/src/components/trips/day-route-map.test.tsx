@@ -1,0 +1,48 @@
+import {afterEach,expect,test,vi} from 'vitest';
+import {cleanup,render,screen,within,waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {DayRouteMap} from './day-route-map';
+import {emptyDay,newTrip,newItem} from '@/lib/trip-ui';
+import {mapsClient} from '@/lib/maps-client';
+import type {MapPlace} from '@/lib/contracts';
+const configState=vi.hoisted(()=>({config:{maps_key:null as string|null,search_enabled:false,routing_enabled:false}}));
+vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({...configState,error:null,retry:vi.fn()})}));
+vi.mock('./map-canvas',()=>({MapCanvas:({nodes,geometries,label}:{nodes:unknown[];geometries:unknown[];label:string})=><div aria-label={label} data-nodes={JSON.stringify(nodes)} data-lines={JSON.stringify(geometries)}/> }));
+afterEach(()=>{cleanup();vi.restoreAllMocks();configState.config.routing_enabled=false;configState.config.maps_key=null;});
+test('unconfigured plan exposes controls and saves boundary, mode and untimed order through aggregate change',async()=>{
+ vi.spyOn(mapsClient,'config').mockResolvedValue({maps_key:null,search_enabled:false,routing_enabled:false});
+ const day=emptyDay('2026-10-01');const p:MapPlace={name:'Парк',address:'',latitude:1,longitude:2,provider:'manual'};
+ const trip={...newTrip(),days:[day],rates:[],items:[{...newItem('activity',day,'RUB',day.date),title:'Парк',position:0,map_place:p},{...newItem('meal',day,'RUB',day.date),title:'Кафе',position:1,map_place:{...p,name:'Кафе',latitude:3}}]};
+ const change=vi.fn(),route=vi.spyOn(mapsClient,'route'),user=userEvent.setup();
+ render(<DayRouteMap trip={trip} dayId={day.id} onChange={change}/>);
+ expect(await screen.findByText(/Карта ещё не настроена/)).toBeInTheDocument();
+ expect(route).not.toHaveBeenCalled();
+ const leg=screen.getByRole('group',{name:'Парк → Кафе'});
+ await user.click(within(leg).getByRole('button',{name:/Пешком/}));
+ expect(change).toHaveBeenLastCalledWith({days:[expect.objectContaining({map_leg_modes:[{from_key:`item:${trip.items[0].id}:start`,to_key:`item:${trip.items[1].id}:start`,mode:'walk'}]})]});
+ await user.click(screen.getByRole('button',{name:'Переместить Кафе вверх'}));
+ expect(change.mock.calls.at(-1)?.[0].items.map((i:{position:number})=>i.position)).toEqual([1,0]);
+ await user.selectOptions(screen.getByLabelText('Выбрать начало'),`item:${trip.items[0].id}:start`);
+ await waitFor(()=>expect(change).toHaveBeenLastCalledWith({days:[expect.objectContaining({map_start:p})]}));
+});
+
+test('only local connections are requested and late prior-day routes never appear after day selection',async()=>{
+ configState.config={maps_key:'browser-test',routing_enabled:true,search_enabled:false};
+ const one=emptyDay('2026-10-01'),two=emptyDay('2026-10-02');
+ const p:MapPlace={name:'Отправление',address:'',latitude:1,longitude:2,provider:'manual'},arrival={...p,name:'Прибытие',latitude:5};
+ const flight={...newItem('flight',one,'RUB',one.date),title:'Ночной рейс',start_time:'22:00',end_time:'06:00',end_day_id:two.id,map_place:p,map_end_place:arrival};
+ const trip={...newTrip(),days:[one,two],rates:[],items:[{...newItem('activity',one,'RUB',one.date),title:'Встреча',start_time:'23:00',map_place:{...p,latitude:2}},flight]};
+ let finish!:(result:import('@/lib/maps-client').MapRouteResult)=>void;
+ const route=vi.spyOn(mapsClient,'route').mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+ const view=render(<DayRouteMap trip={trip} dayId={one.id} onChange={()=>{}}/>);
+ expect(screen.getByText(/Пересечение расписания/)).toBeInTheDocument();
+ await waitFor(()=>expect(route).toHaveBeenCalled());
+ expect(route.mock.calls.every(([from,to])=>from.latitude!==5&&to.latitude!==5)).toBe(true);
+ const markers=JSON.parse(screen.getByLabelText('Карта выбранного дня').getAttribute('data-nodes')!);
+ expect(markers.every((node:{place:MapPlace|null})=>node.place?.latitude!==5)).toBe(true);
+ view.rerender(<DayRouteMap trip={{...trip,items:[flight]}} dayId={two.id} onChange={()=>{}}/>);
+ finish({status:'ok',distance_m:999000,duration_s:900,geometry:{type:'LineString',coordinates:[[2,1],[2,2]]},approximate:false,message:null});
+ await waitFor(()=>expect(screen.getByLabelText('Карта выбранного дня')).toHaveAttribute('data-lines','[]'));
+ expect(screen.queryByText(/999 км/)).not.toBeInTheDocument();
+ expect(screen.getByText('Место прибытия после ночного события')).toBeInTheDocument();
+});

@@ -18,11 +18,14 @@ class Settings(BaseSettings):
     postgres_user: str = "travel_club"
     postgres_password: SecretStr
     allowed_origin: str = "http://localhost:3000"
+    research_origin: str = ""
     cookie_secure: bool = False
     session_hours: int = 12
     login_limit_per_login: int = 5
     login_limit_per_ip: int = 20
     login_window_minutes: int = 15
+    geoapify_api_key: SecretStr = SecretStr("")
+    geoapify_maps_api_key: SecretStr = SecretStr("")
 
     @model_validator(mode="after")
     def safe_production(self):

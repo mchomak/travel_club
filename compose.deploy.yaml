@@ -1,0 +1,80 @@
+# Run these from the repository root in PowerShell to build and save images locally:
+# docker buildx build --platform linux/amd64 --tag travel-club-frontend:preview --load ./frontend
+# docker save --output travel-club-frontend-amd64.tar travel-club-frontend:preview
+# docker buildx build --platform linux/amd64 --tag travel-club-backend:preview --build-context shared=./shared --load ./backend
+# docker save --output travel-club-backend-amd64.tar travel-club-backend:preview
+
+name: travel_club
+
+services:
+  postgres:
+    image: postgres:18
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-travel_club}
+      POSTGRES_USER: ${POSTGRES_USER:-travel_club}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the server .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  backend:
+    image: travel-club-backend:preview
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-travel_club}
+      POSTGRES_USER: ${POSTGRES_USER:-travel_club}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the server .env}
+      POSTGRES_HOST: postgres
+      APP_ENV: production
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:?Set the verified HTTPS origin in the server .env}
+      RESEARCH_ORIGIN: ${RESEARCH_ORIGIN:-}
+      COOKIE_SECURE: "true"
+      GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+      GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}
+    networks:
+      - app
+      - maps_egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    restart: unless-stopped
+
+  frontend:
+    image: travel-club-frontend:preview
+    platform: linux/amd64
+    environment:
+      BACKEND_URL: http://backend:8000
+    networks:
+      app:
+        ipv4_address: 172.19.0.4
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: travel_club_deploy_postgres_data
+
+networks:
+  # Backend-only outbound API/DNS/TLS access; no published ports.
+  maps_egress:
+    driver: bridge
+  app:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16

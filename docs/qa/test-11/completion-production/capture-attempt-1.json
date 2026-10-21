@@ -1,0 +1,2005 @@
+{
+  "generatedAt": "2026-10-19T01:40:13.837Z",
+  "completedAt": "2026-10-19T01:41:45.480Z",
+  "baseURL": "http://localhost:3000",
+  "evidenceStatus": "production-awaiting-visual-review",
+  "failure": {
+    "message": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded.",
+    "at": "2026-10-19T01:41:45.480Z"
+  },
+  "contract": "six reading spreads / twelve pages; October 19 completion",
+  "environment": "local Docker production rebuilt by coordinator 2026-10-19",
+  "browser": "153.0.8010.12",
+  "captures": [
+    {
+      "filename": "hero-formats-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=1",
+      "sampledAt": "2026-10-19T01:40:17.109Z",
+      "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "price-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 176,
+        "after": 176
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "next-issue-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=2",
+      "sampledAt": "2026-10-19T01:40:20.908Z",
+      "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "next-aperture",
+              "opacity": "1",
+              "clipPath": "circle(50%)",
+              "transform": "none"
+            },
+            {
+              "name": "next-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-disclaimer",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "next-lead",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-story",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-planning",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 174,
+        "after": 174
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "thailand-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=3",
+      "sampledAt": "2026-10-19T01:40:24.758Z",
+      "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 0, 40.2641)"
+            },
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 0, 20.132)"
+            },
+            {
+              "name": "thai-line",
+              "opacity": "0.6",
+              "clipPath": "none",
+              "transform": "matrix(0.978148, -0.207912, 0.207912, 0.978148, 0, 0)"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "thai-prose",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-people",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-margin",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-city",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 174,
+        "after": 174
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "china-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=4",
+      "sampledAt": "2026-10-19T01:40:28.707Z",
+      "stage": "reading",
+      "spread": "4",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "china-vertical",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-label",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-credit",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "china-body",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-friends",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-detail",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 177,
+        "after": 177
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "archive-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=5",
+      "sampledAt": "2026-10-19T01:40:32.592Z",
+      "stage": "reading",
+      "spread": "5",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "archive-print-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.990268, -0.139173, 0.139173, 0.990268, 0, 0)"
+            },
+            {
+              "name": "archive-print-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.992546, 0.121869, -0.121869, 0.992546, 0, 0)"
+            },
+            {
+              "name": "archive-print-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.99863, -0.052336, 0.052336, 0.99863, 0, 0)"
+            },
+            {
+              "name": "archive-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-credit",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "archive-intro",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-caveat",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 173,
+        "after": 173
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "point-of-view-start-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=6",
+      "sampledAt": "2026-10-19T01:40:36.509Z",
+      "stage": "reading",
+      "spread": "6",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "pov-also",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "pov-sign",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "start-title",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-lead",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 76.796875,
+        "y": 16,
+        "width": 1126.390625,
+        "height": 703.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 184,
+        "after": 184
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "cover-1280x768.png",
+      "viewport": {
+        "width": 1280,
+        "height": 768
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11",
+      "sampledAt": "2026-10-19T01:40:42.750Z",
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "CLOSED",
+      "introResult": null,
+      "leafCount": "8",
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "inset(0px 100% 0px 0px)",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "price-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": {
+        "x": 483.78765869140625,
+        "y": 213.03094482421875,
+        "width": 312.4246826171875,
+        "height": 356.67559814453125
+      },
+      "book": {
+        "x": 229.48306274414062,
+        "y": 236.48672485351562,
+        "width": 562.3011474609375,
+        "height": 321.5296325683594
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "idleFrames": null,
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x5f340fd2c600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      ]
+    },
+    {
+      "filename": "hero-formats-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=1",
+      "sampledAt": "2026-10-19T01:40:46.090Z",
+      "stage": "reading",
+      "spread": "1",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "format-details",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "price-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 175,
+        "after": 175
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "next-issue-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=2",
+      "sampledAt": "2026-10-19T01:40:49.908Z",
+      "stage": "reading",
+      "spread": "2",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "next-aperture",
+              "opacity": "1",
+              "clipPath": "circle(50%)",
+              "transform": "none"
+            },
+            {
+              "name": "next-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-disclaimer",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "next-lead",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-story",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "next-planning",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 175,
+        "after": 175
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "thailand-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=3",
+      "sampledAt": "2026-10-19T01:40:53.773Z",
+      "stage": "reading",
+      "spread": "3",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 0, 48.4313)"
+            },
+            {
+              "name": "thai-strip",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 0, 24.2156)"
+            },
+            {
+              "name": "thai-line",
+              "opacity": "0.6",
+              "clipPath": "none",
+              "transform": "matrix(0.978148, -0.207912, 0.207912, 0.978148, 0, 0)"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "thai-prose",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-people",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-margin",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "thai-city",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11.5636,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 173,
+        "after": 173
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "china-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=4",
+      "sampledAt": "2026-10-19T01:40:57.724Z",
+      "stage": "reading",
+      "spread": "4",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "china-vertical",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-label",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-credit",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "china-body",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-friends",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "china-detail",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 178,
+        "after": 178
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "archive-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=5",
+      "sampledAt": "2026-10-19T01:41:01.658Z",
+      "stage": "reading",
+      "spread": "5",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "archive-print-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.990268, -0.139173, 0.139173, 0.990268, 0, 0)"
+            },
+            {
+              "name": "archive-print-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.992546, 0.121869, -0.121869, 0.992546, 0, 0)"
+            },
+            {
+              "name": "archive-print-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "matrix(0.99863, -0.052336, 0.052336, 0.99863, 0, 0)"
+            },
+            {
+              "name": "archive-note",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-credit",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "archive-intro",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-entry-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "archive-caveat",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 169,
+        "after": 169
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "point-of-view-start-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11?spread=6",
+      "sampledAt": "2026-10-19T01:41:05.641Z",
+      "stage": "reading",
+      "spread": "6",
+      "introPhase": null,
+      "introResult": null,
+      "leafCount": null,
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "pov-also",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "principle-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "pov-sign",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "enter",
+          "objects": [
+            {
+              "name": "start-title",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-lead",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-0",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-1",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "start-step-2",
+              "opacity": "1",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": null,
+      "book": {
+        "x": 51.203125,
+        "y": 16,
+        "width": 1337.59375,
+        "height": 835.984375
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": 11,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": 11,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 0,
+      "idleFrames": {
+        "before": 184,
+        "after": 184
+      },
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+      ]
+    },
+    {
+      "filename": "cover-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": true,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11",
+      "sampledAt": "2026-10-19T01:41:12.300Z",
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "CLOSED",
+      "introResult": null,
+      "leafCount": "8",
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "inset(0px 100% 0px 0px)",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "price-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 238.93978881835938,
+        "y": 277.13287353515625,
+        "width": 658.9814453125,
+        "height": 376.82684326171875
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "idleFrames": null,
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x6534007cf400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      ]
+    },
+    {
+      "filename": "opening-cover-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11",
+      "sampledAt": "2026-10-19T01:41:12.890Z",
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "OPENING",
+      "introResult": null,
+      "leafCount": "8",
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "inset(0px 100% 0px 0px)",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "price-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 245.3065185546875,
+        "y": 274.04376220703125,
+        "width": 663.0457763671875,
+        "height": 379.24481201171875
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "idleFrames": null,
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x6534007cf400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "[.WebGL-0x6534007cf400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    },
+    {
+      "filename": "opening-early-leaf-1440x900.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "final": false,
+      "evidenceStatus": "production-awaiting-visual-review",
+      "sourceURL": "http://localhost:3000/test_11",
+      "sampledAt": "2026-10-19T01:41:13.937Z",
+      "stage": "opening",
+      "spread": "1",
+      "introPhase": "FLIP_3",
+      "introResult": null,
+      "leafCount": "8",
+      "readingTurn": null,
+      "reveal": [
+        {
+          "side": "left",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "hero-photo",
+              "opacity": "1",
+              "clipPath": "inset(0px 100% 0px 0px)",
+              "transform": "none"
+            },
+            {
+              "name": "hero-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            },
+            {
+              "name": "hero-description",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        },
+        {
+          "side": "right",
+          "phase": "pending",
+          "objects": [
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "format-details",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "matrix(1, 0, 0, 1, 16, 0)"
+            },
+            {
+              "name": "price-note",
+              "opacity": "0",
+              "clipPath": "none",
+              "transform": "none"
+            }
+          ]
+        }
+      ],
+      "cover": {
+        "x": 535.5695190429688,
+        "y": 250.99801635742188,
+        "width": 368.8609619140625,
+        "height": 418.2567443847656
+      },
+      "book": {
+        "x": 293.49908447265625,
+        "y": 158.36053466796875,
+        "width": 852.9224243164062,
+        "height": 496.32501220703125
+      },
+      "pageOverflow": [
+        {
+          "side": "left",
+          "horizontal": 0,
+          "vertical": 0
+        },
+        {
+          "side": "right",
+          "horizontal": 0,
+          "vertical": 0
+        }
+      ],
+      "pageTextBounds": [
+        {
+          "side": "left",
+          "minTextPx": null,
+          "violations": []
+        },
+        {
+          "side": "right",
+          "minTextPx": null,
+          "violations": []
+        }
+      ],
+      "documentOverflow": {
+        "horizontal": 0,
+        "vertical": 0
+      },
+      "brokenImages": [],
+      "runningAnimations": 0,
+      "canvases": 1,
+      "idleFrames": null,
+      "warnings": [
+        "The resource http://localhost:3000/_next/static/chunks/3bswa89roskq3.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "The resource http://localhost:3000/_next/static/chunks/1y7pmczr8-ctf.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+        "[.WebGL-0x6534007cf400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "[.WebGL-0x6534007cf400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ]
+    }
+  ]
+}

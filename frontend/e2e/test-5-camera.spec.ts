@@ -274,7 +274,13 @@ test("the camera eases across multiple frames, settles at rest and releases nati
 test("the live homepage masthead grows from the right page and continues into native scroll", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_5");
+  await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => window.scrollTo(0, innerHeight * 1.25 * .5));
+  // y is already below 450 while the cover is still opening; inspect the
+  // half-way spread only after its target and rendered camera have settled.
+  await settle(page, .5);
+  const camera = page.locator("[data-animated='true']");
+  await expect.poll(() => camera.evaluate(e => Math.abs(Number((e as HTMLElement).dataset.targetProgress) - Number((e as HTMLElement).dataset.renderedProgress)))).toBeLessThan(.0001);
   const masthead = page.locator("#top").getByText("TRAVEL CLUB", { exact: true }).first();
   await expect.poll(async () => (await masthead.boundingBox())!.y).toBeLessThan(450);
   expect((await masthead.boundingBox())!.x).toBeGreaterThan(600);
@@ -329,8 +335,8 @@ test("deep link, keyboard navigation and reduced motion open the source homepage
   await page.locator("#start").focus();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Travel Club — начало страницы" })).toBeFocused();
-  await page.getByRole("banner").getByRole("link", { name: "Начать историю" }).click();
-  await expect(page).toHaveURL(/#story$/);
+  await expect(page.getByRole("banner").getByRole("link", { name: "Начать историю" })).toHaveAttribute("href", "/start");
+  await page.locator("#story").scrollIntoViewIfNeeded();
   await page.getByRole("textbox", { name: /Ваш контакт/ }).fill("@retained_camera_state");
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(page.getByRole("textbox", { name: /Ваш контакт/ })).toHaveValue("@retained_camera_state");
@@ -352,7 +358,7 @@ test("resize, restoration, slow reverse and skip preserve a usable single homepa
     await page.evaluate(p => window.scrollTo(0, innerHeight * 1.25 * p), step / 20);
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
   }
-  await page.getByRole("banner").getByRole("link", { name: "Начать историю" }).click();
+  await page.locator("#story").scrollIntoViewIfNeeded();
   await page.getByRole("textbox", { name: /Ваш контакт/ }).fill("@keep_after_reverse");
   await page.evaluate(() => { history.replaceState(null, "", "/test_5"); window.scrollTo(0, innerHeight * .8); });
   await page.setViewportSize({ width: 1280, height: 720 });

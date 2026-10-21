@@ -12,6 +12,7 @@ __pycache__/
 .DS_Store
 .autopilot/serve.*
 .autopilot/__pycache__/
+.worktrees/
 test-results/
 playwright-report/
 .playwright-mcp

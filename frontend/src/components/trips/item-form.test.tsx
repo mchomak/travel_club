@@ -6,6 +6,26 @@ import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 
 afterEach(cleanup);
 
+test('inline place editing saves departure and arrival without changing legacy fields', async () => {
+ const day=emptyDay('2026-10-01'),next=emptyDay('2026-10-02');
+ const item={...newItem('activity',day,'RUB',day.date),end_day_id:next.id,location:'Legacy address',external_url:'https://example.com'};
+ const trip={...newTrip(),start_date:day.date,end_date:next.date,days:[day,next],items:[],rates:[]};
+ const onSubmit=vi.fn(),user=userEvent.setup();
+ render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ const departure=screen.getByRole('group',{name:'Место посещения / отправления'});
+ const {within}=await import('@testing-library/react');
+ await user.type(within(departure).getByLabelText('Название точки'),'Начало');
+ await user.type(within(departure).getByLabelText('Широта'),'55.75');
+ await user.type(within(departure).getByLabelText('Долгота'),'37.61');
+ await user.click(within(departure).getByRole('button',{name:'Подтвердить место'}));
+ const arrival=screen.getByRole('group',{name:'Место окончания / прибытия'});
+ await user.type(within(arrival).getByLabelText('Широта'),'59.93');
+ await user.type(within(arrival).getByLabelText('Долгота'),'30.31');
+ await user.click(within(arrival).getByRole('button',{name:'Подтвердить место'}));
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({map_place:expect.objectContaining({latitude:55.75,longitude:37.61}),map_end_place:expect.objectContaining({latitude:59.93}),location:'Legacy address',external_url:'https://example.com'}),undefined);
+});
+
 test("flight form saves and restores custom airport durations, including a hidden block", async () => {
   const user = userEvent.setup();
   const day = emptyDay("2026-10-01");

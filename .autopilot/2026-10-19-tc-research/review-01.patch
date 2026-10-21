@@ -1,0 +1,3592 @@
+﻿diff --git a/backend/app/research_bank.py b/backend/app/research_bank.py
+new file mode 100644
+index 0000000..6f782f5
+--- /dev/null
++++ b/backend/app/research_bank.py
+@@ -0,0 +1,678 @@
++from __future__ import annotations
++
++import json
++import sys
++from collections import Counter
++from pathlib import Path
++from typing import Any
++
++DATA_DIR = Path(__file__).resolve().parent / "research_data"
++EXPECTED_QUESTION_CODES = {
++    *(f"S{number:02}" for number in range(1, 7)),
++    *(f"G{number:02}" for number in range(1, 13)),
++    *(f"T{number:02}" for number in range(1, 17)),
++    *(f"D{number:02}" for number in range(1, 13)),
++    *(f"R{number:02}" for number in range(1, 13)),
++    *(f"B{number:02}" for number in range(1, 13)),
++    *(f"X{number:02}" for number in range(1, 13)),
++}
++EXPECTED_HYPOTHESIS_CODES = {f"H{number:02}" for number in range(1, 18)}
++EXPECTED_CATEGORIES = {
++    "trips_experienced",
++    "trips_beginner",
++    "travel_design",
++    "travel_ready",
++}
++SUPPORTED_CLASSIFICATION_OPERATORS = {
++    "equals",
++    "in",
++    "numeric_gte",
++    "numeric_lte",
++    "numeric_equals",
++}
++EXPECTED_SCREENING_KEYS = {
++    "name",
++    "age_range",
++    "city",
++    "independent_trips_24m",
++    "group_experience",
++    "has_upcoming_plans",
++    "paid_planning_services",
++    "organization_style",
++    "preparation_difficulty",
++}
++
++
++def normalize_classification_number(value: Any) -> int | float | None:
++    if isinstance(value, bool) or value is None:
++        return None
++    if isinstance(value, (int, float)):
++        return value
++    normalized = str(value).strip().lower().replace(" ", "")
++    if normalized in {"3+", "3_plus", "3ormore", "threeplus"}:
++        return 3.0
++    if normalized.endswith("+"):
++        normalized = normalized[:-1]
++    try:
++        return float(normalized)
++    except ValueError:
++        return None
++
++
++def _read_json(filename: str) -> dict[str, Any]:
++    path = DATA_DIR / filename
++    return json.loads(path.read_text(encoding="utf-8"))
++
++
++def load_question_bank() -> dict[str, Any]:
++    """Load the editable question and hypothesis bank."""
++    return _read_json("questions.json")
++
++
++def load_scenarios() -> dict[str, Any]:
++    """Load interview question-code sequences and optional modules."""
++    return _read_json("scenarios.json")
++
++
++def load_screening() -> dict[str, Any]:
++    """Load the editable preliminary questionnaire."""
++    return _read_json("screening.json")
++
++
++def load_classification_rules() -> dict[str, Any]:
++    """Load the transparent category scoring rules."""
++    return _read_json("classification.json")
++
++
++def load_configuration() -> dict[str, dict[str, Any]]:
++    return {
++        "bank": load_question_bank(),
++        "scenarios": load_scenarios(),
++        "screening": load_screening(),
++        "classification": load_classification_rules(),
++    }
++
++
++def _code_inventory(
++    entries: Any,
++    *,
++    label: str,
++    expected: set[str],
++    issues: list[str],
++) -> set[str]:
++    if not isinstance(entries, list):
++        issues.append(f"{label} must be a JSON array")
++        return set()
++    codes = [entry.get("code") for entry in entries if isinstance(entry, dict)]
++    invalid_entries = len(entries) - len(codes)
++    if invalid_entries:
++        issues.append(f"{label} contains {invalid_entries} non-object entries")
++    code_counts = Counter(code for code in codes if isinstance(code, str))
++    duplicates = sorted(code for code, count in code_counts.items() if count > 1)
++    missing = sorted(expected - set(code_counts))
++    unknown = sorted(set(code_counts) - expected)
++    if duplicates:
++        issues.append(f"duplicate {label} codes: {', '.join(duplicates)}")
++    if missing:
++        issues.append(f"missing {label} codes: {', '.join(missing)}")
++    if unknown:
++        issues.append(f"unknown {label} codes: {', '.join(unknown)}")
++    return set(code_counts)
++
++
++def _validate_question_refs(
++    refs: Any,
++    *,
++    label: str,
++    known_codes: set[str],
++    issues: list[str],
++) -> None:
++    if not isinstance(refs, list):
++        issues.append(f"{label} must be a JSON array")
++        return
++    non_string_refs = sorted(repr(ref) for ref in refs if not isinstance(ref, str))
++    if non_string_refs:
++        issues.append(
++            f"{label} has non-string question codes: {', '.join(non_string_refs)}"
++        )
++    unknown = sorted({ref for ref in refs if isinstance(ref, str) and ref not in known_codes})
++    if unknown:
++        issues.append(f"{label} references unknown questions: {', '.join(unknown)}")
++
++
++def _object_section(
++    parent: dict[str, Any], key: str, *, label: str, issues: list[str]
++) -> dict[str, Any]:
++    value = parent.get(key)
++    if not isinstance(value, dict):
++        issues.append(f"{label} must be an object")
++        return {}
++    return value
++
++
++def _array_section(
++    parent: dict[str, Any], key: str, *, label: str, issues: list[str]
++) -> list[Any]:
++    value = parent.get(key)
++    if not isinstance(value, list):
++        issues.append(f"{label} must be a JSON array")
++        return []
++    return value
++
++
++def _classification_rule_is_matchable(
++    rule: dict[str, Any], screening_fields: dict[str, dict[str, Any]], issues: list[str]
++) -> None:
++    rule_id = rule.get("id", "<unknown>")
++    operator = rule.get("operator")
++    if not isinstance(operator, str) or operator not in SUPPORTED_CLASSIFICATION_OPERATORS:
++        issues.append(f"classification rule {rule_id} has unsupported operator")
++        return
++
++    field_key = rule.get("field")
++    field = screening_fields.get(field_key) if isinstance(field_key, str) else None
++    if field is None:
++        issues.append(f"classification rule {rule_id} references an unknown screening field")
++        return
++
++    expected = rule.get("value")
++    if operator == "in":
++        if not isinstance(expected, list) or not expected:
++            issues.append(f"classification rule {rule_id} operator 'in' requires a non-empty list")
++            return
++    elif operator.startswith("numeric_"):
++        if normalize_classification_number(expected) is None:
++            issues.append(f"classification rule {rule_id} has a non-numeric comparison value")
++            return
++    elif not isinstance(expected, (str, int, float)) or isinstance(expected, bool):
++        issues.append(f"classification rule {rule_id} has an unsupported comparison value")
++        return
++
++    raw_options = field.get("options", [])
++    if not isinstance(raw_options, list) or not raw_options:
++        return
++    options = [option.get("value") for option in raw_options if isinstance(option, dict)]
++    if operator == "equals":
++        expected_value = str(expected).strip().casefold()
++        can_match = any(
++            str(option).strip().casefold() == expected_value for option in options
++        )
++    elif operator == "in":
++        expected_values = {
++            str(value).strip().casefold()
++            for value in expected
++            if isinstance(value, (str, int, float)) and not isinstance(value, bool)
++        }
++        can_match = any(str(option).strip().casefold() in expected_values for option in options)
++    else:
++        expected_number = normalize_classification_number(expected)
++        option_numbers = [
++            number
++            for option in options
++            if (number := normalize_classification_number(option)) is not None
++        ]
++        if operator == "numeric_gte":
++            can_match = any(number >= expected_number for number in option_numbers)
++        elif operator == "numeric_lte":
++            can_match = any(number <= expected_number for number in option_numbers)
++        else:
++            can_match = any(number == expected_number for number in option_numbers)
++    if not can_match:
++        issues.append(
++            f"classification rule {rule_id} cannot match any configured option for {field_key}"
++        )
++
++
++def validate_configuration(
++    configuration: dict[str, dict[str, Any]] | None = None,
++) -> list[str]:
++    """Return every structural or cross-file issue in a bank configuration."""
++    if configuration is None:
++        try:
++            configuration = load_configuration()
++        except (OSError, json.JSONDecodeError) as error:
++            return [f"cannot load research JSON: {error}"]
++    if not isinstance(configuration, dict):
++        return ["research configuration must be a JSON object"]
++
++    issues: list[str] = []
++    root_sections: dict[str, dict[str, Any]] = {}
++    for root_name in ("bank", "scenarios", "screening", "classification"):
++        section = configuration.get(root_name)
++        if not isinstance(section, dict):
++            issues.append(f"{root_name} JSON root must be an object")
++            section = {}
++        root_sections[root_name] = section
++    bank = root_sections["bank"]
++    scenarios = root_sections["scenarios"]
++    screening = root_sections["screening"]
++    classification = root_sections["classification"]
++
++    question_entries = bank.get("questions")
++    question_codes = _code_inventory(
++        question_entries,
++        label="question",
++        expected=EXPECTED_QUESTION_CODES,
++        issues=issues,
++    )
++    hypothesis_codes = _code_inventory(
++        bank.get("hypotheses"),
++        label="hypothesis",
++        expected=EXPECTED_HYPOTHESIS_CODES,
++        issues=issues,
++    )
++
++    hypotheses = bank.get("hypotheses")
++    if isinstance(hypotheses, list):
++        for hypothesis in hypotheses:
++            if not isinstance(hypothesis, dict):
++                continue
++            code = hypothesis.get("code", "<unknown>")
++            if not isinstance(hypothesis.get("text"), str) or not hypothesis["text"].strip():
++                issues.append(f"hypothesis {code} has no text")
++
++    if isinstance(question_entries, list):
++        for question in question_entries:
++            if not isinstance(question, dict):
++                continue
++            code = question.get("code", "<unknown>")
++            if not isinstance(question.get("text"), str) or not question["text"].strip():
++                issues.append(f"question {code} has no text")
++            if not isinstance(question.get("options"), list):
++                issues.append(f"question {code} options must be an array")
++            if not isinstance(question.get("follow_ups"), list):
++                issues.append(f"question {code} follow_ups must be an array")
++            refs = question.get("hypothesis_ids", [])
++            if not isinstance(refs, list):
++                issues.append(f"question {code} hypothesis_ids must be an array")
++                continue
++            non_string_refs = sorted(repr(ref) for ref in refs if not isinstance(ref, str))
++            if non_string_refs:
++                issues.append(
++                    f"question {code} has non-string hypothesis references: "
++                    f"{', '.join(non_string_refs)}"
++                )
++            invalid_refs = sorted(
++                {ref for ref in refs if isinstance(ref, str) and ref not in hypothesis_codes}
++            )
++            if invalid_refs:
++                issues.append(
++                    f"question {code} references unknown hypotheses: {', '.join(invalid_refs)}"
++                )
++
++    scenario_entries = _array_section(
++        scenarios, "scenarios", label="scenarios", issues=issues
++    )
++    non_object_scenarios = sum(1 for entry in scenario_entries if not isinstance(entry, dict))
++    if non_object_scenarios:
++        issues.append(f"scenarios contains {non_object_scenarios} non-object entries")
++    expected_scenarios = {"trips_experienced", "trips_beginner", "travel_design", "travel_ready"}
++    raw_scenario_names = [
++        entry.get("code", "<missing>") for entry in scenario_entries if isinstance(entry, dict)
++    ]
++    invalid_scenario_names = sorted(
++        repr(code) for code in raw_scenario_names if not isinstance(code, str)
++    )
++    if invalid_scenario_names:
++        issues.append(
++            "scenario entries must have string codes: " + ", ".join(invalid_scenario_names)
++        )
++    scenario_names = [code for code in raw_scenario_names if isinstance(code, str)]
++    duplicate_scenarios = sorted(
++        code for code, count in Counter(scenario_names).items() if count > 1
++    )
++    if duplicate_scenarios:
++        issues.append(f"duplicate scenario codes: {', '.join(duplicate_scenarios)}")
++    missing_scenarios = sorted(expected_scenarios - set(scenario_names))
++    unknown_scenarios = sorted(set(scenario_names) - expected_scenarios)
++    if missing_scenarios:
++        issues.append(f"missing scenarios: {', '.join(missing_scenarios)}")
++    if unknown_scenarios:
++        issues.append(f"unknown scenarios: {', '.join(unknown_scenarios)}")
++    for scenario in scenario_entries:
++        if not isinstance(scenario, dict):
++            continue
++        code = scenario.get("code", "<unknown>")
++        refs = scenario.get("question_codes", [])
++        if not isinstance(refs, list):
++            issues.append(f"scenario {code} question_codes must be an array")
++            continue
++        _validate_question_refs(
++            refs,
++            label=f"scenario {code}",
++            known_codes=question_codes,
++            issues=issues,
++        )
++        string_refs = [ref for ref in refs if isinstance(ref, str)]
++        duplicates = sorted(ref for ref, count in Counter(string_refs).items() if count > 1)
++        if duplicates:
++            issues.append(f"scenario {code} repeats question codes: {', '.join(duplicates)}")
++        for key in ("screening_question_codes", "docx_route_codes", "provided_route_codes"):
++            if key in scenario:
++                _validate_question_refs(
++                    scenario[key],
++                    label=f"scenario {code} {key}",
++                    known_codes=question_codes,
++                    issues=issues,
++                )
++
++    optional_modules = _object_section(
++        scenarios,
++        "optional_modules",
++        label="scenarios optional_modules",
++        issues=issues,
++    )
++    for module_name, module in optional_modules.items():
++        if not isinstance(module, dict):
++            issues.append(f"optional module {module_name} must be an object")
++            continue
++        refs = module.get("question_codes", [])
++        if not isinstance(refs, list):
++            issues.append(f"optional module {module_name} question_codes must be an array")
++            continue
++        _validate_question_refs(
++            refs,
++            label=f"optional module {module_name}",
++            known_codes=question_codes,
++            issues=issues,
++        )
++        if "docx_ecosystem_route" in module:
++            _validate_question_refs(
++                module["docx_ecosystem_route"],
++                label=f"optional module {module_name} docx_ecosystem_route",
++                known_codes=question_codes,
++                issues=issues,
++            )
++        conditional = module.get("conditional_docx_questions", {})
++        if not isinstance(conditional, dict):
++            issues.append(
++                f"optional module {module_name} conditional_docx_questions must be an object"
++            )
++            continue
++        for route, conditional_refs in conditional.items():
++            _validate_question_refs(
++                conditional_refs,
++                label=f"optional module {module_name} conditional route {route}",
++                known_codes=question_codes,
++                issues=issues,
++            )
++    route_comparisons = _array_section(
++        scenarios,
++        "docx_route_comparison",
++        label="scenarios docx_route_comparison",
++        issues=issues,
++    )
++    for comparison in route_comparisons:
++        if not isinstance(comparison, dict):
++            issues.append("DOCX route comparison entries must be objects")
++            continue
++        for key in ("docx_adds", "conditional_offers", "docx_route"):
++            if key in comparison:
++                _validate_question_refs(
++                    comparison[key],
++                    label=f"DOCX route comparison {comparison.get('scenario', '<unknown>')} {key}",
++                    known_codes=question_codes,
++                    issues=issues,
++                )
++    offers = optional_modules.get("offers", {})
++    if not isinstance(offers, dict):
++        issues.append("optional module offers must be an object")
++    elif offers.get("enabled") is not False:
++        issues.append(
++            "offers module must remain disabled until real prices and terms are available"
++        )
++
++    fields = _array_section(screening, "fields", label="screening fields", issues=issues)
++    additional_fields = _array_section(
++        screening,
++        "additional_fields",
++        label="screening additional_fields",
++        issues=issues,
++    )
++    goal = _object_section(screening, "goal", label="screening goal", issues=issues)
++    goal_options = _array_section(
++        goal, "options", label="screening goal options", issues=issues
++    )
++    non_object_fields = sum(
++        1 for entry in [*fields, *additional_fields] if not isinstance(entry, dict)
++    )
++    if non_object_fields:
++        issues.append(f"screening contains {non_object_fields} non-object fields")
++    raw_field_keys = [entry.get("key", "<missing>") for entry in fields if isinstance(entry, dict)]
++    invalid_field_keys = sorted(
++        repr(key) for key in raw_field_keys if not isinstance(key, str)
++    )
++    if invalid_field_keys:
++        issues.append("screening field keys must be strings: " + ", ".join(invalid_field_keys))
++    field_keys = [key for key in raw_field_keys if isinstance(key, str)]
++    missing_fields = sorted(EXPECTED_SCREENING_KEYS - set(field_keys))
++    unknown_fields = sorted(set(field_keys) - EXPECTED_SCREENING_KEYS)
++    if missing_fields:
++        issues.append(f"missing screening fields: {', '.join(missing_fields)}")
++    if unknown_fields:
++        issues.append(f"unknown screening fields: {', '.join(unknown_fields)}")
++    duplicate_fields = sorted(key for key, count in Counter(field_keys).items() if count > 1)
++    if duplicate_fields:
++        issues.append(f"duplicate screening fields: {', '.join(duplicate_fields)}")
++    for field in fields:
++        if not isinstance(field, dict):
++            continue
++        key = field.get("key", "<unknown>")
++        control = field.get("control")
++        if not isinstance(control, str) or control not in {"text", "textarea", "select", "radio"}:
++            issues.append(f"screening field {key} has unsupported control")
++        options = field.get("options", [])
++        if isinstance(control, str) and control in {"radio", "select"}:
++            if not isinstance(options, list) or not options:
++                issues.append(f"screening field {key} requires options")
++                continue
++            non_object_options = sum(1 for option in options if not isinstance(option, dict))
++            if non_object_options:
++                issues.append(
++                    f"screening field {key} contains {non_object_options} non-object options"
++                )
++            raw_values = [
++                option.get("value", "<missing>")
++                for option in options
++                if isinstance(option, dict)
++            ]
++            invalid_values = sorted(
++                repr(value) for value in raw_values if not isinstance(value, str)
++            )
++            if invalid_values:
++                issues.append(
++                    f"screening field {key} option values must be strings: "
++                    f"{', '.join(invalid_values)}"
++                )
++            values = {value for value in raw_values if isinstance(value, str)}
++            if "other" not in values:
++                issues.append(f"screening field {key} is missing the 'other' option")
++            if "unknown" not in values:
++                issues.append(f"screening field {key} is missing the 'unknown' option")
++        source = field.get("source", {})
++        if not isinstance(source, dict):
++            issues.append(f"screening field {key} source must be an object")
++            continue
++        question_code = source.get("question_code") if isinstance(source, dict) else None
++        if question_code:
++            question = next(
++                (
++                    item
++                    for item in question_entries or []
++                    if isinstance(item, dict) and item.get("code") == question_code
++                ),
++                None,
++            )
++            if question is None:
++                issues.append(f"screening field {key} references unknown question {question_code}")
++            elif source.get("question_text") != question.get("text"):
++                issues.append(f"screening field {key} source text differs from {question_code}")
++
++    goal_option_values = [
++        option.get("value") for option in goal_options if isinstance(option, dict)
++    ]
++    if any(not isinstance(value, str) for value in goal_option_values):
++        issues.append("screening goal option values must be strings")
++    supported_goal_codes = {
++        value for value in goal_option_values if isinstance(value, str)
++    }
++
++    categories = _array_section(
++        classification, "categories", label="classification categories", issues=issues
++    )
++    non_object_categories = sum(1 for item in categories if not isinstance(item, dict))
++    if non_object_categories:
++        issues.append(f"classification contains {non_object_categories} non-object categories")
++    raw_category_codes = [
++        item.get("code", "<missing>") for item in categories if isinstance(item, dict)
++    ]
++    invalid_category_codes = sorted(
++        repr(code) for code in raw_category_codes if not isinstance(code, str)
++    )
++    if invalid_category_codes:
++        issues.append("classification category codes must be strings")
++    category_codes = {code for code in raw_category_codes if isinstance(code, str)}
++    if (
++        len(raw_category_codes) != len(EXPECTED_CATEGORIES)
++        or len(category_codes) != len(raw_category_codes)
++        or category_codes != EXPECTED_CATEGORIES
++    ):
++        issues.append("classification categories must contain each category exactly once")
++    priority_by_goal = _object_section(
++        classification,
++        "priority_by_goal",
++        label="classification priority_by_goal",
++        issues=issues,
++    )
++    for goal_name in priority_by_goal:
++        if goal_name not in supported_goal_codes:
++            issues.append(f"classification priority_by_goal references unknown goal {goal_name}")
++    priority_values = _array_section(
++        classification, "priority", label="classification priority", issues=issues
++    )
++    for priority_key, priorities in (
++        ("priority", [priority_values]),
++        ("priority_by_goal", list(priority_by_goal.values())),
++    ):
++        for priority in priorities:
++            if not isinstance(priority, list) or any(
++                not isinstance(category, str) for category in priority
++            ) or (
++                len(priority) != len(EXPECTED_CATEGORIES)
++                or len(set(priority)) != len(priority)
++                or set(priority) != EXPECTED_CATEGORIES
++            ):
++                issues.append(
++                    f"classification {priority_key} must order each category exactly once"
++                )
++                break
++    goal_adjustments = _object_section(
++        classification,
++        "goal_adjustments",
++        label="classification goal_adjustments",
++        issues=issues,
++    )
++    for goal_name, adjustments in goal_adjustments.items():
++        if not isinstance(adjustments, dict):
++            issues.append(f"classification goal_adjustments entry {goal_name} must be an object")
++            continue
++        if goal_name not in supported_goal_codes:
++            issues.append(f"classification goal_adjustments references unknown goal {goal_name}")
++        for category, points in adjustments.items():
++            if category not in EXPECTED_CATEGORIES:
++                issues.append(
++                    f"classification goal_adjustments {goal_name} references unknown category "
++                    f"{category}"
++                )
++            if isinstance(points, bool) or not isinstance(points, int) or points <= 0:
++                issues.append(
++                    f"classification goal_adjustments {goal_name} points for {category} "
++                    "must be a positive integer"
++                )
++    signal_strength = _object_section(
++        classification,
++        "signal_strength",
++        label="classification signal_strength",
++        issues=issues,
++    )
++    threshold_values: dict[str, int | float] = {}
++    for threshold in ("low_max_score", "medium_max_score"):
++        value = signal_strength.get(threshold)
++        if isinstance(value, bool) or not isinstance(value, (int, float)):
++            issues.append(f"classification signal_strength {threshold} must be numeric")
++        else:
++            threshold_values[threshold] = value
++    if (
++        len(threshold_values) == 2
++        and threshold_values["low_max_score"] >= threshold_values["medium_max_score"]
++    ):
++        issues.append(
++            "classification signal_strength low_max_score must be less than medium_max_score"
++        )
++    screening_fields = {
++        field.get("key"): field
++        for field in [*fields, *additional_fields]
++        if isinstance(field, dict) and isinstance(field.get("key"), str)
++    }
++    classification_rules = _array_section(
++        classification, "rules", label="classification rules", issues=issues
++    )
++    for rule in classification_rules:
++        if not isinstance(rule, dict):
++            issues.append("classification rules must contain objects")
++            continue
++        _classification_rule_is_matchable(rule, screening_fields, issues)
++        if not isinstance(rule.get("category"), str) or rule["category"] not in EXPECTED_CATEGORIES:
++            issues.append(
++                f"classification rule {rule.get('id', '<unknown>')} references an unknown category"
++            )
++        if (
++            isinstance(rule.get("points"), bool)
++            or not isinstance(rule.get("points"), int)
++            or rule["points"] <= 0
++        ):
++            issues.append(
++                f"classification rule {rule.get('id', '<unknown>')} must award positive "
++                "integer points"
++            )
++    fallback = _object_section(
++        classification,
++        "no_signal_fallback",
++        label="classification no_signal_fallback",
++        issues=issues,
++    )
++    if (
++        not isinstance(fallback.get("suggested_category"), str)
++        or fallback.get("suggested_category") not in EXPECTED_CATEGORIES
++        or not isinstance(fallback.get("alternative_category"), str)
++        or fallback.get("alternative_category") not in EXPECTED_CATEGORIES
++    ):
++        issues.append("classification no-signal fallback must use supported categories")
++
++    return issues
++
++
++def main(argv: list[str] | None = None) -> int:
++    args = sys.argv[1:] if argv is None else argv
++    if args != ["validate"]:
++        print("Usage: python -m app.research_bank validate", file=sys.stderr)
++        return 2
++    issues = validate_configuration()
++    if issues:
++        print("Research configuration invalid:")
++        for issue in issues:
++            print(f"- {issue}")
++        return 1
++    configuration = load_configuration()
++    question_count = len(configuration["bank"]["questions"])
++    hypothesis_count = len(configuration["bank"]["hypotheses"])
++    scenario_count = len(configuration["scenarios"]["scenarios"])
++    print(
++        f"Research configuration valid: {question_count} questions, "
++        f"{hypothesis_count} hypotheses, {scenario_count} scenarios."
++    )
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/backend/app/research_data/classification.json b/backend/app/research_data/classification.json
+new file mode 100644
+index 0000000..8fcfed0
+--- /dev/null
++++ b/backend/app/research_data/classification.json
+@@ -0,0 +1,188 @@
++{
++  "version": "1.0",
++  "categories": [
++    {
++      "code": "trips_experienced",
++      "label": "TC Trips / опытный путешественник"
++    },
++    {
++      "code": "trips_beginner",
++      "label": "TC Trips / начинающий путешественник"
++    },
++    {
++      "code": "travel_design",
++      "label": "Travel Design"
++    },
++    {
++      "code": "travel_ready",
++      "label": "Travel Ready"
++    }
++  ],
++  "priority": [
++    "trips_beginner",
++    "trips_experienced",
++    "travel_design",
++    "travel_ready"
++  ],
++  "priority_by_goal": {
++    "trips": [
++      "trips_beginner",
++      "trips_experienced",
++      "travel_design",
++      "travel_ready"
++    ],
++    "individual_services": [
++      "travel_design",
++      "travel_ready",
++      "trips_beginner",
++      "trips_experienced"
++    ]
++  },
++  "goal_adjustments": {
++    "trips": {
++      "trips_experienced": 1,
++      "trips_beginner": 1
++    },
++    "individual_services": {
++      "travel_design": 1,
++      "travel_ready": 1
++    }
++  },
++  "rules": [
++    {
++      "id": "three_or_more_independent_trips",
++      "field": "independent_trips_24m",
++      "operator": "numeric_gte",
++      "value": 3,
++      "category": "trips_experienced",
++      "points": 3,
++      "reason": "За последние 24 месяца было не менее трёх самостоятельных зарубежных поездок."
++    },
++    {
++      "id": "two_independent_trips",
++      "field": "independent_trips_24m",
++      "operator": "numeric_equals",
++      "value": 2,
++      "category": "trips_experienced",
++      "points": 2,
++      "reason": "За последние 24 месяца было две самостоятельные зарубежные поездки."
++    },
++    {
++      "id": "zero_or_one_independent_trip",
++      "field": "independent_trips_24m",
++      "operator": "numeric_lte",
++      "value": 1,
++      "category": "trips_beginner",
++      "points": 3,
++      "reason": "За последние 24 месяца была одна или ни одной самостоятельной зарубежной поездки."
++    },
++    {
++      "id": "group_trip_experience",
++      "field": "group_experience",
++      "operator": "equals",
++      "value": "yes",
++      "category": "trips_experienced",
++      "points": 1,
++      "reason": "Есть опыт организованных групповых путешествий."
++    },
++    {
++      "id": "no_group_trip_experience",
++      "field": "group_experience",
++      "operator": "equals",
++      "value": "no",
++      "category": "trips_beginner",
++      "points": 1,
++      "reason": "Нет опыта организованных групповых путешествий."
++    },
++    {
++      "id": "upcoming_trip_plans",
++      "field": "has_upcoming_plans",
++      "operator": "equals",
++      "value": "yes",
++      "category": "trips_beginner",
++      "points": 1,
++      "reason": "Есть конкретные планы путешествия в ближайшие месяцы."
++    },
++    {
++      "id": "route_planning_difficulty",
++      "field": "preparation_difficulty",
++      "operator": "equals",
++      "value": "itinerary_design",
++      "category": "travel_design",
++      "points": 3,
++      "reason": "Наибольшая трудность связана с составлением маршрута."
++    },
++    {
++      "id": "booking_difficulty",
++      "field": "preparation_difficulty",
++      "operator": "in",
++      "value": [
++        "booking_logistics",
++        "documents_language"
++      ],
++      "category": "travel_ready",
++      "points": 2,
++      "reason": "Трудности связаны с бронированием или организационными задачами."
++    },
++    {
++      "id": "coordination_difficulty",
++      "field": "preparation_difficulty",
++      "operator": "equals",
++      "value": "coordination",
++      "category": "travel_ready",
++      "points": 2,
++      "reason": "Согласование поездки с попутчиками требует дополнительной организации."
++    },
++    {
++      "id": "time_difficulty",
++      "field": "preparation_difficulty",
++      "operator": "equals",
++      "value": "time_cost",
++      "category": "travel_ready",
++      "points": 2,
++      "reason": "Нехватка времени на подготовку может указывать на ценность организации."
++    },
++    {
++      "id": "paid_route_design",
++      "field": "paid_planning_services",
++      "operator": "equals",
++      "value": "route_design",
++      "category": "travel_design",
++      "points": 3,
++      "reason": "Уже оплачивались разработка маршрута или готовый маршрут."
++    },
++    {
++      "id": "paid_trip_organization",
++      "field": "paid_planning_services",
++      "operator": "equals",
++      "value": "trip_organization",
++      "category": "travel_ready",
++      "points": 3,
++      "reason": "Уже оплачивалась организация поездки."
++    },
++    {
++      "id": "usually_uses_organizer",
++      "field": "organization_style",
++      "operator": "equals",
++      "value": "organizer",
++      "category": "travel_ready",
++      "points": 1,
++      "reason": "Обычно поездка организуется через организатора."
++    }
++  ],
++  "signal_strength": {
++    "low_max_score": 2,
++    "medium_max_score": 4
++  },
++  "no_signal_fallback": {
++    "suggested_category": "trips_beginner",
++    "alternative_category": "travel_design",
++    "reason": "Мало данных для рекомендации; это слабый стартовый вариант, а не вывод о человеке.",
++    "signal_strength": "low"
++  },
++  "disclaimer": "Рекомендация сценария не является диагнозом или достоверным определением типа человека; интервьюер может выбрать другую категорию.",
++  "assumptions": [
++    "Начальные баллы и пороги не подтверждены исследованиями; они заданы для первого запуска и должны пересматриваться по результатам интервью.",
++    "Если данных для классификации недостаточно, основной вариант — trips_beginner, альтернативный — travel_design, сигнал слабый."
++  ]
++}
+diff --git a/backend/app/research_data/questions.json b/backend/app/research_data/questions.json
+new file mode 100644
+index 0000000..aaa5d4e
+--- /dev/null
++++ b/backend/app/research_data/questions.json
+@@ -0,0 +1,1383 @@
++{
++  "bank_version": "1.0",
++  "source": {
++    "document": "Travel_Club_CustDev.docx",
++    "edition": "1.0",
++    "date": "2026-10-16",
++    "transfer_note": "Question text, answer guidance, follow-ups, interpretation, and hypothesis references copied from the source document."
++  },
++  "questions": [
++    {
++      "code": "S01",
++      "section": "screening",
++      "text": "В какой возрастной группе вы находитесь?",
++      "type": "closed",
++      "options": [
++        "18–22",
++        "23–29",
++        "30–39",
++        "40+",
++        "не хочу отвечать"
++      ],
++      "follow_ups": [
++        "Если удобно, уточнить возраст без давления."
++      ],
++      "hypothesis_ids": [
++        "H02",
++        "H13"
++      ],
++      "interpretation": "Нужно для сравнения групп по H13; возраст сам по себе не подтверждает спрос.",
++      "answer_guidance": "Закрытый факт: 18–22 / 23–29 / 30–39 / 40+ / не хочу отвечать."
++    },
++    {
++      "code": "S02",
++      "section": "screening",
++      "text": "В каком городе вы живёте и откуда обычно вылетаете в путешествия?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Отличается ли аэропорт вылета от города проживания?"
++      ],
++      "hypothesis_ids": [
++        "H07",
++        "H13"
++      ],
++      "interpretation": "Города и стоимость дороги помогут проверить H07 на реальных заявках; отсутствие Москвы не считается барьером по умолчанию.",
++      "answer_guidance": "Открытый короткий факт."
++    },
++    {
++      "code": "S03",
++      "section": "screening",
++      "text": "Сколько самостоятельных зарубежных поездок было за последние 24 месяца и кто организовывал последнюю?",
++      "type": "mixed",
++      "options": [],
++      "follow_ups": [
++        "Бронировали сами, с друзьями или через организатора?"
++      ],
++      "hypothesis_ids": [
++        "H02"
++      ],
++      "interpretation": "Позволяет классифицировать опыт и сравнить H02; число поездок ≠ готовность выбрать Trips.",
++      "answer_guidance": "Факт + свободный рассказ."
++    },
++    {
++      "code": "S04",
++      "section": "screening",
++      "text": "Какова ваша роль в выборе и оплате путешествий?",
++      "type": "fact",
++      "options": [],
++      "follow_ups": [
++        "Кто определяет бюджет и кто принимает решение о покупке?"
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Разделить инициатора, пользователя и плательщика. Не исключать тех, кто путешествует с общим бюджетом.",
++      "answer_guidance": "Факт в свободной форме."
++    },
++    {
++      "code": "S05",
++      "section": "screening",
++      "text": "Какая поездка у вас сейчас в планах? Что уже сделано?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Есть направление, предполагаемые даты, брони?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Помогает отобрать людей с настоящей текущей задачей; фантазия без действий — слабый сигнал.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "S06",
++      "section": "screening",
++      "text": "Есть ли у вас опыт оплаты авторского тура, готового маршрута или помощи в организации поездки?",
++      "type": "mixed",
++      "options": [],
++      "follow_ups": [
++        "Когда, что покупали и почему?"
++      ],
++      "hypothesis_ids": [
++        "H02",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Опыт платной альтернативы важен для сравнительного анализа, но не гарантирует будущую оплату TC.",
++      "answer_guidance": "Факт + описание эпизода."
++    },
++    {
++      "code": "G01",
++      "section": "general",
++      "text": "Расскажите о последней поездке, которую вы организовали или оплачивали. Как всё начиналось?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Дата, направление, состав, первый шаг, фактическое решение."
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H02",
++        "H09"
++      ],
++      "interpretation": "Доказательство конкретной ситуации; общие рассуждения без эпизода не кодировать как поведение.",
++      "answer_guidance": "Открытый, прошлое поведение."
++    },
++    {
++      "code": "G02",
++      "section": "general",
++      "text": "Как вы выбрали формат поездки: самостоятельно, с друзьями, группой или через организатора?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие альтернативы отвергли и почему?"
++      ],
++      "hypothesis_ids": [
++        "H02",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Сопоставить реальную альтернативу для T1/T2 и Services; выбор без перечисления альтернатив менее информативен.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G03",
++      "section": "general",
++      "text": "Что именно подтолкнуло вас перейти от идеи поездки к конкретным действиям?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Билет, отпуск, контент, друзья, цена, событие; что было раньше?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H17"
++      ],
++      "interpretation": "Повторяющиеся реальные триггеры могут поддержать коммуникационную стратегию; ответы, подсказанные интервьюером, не учитывать как спонтанные.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G04",
++      "section": "general",
++      "text": "Что в подготовке и самой поездке было наиболее сложным? Что вы сделали, чтобы с этим справиться?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Время, деньги, документы, неизвестность, язык, согласование друзей."
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H10",
++        "H12"
++      ],
++      "interpretation": "Реальные затраты/обходные решения усиливают JTBD; «ничего сложного» ослабляет гипотезу о боли.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G05",
++      "section": "general",
++      "text": "Какой момент или результат сделал последнюю поездку по-настоящему ценной для вас?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Локации, люди, культура, чувство самостоятельности; попросить конкретный пример."
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H05"
++      ],
++      "interpretation": "Первое спонтанное упоминание и подтверждённые действия помогают разделять PLACE/PEOPLE; одно упоминание не выявляет главный драйвер рынка.",
++      "answer_guidance": "Открытый, не предлагать список заранее."
++    },
++    {
++      "code": "G06",
++      "section": "general",
++      "text": "Вспомните путешествие, которое хотели совершить, но отложили или отменили. Что произошло?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Кто повлиял, какой шаг уже сделали, была ли попытка решить проблему?"
++      ],
++      "hypothesis_ids": [
++        "H03"
++      ],
++      "interpretation": "Поддерживает H03 лишь если именно компания стала реальным ограничением; бюджет и даты — альтернативные объяснения.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "G07",
++      "section": "general",
++      "text": "Как вы определяли бюджет последней поездки и сколько примерно потратили на неё?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Отделить перелёт, проживание, услуги организатора, дополнительные траты."
++      ],
++      "hypothesis_ids": [
++        "H05",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Суммы дают диапазон прошлых расходов, но не «цену, которую готовы заплатить» за TC.",
++      "answer_guidance": "Открытый факт, сумма приблизительная; можно пропустить."
++    },
++    {
++      "code": "G08",
++      "section": "general",
++      "text": "На чём вы сознательно экономили, а на что решили потратить больше? Почему?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Конкретные компромиссы, сравниваемые варианты."
++      ],
++      "hypothesis_ids": [
++        "H05",
++        "H10"
++      ],
++      "interpretation": "Реальные компромиссы показывают ценность опыта/удобства; общий лозунг «люблю качество» слаб.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G09",
++      "section": "general",
++      "text": "Где вы искали идеи, варианты поездки и советы перед последним путешествием?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какой материал привёл к действию? Сохранили, подписались, связались?"
++      ],
++      "hypothesis_ids": [
++        "H17"
++      ],
++      "interpretation": "Проверка каналов: действие сильнее упоминания платформы, подписка слабее обращения.",
++      "answer_guidance": "Открытый спонтанный ответ."
++    },
++    {
++      "code": "G10",
++      "section": "general",
++      "text": "Кому и каким источникам вы доверяли при выборе поездки? Что проверяли лично?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Отзывы, сайт, знакомые, договор, цена, прошлый опыт."
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H16"
++      ],
++      "interpretation": "Конкретные проверки определяют RTB; «доверяю красивым аккаунтам» без поведения — слабый сигнал.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G11",
++      "section": "general",
++      "text": "Что в последней поездке оказалось не таким, как ожидалось? Как вы на это отреагировали?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что реально испортило опыт, как решали проблему?"
++      ],
++      "hypothesis_ids": [
++        "H06",
++        "H10"
++      ],
++      "interpretation": "Помогает понять допустимую спонтанность, поддержку и требования к организации.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "G12",
++      "section": "general",
++      "text": "Когда вы обычно выбираете следующую поездку и какие реальные шаги уже предприняли?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Отпуск, календарь, бронь, накопления, обсуждение компании."
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Сигнал срочности; планы без даты/действия не приравнивать к активному спросу.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "T01",
++      "section": "trips",
++      "text": "Если вы умеете путешествовать сами, в каких случаях всё же выбираете организованную групповую поездку?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Бывали ли реальные случаи? Что перевесило?"
++      ],
++      "hypothesis_ids": [
++        "H02"
++      ],
++      "interpretation": "Реальное переключение самостоятельного путешественника поддержит H02; абстрактное «иногда удобно» слабее.",
++      "answer_guidance": "Открытый, спросить опыт."
++    },
++    {
++      "code": "T02",
++      "section": "trips",
++      "text": "Был ли случай, когда вы отказались от поездки только потому, что не нашлось компании?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Когда и как искали попутчиков?"
++      ],
++      "hypothesis_ids": [
++        "H03"
++      ],
++      "interpretation": "H03 поддерживается при примере и попытках решить проблему; если решающим был бюджет или работа — ослабляется.",
++      "answer_guidance": "Открытый эпизод, избегать «только» как обязательного условия: проверить другие причины."
++    },
++    {
++      "code": "T03",
++      "section": "trips",
++      "text": "Что для вас определило бы выбор между самостоятельной поездкой и похожим путешествием в маленькой группе?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что должно быть лучше у группы, чтобы вы согласились переплатить?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H02"
++      ],
++      "interpretation": "Выявляет драйвер сравнения; «люди» становится сильнее, когда связано с реальным прошлым выбором.",
++      "answer_guidance": "Открытый, можно попросить сравнение из опыта."
++    },
++    {
++      "code": "T04",
++      "section": "trips",
++      "text": "Как вы выбираете попутчиков и что обычно происходит, когда ваши желания в поездке расходятся?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Последний конфликт/компромисс, что сработало?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H03"
++      ],
++      "interpretation": "Проверяет реальную важность совместимости; отсутствие конфликтов не значит, что критерий не важен.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "T05",
++      "section": "trips",
++      "text": "Вспомните поездку, где люди существенно повлияли на ваши впечатления. Что произошло?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Как именно изменилась оценка поездки?"
++      ],
++      "hypothesis_ids": [
++        "H01"
++      ],
++      "interpretation": "Спонтанные конкретные истории усиливают гипотезу PEOPLE; обобщённые «люди важны» слабы.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "T06",
++      "section": "trips",
++      "text": "Что вы думаете о группе из 6–9 человек? Есть ли опыт разных размеров групп?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие практические плюсы/минусы вы испытали?"
++      ],
++      "hypothesis_ids": [
++        "H04"
++      ],
++      "interpretation": "Если размер помогает удобству и знакомствам в реальном опыте — предварительная поддержка H04; если связан с теснотой/ограничением — барьер.",
++      "answer_guidance": "Сначала открытый; затем показать размер."
++    },
++    {
++      "code": "T07",
++      "section": "trips",
++      "text": "Что вам нужно знать о других участниках до оплаты групповой поездки?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Возраст, интересы, правила, предварительный созвон; что критично?"
++      ],
++      "hypothesis_ids": [
++        "H04",
++        "H08"
++      ],
++      "interpretation": "Конкретные требования задают анкету/знакомство, но желание «отбора» не доказывает его эффекта на продажи.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "T08",
++      "section": "trips",
++      "text": "Как вы отнеслись бы к короткой анкете и личному знакомству с сопровождающей до подтверждения участия?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что может казаться лишним или некомфортным?"
++      ],
++      "hypothesis_ids": [
++        "H04"
++      ],
++      "interpretation": "Сигнал приемлемости механики, не доказательство её повышения конверсии. Отказ от знакомства — риск потери части спроса.",
++      "answer_guidance": "Сначала открытый; затем уточнить опыт аналогичных процедур."
++    },
++    {
++      "code": "T09",
++      "section": "trips",
++      "text": "За какие элементы насыщенного культурного маршрута вы действительно платили дополнительно?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Местный гид, необычная активность, личный опыт, культурная программа."
++      ],
++      "hypothesis_ids": [
++        "H05"
++      ],
++      "interpretation": "Реальный платёж поддерживает ценность программы; «интересно» без платежей не подтверждает H05.",
++      "answer_guidance": "Открытый, прошлые платежи."
++    },
++    {
++      "code": "T10",
++      "section": "trips",
++      "text": "Какие решения в групповой поездке вы обязательно хотите принимать самостоятельно?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Свободное время, питание, отдельные прогулки, утро/вечер."
++      ],
++      "hypothesis_ids": [
++        "H06"
++      ],
++      "interpretation": "Проверяет границы свободы; если программа TC не соответствует повторяющимся потребностям, H06 ослабляется.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "T11",
++      "section": "trips",
++      "text": "Что в предложении авторского группового путешествия заставило бы вас выбрать самостоятельную поездку вместо него?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Цена, недоверие, группа, автономия, график, логистика."
++      ],
++      "hypothesis_ids": [
++        "H02",
++        "H06",
++        "H08"
++      ],
++      "interpretation": "Выявляет доминирующий барьер T1, не считать каждый названный фактор равным по весу.",
++      "answer_guidance": "Открытый, попросить ранжировать после рассказа."
++    },
++    {
++      "code": "T12",
++      "section": "trips",
++      "text": "Расскажите о ситуации, когда программа путешествия неожиданно изменилась. Насколько это было приемлемо?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что было допустимо, а что нет?"
++      ],
++      "hypothesis_ids": [
++        "H06"
++      ],
++      "interpretation": "Сопоставить PLAN × SPONTANEITY с реальными ожиданиями и правилами группы.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "T13",
++      "section": "trips",
++      "text": "Если групповой маршрут начинается не в вашем городе, как обычно решаете дорогу до точки встречи?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Стоимость, пересадки, отдельный билет, риск стыковок."
++      ],
++      "hypothesis_ids": [
++        "H07"
++      ],
++      "interpretation": "Дает реальные логистические ограничения H07; нужен расчёт по городам и заявкам.",
++      "answer_guidance": "Открытый факт/эпизод."
++    },
++    {
++      "code": "T14",
++      "section": "trips",
++      "text": "В последний раз, когда покупали дорогую услугу у незнакомой компании, что помогло вам довериться?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Чем подтверждали договоренности? Что остановило бы?"
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H16"
++      ],
++      "interpretation": "Факторы доверия переносятся в RTB, но реакция на нового TC дополнительно проверяется оффером.",
++      "answer_guidance": "Открытый прошлый опыт."
++    },
++    {
++      "code": "T15",
++      "section": "trips",
++      "text": "Что вы ожидаете от ведущего поездки до выезда и во время неё?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Разбор задач, сопровождение, ответственность, контакты, форс-мажор."
++      ],
++      "hypothesis_ids": [
++        "H08"
++      ],
++      "interpretation": "Позволяет сопоставить ожидания с реальными возможностями Василисы и условиями TC; чрезмерные ожидания — риск.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "T16",
++      "section": "trips",
++      "text": "При каких обстоятельствах вы рекомендовали бы групповую поездку знакомым после возвращения?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Кому и что уже советовали в прошлых поездках?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H17"
++      ],
++      "interpretation": "Предполагаемая модель рекомендаций; доказать referral можно только реальными приглашениями и покупками.",
++      "answer_guidance": "Открытый на основе прошлых рекомендаций."
++    },
++    {
++      "code": "D01",
++      "section": "travel_design",
++      "text": "Как вы обычно строите маршрут самостоятельной поездки от первой идеи до расписания по дням?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Последний пример, использованные инструменты."
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Выявляет реальную самостоятельную работу и потенциальные места ценности Design.",
++      "answer_guidance": "Открытый прошлый процесс."
++    },
++    {
++      "code": "D02",
++      "section": "travel_design",
++      "text": "На каком этапе планирования вы тратите больше всего времени? Сколько примерно?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какая часть повторялась или не дала результата?"
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Время и реальные затраты помогают рассчитать экономию; голословное «долго» слабее.",
++      "answer_guidance": "Открытый с оценкой фактических часов."
++    },
++    {
++      "code": "D03",
++      "section": "travel_design",
++      "text": "Была ли поездка, где маршрут привёл к лишним затратам или потерянному времени?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какой конкретно просчёт? Его можно было предусмотреть?"
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Реальная цена ошибки усиливает JTBD экспертизы; если проблем никогда нет — слабее.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "D04",
++      "section": "travel_design",
++      "text": "Какие источники вы используете для составления маршрута и чего в них обычно не хватает?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Карты, ChatGPT, блоги, гиды: что проверяли и исправляли?"
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Наличие неудовлетворённой потребности относительно бесплатных альтернатив.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "D05",
++      "section": "travel_design",
++      "text": "Приходилось ли платить за маршрут, гайд или помощь в планировании? Как выбирали?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Цена, состав результата, удовлетворенность; если не платили — почему?"
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Факт оплаты близкого решения — сильный сигнал существующего спроса; отказ раскрывает барьеры.",
++      "answer_guidance": "Открытый факт."
++    },
++    {
++      "code": "D06",
++      "section": "travel_design",
++      "text": "Какие части планирования вы не готовы отдавать другому человеку?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что принципиально оставляете под своим контролем?"
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H14"
++      ],
++      "interpretation": "Выявляет границы Design и нужную степень персонализации.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "D07",
++      "section": "travel_design",
++      "text": "Если бы маршрут готовил специалист, что должно быть внутри, чтобы это было полезнее ваших собственных заметок?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Примеры дневного плана, логистика, альтернативы, бюджет, культурные детали."
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H15"
++      ],
++      "interpretation": "Список ожидаемой ценности; не доказывает оплату, требует оффер-теста.",
++      "answer_guidance": "Открытый, гипотетический — только после прошлого опыта."
++    },
++    {
++      "code": "D08",
++      "section": "travel_design",
++      "text": "Как бы вы проверили качество маршрута до того, как его полностью получите?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Пример страниц, компетенция, прозрачность условий, гарантия правок."
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H09"
++      ],
++      "interpretation": "Факторы доверия и пример продукта, требуемый на сайте.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "D09",
++      "section": "travel_design",
++      "text": "Как меняются ваши потребности в помощи, если направление незнакомое или поездка первая?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Чем именно сложнее? Сколько поддержки потребуется?"
++      ],
++      "hypothesis_ids": [
++        "H12"
++      ],
++      "interpretation": "Проверка S3 и риска высокой нагрузки H12.",
++      "answer_guidance": "Открытый сравнение фактов."
++    },
++    {
++      "code": "D10",
++      "section": "travel_design",
++      "text": "Кому в вашем окружении действительно помог бы готовый индивидуальный маршрут и почему?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Есть ли конкретный случай покупки?"
++      ],
++      "hypothesis_ids": [
++        "H13"
++      ],
++      "interpretation": "Указывает возможную аудиторию, но не заменяет интервью с самими предполагаемыми клиентами.",
++      "answer_guidance": "Открытый как дополнительный, слабый косвенный сигнал."
++    },
++    {
++      "code": "D11",
++      "section": "travel_design",
++      "text": "Какой самый неудобный момент при покупке готового маршрута вы бы хотели избежать?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Обновления цен, неактуальные сведения, общие рекомендации, пересмотры."
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Границы обещаний и контроль качества продукта.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "D12",
++      "section": "travel_design",
++      "text": "Каким был бы для вас логичный следующий шаг после просмотра примера Travel Design?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Бриф, консультация, покупка, самостоятельное планирование."
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H14"
++      ],
++      "interpretation": "Сопоставить декларируемое действие и фактический переход в заявку.",
++      "answer_guidance": "Открытый, затем реальное действие при наличии оффера."
++    },
++    {
++      "code": "R01",
++      "section": "travel_ready",
++      "text": "Вспомните, когда вам не хватило времени на организацию поездки. Что вы сделали?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Перенесли, упростили, делегировали, заплатили?"
++      ],
++      "hypothesis_ids": [
++        "H10"
++      ],
++      "interpretation": "Реальная потеря времени или платное делегирование поддерживают H10.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "R02",
++      "section": "travel_ready",
++      "text": "Какие конкретные задачи подготовки поездки вы обычно хотели бы делегировать?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Поиск, сравнение, бронирования, расписание, контроль оплат, поддержка."
++      ],
++      "hypothesis_ids": [
++        "H10"
++      ],
++      "interpretation": "Формирует границы Ready; пустое абстрактное «всё» нужно расшифровать.",
++      "answer_guidance": "Сначала открытый, затем уточнения."
++    },
++    {
++      "code": "R03",
++      "section": "travel_ready",
++      "text": "За что из организационных задач путешествия вы уже платили, помимо стоимости самих билетов/отелей?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Кому, сколько примерно и почему?"
++      ],
++      "hypothesis_ids": [
++        "H10"
++      ],
++      "interpretation": "Поддержка WTP через прошлый платеж; не равен WTP за Ready.",
++      "answer_guidance": "Открытый прошлый платёж."
++    },
++    {
++      "code": "R04",
++      "section": "travel_ready",
++      "text": "Кто должен принимать финальное решение о бронировании и изменениях в путешествии?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие согласования приемлемы и как быстро?"
++      ],
++      "hypothesis_ids": [
++        "H10",
++        "H11"
++      ],
++      "interpretation": "Определяет требуемую модель ответственности и координации.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "R05",
++      "section": "travel_ready",
++      "text": "Что для вас меняется, если специалист подбирает и согласует варианты, а оплату поставщикам делаете вы сами?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие конкретные неудобства и плюсы видите?"
++      ],
++      "hypothesis_ids": [
++        "H11"
++      ],
++      "interpretation": "Если схема становится решающей причиной отказа — риск H11. Похвала прозрачности без действий — слабый сигнал.",
++      "answer_guidance": "Открытый после нейтрального описания модели."
++    },
++    {
++      "code": "R06",
++      "section": "travel_ready",
++      "text": "Какие шаги процесса самостоятельных оплат были бы для вас слишком сложными или раздражающими?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Количество транзакций, валюта, язык, сроки, возвраты."
++      ],
++      "hypothesis_ids": [
++        "H11"
++      ],
++      "interpretation": "Позволяет redesign Ready под реальную нагрузку и найти границы H11.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "R07",
++      "section": "travel_ready",
++      "text": "Как вы решали вопрос «сделать самому или оплатить помощь» в последнем отпуске?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Почему выбрали именно так? Что стоило это решение по времени/деньгам?"
++      ],
++      "hypothesis_ids": [
++        "H10",
++        "H15"
++      ],
++      "interpretation": "Драйвер делегирования и коммерческий потенциал S2, полезно сравнивать с D05.",
++      "answer_guidance": "Открытый прошлый выбор."
++    },
++    {
++      "code": "R08",
++      "section": "travel_ready",
++      "text": "Какие условия поддержки во время подготовки были бы обязательны?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Канал, часы ответа, число корректировок, экстренные вопросы."
++      ],
++      "hypothesis_ids": [
++        "H10"
++      ],
++      "interpretation": "Сопоставить ожидания с тарифом/ресурсом команды; чрезмерные SLA снижают маржу.",
++      "answer_guidance": "Сначала открытый; затем ограничения."
++    },
++    {
++      "code": "R09",
++      "section": "travel_ready",
++      "text": "Когда поездка в незнакомую страну вызывает тревогу, какую помощь вам действительно приходилось получать?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Платная/бесплатная, сколько обращений, в какой момент?"
++      ],
++      "hypothesis_ids": [
++        "H12"
++      ],
++      "interpretation": "Помогает проверить S3 и количество работы, не обещая безлимитной поддержки.",
++      "answer_guidance": "Открытый прошлый эпизод."
++    },
++    {
++      "code": "R10",
++      "section": "travel_ready",
++      "text": "В каких обстоятельствах вы бы искали помощника по организации поездки вместо готового тура?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что не подошло в обычном турпакете?"
++      ],
++      "hypothesis_ids": [
++        "H13"
++      ],
++      "interpretation": "Объясняет альтернативы и потенциальный более широкий рынок Services, но демографию подтверждают данные выборки.",
++      "answer_guidance": "Открытый, сравнение последнего реального случая."
++    },
++    {
++      "code": "R11",
++      "section": "travel_ready",
++      "text": "Что вас остановило бы при заказе Travel Ready, даже если программа и цена подходят?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Возвраты, ответственность, прямые бронирования, доверие, сроки."
++      ],
++      "hypothesis_ids": [
++        "H11"
++      ],
++      "interpretation": "Открывает «скрытый» барьер H11 и требования к юридической ясности.",
++      "answer_guidance": "Открытый, после описания, не подсказывать список."
++    },
++    {
++      "code": "R12",
++      "section": "travel_ready",
++      "text": "После передачи вариантов и инструкций вы бы считали услугу выполненной? Что ещё нужно?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Когда нужна помощь с оплатами, изменениями, отменами?"
++      ],
++      "hypothesis_ids": [
++        "H10",
++        "H15"
++      ],
++      "interpretation": "Определяет реальные критерии завершения Ready и предел платного объёма.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "B01",
++      "section": "brand",
++      "text": "Какие туристические проекты, клубы, авторов или сообщества вы недавно читали или выбирали?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "За какими следите? Почему? Предпринимали ли действия?"
++      ],
++      "hypothesis_ids": [
++        "H16",
++        "H17"
++      ],
++      "interpretation": "Реальные конкурентные ориентиры и источники внимания без навязанного списка.",
++      "answer_guidance": "Открытый факт."
++    },
++    {
++      "code": "B02",
++      "section": "brand",
++      "text": "Когда вы впервые видите новый travel-бренд, какие факты проверяете, прежде чем оставить заявку?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Сайт, лица, договор, отзывы, документы, переписка."
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H16"
++      ],
++      "interpretation": "Доказательства доверия для сайта; ответы сами по себе не снимают H08.",
++      "answer_guidance": "Открытый прошлый опыт."
++    },
++    {
++      "code": "B03",
++      "section": "brand",
++      "text": "Расскажите о случае, когда опыт и личная история основателей убедили вас довериться бренду — или наоборот оттолкнули.",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что стало решающим?"
++      ],
++      "hypothesis_ids": [
++        "H16"
++      ],
++      "interpretation": "Проверка роли живых историй без искусственных отзывов.",
++      "answer_guidance": "Открытый эпизод."
++    },
++    {
++      "code": "B04",
++      "section": "brand",
++      "text": "Как вы воспринимаете честно обозначенный архив личных путешествий команды, если у бренда ещё нет коммерческих Trips-кейсов?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что подтвердило бы компетентность?"
++      ],
++      "hypothesis_ids": [
++        "H16",
++        "H08"
++      ],
++      "interpretation": "Поддерживает лишь понятность и приемлемость подачи, требует проверить конверсию контента H16.",
++      "answer_guidance": "Открытый после нейтрального объяснения."
++    },
++    {
++      "code": "B05",
++      "section": "brand",
++      "text": "Вспомните последние два travel-видео или поста, которые вы сохранили/переслали. Зачем?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Удалось ли перейти на сайт, купить, составить план?"
++      ],
++      "hypothesis_ids": [
++        "H17"
++      ],
++      "interpretation": "Контентные триггеры и каналы: сохранение — интерес, переход/заявка — действие.",
++      "answer_guidance": "Открытый прошлый эпизод."
++    },
++    {
++      "code": "B06",
++      "section": "brand",
++      "text": "Через какой реальный источник вы в последний раз нашли и оплатили услугу или поездку?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Откуда узнали? Как проверяли, почему поверили?"
++      ],
++      "hypothesis_ids": [
++        "H17"
++      ],
++      "interpretation": "Позволяет сравнить каналы с оплатами, а не только просмотрами.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "B07",
++      "section": "brand",
++      "text": "Какой формат общения с travel-клубом между поездками был бы вам полезен?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Был ли опыт участия в сообществе? Что реально делали?"
++      ],
++      "hypothesis_ids": [
++        "H01"
++      ],
++      "interpretation": "Гипотеза о Community; интерес к чату ещё не равен активности.",
++      "answer_guidance": "Сначала открытый, дополнительный блок."
++    },
++    {
++      "code": "B08",
++      "section": "brand",
++      "text": "Какие события или встречи по теме путешествий вы посещали за последний год?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Цена, компания, повторное посещение."
++      ],
++      "hypothesis_ids": [
++        "H17"
++      ],
++      "interpretation": "Проверка потенциального спроса Events; отсутствие случаев ≠ нулевой интерес.",
++      "answer_guidance": "Открытый факт."
++    },
++    {
++      "code": "B09",
++      "section": "brand",
++      "text": "Как вы относитесь к формату «журнал путешествий», историям участников и архиву поездок?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что захотелось читать/сохранить/отправить?"
++      ],
++      "hypothesis_ids": [
++        "H16"
++      ],
++      "interpretation": "Восприятие редакционной концепции TC, не коммерческий спрос.",
++      "answer_guidance": "Сначала открытый после примера."
++    },
++    {
++      "code": "B10",
++      "section": "brand",
++      "text": "Чем должен отличаться travel-клуб, чтобы вы захотели оставаться с ним после поездки?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Приходилось ли оставаться участником сообщества?"
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H16"
++      ],
++      "interpretation": "Критерии будущего retention, не подтверждение жизнеспособности платного членства.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "B11",
++      "section": "brand",
++      "text": "Какой человек или группа участников сделали бы совместное путешествие некомфортным для вас?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что именно произошло, какие правила помогли бы?"
++      ],
++      "hypothesis_ids": [
++        "H04"
++      ],
++      "interpretation": "Поведенческие критерии совместимости, избегать суждений по внешности, достатку или профессии.",
++      "answer_guidance": "Открытый сценарий/опыт."
++    },
++    {
++      "code": "B12",
++      "section": "brand",
++      "text": "Что для вас значит «путешествие со свободой для спонтанности»? Расскажите о конкретном примере.",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Когда неожиданность была полезной, когда раздражала?"
++      ],
++      "hypothesis_ids": [
++        "H06"
++      ],
++      "interpretation": "Проверка философии PLAN × SPONTANEITY на операционной совместимости.",
++      "answer_guidance": "Открытый."
++    },
++    {
++      "code": "X01",
++      "section": "offers",
++      "text": "Изучите описание этого предложения. Что здесь вы поняли однозначно, а что осталось непонятным?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Попросить пересказать состав услуги своими словами."
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H14"
++      ],
++      "interpretation": "Ошибки пересказа = проблема коммуникации, а не отсутствие спроса.",
++      "answer_guidance": "Открытый тест понятности; не читать текст за человека."
++    },
++    {
++      "code": "X02",
++      "section": "offers",
++      "text": "Какие альтернативы вы сравнили бы с таким предложением до принятия решения?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Найдите реальную сопоставимую альтернативу."
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Конкурентные альтернативы для позиционирования и корректной ценовой проверки.",
++      "answer_guidance": "Открытый, после оффера."
++    },
++    {
++      "code": "X03",
++      "section": "offers",
++      "text": "Сейчас вы видите программу и отдельную цену TC. Что в ней создаёт достаточную ценность, а что кажется лишним?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие элементы убрали бы без потери ценности?"
++      ],
++      "hypothesis_ids": [
++        "H05"
++      ],
++      "interpretation": "H05 тестируется сравнением выбора и дальнейшим действием, не позитивной оценкой маршрута.",
++      "answer_guidance": "Открытый, конкретный Trips-оффер."
++    },
++    {
++      "code": "X04",
++      "section": "offers",
++      "text": "Как изменяется ваше решение с учётом дороги из вашего города до точки старта и обратно?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какой расход наиболее чувствителен, какие варианты рассмотрели бы?"
++      ],
++      "hypothesis_ids": [
++        "H07"
++      ],
++      "interpretation": "Географическая доступность H07; нужно связывать с городом/фактическими заявками.",
++      "answer_guidance": "Открытый, показать полную стоимость."
++    },
++    {
++      "code": "X05",
++      "section": "offers",
++      "text": "Каких конкретных подтверждений вам не хватает, чтобы доверить деньги или планы этой команде?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Что из текущего контента действительно помогло?"
++      ],
++      "hypothesis_ids": [
++        "H08",
++        "H16"
++      ],
++      "interpretation": "План доверия для H08/H16; «всё ок» без действия недостаточно.",
++      "answer_guidance": "Открытый, после реального сайта/пакета доказательств."
++    },
++    {
++      "code": "X06",
++      "section": "offers",
++      "text": "Вот состав и цена Travel Design. Как бы вы решили: купить или сделать самому?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какая часть предложения оправдывает отдельную стоимость?"
++      ],
++      "hypothesis_ids": [
++        "H09"
++      ],
++      "interpretation": "Предметный выбор ближе к H09, оплата — сильный тест; обещания не считать оплатой.",
++      "answer_guidance": "Открытый конкретный выбор; предложить реальную ссылку/бриф."
++    },
++    {
++      "code": "X07",
++      "section": "offers",
++      "text": "Вот состав и цена Travel Ready. С чем будете сравнивать и что для вас решающее?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Время, поддержка, ответственность, сравнение с готовым туром."
++      ],
++      "hypothesis_ids": [
++        "H10"
++      ],
++      "interpretation": "H10 проявляется в шаге к брифу или покупке, не в одобрении идеи.",
++      "answer_guidance": "Открытый конкретный выбор."
++    },
++    {
++      "code": "X08",
++      "section": "offers",
++      "text": "Прочитайте порядок прямой оплаты поставщикам. Что вы ожидали и где возникли сложности?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Предложить пересказать, кто кому платит и кто отвечает."
++      ],
++      "hypothesis_ids": [
++        "H11"
++      ],
++      "interpretation": "Непонимание = исправить объяснение; понятный, но неприемлемый процесс = риск H11.",
++      "answer_guidance": "Тест понимания реальных условий."
++    },
++    {
++      "code": "X09",
++      "section": "offers",
++      "text": "На странице «Индивидуальные путешествия» какой из двух вариантов помощи вы бы выбрали и почему?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Своими словами чем отличаются Design/Ready?"
++      ],
++      "hypothesis_ids": [
++        "H14"
++      ],
++      "interpretation": "При путанице H14 ослабляется; наблюдать на реальном клике/заявке.",
++      "answer_guidance": "Открытый тест интерфейса, рандомизировать порядок карточек."
++    },
++    {
++      "code": "X10",
++      "section": "offers",
++      "text": "Не видя названий продуктов, какой объём помощи вам нужен для следующей поездки?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Какие задачи оставили бы себе?"
++      ],
++      "hypothesis_ids": [
++        "H14",
++        "H15"
++      ],
++      "interpretation": "Позволяет проверить, не навязываем ли клиенту искусственное различие офферов.",
++      "answer_guidance": "Открытый до показа карточек, затем сопоставить."
++    },
++    {
++      "code": "X11",
++      "section": "offers",
++      "text": "Какое следующее действие вы готовы сделать сейчас, если предложение соответствует вашей ситуации?",
++      "type": "fact",
++      "options": [],
++      "follow_ups": [
++        "Не подталкивать, право отказаться без объяснений."
++      ],
++      "hypothesis_ids": [
++        "H09",
++        "H10",
++        "H15"
++      ],
++      "interpretation": "Сильнее намерений — заполненная заявка, согласованный бриф, законная оплата; не считать интервью лидом автоматически.",
++      "answer_guidance": "Фиксировать реальное действие: нет / запрос условий / анкета / консультация / оплата."
++    },
++    {
++      "code": "X12",
++      "section": "offers",
++      "text": "Если откажетесь от предложения, какое решение выберете вместо него и почему?",
++      "type": "open",
++      "options": [],
++      "follow_ups": [
++        "Бесплатная альтернатива, самостоятельный вариант, перенос, другой бренд."
++      ],
++      "hypothesis_ids": [
++        "H01",
++        "H09",
++        "H10"
++      ],
++      "interpretation": "Причины отказа = главный вход в изменение оффера, а не «потерянный лид» без анализа.",
++      "answer_guidance": "Открытый, обязательно спросить даже при позитивной реакции."
++    }
++  ],
++  "hypotheses": [
++    {
++      "code": "H01",
++      "text": "Впечатления вызывают интерес; совместимая группа помогает выбрать TC.",
++      "related_questions_source": "G05, T03, T05, O03"
++    },
++    {
++      "code": "H02",
++      "text": "Опытные самостоятельные путешественники перспективны для Trips.",
++      "related_questions_source": "S03, G02, T01, T11"
++    },
++    {
++      "code": "H03",
++      "text": "Недостаток компании — реальная причина отложенных поездок.",
++      "related_questions_source": "G06, T02, T04"
++    },
++    {
++      "code": "H04",
++      "text": "Группа 6–9 человек и знакомство снижают тревогу.",
++      "related_questions_source": "T06, T07, T08"
++    },
++    {
++      "code": "H05",
++      "text": "Культурно насыщенный маршрут оправдывает отдельную плату TC.",
++      "related_questions_source": "G05, T09, X03"
++    },
++    {
++      "code": "H06",
++      "text": "Групповой формат сохраняет необходимую свободу.",
++      "related_questions_source": "T10, T12"
++    },
++    {
++      "code": "H07",
++      "text": "Набор по всей России реалистичен при понятной логистике.",
++      "related_questions_source": "S02, T13, X04"
++    },
++    {
++      "code": "H08",
++      "text": "Новый бренд способен завоевать доверие без платных Trips-кейсов.",
++      "related_questions_source": "T14, B02, X05"
++    },
++    {
++      "code": "H09",
++      "text": "Клиенты платят за отдельную разработку маршрута Design.",
++      "related_questions_source": "D05, D07, X06"
++    },
++    {
++      "code": "H10",
++      "text": "Экономия времени оправдывает плату за Ready.",
++      "related_questions_source": "R01, R03, X07"
++    },
++    {
++      "code": "H11",
++      "text": "Прямые платежи поставщикам не обнуляют ценность Ready.",
++      "related_questions_source": "R05, R06, X08"
++    },
++    {
++      "code": "H12",
++      "text": "Неуверенным путешественникам можно помогать прибыльно.",
++      "related_questions_source": "D09, R09, G04"
++    },
++    {
++      "code": "H13",
++      "text": "Рынок Services может быть шире аудитории Trips.",
++      "related_questions_source": "S01, S02, D10, R10"
++    },
++    {
++      "code": "H14",
++      "text": "Единый вход с двумя офферами понятен покупателю.",
++      "related_questions_source": "X09, X10"
++    },
++    {
++      "code": "H15",
++      "text": "Разница в спросе и экономике Design/Ready определяется данными.",
++      "related_questions_source": "D07, R07, X11"
++    },
++    {
++      "code": "H16",
++      "text": "Архив поездок и процесс работы основателей создают доверие.",
++      "related_questions_source": "B03, B04, X05"
++    },
++    {
++      "code": "H17",
++      "text": "Органика и бюджет 0/5/5 тыс. ₽ способны давать подходящие лиды.",
++      "related_questions_source": "B05, B06 + события CRM"
++    }
++  ]
++}
+diff --git a/backend/app/research_data/scenarios.json b/backend/app/research_data/scenarios.json
+new file mode 100644
+index 0000000..33aeec4
+--- /dev/null
++++ b/backend/app/research_data/scenarios.json
+@@ -0,0 +1,346 @@
++{
++  "version": "1.0",
++  "bank_version": "1.0",
++  "scenarios": [
++    {
++      "code": "trips_experienced",
++      "label": "Trips / Опытный путешественник",
++      "screening_question_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05"
++      ],
++      "question_codes": [
++        "G01",
++        "G02",
++        "G05",
++        "G06",
++        "G07",
++        "G10",
++        "T01",
++        "T03",
++        "T04",
++        "T07",
++        "T10",
++        "T14"
++      ],
++      "docx_route_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "G01",
++        "G02",
++        "G05",
++        "G06",
++        "G07",
++        "G10",
++        "T01",
++        "T03",
++        "T04",
++        "T07",
++        "T10",
++        "T14"
++      ],
++      "provided_route_codes": [
++        "G01",
++        "G02",
++        "G05",
++        "G06",
++        "G07",
++        "G10",
++        "T01",
++        "T03",
++        "T04",
++        "T07",
++        "T10",
++        "T14"
++      ]
++    },
++    {
++      "code": "trips_beginner",
++      "label": "Trips / Начинающий путешественник",
++      "screening_question_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05"
++      ],
++      "question_codes": [
++        "G01",
++        "G04",
++        "G05",
++        "G06",
++        "G10",
++        "G12",
++        "T02",
++        "T05",
++        "T06",
++        "T08",
++        "T14",
++        "T15"
++      ],
++      "docx_route_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "G01",
++        "G04",
++        "G05",
++        "G06",
++        "G10",
++        "G12",
++        "T02",
++        "T05",
++        "T06",
++        "T08",
++        "T14",
++        "T15"
++      ],
++      "provided_route_codes": [
++        "G01",
++        "G04",
++        "G05",
++        "G06",
++        "T02",
++        "T05",
++        "T06",
++        "T08",
++        "T14",
++        "T15"
++      ]
++    },
++    {
++      "code": "travel_design",
++      "label": "Travel Design",
++      "screening_question_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "S06"
++      ],
++      "question_codes": [
++        "G01",
++        "G04",
++        "G07",
++        "G08",
++        "G10",
++        "D01",
++        "D02",
++        "D04",
++        "D05",
++        "D07",
++        "D08"
++      ],
++      "docx_route_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "S06",
++        "G01",
++        "G04",
++        "G07",
++        "G08",
++        "G10",
++        "D01",
++        "D02",
++        "D04",
++        "D05",
++        "D07",
++        "D08",
++        "X06"
++      ],
++      "provided_route_codes": [
++        "G01",
++        "G04",
++        "G07",
++        "D01",
++        "D02",
++        "D04",
++        "D05",
++        "D07",
++        "D08"
++      ]
++    },
++    {
++      "code": "travel_ready",
++      "label": "Travel Ready",
++      "screening_question_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "S06"
++      ],
++      "question_codes": [
++        "G01",
++        "G04",
++        "G07",
++        "G10",
++        "R01",
++        "R02",
++        "R03",
++        "R05",
++        "R06",
++        "R12"
++      ],
++      "docx_route_codes": [
++        "S01",
++        "S02",
++        "S03",
++        "S04",
++        "S05",
++        "S06",
++        "G01",
++        "G04",
++        "G07",
++        "G10",
++        "R01",
++        "R02",
++        "R03",
++        "R05",
++        "R06",
++        "R12",
++        "X07",
++        "X08"
++      ],
++      "provided_route_codes": [
++        "G01",
++        "G04",
++        "G07",
++        "R01",
++        "R02",
++        "R03",
++        "R05",
++        "R06",
++        "R12"
++      ]
++    }
++  ],
++  "optional_modules": {
++    "brand": {
++      "enabled": true,
++      "append_to_end": true,
++      "question_codes": [
++        "B01",
++        "B02",
++        "B03",
++        "B04",
++        "B05",
++        "B06",
++        "B07",
++        "B08",
++        "B09",
++        "B10",
++        "B11",
++        "B12"
++      ],
++      "docx_ecosystem_route": [
++        "G01",
++        "G05",
++        "G09",
++        "G10",
++        "B01",
++        "B02",
++        "B03",
++        "B05",
++        "B07",
++        "B08"
++      ]
++    },
++    "offers": {
++      "enabled": false,
++      "question_codes": [
++        "X01",
++        "X02",
++        "X03",
++        "X04",
++        "X05",
++        "X06",
++        "X07",
++        "X08",
++        "X09",
++        "X10",
++        "X11",
++        "X12"
++      ],
++      "enable_only_when": "Есть реальные цены и условия предложения.",
++      "conditional_docx_questions": {
++        "travel_design": [
++          "X06"
++        ],
++        "travel_ready": [
++          "X07",
++          "X08"
++        ]
++      }
++    }
++  },
++  "docx_route_comparison": [
++    {
++      "scenario": "trips_beginner",
++      "docx_adds": [
++        "G10",
++        "G12"
++      ],
++      "resolution": "Использовать DOCX как первичный источник."
++    },
++    {
++      "scenario": "travel_design",
++      "docx_adds": [
++        "G08",
++        "G10"
++      ],
++      "resolution": "Использовать DOCX как первичный источник."
++    },
++    {
++      "scenario": "travel_ready",
++      "docx_adds": [
++        "G10"
++      ],
++      "resolution": "Использовать DOCX как первичный источник."
++    },
++    {
++      "scenario": "travel_design",
++      "conditional_offers": [
++        "X06"
++      ],
++      "resolution": "X выключен до реальной цены и условий; вопрос не входит в базовый массив."
++    },
++    {
++      "scenario": "travel_ready",
++      "conditional_offers": [
++        "X07",
++        "X08"
++      ],
++      "resolution": "X выключен до реальной цены и условий; вопросы не входят в базовый массив."
++    },
++    {
++      "scenario": "brand",
++      "docx_route": [
++        "G01",
++        "G05",
++        "G09",
++        "G10",
++        "B01",
++        "B02",
++        "B03",
++        "B05",
++        "B07",
++        "B08"
++      ],
++      "resolution": "B — необязательное приложение к любому основному сценарию, не пятая категория."
++    }
++  ]
++}
+diff --git a/backend/app/research_data/screening.json b/backend/app/research_data/screening.json
+new file mode 100644
+index 0000000..47428c0
+--- /dev/null
++++ b/backend/app/research_data/screening.json
+@@ -0,0 +1,305 @@
++{
++  "version": "1.0",
++  "fields": [
++    {
++      "key": "name",
++      "label": "Имя респондента или псевдоним",
++      "control": "text",
++      "required": true,
++      "source": {
++        "kind": "user_prompt"
++      }
++    },
++    {
++      "key": "age_range",
++      "label": "Возраст или возрастная категория",
++      "control": "select",
++      "required": false,
++      "source": {
++        "kind": "docx",
++        "question_code": "S01",
++        "question_text": "В какой возрастной группе вы находитесь?"
++      },
++      "options": [
++        {
++          "value": "18_22",
++          "label": "18–22"
++        },
++        {
++          "value": "23_29",
++          "label": "23–29"
++        },
++        {
++          "value": "30_39",
++          "label": "30–39"
++        },
++        {
++          "value": "40_plus",
++          "label": "40+"
++        },
++        {
++          "value": "other",
++          "label": "Другая возрастная категория"
++        },
++        {
++          "value": "prefer_not_to_say",
++          "label": "не хочу отвечать"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ]
++    },
++    {
++      "key": "city",
++      "label": "Город проживания",
++      "control": "text",
++      "required": false,
++      "source": {
++        "kind": "docx",
++        "question_code": "S02",
++        "question_text": "В каком городе вы живёте и откуда обычно вылетаете в путешествия?"
++      }
++    },
++    {
++      "key": "independent_trips_24m",
++      "label": "Количество самостоятельных зарубежных путешествий за последние 24 месяца",
++      "control": "select",
++      "required": false,
++      "source": {
++        "kind": "docx",
++        "question_code": "S03",
++        "question_text": "Сколько самостоятельных зарубежных поездок было за последние 24 месяца и кто организовывал последнюю?"
++      },
++      "options": [
++        {
++          "value": "0",
++          "label": "Ни одного"
++        },
++        {
++          "value": "1",
++          "label": "Одно"
++        },
++        {
++          "value": "2",
++          "label": "Два"
++        },
++        {
++          "value": "3_plus",
++          "label": "Три и больше"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ]
++    },
++    {
++      "key": "group_experience",
++      "label": "Опыт участия в организованных групповых путешествиях",
++      "control": "radio",
++      "required": false,
++      "source": {
++        "kind": "user_prompt"
++      },
++      "options": [
++        {
++          "value": "yes",
++          "label": "Да"
++        },
++        {
++          "value": "no",
++          "label": "Нет"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ]
++    },
++    {
++      "key": "has_upcoming_plans",
++      "label": "Есть ли конкретные планы путешествий в ближайшие месяцы?",
++      "control": "radio",
++      "required": false,
++      "source": {
++        "kind": "user_prompt"
++      },
++      "options": [
++        {
++          "value": "yes",
++          "label": "Да"
++        },
++        {
++          "value": "no",
++          "label": "Нет"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ],
++      "details_key": "upcoming_plans_details",
++      "details_label": "Что уже известно о поездке? (необязательно)"
++    },
++    {
++      "key": "paid_planning_services",
++      "label": "Пользовались ли платными услугами планирования или организации поездок?",
++      "control": "radio",
++      "required": false,
++      "source": {
++        "kind": "docx",
++        "question_code": "S06",
++        "question_text": "Есть ли у вас опыт оплаты авторского тура, готового маршрута или помощи в организации поездки?"
++      },
++      "options": [
++        {
++          "value": "route_design",
++          "label": "Да, покупал(а) готовый маршрут или его разработку"
++        },
++        {
++          "value": "trip_organization",
++          "label": "Да, оплачивал(а) организацию поездки"
++        },
++        {
++          "value": "no",
++          "label": "Нет"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ],
++      "details_key": "paid_planning_details",
++      "details_label": "Когда, что покупали и почему? (необязательно)"
++    },
++    {
++      "key": "organization_style",
++      "label": "Как обычно организуете путешествия?",
++      "control": "select",
++      "required": false,
++      "source": {
++        "kind": "user_prompt"
++      },
++      "options": [
++        {
++          "value": "self",
++          "label": "Самостоятельно"
++        },
++        {
++          "value": "jointly",
++          "label": "Совместно с попутчиками"
++        },
++        {
++          "value": "organizer",
++          "label": "Через организатора"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ]
++    },
++    {
++      "key": "preparation_difficulty",
++      "label": "Какая часть подготовки поездки вызывает наибольшие трудности?",
++      "control": "select",
++      "required": false,
++      "source": {
++        "kind": "user_prompt"
++      },
++      "options": [
++        {
++          "value": "itinerary_design",
++          "label": "Составление маршрута и выбор мест"
++        },
++        {
++          "value": "booking_logistics",
++          "label": "Поиск и бронирование билетов, жилья и транспорта"
++        },
++        {
++          "value": "coordination",
++          "label": "Согласование планов с попутчиками"
++        },
++        {
++          "value": "time_cost",
++          "label": "Нехватка времени на подготовку"
++        },
++        {
++          "value": "budget",
++          "label": "Планирование бюджета"
++        },
++        {
++          "value": "documents_language",
++          "label": "Документы, язык или незнакомые правила"
++        },
++        {
++          "value": "none",
++          "label": "Существенных трудностей нет"
++        },
++        {
++          "value": "other",
++          "label": "Другое"
++        },
++        {
++          "value": "unknown",
++          "label": "Затрудняюсь ответить"
++        }
++      ]
++    }
++  ],
++  "additional_fields": [
++    {
++      "key": "respondent_role",
++      "label": "Какова ваша роль в выборе и оплате путешествий?",
++      "control": "textarea",
++      "required": false,
++      "collapsed_by_default": true,
++      "source": {
++        "kind": "docx",
++        "question_code": "S04",
++        "question_text": "Какова ваша роль в выборе и оплате путешествий?"
++      }
++    }
++  ],
++  "goal": {
++    "key": "research_goal",
++    "label": "Цель исследования",
++    "control": "radio",
++    "required": false,
++    "options": [
++      {
++        "value": "trips",
++        "label": "Trips"
++      },
++      {
++        "value": "individual_services",
++        "label": "Индивидуальные услуги"
++      }
++    ],
++    "source": {
++      "kind": "user_prompt"
++    }
++  }
++}
+diff --git a/backend/app/research_domain.py b/backend/app/research_domain.py
+new file mode 100644
+index 0000000..eef8d5d
+--- /dev/null
++++ b/backend/app/research_domain.py
+@@ -0,0 +1,97 @@
++from __future__ import annotations
++
++from collections.abc import Mapping
++from typing import Any
++
++from app.research_bank import load_classification_rules, normalize_classification_number
++
++
++def _matches(value: Any, operator: str, expected: Any) -> bool:
++    if value is None or value == "" or value == "unknown":
++        return False
++    if operator == "equals":
++        return str(value).strip().casefold() == str(expected).strip().casefold()
++    if operator == "in":
++        if not isinstance(expected, list):
++            return False
++        return str(value).strip().casefold() in {
++            str(option).strip().casefold() for option in expected
++        }
++    actual_number = normalize_classification_number(value)
++    expected_number = normalize_classification_number(expected)
++    if actual_number is None or expected_number is None:
++        return False
++    if operator == "numeric_gte":
++        return actual_number >= expected_number
++    if operator == "numeric_lte":
++        return actual_number <= expected_number
++    if operator == "numeric_equals":
++        return actual_number == expected_number
++    return False
++
++
++def recommend_category(
++    screening_answers: Mapping[str, Any],
++    goal: str | None = None,
++    rules: Mapping[str, Any] | None = None,
++) -> dict[str, Any]:
++    """Return a deterministic, explainable scenario recommendation from screening answers."""
++    config = load_classification_rules() if rules is None else rules
++    categories = [item["code"] for item in config["categories"]]
++    scores = {category: 0 for category in categories}
++    reasons: list[str] = []
++    evidence_matched = False
++
++    for rule in config["rules"]:
++        answer = screening_answers.get(rule["field"])
++        if _matches(answer, rule["operator"], rule["value"]):
++            scores[rule["category"]] += rule["points"]
++            reasons.append(rule["reason"])
++            evidence_matched = True
++
++    # The interviewer goal is a modest tie-break signal only when the answers
++    # contain respondent evidence; it cannot manufacture evidence by itself.
++    goal_adjustments = config.get("goal_adjustments", {}).get(goal or "", {})
++    if evidence_matched:
++        for category, points in goal_adjustments.items():
++            if category in scores and isinstance(points, int) and points > 0:
++                scores[category] += points
++        if goal_adjustments:
++            goal_label = "Trips" if goal == "trips" else "индивидуальные услуги"
++            reasons.append(f"Цель исследования: {goal_label}.")
++
++    if not evidence_matched:
++        fallback = config["no_signal_fallback"]
++        return {
++            "suggested_category": fallback["suggested_category"],
++            "alternative_category": fallback["alternative_category"],
++            "scores": scores,
++            "suggested_score": scores[fallback["suggested_category"]],
++            "reasons": [fallback["reason"]],
++            "signal_strength": fallback.get("signal_strength", "low"),
++        }
++
++    priorities = config.get("priority_by_goal", {}).get(goal, config["priority"])
++    priority_index = {category: index for index, category in enumerate(priorities)}
++    ordered = sorted(categories, key=lambda category: (-scores[category], priority_index[category]))
++    suggested, alternative = ordered[:2]
++    top_evidence_score = max(
++        (scores[category] - goal_adjustments.get(category, 0) for category in categories),
++        default=0,
++    )
++    thresholds = config.get("signal_strength", {})
++    if top_evidence_score <= thresholds.get("low_max_score", 2):
++        strength = "low"
++    elif top_evidence_score <= thresholds.get("medium_max_score", 4):
++        strength = "medium"
++    else:
++        strength = "high"
++
++    return {
++        "suggested_category": suggested,
++        "alternative_category": alternative,
++        "scores": scores,
++        "suggested_score": scores[suggested],
++        "reasons": reasons,
++        "signal_strength": strength,
++    }
+diff --git a/backend/tests/test_research_bank.py b/backend/tests/test_research_bank.py
+new file mode 100644
+index 0000000..75f6554
+--- /dev/null
++++ b/backend/tests/test_research_bank.py
+@@ -0,0 +1,432 @@
++import copy
++import json
++import subprocess
++import sys
++from pathlib import Path
++
++from app.research_bank import load_configuration, validate_configuration
++
++
++def test_question_bank_contains_the_complete_docx_inventory():
++    path = Path(__file__).resolve().parents[1] / "app" / "research_data" / "questions.json"
++    assert path.is_file(), "the imported question bank must be available to the backend"
++
++    bank = json.loads(path.read_text(encoding="utf-8"))
++    expected = {
++        *(f"S{i:02}" for i in range(1, 7)),
++        *(f"G{i:02}" for i in range(1, 13)),
++        *(f"T{i:02}" for i in range(1, 17)),
++        *(f"D{i:02}" for i in range(1, 13)),
++        *(f"R{i:02}" for i in range(1, 13)),
++        *(f"B{i:02}" for i in range(1, 13)),
++        *(f"X{i:02}" for i in range(1, 13)),
++    }
++    codes = [question["code"] for question in bank["questions"]]
++    assert len(codes) == 82
++    assert set(codes) == expected
++    assert len(bank["hypotheses"]) == 17
++    assert all(question["text"].strip() for question in bank["questions"])
++    assert all(
++        {
++            "code",
++            "section",
++            "text",
++            "type",
++            "options",
++            "follow_ups",
++            "hypothesis_ids",
++            "interpretation",
++            "answer_guidance",
++        }
++        <= question.keys()
++        for question in bank["questions"]
++    )
++
++
++def test_bank_validation_command_accepts_the_imported_configuration():
++    backend_root = Path(__file__).resolve().parents[1]
++    result = subprocess.run(
++        [sys.executable, "-m", "app.research_bank", "validate"],
++        cwd=backend_root,
++        capture_output=True,
++        text=True,
++        check=False,
++    )
++    assert result.returncode == 0, result.stdout + result.stderr
++    assert "82" in result.stdout
++    assert "17" in result.stdout
++
++
++def test_validator_reports_missing_duplicate_unknown_and_broken_links():
++    configuration = copy.deepcopy(load_configuration())
++    bank = configuration["bank"]
++    bank["questions"] = [question for question in bank["questions"] if question["code"] != "G12"]
++    extra = copy.deepcopy(
++        next(question for question in bank["questions"] if question["code"] == "G01")
++    )
++    bank["questions"].append(copy.deepcopy(extra))
++    extra["code"] = "Q99"
++    extra["hypothesis_ids"] = ["H99"]
++    bank["questions"].append(extra)
++    configuration["scenarios"]["scenarios"][0]["question_codes"].append("G99")
++    configuration["scenarios"]["scenarios"][0]["docx_route_codes"].append("G98")
++
++    issues = validate_configuration(configuration)
++    assert any("missing question codes: G12" in issue for issue in issues)
++    assert any("duplicate question codes: G01" in issue for issue in issues)
++    assert any("unknown question codes: Q99" in issue for issue in issues)
++    assert any("question Q99 references unknown hypotheses: H99" in issue for issue in issues)
++    assert any(
++        "scenario trips_experienced references unknown questions: G99" in issue for issue in issues
++    )
++    assert any(
++        "scenario trips_experienced docx_route_codes references unknown questions: G98" in issue
++        for issue in issues
++    )
++
++
++def test_validator_rejects_classification_rules_that_cannot_match():
++    for operator in (None, "unsupported"):
++        configuration = copy.deepcopy(load_configuration())
++        rule = configuration["classification"]["rules"][0]
++        if operator is None:
++            rule.pop("operator")
++        else:
++            rule["operator"] = operator
++
++        issues = validate_configuration(configuration)
++        assert any(
++            "classification rule three_or_more_independent_trips has unsupported operator"
++            in issue
++            for issue in issues
++        )
++
++
++def test_validator_rejects_unmatchable_rule_fields_and_values():
++    cases = [
++        ("field", "not_a_screening_field", "equals", "yes", "unknown screening field"),
++        ("field", "group_experience", "equals", "purple", "cannot match any configured option"),
++        (
++            "field",
++            "independent_trips_24m",
++            "numeric_gte",
++            100,
++            "cannot match any configured option",
++        ),
++        ("field", "preparation_difficulty", "in", [], "requires a non-empty list"),
++    ]
++    for target, value, operator, comparison, expected_issue in cases:
++        configuration = copy.deepcopy(load_configuration())
++        rule = configuration["classification"]["rules"][0]
++        rule[target] = value
++        rule["operator"] = operator
++        rule["value"] = comparison
++
++        issues = validate_configuration(configuration)
++        assert any(expected_issue in issue for issue in issues)
++
++
++def test_validator_accepts_numeric_aliases_supported_by_classifier():
++    configuration = copy.deepcopy(load_configuration())
++    configuration["classification"]["rules"][0]["value"] = "threeplus"
++
++    assert validate_configuration(configuration) == []
++
++
++def test_validator_reports_non_string_scenario_and_hypothesis_refs():
++    configuration = copy.deepcopy(load_configuration())
++    scenario = configuration["scenarios"]["scenarios"][0]
++    scenario["question_codes"].extend([123, {"unexpected": "G02"}])
++    question = configuration["bank"]["questions"][0]
++    question["hypothesis_ids"].append(["H01"])
++
++    issues = validate_configuration(configuration)
++
++    assert any(
++        "scenario trips_experienced has non-string question codes" in issue for issue in issues
++    )
++    assert any("question S01 has non-string hypothesis references" in issue for issue in issues)
++
++
++def test_validator_rejects_missing_or_blank_hypothesis_descriptions():
++    for missing in (False, True):
++        configuration = copy.deepcopy(load_configuration())
++        hypothesis = configuration["bank"]["hypotheses"][0]
++        if missing:
++            hypothesis.pop("text")
++        else:
++            hypothesis["text"] = "   "
++
++        issues = validate_configuration(configuration)
++
++        assert any("hypothesis H01 has no text" in issue for issue in issues)
++
++
++def test_validator_reports_non_string_scenario_codes():
++    for invalid_code in (["trips_experienced"], {"code": "trips_experienced"}, 17, None):
++        configuration = copy.deepcopy(load_configuration())
++        configuration["scenarios"]["scenarios"][0]["code"] = invalid_code
++
++        issues = validate_configuration(configuration)
++
++        assert any("scenario entries must have string codes" in issue for issue in issues)
++
++
++def test_validator_reports_non_object_configuration_root():
++    issues = validate_configuration([])
++
++    assert "research configuration must be a JSON object" in issues
++
++
++def test_validator_reports_non_object_json_roots():
++    for root_name in ("bank", "scenarios", "screening", "classification"):
++        configuration = copy.deepcopy(load_configuration())
++        configuration[root_name] = []
++
++        issues = validate_configuration(configuration)
++
++        assert f"{root_name} JSON root must be an object" in issues
++
++
++def test_validator_reports_non_object_scenario_entries():
++    configuration = copy.deepcopy(load_configuration())
++    configuration["scenarios"]["scenarios"].extend([None, "invalid", []])
++
++    issues = validate_configuration(configuration)
++
++    assert "scenarios contains 3 non-object entries" in issues
++
++
++def test_validator_reports_malformed_nested_sections_without_raising():
++    cases = [
++        ("scenarios", "optional_modules", None, "scenarios optional_modules must be an object"),
++        (
++            "scenarios",
++            "docx_route_comparison",
++            None,
++            "scenarios docx_route_comparison must be a JSON array",
++        ),
++        (
++            "screening",
++            "additional_fields",
++            None,
++            "screening additional_fields must be a JSON array",
++        ),
++        ("screening", "goal", None, "screening goal must be an object"),
++        ("classification", "categories", None, "classification categories must be a JSON array"),
++        ("classification", "rules", None, "classification rules must be a JSON array"),
++        (
++            "classification",
++            "goal_adjustments",
++            [],
++            "classification goal_adjustments must be an object",
++        ),
++        (
++            "classification",
++            "signal_strength",
++            [],
++            "classification signal_strength must be an object",
++        ),
++        (
++            "classification",
++            "no_signal_fallback",
++            [],
++            "classification no_signal_fallback must be an object",
++        ),
++    ]
++    for root_name, section_name, malformed_value, expected_issue in cases:
++        configuration = copy.deepcopy(load_configuration())
++        configuration[root_name][section_name] = malformed_value
++
++        issues = validate_configuration(configuration)
++
++        assert expected_issue in issues
++
++
++def test_validator_rejects_invalid_goal_adjustment_categories_and_points():
++    cases = [
++        ("not_a_category", 1, "references unknown category not_a_category"),
++        (
++            "trips_beginner",
++            "1",
++            "points for trips_beginner must be a positive integer",
++        ),
++        (
++            "trips_beginner",
++            0,
++            "points for trips_beginner must be a positive integer",
++        ),
++        (
++            "trips_beginner",
++            -1,
++            "points for trips_beginner must be a positive integer",
++        ),
++        (
++            "trips_beginner",
++            True,
++            "points for trips_beginner must be a positive integer",
++        ),
++    ]
++    for category, points, expected_issue in cases:
++        configuration = copy.deepcopy(load_configuration())
++        configuration["classification"]["goal_adjustments"]["trips"] = {
++            category: points
++        }
++
++        issues = validate_configuration(configuration)
++
++        assert any(expected_issue in issue for issue in issues)
++
++
++def test_validator_rejects_unknown_priority_by_goal_keys():
++    configuration = copy.deepcopy(load_configuration())
++    configuration["classification"]["priority_by_goal"]["trip"] = list(
++        configuration["classification"]["priority_by_goal"]["trips"]
++    )
++
++    issues = validate_configuration(configuration)
++
++    assert any("priority_by_goal references unknown goal trip" in issue for issue in issues)
++
++
++def test_validator_requires_ordered_signal_strength_thresholds():
++    cases = [
++        ("2", 4, "classification signal_strength low_max_score must be numeric"),
++        (2, 2, "low_max_score must be less than medium_max_score"),
++        (4, 2, "low_max_score must be less than medium_max_score"),
++    ]
++    for low_threshold, medium_threshold, expected_issue in cases:
++        configuration = copy.deepcopy(load_configuration())
++        configuration["classification"]["signal_strength"] = {
++            "low_max_score": low_threshold,
++            "medium_max_score": medium_threshold,
++        }
++
++        issues = validate_configuration(configuration)
++
++        assert any(expected_issue in issue for issue in issues)
++
++
++def test_validator_rejects_duplicate_categories_in_goal_priority():
++    configuration = copy.deepcopy(load_configuration())
++    priority = configuration["classification"]["priority_by_goal"]["trips"]
++    priority.append(priority[0])
++
++    issues = validate_configuration(configuration)
++
++    assert any(
++        "priority_by_goal must order each category exactly once" in issue for issue in issues
++    )
++
++
++def test_validator_rejects_duplicate_category_entries():
++    configuration = copy.deepcopy(load_configuration())
++    categories = configuration["classification"]["categories"]
++    categories.append(copy.deepcopy(categories[0]))
++
++    issues = validate_configuration(configuration)
++
++    assert any(
++        "classification categories must contain each category exactly once" in issue
++        for issue in issues
++    )
++
++
++def test_screening_keeps_source_questions_separate_from_added_fields():
++    configuration = load_configuration()
++    bank_questions = {item["code"]: item for item in configuration["bank"]["questions"]}
++    screening = configuration["screening"]
++    expected_keys = {
++        "name",
++        "age_range",
++        "city",
++        "independent_trips_24m",
++        "group_experience",
++        "has_upcoming_plans",
++        "paid_planning_services",
++        "organization_style",
++        "preparation_difficulty",
++    }
++    fields = {item["key"]: item for item in screening["fields"]}
++    assert set(fields) == expected_keys
++    assert len(fields) == 9
++    for field in [*screening["fields"], *screening["additional_fields"]]:
++        source = field.get("source", {})
++        code = source.get("question_code")
++        if code:
++            assert source["question_text"] == bank_questions[code]["text"]
++    for field in screening["fields"]:
++        if field["control"] in {"radio", "select"}:
++            values = {option["value"] for option in field["options"]}
++            assert {"other", "unknown"} <= values
++    assert screening["goal"]["key"] == "research_goal"
++    assert {option["value"] for option in screening["goal"]["options"]} == {
++        "trips",
++        "individual_services",
++    }
++
++
++def test_scenario_order_matches_docx_and_offers_stay_disabled():
++    configuration = load_configuration()
++    scenarios = {item["code"]: item for item in configuration["scenarios"]["scenarios"]}
++    assert scenarios["trips_experienced"]["question_codes"] == [
++        "G01",
++        "G02",
++        "G05",
++        "G06",
++        "G07",
++        "G10",
++        "T01",
++        "T03",
++        "T04",
++        "T07",
++        "T10",
++        "T14",
++    ]
++    assert scenarios["trips_beginner"]["question_codes"] == [
++        "G01",
++        "G04",
++        "G05",
++        "G06",
++        "G10",
++        "G12",
++        "T02",
++        "T05",
++        "T06",
++        "T08",
++        "T14",
++        "T15",
++    ]
++    assert scenarios["travel_design"]["question_codes"] == [
++        "G01",
++        "G04",
++        "G07",
++        "G08",
++        "G10",
++        "D01",
++        "D02",
++        "D04",
++        "D05",
++        "D07",
++        "D08",
++    ]
++    assert scenarios["travel_ready"]["question_codes"] == [
++        "G01",
++        "G04",
++        "G07",
++        "G10",
++        "R01",
++        "R02",
++        "R03",
++        "R05",
++        "R06",
++        "R12",
++    ]
++    assert configuration["scenarios"]["optional_modules"]["offers"]["enabled"] is False
++    assert configuration["scenarios"]["optional_modules"]["brand"]["append_to_end"] is True
++    assert {item["scenario"] for item in configuration["scenarios"]["docx_route_comparison"]} >= {
++        "trips_beginner",
++        "travel_design",
++        "travel_ready",
++        "brand",
++    }
+diff --git a/backend/tests/test_research_domain.py b/backend/tests/test_research_domain.py
+new file mode 100644
+index 0000000..96fa81a
+--- /dev/null
++++ b/backend/tests/test_research_domain.py
+@@ -0,0 +1,115 @@
++import pytest
++
++from app.research_bank import load_configuration, validate_configuration
++from app.research_domain import recommend_category
++
++
++@pytest.mark.parametrize(
++    ("answers", "goal", "category", "reason_fragment"),
++    [
++        (
++            {"independent_trips_24m": 3, "group_experience": "yes"},
++            "trips",
++            "trips_experienced",
++            "трёх самостоятельных",
++        ),
++        (
++            {"independent_trips_24m": "0", "group_experience": "no"},
++            "trips",
++            "trips_beginner",
++            "одна или ни одной",
++        ),
++        (
++            {
++                "preparation_difficulty": "itinerary_design",
++                "paid_planning_services": "route_design",
++            },
++            "individual_services",
++            "travel_design",
++            "составлением маршрута",
++        ),
++        (
++            {
++                "preparation_difficulty": "booking_logistics",
++                "paid_planning_services": "trip_organization",
++                "organization_style": "organizer",
++            },
++            "individual_services",
++            "travel_ready",
++            "оплачивалась организация",
++        ),
++    ],
++)
++def test_classification_routes_are_deterministic_and_explained(
++    answers, goal, category, reason_fragment
++):
++    result = recommend_category(answers, goal=goal)
++    assert result["suggested_category"] == category
++    assert result["alternative_category"] != category
++    assert result["scores"][category] > result["scores"][result["alternative_category"]]
++    assert result["suggested_score"] == result["scores"][category]
++    assert result["reasons"]
++    assert any(reason_fragment in reason for reason in result["reasons"])
++
++
++def test_missing_evidence_uses_explicit_weak_fallback():
++    result = recommend_category({}, goal="individual_services")
++    assert result["suggested_category"] == "trips_beginner"
++    assert result["alternative_category"] == "travel_design"
++    assert result["signal_strength"] == "low"
++    assert result["scores"] == {
++        "trips_experienced": 0,
++        "trips_beginner": 0,
++        "travel_design": 0,
++        "travel_ready": 0,
++    }
++    assert "мало данных" in result["reasons"][0].lower()
++
++
++def test_goal_reason_is_readable_russian():
++    result = recommend_category({"independent_trips_24m": 2}, goal="trips")
++    assert "Цель исследования: Trips." in result["reasons"]
++
++
++def test_upcoming_plans_alone_are_a_weak_trips_signal():
++    result = recommend_category({"has_upcoming_plans": "yes"})
++    assert result["suggested_category"] == "trips_beginner"
++    assert result["scores"]["trips_beginner"] > 0
++    assert result["signal_strength"] == "low"
++    assert any("планы" in reason.lower() for reason in result["reasons"])
++
++
++def test_validator_and_scorer_agree_when_integer_precision_matters():
++    configuration = load_configuration()
++    rules = configuration["classification"]
++    rule = rules["rules"][0]
++    rule["operator"] = "numeric_equals"
++    rule["value"] = 9007199254740993
++    independent_trips = next(
++        field
++        for field in configuration["screening"]["fields"]
++        if field["key"] == "independent_trips_24m"
++    )
++    independent_trips["options"].append(
++        {"value": "9007199254740992", "label": "precision boundary"}
++    )
++
++    issues = validate_configuration(configuration)
++    result = recommend_category(
++        {"independent_trips_24m": "9007199254740992"}, rules=rules
++    )
++
++    assert any("cannot match any configured option" in issue for issue in issues)
++    assert result["scores"]["trips_experienced"] == 0
++
++
++def test_numeric_alias_accepted_by_validator_scores_equivalently():
++    configuration = load_configuration()
++    rules = configuration["classification"]
++    rules["rules"][0]["value"] = "threeplus"
++
++    assert validate_configuration(configuration) == []
++    alias_result = recommend_category({"independent_trips_24m": "3_plus"}, rules=rules)
++    numeric_result = recommend_category({"independent_trips_24m": 3}, rules=rules)
++
++    assert alias_result["scores"] == numeric_result["scores"]

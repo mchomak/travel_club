@@ -8,13 +8,14 @@ from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import delete, func, select, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.db import get_db
 from app.models import LoginAttempt, User
 from app.models import Session as AdminSession
-from app.schemas import LoginInput, UserInfo
+from app.schemas import LoginInput, PasswordChangeInput, UserInfo
 
 COOKIE_NAME = "travel_session"
 password_hasher = PasswordHasher()
@@ -128,6 +129,33 @@ def login(payload: LoginInput, response: Response, request: Request, db: Databas
 def me(response: Response, user: Admin):
     response.headers["Cache-Control"] = "no-store"
     return user
+
+
+@router.post("/password", status_code=204)
+def change_password(payload: PasswordChangeInput, request: Request, user: Admin, db: Database):
+    try:
+        valid = password_hasher.verify(user.password_hash, payload.current_password)
+    except (VerificationError, InvalidHashError):
+        valid = False
+    if not valid:
+        raise HTTPException(400, "Текущий пароль неверен")
+
+    current_token = request.cookies.get(COOKIE_NAME)
+    if not current_token:
+        raise HTTPException(401, "Войдите, чтобы продолжить")
+
+    user.password_hash = password_hasher.hash(payload.new_password)
+    db.execute(
+        delete(AdminSession).where(
+            AdminSession.user_id == user.id,
+            AdminSession.token_digest != token_digest(current_token),
+        )
+    )
+    try:
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(500, "Не удалось сохранить новый пароль. Попробуйте ещё раз") from exc
 
 
 @router.post("/logout", status_code=204)

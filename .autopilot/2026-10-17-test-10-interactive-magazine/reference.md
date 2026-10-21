@@ -1,0 +1,1 @@
+User art direction: EDITORIAL CLUB ? DESTINATION IDENTITY. LOST iN; The Travel Almanac; NOWNESS; Apartamento. ?ART DIRECTION FIRST. MOTION SECOND.? Existing /test_8 technical and visual basis, no literal copy of references.

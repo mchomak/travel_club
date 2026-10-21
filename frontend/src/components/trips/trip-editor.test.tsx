@@ -11,8 +11,9 @@ import { emptyDay, newItem } from "@/lib/trip-ui";
 import { buildCalendarEntries } from "@/lib/calendar";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:false},error:null,retry:vi.fn()})}));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onOpenAirport, onOpenItem }: {
+vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onOpenAirport, onOpenItem, onSelectDate }: {
   days: TripInput["days"]; items: TripInput["items"]; calculation: TripDocument["calculation"] | null; baseCurrency: string;
   onCreateRange: (dayId: string, start: string, end: string) => void;
   onMoveItem: (itemId: string, dayId: string, start: string, end: string, endDayId: string | null) => void;
@@ -20,7 +21,9 @@ vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, b
   onEditDay: (dayId: string) => void;
   onOpenAirport: (itemId: string, kind: "before" | "after") => void;
   onOpenItem: (itemId: string) => void;
+  onSelectDate: (dayId:string)=>void;
 }) => <div aria-label="Календарь поездки" data-currency={baseCurrency} data-total={calculation?.cost_total}>
+  <button onClick={()=>onSelectDate(days[1].id)}>Выбрать второй день</button>
   <button onClick={() => onCreateRange(days[0].id, "09:15", "10:45")}>Создать интервал</button>
   <button onClick={() => onMoveItem(items[0].id, days[1].id, "11:00", "12:00", null)}>Перенести событие</button>
   <button onClick={() => onMoveHotel(items[1].id, days[1].date, days[2].date, days[1].id)}>Перенести отель</button>
@@ -28,6 +31,19 @@ vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, b
   <button onClick={() => onOpenAirport(items[0].id, "before")}>Настроить приезд в аэропорт</button>
   <button onClick={() => onOpenItem(items[0].id)}>Открыть первый пункт</button>
 </div> }));
+
+test('day map immediately follows the calendar and changes date with its selection',async()=>{
+ const input=structuredClone(vectors.cases[0].input) as TripInput;
+ input.days=[emptyDay('2026-10-01'),emptyDay('2026-10-02')];input.start_date=input.days[0].date;input.end_date=input.days[1].date;input.items=[];
+ const document={...input,id:'map-trip',version:1,created_at:'',updated_at:'',created_by:'user',calculation:calculateTrip(input)} as TripDocument;
+ vi.spyOn(tripApi,'get').mockResolvedValue(document);
+ render(<TripProvider><TripEditor id="map-trip"/></TripProvider>);
+ const map=await screen.findByRole('region',{name:'Маршрут дня'});
+ expect(screen.getByLabelText('Календарь поездки').nextElementSibling).toBe(map);
+ expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-01');
+ await userEvent.click(screen.getByRole('button',{name:'Выбрать второй день'}));
+ expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-02');
+});
 
 test("extra expense buttons create an unscheduled per-person item and keep legacy insurance visible", async () => {
   const input = structuredClone(vectors.cases[0].input) as TripInput;

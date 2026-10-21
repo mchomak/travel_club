@@ -1,0 +1,64 @@
+import {afterEach,expect,test,vi} from 'vitest';
+import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {LocationPicker} from './location-picker';
+import {mapsClient} from '@/lib/maps-client';
+import {ApiError} from '@/lib/api';
+vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:false},error:null,retry:vi.fn()})}));
+afterEach(()=>{cleanup();vi.restoreAllMocks();});
+test('unsupported link keeps typed values and allows an explicit coordinate confirmation without keys',async()=>{
+ vi.spyOn(mapsClient,'resolveLink').mockRejectedValue(new ApiError(422,'invalid_maps_link','Unsupported URL'));
+ const onChange=vi.fn(),user=userEvent.setup();
+ render(<LocationPicker value={null} onChange={onChange}/>);
+ await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
+ await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://example.com/place');
+ await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Используйте ссылку Google Maps');
+ expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://example.com/place');
+ expect(onChange).not.toHaveBeenCalled();
+ await user.type(screen.getByLabelText('Широта'),'91');
+ await user.type(screen.getByLabelText('Долгота'),'0');
+ await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
+ expect(onChange).not.toHaveBeenCalled();
+ await user.clear(screen.getByLabelText('Широта'));
+ await user.type(screen.getByLabelText('Широта'),'0');
+ await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({latitude:0,longitude:0,provider:'manual'}));
+});
+
+test.each(['place','query','error'] as const)('late link %s cannot overwrite newer coordinate and search input',async(outcome)=>{
+ let finish!:(value:{place:import('@/lib/contracts').MapPlace|null;query:string|null})=>void;
+ let fail!:(reason:Error)=>void;
+ vi.spyOn(mapsClient,'resolveLink').mockReturnValue(new Promise((resolve,reject)=>{finish=resolve;fail=reject;}));
+ const onChange=vi.fn(),user=userEvent.setup();
+ render(<LocationPicker value={null} onChange={onChange}/>);
+ await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
+ await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://maps.google.com/?q=1,2');
+ await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
+ fireEvent.change(screen.getByLabelText('Название точки'),{target:{value:'Моя точка'}});
+ fireEvent.change(screen.getByLabelText('Широта'),{target:{value:'55'}});
+ fireEvent.change(screen.getByLabelText('Долгота'),{target:{value:'37'}});
+ fireEvent.change(screen.getByLabelText('Название или адрес'),{target:{value:'Новый поиск'}});
+ await act(async()=>{if(outcome==='error')fail(new Error('Late error'));else finish(outcome==='query'?{place:null,query:'Old query'}:{place:{name:'Old point',address:'Old address',latitude:1,longitude:2,provider:'google_link'},query:null});});
+ expect(screen.getByLabelText('Название точки')).toHaveValue('Моя точка');
+ expect(screen.getByLabelText('Широта')).toHaveValue('55');
+ expect(screen.getByLabelText('Долгота')).toHaveValue('37');
+ expect(screen.getByLabelText('Название или адрес')).toHaveValue('Новый поиск');
+ expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Моя точка',latitude:55,longitude:37}));
+});
+
+test('current link result still requires explicit confirmation',async()=>{
+ const place={name:'Selected pin',address:'Address',latitude:1,longitude:2,provider:'google_link' as const};
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place,query:null});
+ const onChange=vi.fn(),user=userEvent.setup();
+ render(<LocationPicker value={null} onChange={onChange}/>);
+ await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
+ await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://maps.google.com/?q=1,2');
+ await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
+ expect(screen.getByLabelText('Название точки')).toHaveValue('Selected pin');
+ expect(onChange).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining(place));
+});

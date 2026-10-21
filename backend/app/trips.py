@@ -150,7 +150,8 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
             or any(
                 getattr(day, key)
                 for key in (
-                    "country", "city", "place", "title", "status", "internal_note", "client_note"
+                    "country", "city", "place", "title", "status", "internal_note", "client_note",
+                    "map_start", "map_end", "map_leg_modes",
                 )
             )
         )
@@ -336,14 +337,35 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
     original = get_trip(db, trip_id, lock=True)
     payload = read_input(original)
     day_ids = {day.id: uuid4() for day in payload.days}
+    item_ids = {item.id: uuid4() for item in payload.items}
+
+    def copied_node_key(key: str) -> str:
+        if key.startswith("item:"):
+            _, item_id, endpoint = key.split(":")
+            # Harmless stale preferences remain stale; only existing items are remapped.
+            return f"item:{item_ids.get(UUID(item_id), item_id)}:{endpoint}"
+        return key
+
     payload = payload.model_copy(
         update={
             "internal_title": payload.internal_title[:192] + " — копия",
-            "days": [day.model_copy(update={"id": day_ids[day.id]}) for day in payload.days],
+            "days": [
+                day.model_copy(update={
+                    "id": day_ids[day.id],
+                    "map_leg_modes": [
+                        leg.model_copy(update={
+                            "from_key": copied_node_key(leg.from_key),
+                            "to_key": copied_node_key(leg.to_key),
+                        })
+                        for leg in day.map_leg_modes
+                    ],
+                })
+                for day in payload.days
+            ],
             "items": [
                 item.model_copy(
                     update={
-                        "id": uuid4(),
+                        "id": item_ids[item.id],
                         "day_id": day_ids.get(item.day_id),
                         "end_day_id": day_ids.get(item.end_day_id),
                     }

@@ -1,0 +1,232 @@
+
+Running 48 tests using 2 workers
+
+npm.cmd : (node:35920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+строка:2 знак:1
++ npm.cmd exec playwright test e2e/publication-pages.spec.ts e2e/public ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:35920) Wa... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  1 [chromium] › e2e\publication-form.spec.ts:3:1 › format URLs select their context and unknown or repeated values fall back safely (735ms)
+  ok  2 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /formats at 1440: semantics, images, layout and screenshot (981ms)
+  ok  3 [chromium] › e2e\publication-form.spec.ts:14:1 › missing or malformed contact stays on the form with a focused, described error (351ms)
+  ok  5 [chromium] › e2e\publication-form.spec.ts:28:1 › a supplied participant count must be a positive integer, with the first error focused (611ms)
+  ok  4 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /archive at 1440: semantics, images, layout and screenshot (759ms)
+  ok  6 [chromium] › e2e\publication-form.spec.ts:41:3 › accepts editorial@example.com with optional fields blank and opens the honest thanks page (332ms)
+  x   7 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1440: semantics, images, layout and screenshot (432ms)
+  ok  8 [chromium] › e2e\publication-form.spec.ts:41:3 › accepts +7 (999) 123-45-67 with optional fields blank and opens the honest thanks page (322ms)
+(node:70316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok  9 [chromium] › e2e\publication-form.spec.ts:41:3 › accepts @travel_friend with optional fields blank and opens the honest thanks page (328ms)
+  ok 10 [chromium] › e2e\publication-form.spec.ts:52:1 › filled personal answers are absent from requests, URL, browser writes, and logs (422ms)
+  ok 11 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /thanks at 1440: semantics, images, layout and screenshot (464ms)
+  ok 12 [chromium] › e2e\publication-form.spec.ts:92:1 › native choices and fields work by keyboard with visible focus under reduced motion (434ms)
+  ok 13 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /legal at 1440: semantics, images, layout and screenshot (412ms)
+  x  14 [chromium] › e2e\publication-form.spec.ts:113:1 › the form has no horizontal overflow at desktop, tablet, or narrow mobile widths (364ms)
+  ok 15 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /privacy at 1440: semantics, images, layout and screenshot (398ms)
+  ok 16 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /personal-data at 1440: semantics, images, layout and screenshot (370ms)
+  ok 17 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /a-page-outside-the-route at 1440: semantics, images, layout and screenshot (366ms)
+  ok 18 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /formats at 1280: semantics, images, layout and screenshot (742ms)
+  ok 19 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /archive at 1280: semantics, images, layout and screenshot (802ms)
+  x  20 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1280: semantics, images, layout and screenshot (408ms)
+(node:52332) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 21 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /thanks at 1280: semantics, images, layout and screenshot (415ms)
+  ok 22 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /legal at 1280: semantics, images, layout and screenshot (390ms)
+  ok 23 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /privacy at 1280: semantics, images, layout and screenshot (398ms)
+  ok 24 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /personal-data at 1280: semantics, images, layout and screenshot (410ms)
+  ok 25 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /a-page-outside-the-route at 1280: semantics, images, layout and screenshot (378ms)
+  ok 26 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /formats at 768: semantics, images, layout and screenshot (609ms)
+  ok 27 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /archive at 768: semantics, images, layout and screenshot (618ms)
+  x  28 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 768: semantics, images, layout and screenshot (424ms)
+(node:36216) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 29 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /thanks at 768: semantics, images, layout and screenshot (369ms)
+  ok 30 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /legal at 768: semantics, images, layout and screenshot (341ms)
+  ok 31 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /privacy at 768: semantics, images, layout and screenshot (419ms)
+  ok 32 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /personal-data at 768: semantics, images, layout and screenshot (425ms)
+  ok 33 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /a-page-outside-the-route at 768: semantics, images, layout and screenshot (360ms)
+  ok 34 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /formats at 390: semantics, images, layout and screenshot (652ms)
+  ok 35 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /archive at 390: semantics, images, layout and screenshot (613ms)
+  x  36 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 390: semantics, images, layout and screenshot (456ms)
+(node:15720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 37 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /thanks at 390: semantics, images, layout and screenshot (387ms)
+  ok 38 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /legal at 390: semantics, images, layout and screenshot (382ms)
+  ok 39 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /privacy at 390: semantics, images, layout and screenshot (372ms)
+  ok 40 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /personal-data at 390: semantics, images, layout and screenshot (391ms)
+  ok 41 [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /a-page-outside-the-route at 390: semantics, images, layout and screenshot (323ms)
+  x  42 [chromium] › e2e\publication-pages.spec.ts:69:1 › one scoped token set changes real serif, h1, body and Cloud on every publication page (598ms)
+(node:18924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 43 [chromium] › e2e\publication-pages.spec.ts:106:1 › all publication pages support keyboard skip, visible focus and a real return home (1.9s)
+  ok 44 [chromium] › e2e\publication-pages.spec.ts:124:1 › header and footer links open every real publication destination (1.1s)
+  ok 45 [chromium] › e2e\publication-pages.spec.ts:134:1 › editorial pages remain complete with reduced motion (354ms)
+  ok 46 [chromium] › e2e\publication-pages.spec.ts:145:1 › homepage routes lead to the publication while genuine content anchors stay local (481ms)
+  ok 47 [chromium] › e2e\publication-pages.spec.ts:165:1 › formats offer three distinct ways to travel with contextual links (246ms)
+  ok 48 [chromium] › e2e\publication-pages.spec.ts:177:1 › archive distinguishes friends' field notes from future official issues (250ms)
+
+
+  1) [chromium] › e2e\publication-form.spec.ts:113:1 › the form has no horizontal overflow at desktop, tablet, or narrow mobile widths 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      115 |   for (const width of [1440, 1280, 768, 390, 320]) {
+      116 |     await page.setViewportSize({ width, height: 1000 });
+    > 117 |     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+          |                                                                                                  ^
+      118 |     const form = page.getByRole("form", { name: "Начать историю" });
+      119 |     const box = await form.boundingBox();
+      120 |     expect(box).not.toBeNull();
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-form.spec.ts:117:98
+
+    Error Context: test-results\publication\publication-form-the-form--ea372-let-or-narrow-mobile-widths-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-form-the-form--ea372-let-or-narrow-mobile-widths-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-form-the-form--ea372-let-or-narrow-mobile-widths-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1440: semantics, images, layout and screenshot 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      56 |       expect(await page.getByRole("navigation", { name: "Все страницы сайта" }).locator("a").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(footerLinks);
+      57 |       await loadAllImages(page);
+    > 58 |       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+         |                                                                                                 ^
+      59 |       if (["/privacy", "/personal-data"].includes(publication.path)) {
+      60 |         await expect(page.getByRole("heading", { name: /Документ находится в подготовке/ })).toContainText("Не является действующим документом.");
+      61 |       }
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-pages.spec.ts:58:97
+
+    Error Context: test-results\publication\publication-pages-publicat-55aa7-mages-layout-and-screenshot-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-pages-publicat-55aa7-mages-layout-and-screenshot-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-pages-publicat-55aa7-mages-layout-and-screenshot-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1280: semantics, images, layout and screenshot 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      56 |       expect(await page.getByRole("navigation", { name: "Все страницы сайта" }).locator("a").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(footerLinks);
+      57 |       await loadAllImages(page);
+    > 58 |       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+         |                                                                                                 ^
+      59 |       if (["/privacy", "/personal-data"].includes(publication.path)) {
+      60 |         await expect(page.getByRole("heading", { name: /Документ находится в подготовке/ })).toContainText("Не является действующим документом.");
+      61 |       }
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-pages.spec.ts:58:97
+
+    Error Context: test-results\publication\publication-pages-publicat-7f86a-mages-layout-and-screenshot-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-pages-publicat-7f86a-mages-layout-and-screenshot-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-pages-publicat-7f86a-mages-layout-and-screenshot-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 768: semantics, images, layout and screenshot 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      56 |       expect(await page.getByRole("navigation", { name: "Все страницы сайта" }).locator("a").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(footerLinks);
+      57 |       await loadAllImages(page);
+    > 58 |       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+         |                                                                                                 ^
+      59 |       if (["/privacy", "/personal-data"].includes(publication.path)) {
+      60 |         await expect(page.getByRole("heading", { name: /Документ находится в подготовке/ })).toContainText("Не является действующим документом.");
+      61 |       }
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-pages.spec.ts:58:97
+
+    Error Context: test-results\publication\publication-pages-publicat-10fda-mages-layout-and-screenshot-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-pages-publicat-10fda-mages-layout-and-screenshot-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-pages-publicat-10fda-mages-layout-and-screenshot-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 390: semantics, images, layout and screenshot 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      56 |       expect(await page.getByRole("navigation", { name: "Все страницы сайта" }).locator("a").evaluateAll(links => links.map(link => link.getAttribute("href")))).toEqual(footerLinks);
+      57 |       await loadAllImages(page);
+    > 58 |       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+         |                                                                                                 ^
+      59 |       if (["/privacy", "/personal-data"].includes(publication.path)) {
+      60 |         await expect(page.getByRole("heading", { name: /Документ находится в подготовке/ })).toContainText("Не является действующим документом.");
+      61 |       }
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-pages.spec.ts:58:97
+
+    Error Context: test-results\publication\publication-pages-publicat-4d236-mages-layout-and-screenshot-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-pages-publicat-4d236-mages-layout-and-screenshot-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-pages-publicat-4d236-mages-layout-and-screenshot-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › e2e\publication-pages.spec.ts:69:1 › one scoped token set changes real serif, h1, body and Cloud on every publication page 
+
+    Error: locator.evaluate: Error: Page must render a real shared body role
+        at eval (eval at evaluate (:311:30), <anonymous>:11:26)
+        at UtilityScript.evaluate (<anonymous>:313:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:311:30), <anonymous>:11:26)
+        at UtilityScript.evaluate (<anonymous>:313:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\McHomak\Projects\travel_club\frontend\e2e\publication-pages.spec.ts:82:68
+
+    Error Context: test-results\publication\publication-pages-one-scop-3b39f-d-on-every-publication-page-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\publication\publication-pages-one-scop-3b39f-d-on-every-publication-page-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\publication\publication-pages-one-scop-3b39f-d-on-every-publication-page-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [chromium] › e2e\publication-form.spec.ts:113:1 › the form has no horizontal overflow at desktop, tablet, or narrow mobile widths 
+    [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1440: semantics, images, layout and screenshot 
+    [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 1280: semantics, images, layout and screenshot 
+    [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 768: semantics, images, layout and screenshot 
+    [chromium] › e2e\publication-pages.spec.ts:37:5 › publication /start at 390: semantics, images, layout and screenshot 
+    [chromium] › e2e\publication-pages.spec.ts:69:1 › one scoped token set changes real serif, h1, body and Cloud on every publication page 
+  42 passed (24.3s)

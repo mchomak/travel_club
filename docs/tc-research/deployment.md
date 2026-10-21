@@ -1,0 +1,195 @@
+# HTTPS-поддомен TC Research
+
+Эта инструкция описывает конфигурацию; DNS и сервер в рамках этой работы не менялись. Укажите значения, подтверждённые владельцем VPS и DNS-провайдером. Не добавляйте их в код или Git.
+
+## DNS и окружение
+
+Создайте DNS-запись `A` для `research.<ваш-домен>` на фактический публичный IPv4 VPS. Запись `AAAA` добавляйте только если VPS и входящий Nginx действительно настроены на IPv6. TCP/80 нужен для HTTP-01 проверки сертификата; для HTTPS renderer поддерживает порты `8443`, `9443` и `10443`.
+
+На VPS в отдельной административной shell-сессии задайте:
+
+```bash
+RESEARCH_HOST='research.<ваш-домен>'
+PUBLIC_IP='<публичный IPv4 VPS>'
+HTTPS_PORT=8443
+ACME_WEBROOT=/var/www/tc-research-acme
+CERT_DIR=/etc/letsencrypt/live/tc-research
+ACME_EMAIL='<адрес для уведомлений сертификата>'
+FRONTEND_UPSTREAM=172.19.0.4:3000
+```
+
+Замените все значения в угловых скобках. HTTPS-порт выберите из списка выше и используйте его во всех командах и URL. `compose.deploy.yaml` назначает frontend адрес `172.19.0.4:3000` во внутренней сети и не публикует его порт на хосте; перед запуском Compose проверьте, что сеть `172.19.0.0/16` не пересекается с другими сетями VPS.
+
+## Nginx и сертификат
+
+Подготовьте отдельные файлы vhost. Выполняйте команды из корня checkout в одной административной Bash-сессии; renderer получает абсолютный путь через `realpath`. Helper создаёт candidate и копию полного `nginx.conf` с staging include под `/var/tmp`, где candidate заменяет текущий vhost. `nginx -t` проверяет эту будущую конфигурацию, пока live include не менялся. Только после успешной проверки candidate атомарно перемещается на активный путь; затем выполняется reload. Helper остаётся доступен в этой сессии для установки HTTP и HTTPS vhost.
+
+HTTP-конфигурация обслуживает ACME challenge и перенаправляет остальной трафик на HTTPS с выбранным портом:
+
+```bash
+install_research_vhost() (
+  set -euo pipefail
+  local mode="$1"
+  local vhost="$2"
+  shift 2
+
+  local stage_root stage_include candidate stage_main renderer next backup
+  local rollback_next had_vhost keep_backup active_config staged_config
+  stage_root="$(sudo mktemp -d /var/tmp/tc-research-nginx.XXXXXX)"
+  stage_include="$stage_root/conf.d"
+  candidate="$stage_root/candidate"
+  stage_main="$stage_root/nginx.conf"
+  next=''
+  backup=''
+  rollback_next=''
+  had_vhost=0
+  keep_backup=0
+  shopt -s nullglob
+
+  cleanup() {
+    [[ -z "$next" ]] || sudo rm -f -- "$next"
+    [[ -z "$rollback_next" ]] || sudo rm -f -- "$rollback_next"
+    if [[ "$keep_backup" -eq 0 && -n "$backup" ]]; then
+      sudo rm -f -- "$backup"
+    fi
+    sudo rm -f -- "$candidate" "$stage_main"
+    if sudo test -d "$stage_include"; then
+      for staged_config in "$stage_include"/*.conf; do
+        sudo rm -f -- "$staged_config"
+      done
+      sudo rmdir -- "$stage_include"
+    fi
+    sudo rmdir -- "$stage_root" || echo "Could not remove staging directory: $stage_root" >&2
+    return 0
+  }
+  restore_vhost() {
+    if [[ "$had_vhost" -eq 1 ]]; then
+      sudo mv -fT -- "$rollback_next" "$vhost"
+      rollback_next=''
+    else
+      sudo rm -f -- "$vhost"
+    fi
+  }
+  trap cleanup EXIT
+
+  sudo install -d -m 0755 /etc/nginx/conf.d "$stage_include" \
+    "$ACME_WEBROOT/.well-known/acme-challenge"
+  renderer="$(realpath deploy/nginx/render.py)"
+  if ! sudo python3 "$renderer" "$mode" "$@" | sudo tee "$candidate" >/dev/null; then
+    echo "$mode vhost rendering or candidate write failed; existing vhost is unchanged." >&2
+    exit 1
+  fi
+  sudo test -s "$candidate"
+
+  for active_config in /etc/nginx/conf.d/*.conf; do
+    if [[ "$active_config" != "$vhost" ]]; then
+      sudo cp -p -- "$active_config" "$stage_include/"
+    fi
+  done
+  sudo install -m 0644 -- "$candidate" "$stage_include/${vhost##*/}"
+  sudo cp -p -- /etc/nginx/nginx.conf "$stage_main"
+  sudo python3 - "$stage_main" "$stage_include" <<'PY'
+from pathlib import Path
+import sys
+
+config_path = Path(sys.argv[1])
+text = config_path.read_text(encoding="utf-8")
+live_include = "include /etc/nginx/conf.d/*.conf;"
+if text.count(live_include) != 1:
+    raise SystemExit("expected exactly one standard conf.d include in /etc/nginx/nginx.conf")
+staged_include = f"include {sys.argv[2]}/*.conf;"
+config_path.write_text(text.replace(live_include, staged_include, 1), encoding="utf-8")
+PY
+  sudo test -s "$stage_main"
+  if ! sudo nginx -t -p /etc/nginx/ -c "$stage_main"; then
+    echo "Staged $mode Nginx configuration failed validation; live vhost was not changed." >&2
+    exit 1
+  fi
+
+  if sudo test -e "$vhost"; then
+    backup="$(sudo mktemp "${vhost}.rollback.XXXXXX")"
+    sudo cp -p -- "$vhost" "$backup"
+    rollback_next="$(sudo mktemp "${vhost}.restore.XXXXXX")"
+    sudo install -m 0644 -- "$backup" "$rollback_next"
+    had_vhost=1
+    keep_backup=1
+    printf 'Rollback copy: %s\n' "$backup"
+  fi
+  next="$(sudo mktemp "${vhost}.new.XXXXXX")"
+  sudo install -m 0644 -- "$candidate" "$next"
+  sudo mv -fT -- "$next" "$vhost"
+  next=''
+
+  if ! sudo systemctl reload nginx; then
+    restore_vhost
+    if sudo nginx -t; then
+      if ! sudo systemctl reload nginx; then
+        echo "Reload failed; rollback was tested, but its reload also failed." >&2
+      fi
+    else
+      echo "Rollback was applied, but nginx -t now fails; inspect the restored configuration." >&2
+    fi
+    exit 1
+  fi
+)
+
+install_research_vhost http /etc/nginx/conf.d/tc-research-http.conf \
+  --public-ip "$PUBLIC_IP" \
+  --server-name "$RESEARCH_HOST" \
+  --https-port "$HTTPS_PORT" \
+  --acme-webroot "$ACME_WEBROOT"
+```
+
+Убедитесь, что DNS уже указывает на этот VPS, входящий TCP/80 открыт в firewall VPS и провайдера, а challenge-файл действительно отдаётся снаружи по `http://$RESEARCH_HOST/.well-known/acme-challenge/...`. Затем выпустите обычный сертификат для DNS-имени:
+
+```bash
+sudo certbot certonly --webroot \
+  --webroot-path "$ACME_WEBROOT" \
+  --domain "$RESEARCH_HOST" \
+  --cert-name tc-research \
+  --non-interactive --agree-tos --email "$ACME_EMAIL"
+```
+
+После успешной выдачи сертификата добавьте отдельный TLS-vhost. Он проксирует запросы на существующий frontend; Next.js сохраняет маршрут `/api` и проксирует его к backend внутри Compose:
+
+```bash
+install_research_vhost https /etc/nginx/conf.d/tc-research-https.conf \
+  --public-ip "$PUBLIC_IP" \
+  --server-name "$RESEARCH_HOST" \
+  --https-port "$HTTPS_PORT" \
+  --frontend-upstream "$FRONTEND_UPSTREAM" \
+  --cert-dir "$CERT_DIR"
+```
+
+Откройте выбранный HTTPS-порт в фактическом firewall VPS и провайдера. Убедитесь, что Certbot timer включён и `sudo certbot renew --dry-run` проходит. Штатный `deploy/certbot/nginx-deploy-hook.sh` обслуживает только lineage `travel-club-preview`, поэтому для Research установите отдельный deploy hook, который перезагружает Nginx только после обновления его сертификата:
+
+```bash
+sudo install -d -m 0755 /etc/letsencrypt/renewal-hooks/deploy
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/30-tc-research-reload-nginx >/dev/null <<'EOF'
+#!/bin/sh
+set -eu
+[ "${RENEWED_LINEAGE:-}" = "/etc/letsencrypt/live/tc-research" ] || exit 0
+/usr/sbin/nginx -t
+/bin/systemctl reload nginx
+EOF
+sudo chmod 0755 /etc/letsencrypt/renewal-hooks/deploy/30-tc-research-reload-nginx
+systemctl list-timers --all | grep -Ei 'certbot|snap\.certbot'
+sudo certbot renew --dry-run
+```
+
+Renderer передаёт `Host` и `X-Forwarded-Host` как выбранное имя с HTTPS-портом, а `X-Forwarded-Proto` как `https`. Откройте `https://research.<ваш-домен>:<HTTPS_PORT>/research`. Главная `/` остаётся маршрутом основного сайта.
+
+## Origin и вход администратора
+
+В серверном `.env` задайте точный origin Research без завершающего `/`, например по шаблону `https://research.<ваш-домен>:<HTTPS_PORT>`. Сохраните текущее `ALLOWED_ORIGIN` основного сайта: `RESEARCH_ORIGIN` добавляется отдельно и не заменяет его. Не редактируйте `.env.example` вместо серверного `.env`.
+
+После изменения окружения пересоздайте только backend:
+
+```bash
+docker compose -p travel_club -f compose.deploy.yaml up -d --no-deps backend
+docker compose -p travel_club -f compose.deploy.yaml ps backend
+```
+
+Поддомен использует тот же backend, таблицу администраторов и защищённый механизм Travel Club. Войдите на Research существующим администратором; из-за отдельного hostname браузер хранит для него свою `HttpOnly`, `Secure` сессию. Новых ролей или паролей не требуется.
+
+Проверьте HTTPS без обхода проверки сертификата, затем отдельно проверьте анонимный доступ: `/research` должен запросить вход, а защищённый API не должен отдавать данные без действующей сессии. Реальный VPS не развёрнут и сертификат не выпущен.

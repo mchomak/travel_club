@@ -28,3 +28,22 @@
 | 2026-10-08 | `2026-10-08-test-5-live-hero` | сдан | /test_5: right magazine page continues through Contents, formats and lead form; 35 browser / 73 unit tests passed, frontend Docker rebuilt, commit 7f1d4d1 pushed. |
 
 | 2026-10-09 | `2026-10-09-test-5-paper-scale` | сдан | /test_5: обложка увеличена, а hero, содержание и три формата заполняют правую страницу без пустого нижнего поля; 36 production-тестов прошли, Docker healthy. |
+
+| 2026-10-09 | `2026-10-09-deploy-travel-club-preview` | ???? | ????????? ???? ? ??????????? ???????? ?? HTTPS ?? IP; ?????? ?????????????, VPN ? Telegram-??? ?????????. |
+
+| 2026-10-13 | `2026-10-13-editorial-pages` | сдан | семь страниц, общие токены, demo-форма и 404; 100 browser checks |
+
+| 2026-10-13 | `2026-10-13-living-issue-webgl` | сдан с оговоркой | /test_6: процедурный 3D-журнал, page curl, три прохода, панель; два существующих Next CSS warning отмечены отдельно. |
+
+| 2026-10-14 | `2026-10-14-test-7-magazine-handoff` | сдан | /test_7:8лиcтов по preset → scroll в живую homepage, Docker46browserchecks, feature committed/pushed. |
+
+| 2026-10-17 | `2026-10-17-trip-day-maps` | сдан | [Карта и маршруты дня — локальный результат](2026-10-17-trip-day-maps/report.md) |
+
+| 2026-10-17 | `2026-10-17-test-10-interactive-magazine` | сдан 18 октября | /test_10: три разворота, Living Issue, 450ms перелистывание;119 unit/23 browser passed |
+| 2026-10-18 | `2026-10-18-test-11-editorial` | сдан 19 октября | /test_11: шесть глав, пластичный лист и медленные появления; 119 unit / 48 browser, 33 PNG; push main и local rebuild |
+
+| 2026-10-19 | `2026-10-19-test-11-comments` | сдан | Девять комментариев: новые фото, туман и слоган, услуги, Thailand, принципы и процесс; push main, production rebuild и browser acceptance. |
+
+| 2026-10-19 | `2026-10-19-tc-research` | сдан 20 октября | TC Research: CustDev-интервью, JSON-банк, PostgreSQL, autosave, XLSX; 130 frontend tests, 149 backend tests, 2/2 browser acceptance; домен/VPS требуют настройки. |
+
+| 2026-10-21 | `2026-10-21-research-page-improvements` | сдан | Авторизация и каталог `/home`, исправления Research и неизменяемые версии интервью; 161 frontend / 156 backend tests, build и browser checks пройдены; commit `d7566be` опубликован в `codex/research-page-improvements`. |

@@ -5,6 +5,7 @@ import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/co
 import { calculateTrip, nextDate } from "@/lib/pricing";
 import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, itemLabels, modeLabels, subtypeOptions, timeLabel } from "@/lib/trip-ui";
 import { ErrorNotice, Field } from "./ui";
+import { LocationPicker } from './location-picker';
 
 const nullableInteger = (v: string | number | null | undefined) => v === "" || v === null || v === undefined ? null : Number(v);
 const scheduleError = "Окончание должно быть позже начала";
@@ -173,6 +174,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...register("title", { required: "Укажите название", maxLength: 200 })} /></Field>
       <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>
+      <div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||['flight','train_bus','transfer','rental'].includes(item.type)||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>
       <Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
       <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
       {item.external_url && validUrl(item.external_url) === true && <a className="text-link field-wide" href={item.external_url} target="_blank" rel="noopener noreferrer">Открыть ссылку в новой вкладке</a>}
