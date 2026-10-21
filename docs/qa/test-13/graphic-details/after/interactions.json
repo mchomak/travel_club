@@ -1,0 +1,348 @@
+{
+  "legacyCtaGeometryUnchanged": true,
+  "states": [
+    {
+      "spread": 1,
+      "states": {
+        "static": [
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "pending": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "enter": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ]
+      },
+      "settledEnter": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "spread": 3,
+      "states": {
+        "static": [
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "pending": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "enter": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ]
+      },
+      "settledEnter": [
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "spread": 4,
+      "states": {
+        "static": [
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "pending": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "enter": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ]
+      },
+      "settledEnter": [
+        true,
+        true
+      ]
+    },
+    {
+      "spread": 6,
+      "states": {
+        "static": [
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "pending": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "enter": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ]
+      },
+      "settledEnter": [
+        true,
+        true
+      ]
+    },
+    {
+      "spread": 7,
+      "states": {
+        "static": [
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": true,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "pending": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ],
+        "enter": [
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          },
+          {
+            "visible": false,
+            "hidden": "true",
+            "focusable": "false"
+          }
+        ]
+      },
+      "settledEnter": [
+        true,
+        true,
+        true
+      ]
+    }
+  ],
+  "hover": {
+    "boundsStable": true,
+    "lineTransform": "matrix(1, 0, 0, 1, 0, -2)",
+    "transition": "0.19s"
+  },
+  "keyboard": "http://localhost:3113/formats"
+}

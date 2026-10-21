@@ -1,0 +1,67 @@
+[
+  {
+    "viewport": [
+      1440,
+      900
+    ],
+    "differences": []
+  },
+  {
+    "viewport": [
+      1440,
+      900
+    ],
+    "cta": {
+      "rest": {
+        "box": {
+          "x": 1189.328125,
+          "y": 357,
+          "width": 169.375,
+          "height": 26.453125,
+          "top": 357,
+          "right": 1358.703125,
+          "bottom": 383.453125,
+          "left": 1189.328125
+        },
+        "color": "rgb(18, 51, 93)",
+        "background": "rgba(0, 0, 0, 0)",
+        "line": "1px"
+      },
+      "focus": {
+        "focusVisible": true,
+        "outline": "2px",
+        "href": "/formats"
+      },
+      "boundsStable": true
+    }
+  },
+  {
+    "viewport": [
+      1100,
+      700
+    ],
+    "cta": {
+      "rest": {
+        "box": {
+          "x": 881.265625,
+          "y": 277.984375,
+          "width": 154.640625,
+          "height": 18.625,
+          "top": 277.984375,
+          "right": 1035.90625,
+          "bottom": 296.609375,
+          "left": 881.265625
+        },
+        "color": "rgb(18, 51, 93)",
+        "background": "rgba(0, 0, 0, 0)",
+        "line": "1px"
+      },
+      "focus": {
+        "focusVisible": true,
+        "outline": "2px",
+        "href": "/formats"
+      },
+      "boundsStable": true
+    }
+  }
+]

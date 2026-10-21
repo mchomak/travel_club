@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Print artwork uses decoded local images for exact page snapshots. */
 import { ARCHIVE, FORMATS, FOUNDER_PHOTOS, PHOTOS, PRINCIPLES } from "./data";
-import { ArrowUpRight, Compass, MapPin, Route, Sparkles, Users } from "lucide-react";
+import { EditorialSymbol } from "./editorial-symbol";
 import s from "./spreads.module.css";
 
 type Side = "left" | "right";
@@ -21,7 +21,7 @@ function Photo({ photo, className = "", decorative = false }: { photo: PhotoValu
 }
 
 function Link({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
-  return <a className={`${s.link} ${className}`} data-editorial="cascade" data-step="6" href={href}>{children}<ArrowUpRight aria-hidden="true" /></a>;
+  return <a className={`${s.link} ${className}`} data-editorial="cascade" data-step="6" href={href}>{children}<EditorialSymbol name="onward" /></a>;
 }
 
 export function MagazineCover() {
@@ -53,17 +53,17 @@ function HeroPage({ reveal }: PageProps) {
 }
 
 function FormatsPage({ reveal }: PageProps) {
-  const icons = [Route, Sparkles, Users];
+  const symbols = ["route", "ready", "companions"] as const;
   return <section className={`${s.page} ${s.formatsPage}`} data-magazine-page="right" data-reveal={reveal} aria-label="Три формата путешествий">
     <Head left="Способ отправиться" right={<a className={s.headLink} href="/start">Обсудить поездку ↗</a>} />
     <div className={s.formatsIntro}><h2 data-editorial="reveal">С нами в путь</h2><p data-editorial="cascade" data-step="1">Создаём индивидуальные маршруты, помогаем организовывать путешествия и собираем небольшие компании для совместных поездок.</p></div>
     <div className={s.formatsTable} data-draw="top" data-step="1">
-      {FORMATS.map((format, index) => { const Icon = icons[index]; return <a className={s.formatRow} data-editorial="cascade" data-step={index + 2} data-draw="bottom" href="/formats" key={format.number} aria-label={`${format.english} — ${format.title} — ${format.price}. Подробнее о формате`}>
-        <span className={s.formatNumber} aria-hidden="true"><Icon /><span>{format.number}</span></span>
+      {FORMATS.map((format, index) => { const symbol = symbols[index]; return <a className={s.formatRow} data-editorial="cascade" data-step={index + 2} data-draw="bottom" href="/formats" key={format.number} aria-label={`${format.english} — ${format.title} — ${format.price}. Подробнее о формате`}>
+        <span className={s.formatNumber} aria-hidden="true"><EditorialSymbol name={symbol} /><span>{format.number}</span></span>
         <div className={s.formatName}><h3>{format.english}</h3><span>{format.title}</span></div>
         <span className={`${s.formatPrice} ${format.number === "03" ? s.agreedPrice : ""}`}>{format.price}</span>
         <p data-reveal-object="format-details">{format.description}</p>
-        <span className={s.formatAction}>Подробнее о формате <ArrowUpRight aria-hidden="true" /></span>
+        <span className={s.formatAction}>Подробнее о формате <EditorialSymbol name="onward" /></span>
       </a>; })}
     </div>
     <p className={s.formatTerms} data-editorial="cascade" data-step="5">5 000 ₽ и 10 000 ₽ — стоимость услуг Travel Design и Travel Ready. Транспорт, проживание и прочие расходы оплачиваются отдельно.</p>
@@ -132,9 +132,9 @@ function NextRight({ reveal }: PageProps) {
     <p className={s.nextLead} data-editorial="cascade" data-step="1" data-reveal-object="next-lead" data-text-legacy="" data-beat="1">Есть места, которые интереснее открывать вместе.</p>
     <div className={s.nextStoryBody} data-editorial="cascade" data-step="2" data-reveal-object="next-story">
       <p>Готовим первое групповое путешествие Travel Club. Небольшая компания, общая дорога и программа, собранная нами.</p>
-      <div className={s.nextMarginal}><Users aria-hidden="true" /><p>Сначала — знакомство.<br />Затем — дорога.</p></div>
+      <div className={s.nextMarginal}><EditorialSymbol name="companions" /><p>Сначала — знакомство.<br />Затем — дорога.</p></div>
     </div>
-    <div className={s.nextPlanning} data-editorial="cascade" data-step="4" data-draw="top" data-reveal-object="next-planning" data-text-legacy="" data-beat="4"><span><Compass aria-hidden="true" />В подготовке</span><p>Направление и даты ещё не объявлены.</p></div>
+    <div className={s.nextPlanning} data-editorial="cascade" data-step="4" data-draw="top" data-reveal-object="next-planning" data-text-legacy="" data-beat="4"><span><EditorialSymbol name="direction" />В подготовке</span><p>Направление и даты ещё не объявлены.</p></div>
     <div className={s.nextAction} data-editorial="cascade" data-step="6"><Link href="/start?format=group">Хочу поехать с вами</Link><p>Расскажите о своём интересе. Это не бронирование.</p></div>
     <Folio number="07" label="Первое путешествие начинается с разговора" />
   </section>;
@@ -148,7 +148,7 @@ function ThailandLeft({ reveal }: PageProps) {
       <h2 className={s.thaiDisplay} aria-label="Thailand ’26"><span className={s.thaiWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span><span className={s.landWord} aria-hidden="true"><img src={PHOTOS.thailandCover.src} alt="" decoding="sync" loading="eager" /></span></h2>
       <div className={s.thaiYear}>’26<span>Таиланд<br />в двух ритмах</span></div>
     </div>
-    <div className={s.thaiRoute} data-editorial="cascade" data-step="1"><span><MapPin aria-hidden="true" />От островов до Бангкока</span><p>Четверо друзей.<br />Одна поездка.</p></div>
+    <div className={s.thaiRoute} data-editorial="cascade" data-step="1"><span><EditorialSymbol name="waypoint" />От островов до Бангкока</span><p>Четверо друзей.<br />Одна поездка.</p></div>
     <p className={s.credit}>{PHOTOS.thailandCover.author} / Pexels<span>Иллюстративная фотография</span></p>
     <Folio number="08" label="Личный опыт друзей до запуска клуба" />
   </section>;
@@ -214,7 +214,7 @@ function ArchiveLeft({ reveal }: PageProps) {
 function ArchiveRight({ reveal }: PageProps) {
   return <section className={`${s.page} ${s.archiveIndex}`} data-magazine-page="right" data-reveal={reveal} aria-label="Архив 2025 — Китай, Мадагаскар, Таиланд">
     <Head left="Из личного архива" right="2025" />
-    <div className={s.archiveIntro}><h2 data-editorial="reveal" data-duration="multiline">То, что<br />остаётся.</h2><p data-editorial="cascade" data-step="1" data-reveal-object="archive-intro" data-text-legacy="" data-beat="1">Разные страны и разный масштаб. Поездки друзей до запуска Travel Club.</p></div>
+    <div className={s.archiveIntro}><span className={s.archiveNoteMark} data-editorial="cascade" data-step="2"><EditorialSymbol name="note" /></span><h2 data-editorial="reveal" data-duration="multiline">То, что<br />остаётся.</h2><p data-editorial="cascade" data-step="1" data-reveal-object="archive-intro" data-text-legacy="" data-beat="1">Разные страны и разный масштаб. Поездки друзей до запуска Travel Club.</p></div>
     <div className={s.archiveEntries}>{ARCHIVE.map((record, i) => <article key={record.english} data-editorial="cascade" data-step={i + 2} data-draw="top">
       <span className={s.archiveEntryNumber}>0{i + 1}</span><div><h3>{record.place}</h3><div data-reveal-object={`archive-entry-${i}`} data-text-legacy="" data-beat={i + 1}><p>{record.route}</p><span>{record.people} / 2025</span></div></div>
     </article>)}</div>
@@ -237,6 +237,7 @@ function PovLeft({ reveal }: PageProps) {
 function StartRight({ reveal }: PageProps) {
   return <section className={`${s.page} ${s.startPage}`} data-magazine-page="right" data-reveal={reveal} aria-label="Начнём с разговора — Travel Club">
     <Head left="Ваша следующая история" right="Start / Travel Club" />
+    <span className={s.startWaymark} data-editorial="cascade" data-step="2"><EditorialSymbol name="waypoint" /></span>
     <h2 className={s.startTitle} data-editorial="reveal" data-duration="multiline">Начнём<br /><span data-reveal-object="start-title" data-beat="1">с разговора.</span></h2>
     <p className={s.startLead} data-editorial="cascade" data-step="1" data-reveal-object="start-lead" data-text-legacy="" data-beat="2">От первой идеи к понятному плану. Вот как строится наша работа.</p>
     <div className={s.startProcess}>{[
@@ -244,7 +245,7 @@ function StartRight({ reveal }: PageProps) {
       ["Предложение", "Готовим подходящий формат работы и предварительный состав услуг."],
       ["Согласование", "Вместе уточняем предложение и договариваемся о дальнейших действиях."],
     ].map(([title, body], i) => <div key={title} data-editorial="cascade" data-step={i + 2} data-draw="top" data-reveal-object={`start-step-${i}`} data-text-legacy="" data-beat={i + 1}><span>0{i + 1}</span><h3>{title}</h3><p>{body}</p></div>)}</div>
-    <div className={s.startActions} data-editorial="cascade" data-step="6"><Link href="/start">Обсудить поездку</Link><a href="/formats">Сначала сравнить форматы <ArrowUpRight aria-hidden="true" /></a></div>
+    <div className={s.startActions} data-editorial="cascade" data-step="6"><Link href="/start">Обсудить поездку</Link><a href="/formats">Сначала сравнить форматы <EditorialSymbol name="onward" /></a></div>
     <p className={s.prototypeNote} data-editorial="cascade" data-step="7">Форма поможет сформулировать запрос. Сейчас это прототип: ответы не отправляются и не сохраняются.</p>
     <Folio number="15" label="Конец номера / Продолжение следует" />
   </section>;

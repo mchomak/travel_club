@@ -529,6 +529,10 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 
 
 - Правки TEST_13 21 октября: `pending` скрывает новый анимируемый текст, иконки и линии в live DOM и capture до `enter`; static/reduced остаются видимыми. REVEAL 1000/1200 ms, CASCADE 650 ms с шагом 160 ms, до 1.93 s. Кнопка открытия под обложкой; nav hover 44→50 px в зарезервированном слоте 52 px. Проверки: 39 production Playwright + 113 Vitest; `docs/qa/test-13/refinement.md`.
+- `editorial-symbol.tsx`: локальный `EditorialSymbol({ name, className? })` рисует семь SVG-знаков на сетке 24: route, ready, companions, direction, waypoint, note, onward; декоративный SVG скрыт от accessibility tree и не получает фокус.
+- `spreads.tsx` размещает знаки в форматах, Next Issue, Thailand, Archive, Start и CTA; строки форматов остаются едиными ссылками `/formats`, «Подробнее о формате» — вложенная подпись, без второй ссылки.
+- CTA и детали оформлены только в `test_13/spreads.module.css`: resting underline, hover/focus без сдвига геометрии; compact-блок при ширине ≤1200 px или высоте ≤790 px уменьшает заголовок и интервалы первого разворота, знаки до 18 px. Вертикальный padding текстовых CTA `.12em` устраняет исходное пересечение услуг с примечанием и на 1440×900; меняются только внутренние интервалы строк форматов.
+- Новые детали используют существующие cascade/pending/static capture; reduced motion возвращает видимые знаки и статичные подчёркивания. Сигнатура `MagazineSpread({ index, side?, animate?, reveal? })` и движки перелистывания сохранены.
 
 ### TC Research — закрытый модуль интервью
 

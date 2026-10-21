@@ -1,0 +1,157 @@
+[
+  {
+    "width": 1100,
+    "height": 700,
+    "rowBottom": 524.375,
+    "termsTop": 529.265625,
+    "gap": 4.890625,
+    "contentBottom": 521.4375,
+    "actual": [
+      {
+        "tag": "SPAN",
+        "bottom": 449.796875
+      },
+      {
+        "tag": "DIV",
+        "bottom": 450.984375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 434.59375
+      },
+      {
+        "tag": "P",
+        "bottom": 502.234375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 521.4375
+      }
+    ],
+    "pass": true
+  },
+  {
+    "width": 1100,
+    "height": 900,
+    "rowBottom": 623.109375,
+    "termsTop": 629.40625,
+    "gap": 6.296875,
+    "contentBottom": 620.765625,
+    "actual": [
+      {
+        "tag": "SPAN",
+        "bottom": 548.90625
+      },
+      {
+        "tag": "DIV",
+        "bottom": 550.28125
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 533.6875
+      },
+      {
+        "tag": "P",
+        "bottom": 601.546875
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 620.765625
+      }
+    ],
+    "pass": true
+  },
+  {
+    "width": 1440,
+    "height": 700,
+    "rowBottom": 524.375,
+    "termsTop": 529.265625,
+    "gap": 4.890625,
+    "contentBottom": 521.4375,
+    "actual": [
+      {
+        "tag": "SPAN",
+        "bottom": 449.796875
+      },
+      {
+        "tag": "DIV",
+        "bottom": 450.984375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 434.59375
+      },
+      {
+        "tag": "P",
+        "bottom": 502.234375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 521.4375
+      }
+    ],
+    "pass": true
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "rowBottom": 543,
+    "termsTop": 548.03125,
+    "gap": 5.03125,
+    "contentBottom": 534.71875,
+    "actual": [
+      {
+        "tag": "SPAN",
+        "bottom": 463.421875
+      },
+      {
+        "tag": "DIV",
+        "bottom": 464.234375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 448.15625
+      },
+      {
+        "tag": "P",
+        "bottom": 515.5
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 534.71875
+      }
+    ],
+    "pass": true
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "rowBottom": 701.515625,
+    "termsTop": 704.9375,
+    "gap": 3.421875,
+    "contentBottom": 692.765625,
+    "actual": [
+      {
+        "tag": "SPAN",
+        "bottom": 599.125
+      },
+      {
+        "tag": "DIV",
+        "bottom": 601.109375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 579.328125
+      },
+      {
+        "tag": "P",
+        "bottom": 666.859375
+      },
+      {
+        "tag": "SPAN",
+        "bottom": 692.765625
+      }
+    ],
+    "pass": true
+  }
+]
