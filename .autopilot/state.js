@@ -20,7 +20,7 @@ window.STATE =
     ]
   },
   "slug": "test-13-motion",
-  "dir": "2026-10-21-test-13-motion--wip",
+  "dir": "2026-10-21-test-13-motion",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "memoryFile": "AGENTS.md",
   "tickets": [
@@ -104,11 +104,19 @@ window.STATE =
         "frontend/src/app/test_13",
         "frontend/src/components/test_13"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-10-21T02:35:20+03:00"
+      "startedAt": "2026-10-21T02:35:20+03:00",
+      "finishedAt": "2026-10-21T02:40:19+03:00",
+      "commit": "28c80aec56434c29b344ce84093cfe4fe24d74d0",
+      "tests": [
+        "14 paired DOM/PNG parity zero pixel differences",
+        "424 working+Git hashes",
+        "intro/keyboard/turn/history/query/fallback",
+        "lint/typecheck"
+      ]
     },
     {
       "id": "02",
@@ -325,10 +333,18 @@ window.STATE =
         "frontend/src/components/test_13",
         "frontend/e2e/test-13"
       ],
-      "status": "pending",
-      "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "status": "review",
+      "retries": 1,
+      "repairs": 2,
+      "handoffs": 1,
+      "startedAt": "2026-10-21T02:40:19+03:00",
+      "repairFindings": [
+        "Animate actual hover underline150-250ms instead of instanttextdecoration",
+        "About names must followheadline thenroles",
+        "Chapter7bothCTAgroupcascade630ms",
+        "Corelinkunderline must visiblymove/drawinstead ofoverlayingstaticborder",
+        "Freshcontext: fixselector specificity soCTArestunderline remainsvisible"
+      ]
     }
   ],
   "tests": {
@@ -336,7 +352,15 @@ window.STATE =
     "copyParity": "14 pairs: zero differing pixels; DOM/content/href/geometry identical",
     "copyBrowser": "intro/forward/back/history/query/fallback PASS; errors=0",
     "copyLint": "passed",
-    "copyTypecheck": "passed"
+    "copyTypecheck": "passed",
+    "motionLint": "passed",
+    "motionTypecheck": "passed",
+    "motionVitest": "113 passed /26files",
+    "productionBuild": "Docker Next production build passed; localcontainer3114 HTTP200",
+    "productionPlaywright": "36 passed /5files /1.1minutes on final :where fix",
+    "protectedFiles": "424 SHA256 matches /0differences",
+    "g4": "PASS all7runtime +6CTArest/hover/focus finalchecks",
+    "productionGeometry": "28/28 pairs across4viewports; all7early/mid/final; zero loading/console errors"
   },
   "title": "TEST_13 — Editorial Motion",
   "stages": [
@@ -371,24 +395,33 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
-      "startedAt": "2026-10-21T02:35:20+03:00"
+      "status": "done",
+      "startedAt": "2026-10-21T02:35:20+03:00",
+      "finishedAt": "2026-10-21T03:28:52+03:00"
     },
     {
       "id": "review",
-      "status": "active",
-      "startedAt": "2026-10-21T02:39:08+03:00"
+      "status": "done",
+      "startedAt": "2026-10-21T02:39:08+03:00",
+      "finishedAt": "2026-10-21T03:28:52+03:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-10-21T03:28:52+03:00"
     }
   ],
-  "blind": null,
+  "blind": {
+    "verdict": "PASS",
+    "agent": "/root/blind",
+    "drift": [],
+    "report": "docs/qa/test-13/blind-acceptance.md"
+  },
   "polish": null,
-  "updatedAt": "2026-10-21T02:39:08+03:00",
+  "updatedAt": "2026-10-21T03:28:52+03:00",
   "reviewers": {
-    "manifestSpec": "/root/coverage"
+    "manifestSpec": "/root/coverage",
+    "craft": "/root/craft"
   },
   "requirements": {
     "done": 0,
@@ -406,8 +439,19 @@ window.STATE =
     {
       "source": "craft",
       "finding": "Copied TEST_13 README repeats inherited 20 Oct verification",
-      "triage": "fix now in T02",
+      "triage": "fixed",
       "file": "frontend/src/components/test_13/README.md:56"
+    },
+    {
+      "source": "spec_review",
+      "finding": "Hoverline visible but specificityhides originalrestCTAline",
+      "triage": "fixed"
+    },
+    {
+      "source": "visualQA",
+      "finding": "Hero finalraster differs up to21209pixels despiteidenticalgeometry and visuallyequivalent crops; exactcauseunknown",
+      "triage": "report",
+      "evidence": "docs/qa/test-13/motion-final/natural-hero-pixel.json"
     }
   ]
 }

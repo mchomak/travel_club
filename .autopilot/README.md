@@ -45,4 +45,4 @@
 | 2026-10-19 | `2026-10-19-test-11-comments` | сдан | Девять комментариев: новые фото, туман и слоган, услуги, Thailand, принципы и процесс; push main, production rebuild и browser acceptance. |
 
 | 2026-10-20 | `2026-10-20-test-12` | сдан | Семь глав, основатели, продукты и обложка; codex/test-12, отдельный production preview 3013; 36 browser + 113 unit, push и rebuild. |
-| 2026-10-21 | `2026-10-21-test-13-motion--wip` | в работе | Editorial Motion |
+| 2026-10-21 | `2026-10-21-test-13-motion` | сдан | Six motion primitives;36productiontests;424protectedfiles |

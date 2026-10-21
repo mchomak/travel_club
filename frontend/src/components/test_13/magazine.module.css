@@ -33,11 +33,11 @@
 .navigation button:hover:not(:disabled) { color:#fff5e9; background:#f1dfd10c; }
 .navStart,.navEnd { display:flex; align-items:center; gap:2px; flex-shrink:0; }.navEnd { justify-content:flex-end; }
 .navigation .coverControl { color:#dfcabc; }.navigation .navArrow { font-size:20px; }.navHint { display:none; color:#c1bba9; font-size:11px; }
-.contents { display:flex; min-width:0; gap:clamp(2px,.5vw,9px); overflow-x:auto; scrollbar-width:thin; scrollbar-color:#bc998b transparent; }
+.contents { position:relative; display:flex; min-width:0; gap:clamp(2px,.5vw,9px); overflow-x:auto; scrollbar-width:thin; scrollbar-color:#bc998b transparent; }
 .contents button { position:relative; flex-shrink:0; display:flex; gap:6px; align-items:center; white-space:nowrap; }
 .contents button>span:first-child { color:#cbb4a7; font-size:11px; font-variant-numeric:tabular-nums; }
-.contents button::after { content:""; position:absolute; bottom:5px; left:8px; right:8px; height:2px; background:currentColor; opacity:0; }
-.contents [aria-current=page] { color:#fff5e9; font-weight:600; }.contents [aria-current=page]::after { opacity:1; }
+.navIndicator { position:absolute; left:0; bottom:5px; height:2px; width:var(--nav-width,0px); background:#fff5e9; transform:translateX(var(--nav-x,0px)); transition:transform 260ms cubic-bezier(.16,1,.3,1),width 260ms cubic-bezier(.16,1,.3,1); pointer-events:none; }
+.contents [aria-current=page] { color:#fff5e9; font-weight:600; }
 .contents button:focus-visible { outline-offset:-3px; }
 .root :where(a,button):focus-visible { outline:2px solid #ead8a7; outline-offset:4px; }
 .status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
@@ -69,3 +69,15 @@
 .readingScene canvas { display:block; width:100%; height:100%; }
 
 .turnLayer .leaf,.turnLayer .face::after { animation-play-state:var(--reading-play-state,running); }
+
+/* Reading controls acknowledge direction without moving their hit targets. */
+.root[data-stage=reading] .edge { transition:background-color 190ms ease; }
+.root[data-stage=reading] .edge:is(:hover,:active):not(:disabled) { transform:translateY(-50%); }
+.navArrow > span,.edge > span { display:inline-block; transition:transform 190ms ease-out; }
+.navStart .navArrow:focus-visible > span,.edgeLeft:focus-visible > span { transform:translateX(-3px); }
+.navEnd .navArrow:focus-visible > span,.edgeRight:focus-visible > span { transform:translateX(3px); }
+@media(hover:hover) {
+  .navStart .navArrow:hover:not(:disabled) > span,.edgeLeft:hover:not(:disabled) > span { transform:translateX(-3px); }
+  .navEnd .navArrow:hover:not(:disabled) > span,.edgeRight:hover:not(:disabled) > span { transform:translateX(3px); }
+}
+@media(prefers-reduced-motion:reduce) { .navArrow > span,.edge > span { transform:none!important; } }

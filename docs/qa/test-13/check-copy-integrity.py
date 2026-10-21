@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 
 root = Path(__file__).resolve().parents[3]
-baseline = json.loads((root / '.autopilot/2026-10-21-test-13-motion--wip/protected-hashes.json').read_text(encoding='utf-8-sig'))
+baseline = json.loads((root / '.autopilot/2026-10-21-test-13-motion/protected-hashes.json').read_text(encoding='utf-8-sig'))
 names = list(baseline['gitBlobHashes'])
 raw = subprocess.check_output(['git', 'cat-file', '--batch'], cwd=root, input=('\n'.join(baseline['baseCommit'] + ':' + name for name in names) + '\n').encode())
 stream = io.BytesIO(raw)

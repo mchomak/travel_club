@@ -48,3 +48,13 @@
 - Evidence docs/qa/test-13/copy-baseline/results.json и pixel-comparison.json:14/14 pairs DOM/PNG equal,0pixels; intro/keyboard/turn/history/query/fallback PASS, errors0.
 - 424 protected hashes совпадают, tracked frontend diff пуст; lint/typecheck pass; исходный Vitest113/26.
 - Task01 manifest/spec и craft independent PASS. README наследует старый абзац проверки — заменить фактическими TEST_13 результатами в T02.
+
+## Из таска02 — motion
+
+- Публичные props/RevealPhase прежние; motion declarative и finite только на live enter после прежнегоfinish/onComplete.
+- Spreads local CSS: native headingclip, text-onlycascade, pseudo separator draw, Lucideicon motion, hover/focus190ms.
+- Navigationunderline: geometryderivedfrom existingindex/turn; event-drivenResizeObserver, no newnavigationstate/idleloop.
+- Intro/capture/physicalturn/data and originalphotoCSSrules byteidenticaltocontrol.
+- Reduced motion/static/capture finalvisible; nocharacter splitting, no photoparentcascade.
+- Newtests frontend/e2e/test-13-motion.spec.ts; capture docs/qa/test-13/motion-capture.mjs; productionhttp://localhost:3114.
+- Scopedfinalspec reviewPASS: Aboutnames/rolesorder, groupedchapter7CTAs, visiblehover+restunderline, reducedreset.

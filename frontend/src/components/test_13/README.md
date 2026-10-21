@@ -1,56 +1,51 @@
 ﻿# /test_13 — Между строк
 
-Independent noindex iteration of `/test_11`, supported from **1100 × 700 px**. The original routes, shared design system, assets and backend remain read-only. Seven spreads / fourteen reading pages:
-
-| Chapter | Contents label | Editorial title | Folios |
-| --- | --- | --- | --- |
-| 1 | Услуги | Hero + Formats | 02–03 |
-| 2 | О нас | О нас | 04–05 |
-| 3 | Первая поездка | Next Issue | 06–07 |
-| 4 | Таиланд | Thailand ’26 | 08–09 |
-| 5 | Китай | China ’26 | 10–11 |
-| 6 | Архив | Archive ’25 | 12–13 |
-| 7 | Начать | Point of View + Start | 14–15 |
-
-The cover is separate from these chapters. Field Notes describe private trips with friends before the club launched; the photographs remain illustrative. Next Issue is in preparation. Existing functional `/formats`, `/start` and `/archive` pages are unchanged; `/start` remains a prototype.
+Independent noindex copy of `/test_12`, supported from **1100 × 700 px**. Seven spreads and fourteen reading pages preserve the original content, photography, typography, geometry and links. All old versions, shared code, assets and backend remain read-only.
 
 ## Files and contracts
 
-- `../../app/test_13/page.tsx` owns metadata and the server parser for `spread=1`–`7`. A spread query opens reading directly. Invalid/repeated values normalize to 1 while preserving unrelated query parameters.
-- `data.ts` centralizes `SPREADS` (`title`, `navLabel`), `FORMATS`, `FOUNDER_PHOTOS`, existing `PHOTOS`, archive records and principles. The navigation uses `navLabel`; the printed chapters retain their editorial titles.
-- `magazine-experience.tsx` owns the single chapter index, navigation lock, keyboard, edge controls, compact contents, focus and browser history. It derives the chapter count from `SPREADS.length`. Temporary pages are inert and aria-hidden.
-- `magazine-intro.tsx` and `magazine.module.css` add a visible opening cue and a finite closed-cover pulse. Opening remains a semantic keyboard-accessible button. The effects stop during opening; reduced motion presents a static state. Returning to the cover retains the current chapter.
-- `intro-scene.ts`, `capture-page.ts`, `reading-turn.tsx`, `reading-turn-engine.ts` preserve the copied TEST_11 camera, timing, capture, physical page deformation, fallback and cleanup contracts. They read existing geometry from test_7/test_8. Idle reading has no engine canvas or requestAnimationFrame loop.
-- `spreads.tsx` exports `MagazineCover()` and `MagazineSpread({ index, side?, animate?, reveal? })`. `index` is 0–6, `side` is `left | right`, and exported `RevealPhase` is `static | pending | enter`. Static is the complete printable capture state.
-- `spreads.module.css` owns cover and reading compositions, including the new founder pair and refined service list. Existing Next Issue, Thailand, China, Archive and Point of View + Start retain their content, artwork, type and reveal, with only the folios shifted.
+- `../../app/test_13/page.tsx`: noindex metadata; server parser for `spread=1`–`7`. Invalid/repeated values normalize to 1 and preserve unrelated query parameters.
+- `data.ts`: unchanged TEST_12 content, prices, image slots and chapter labels.
+- `magazine-experience.tsx`: the existing single index, turn lock, keyboard/history/focus lifecycle; derives the displayed chapter for one measured navigation underline.
+- `spreads.tsx`: `MagazineCover()` and `MagazineSpread({ index, side?, animate?, reveal? })`; `RevealPhase = static | pending | enter`. Static is the complete printed capture state.
+- `spreads.module.css`: local text reveal/cascade, rules, icons and interaction effects; original photo/intro declarations remain unchanged.
+- `magazine-intro.tsx`, `intro-scene.ts`, `capture-page.ts`, `reading-turn.tsx`, `reading-turn-engine.ts`: byte-identical to TEST_12. No idle engine canvas or animation loop.
 
-## Editorial changes
+## Editorial motion
 
-Hero retains the existing mountain, original navy SVG signature and slogan. Its short caption identifies Travel Club as an independent travel editorial project. Services lead with Travel Design / Travel Ready / TC Trips, Russian purpose, concrete benefit and price. Travel Design and Travel Ready prices explicitly cover the club's services; travel expenses are separate. A compact top-right `/start` link and a separate lower `/formats` link replace the duplicated hero action.
+Native headings reveal left to right in 480 ms (620 ms for multiline titles), with a safe final clip reset. Semantic text groups cascade in 340 ms with 8 px translation and 90 ms steps; the longest sequence completes in 1.06 s. Complete service rows keep name, description and price together. Existing rules draw over 250/380 ms using pseudo-elements and transparent borders that preserve layout. Existing Lucide icons enter once in 300 ms. Links, arrows and focus respond in 190 ms; the original CTA underline remains visible at rest and moves up 2 px. One measured navigation underline follows the displayed chapter without a second navigation state.
 
-About uses the existing Cloud (`#F2F0EA`), Navy (`#172F50`) and Ink palette, bundled TC Golos / TC Lora, large names and mirrored portrait/text columns. Василиса / Рамиль are equal cofounders. The shared origin follows real independent travel with friends, organizing trips, planning routes and exploring places. It introduces individual services and authored group journeys without turning earlier trips into commercial work.
+| Chapter | Reveal and text groups | Rules and response |
+| --- | --- | --- |
+| Services | С нами в путь; introduction, three complete formats, terms, CTA | Header/rows/folio; Route, Sparkles, Users; whole-row links |
+| About | Shared headlines and founder names; roles, descriptions, origin | Header/origin/folio; original portrait placeholders |
+| Next Issue | Следующая история — вместе; lead, concept, preparation, CTA | Planning/folio; Compass/Users; original iris and NEXT ISSUE |
+| Thailand | Right story headline, route, prose, marginalia, captions, CTA | Printed rules; MapPin; original image-filled THAILAND and photos |
+| China | CHINA and Дальше — вместе; labels, body, figures, caption, CTA | Header/folio and vertical divider; original photo effects |
+| Archive | ARCHIVE and То, что остаётся; introduction, complete entries, caveat, CTA | Entry/folio rules; original contact prints |
+| Start | Не только куда and Начнём с разговора; principles, process, CTA, prototype note | Principle/process/folio rules; link arrows and underline |
 
-## Replace the two founder portraits
+The existing `ReadingTurn.onComplete` → `finish` and `introComplete` set `reveal=enter` after leaf/decode handoff. Static capture remains fully printed; pending does not hide new text. Finite backwards-fill animations return to visible base CSS without animationend callbacks. Resize, hover and indicator measurements do not replay them; revisiting a chapter does. Reduced motion disables the new animations/transitions, resets clip/opacity/transforms, and interrupts an active turn. Indicator measurements use ResizeObserver, font readiness and scroll events with cleanup; there is no idle animation loop.
 
-There are no verified founder portraits in the available assets. Each page deliberately displays a named portrait area and states that the real portrait will appear later. No stock or generated person stands in for either founder.
+## Content and constraints
 
-In `data.ts`, set `FOUNDER_PHOTOS.vasilisa.src` and `FOUNDER_PHOTOS.ramil.src` to the paths of the supplied real images. Set each `alt` to an accurate description and adjust `position` (CSS object-position, default `50% 50%`) to frame the face. For example, a supplied file in `public/test_13/` uses a `/test_13/...` source. The `FounderPortrait` component switches automatically from the labelled area to the photograph; no layout changes are needed. Do not relabel an illustrative travel photo as a founder.
+Intro, capture and physical page-turn engines plus `data.ts` are byte-identical to TEST_12; photo masks/keyframes/delays/data-beat remain unchanged. The hero slogan, image-filled THAILAND and large NEXT ISSUE retain their original reveal because they interact with photographs. Founder portrait placeholders remain original content: change `FOUNDER_PHOTOS.vasilisa.src` / `FOUNDER_PHOTOS.ramil.src`, accurate alt and object-position only when real supplied portraits exist. Existing travel photos and logos remain read-only assets. No dependency or environment variable was added.
 
-Travel photographs remain in `public/test_11/`; their manifest and credits remain there. Logos are read from `public/test_9/`. No new package or environment variable is required.
+This remains a desktop experiment from 1100 × 700 px. Smaller windows retain the existing explanatory fallback and `/test_8` link. Field Notes remain friends' private trips, photos illustrative, Next Issue in preparation and public request forms prototypes.
 
-## Local preview and verification
+## Verified 21 October 2026
 
-Use the isolated preview supplied by the coordinator (development `http://localhost:3113/test_13`), not the main checkout's running site. The planned production preview uses a separate container and port. Do not restart other sessions' servers.
+Development: `http://localhost:3113/test_13`; isolated production: `http://localhost:3114/test_13`. The pre-motion copy gate passed all seven spreads at 1440×900 and 1100×700 with fourteen exact decoded pixel matches: [copy report](../../../../docs/qa/test-13/copy-baseline.md).
 
-From this worktree's `frontend/` in PowerShell:
+From this worktree's `frontend/` (PowerShell):
 
 ```powershell
 npm.cmd run lint
 npm.cmd run typecheck
 npm.cmd test -- --run --testTimeout=15000
 npm.cmd run build
-$env:PLAYWRIGHT_BASE_URL='http://localhost:3113'
-npm.cmd exec playwright test e2e/test-13-magazine.spec.ts -- --workers=1
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3114'
+npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-12-magazine.spec.ts e2e/test-12-review-comments.spec.ts e2e/test-11-reveal.spec.ts e2e/test-10-magazine.spec.ts -- --workers=2
 ```
 
-Editorial executor verification on 20 October 2026: lint and typecheck passed; Vitest passed all 113 tests in 26 files (same as the starting baseline). A direct Chromium check of chapters 1–2 at 1366×768, 1440×900 and 1920×1080 found no page overflow or clipped text; the 1366×768 compositions were visually reviewed. Production and independent browser evidence belong to the isolated TEST_13 QA report; previous-version counts are not evidence for this iteration.
+Coordinator results: lint/typecheck passed, Vitest 113 passed in 26 files, isolated Docker production build passed. Final production Playwright suite after the underline correction: 36 passed (1.1 minutes). The CTA regression failed on the missing rest underline before the CSS specificity correction, then passed with a visible 1 px rest line, 2 px hover movement, unchanged bounds and reduced-motion static line. Independent browser acceptance and scoped source review passed. Final commands/logs, frame comparisons and limitations: [QA evidence](../../../../docs/qa/test-13/README.md).

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createSiteVariables } from "../public-site/site-tokens";
 import { MagazineSpread, type RevealPhase } from "./spreads";
 import { SPREADS } from "./data";
@@ -25,6 +25,7 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
   const [reveal, setReveal] = useState<RevealPhase>("pending");
   const busy = useRef(false), current = useRef(initialIndex), turnSequence = useRef(0);
   const nav = useRef<HTMLElement>(null), bookRef = useRef<HTMLDivElement>(null), frameRef = useRef<HTMLDivElement>(null);
+  const contentsRef = useRef<HTMLDivElement>(null), indicatorRef = useRef<HTMLSpanElement>(null);
   const introActions = useRef<IntroActions | null>(null);
   const introOpenRef = useRef<HTMLButtonElement>(null), focusAfterIntro = useRef(false);
   const introComplete = useCallback(() => {
@@ -98,6 +99,27 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
 
   const left = turn ? turn.landed ? turn.to : !turn.active || turn.direction > 0 ? turn.from : turn.to : index;
   const right = turn ? turn.landed ? turn.to : !turn.active || turn.direction < 0 ? turn.from : turn.to : index;
+  const shownIndex = turn ? turn.landed ? turn.to : turn.from : index;
+  useLayoutEffect(() => {
+    const contents = contentsRef.current, indicator = indicatorRef.current;
+    if (!contents || !indicator) return;
+    let disposed = false;
+    function measure() {
+      if (disposed || !contents || !indicator) return;
+      const button = contents.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!button) return;
+      const parent = contents.getBoundingClientRect(), active = button.getBoundingClientRect();
+      indicator.style.setProperty("--nav-x", `${active.left - parent.left + contents.scrollLeft + 8}px`);
+      indicator.style.setProperty("--nav-width", `${Math.max(0, active.width - 16)}px`);
+    }
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(contents);
+    contents.querySelectorAll("button").forEach(button => observer.observe(button));
+    contents.addEventListener("scroll", measure, { passive: true });
+    document.fonts.ready.then(measure);
+    return () => { disposed = true; observer.disconnect(); contents.removeEventListener("scroll", measure); };
+  }, [shownIndex, ready]);
   const live = ready && !turn;
   return <main className={s.root} style={createSiteVariables()} data-testid="magazine-experience" data-stage={ready ? "reading" : "opening"} data-intro-waiting={String(!ready && !introMoving)} data-spread={index + 1} data-turning={String(Boolean(turn))}>
     <div className={s.desktop}>
@@ -122,10 +144,10 @@ export function MagazineExperience({ initialIndex, skipIntro }: { initialIndex: 
       <nav ref={nav} className={s.navigation} aria-label="Навигация журнала" tabIndex={-1}>
         <div className={s.navStart}>
           <button disabled={!live} onClick={() => { setRevisiting(true); setReveal("pending"); setReady(false); }} className={s.coverControl}>Обложка</button>
-          <button disabled={!live || index === 0} onClick={() => navigate(index - 1)} aria-label="Previous" className={s.navArrow}>←</button>
+          <button disabled={!live || index === 0} onClick={() => navigate(index - 1)} aria-label="Previous" className={s.navArrow}><span>←</span></button>
         </div>
-        <div className={s.contents}>{SPREADS.map((spread: NavigationSpread, i) => <button key={i} disabled={!live} aria-current={index === i ? "page" : undefined} onClick={() => navigate(i)}><span>{String(i + 1).padStart(2, "0")}</span><span>{spread.navLabel ?? spread.title}</span></button>)}</div>
-        <div className={s.navEnd}><span className={s.navHint}>Листайте стрелками</span><button disabled={!live || index === SPREADS.length - 1} onClick={() => navigate(index + 1)} aria-label="Next" className={s.navArrow}>→</button></div>
+        <div ref={contentsRef} className={s.contents}>{SPREADS.map((spread: NavigationSpread, i) => <button key={i} disabled={!live} aria-current={shownIndex === i ? "page" : undefined} onClick={() => navigate(i)}><span>{String(i + 1).padStart(2, "0")}</span><span>{spread.navLabel ?? spread.title}</span></button>)}<span ref={indicatorRef} className={s.navIndicator} data-nav-indicator aria-hidden="true" /></div>
+        <div className={s.navEnd}><span className={s.navHint}>Листайте стрелками</span><button disabled={!live || index === SPREADS.length - 1} onClick={() => navigate(index + 1)} aria-label="Next" className={s.navArrow}><span>→</span></button></div>
       </nav>
       <span className={s.status} role="status">Разворот {index + 1} из {SPREADS.length}. {SPREADS[index].title}</span>
     </div>
