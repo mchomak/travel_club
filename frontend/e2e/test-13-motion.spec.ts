@@ -13,7 +13,7 @@ test("native headings reveal once while service rows arrive as complete groups",
     duration: item.effect?.getTiming().duration,
     clips: (item.effect as KeyframeEffect).getKeyframes().map(frame => frame.clipPath),
   })));
-  expect(animation).toEqual(expect.arrayContaining([expect.objectContaining({ duration: 480 })]));
+  expect(animation).toEqual(expect.arrayContaining([expect.objectContaining({ duration: 1000 })]));
   expect(animation.some(item => item.clips.some(clip => typeof clip === "string" && clip.includes("100%")))).toBe(true);
   await expect(page.locator(`${pages} a[data-editorial="cascade"]`)).toHaveCount(4);
 });
@@ -40,8 +40,8 @@ test("all seven chapters have bounded text motion and unchanged photo ancestors"
     expect(report.headings).toBeGreaterThan(0);
     expect(report.cascade).toBeGreaterThan(2);
     expect(report.photoAncestors).toBe(0);
-    expect(Math.max(...report.durations)).toBeLessThanOrEqual(1400);
-    expect(Math.max(...report.durations)).toBeGreaterThanOrEqual(800);
+    expect(Math.max(...report.durations)).toBeLessThanOrEqual(2200);
+    expect(Math.max(...report.durations)).toBeGreaterThanOrEqual(1500);
     await page.evaluate(async () => {
       await Promise.all(document.querySelector("main")!.getAnimations({ subtree: true }).map(animation => animation.finished));
     });
@@ -56,16 +56,27 @@ test("new effects wait for handoff, replay on revisit and stay finished on resiz
   await page.goto("/test_13?spread=1");
   await page.evaluate(() => {
     (window as unknown as { motionEvents: { name: string; turning: string | null }[] }).motionEvents = [];
+    (window as unknown as { turnSamples: { pending: number; entering: number; chapter: string }[] }).turnSamples = [];
+    new MutationObserver(() => {
+      const root = document.querySelector("main")!;
+      if (root.getAttribute("data-turning") !== "true") return;
+      (window as unknown as { turnSamples: unknown[] }).turnSamples.push({
+        pending: root.querySelectorAll('[data-magazine-book] > [data-magazine-page][data-reveal="pending"]').length,
+        entering: root.querySelectorAll('[data-magazine-book] > [data-magazine-page][data-reveal="enter"]').length,
+        chapter: root.querySelector('[aria-current="page"]')?.textContent ?? "",
+      });
+    }).observe(document.querySelector("main")!, { attributes: true, childList: true, subtree: true, attributeFilter: ["data-turning", "data-reveal", "aria-current"] });
     document.addEventListener("animationstart", event => {
       if (event.animationName.includes("editorial")) (window as unknown as { motionEvents: unknown[] }).motionEvents.push({ name: event.animationName, turning: document.querySelector("main")!.getAttribute("data-turning") });
     });
   });
   await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.getByTestId("magazine-experience")).toHaveAttribute("data-turning", "true");
-  await expect(page.getByRole("navigation").locator('[aria-current="page"]')).toContainText("Услуги");
-  await expect(page.locator(`${pages}[data-reveal="enter"]`)).toHaveCount(0);
   await expect(page.getByTestId("magazine-experience")).toHaveAttribute("data-turning", "false", { timeout: 20000 });
-  await page.waitForTimeout(1150);
+  const turnSamples = await page.evaluate(() => (window as unknown as { turnSamples: { pending: number; entering: number; chapter: string }[] }).turnSamples);
+  expect(turnSamples.some(sample => sample.pending === 1 && sample.chapter.includes("Услуги"))).toBe(true);
+  expect(turnSamples.every(sample => sample.entering === 0)).toBe(true);
+  expect(turnSamples.filter(sample => sample.pending === 2).every(sample => sample.chapter.includes("О нас"))).toBe(true);
+  await page.waitForTimeout(2100);
   const events = () => page.evaluate(() => (window as unknown as { motionEvents: { name: string; turning: string }[] }).motionEvents);
   const first = await events();
   expect(first.some(event => event.name.includes("editorialReveal"))).toBe(true);
@@ -76,7 +87,7 @@ test("new effects wait for handoff, replay on revisit and stay finished on resiz
   expect(await events()).toEqual(first);
   await page.getByRole("button", { name: "Previous", exact: true }).click();
   await expect(page.getByTestId("magazine-experience")).toHaveAttribute("data-turning", "false", { timeout: 20000 });
-  await page.waitForTimeout(1150);
+  await page.waitForTimeout(2100);
   expect((await events()).length).toBeGreaterThan(first.length);
   await expect(page.locator("canvas,[data-reading-turn]")).toHaveCount(0);
 });
@@ -156,7 +167,7 @@ test("unsupported sizes and touch preserve the original readable fallback and na
 test("CTA underline visibly moves in its reserved border without shifting the link", async ({ page }) => {
   await page.goto("/test_13?spread=1");
   const link = page.getByRole("link", {name:"Подробнее о форматах",exact:true});
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(2100);
   // The original print underline must be fully visible before any interaction.
   expect(await link.evaluate(element => {
     const line = getComputedStyle(element,"::before");

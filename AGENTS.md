@@ -527,4 +527,7 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - Проверено координатором: из `frontend/` `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000` — 113 passed / 26 файлов; Docker production build прошёл, preview отвечает HTTP 200. После финальной CSS-правки production Playwright — 36 passed / 1.1 min: `$env:PLAYWRIGHT_BASE_URL='http://localhost:3114'; npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-12-magazine.spec.ts e2e/test-12-review-comments.spec.ts e2e/test-11-reveal.spec.ts e2e/test-10-magazine.spec.ts -- --workers=2`.
 - Новый браузерный набор — `frontend/e2e/test-13-motion.spec.ts`; capture — `docs/qa/test-13/motion-capture.mjs`, независимая приёмка — `docs/qa/test-13/blind-acceptance.md`. Новых зависимостей и env-переменных нет.
 
+
+- Правки TEST_13 21 октября: `pending` скрывает новый анимируемый текст, иконки и линии в live DOM и capture до `enter`; static/reduced остаются видимыми. REVEAL 1000/1200 ms, CASCADE 650 ms с шагом 160 ms, до 1.93 s. Кнопка открытия под обложкой; nav hover 44→50 px в зарезервированном слоте 52 px. Проверки: 39 production Playwright + 113 Vitest; `docs/qa/test-13/refinement.md`.
+
 <!-- autopilot:end -->

@@ -355,30 +355,34 @@
   .page[data-reveal="pending"] .thaiProse { opacity: 1; }
 }
 
-/* TEST_13: native print arrives after the existing leaf/decode handoff.
-   Defaults are the final state. Shared photo beats above remain untouched. */
+/* TEST_13: pending destination captures contain only the fixed print.
+   Enter starts the editorial sequence after the existing leaf/decode handoff.
+   Static/finished states are fully visible; photo beats above stay untouched. */
 .page [data-step="0"] { --editorial-delay: 0ms; }
-.page [data-step="1"] { --editorial-delay: 180ms; }
-.page [data-step="2"] { --editorial-delay: 270ms; }
-.page [data-step="3"] { --editorial-delay: 360ms; }
-.page [data-step="4"] { --editorial-delay: 450ms; }
-.page [data-step="5"] { --editorial-delay: 540ms; }
-.page [data-step="6"] { --editorial-delay: 630ms; }
-.page [data-step="7"] { --editorial-delay: 720ms; }
+.page [data-step="1"] { --editorial-delay: 320ms; }
+.page [data-step="2"] { --editorial-delay: 480ms; }
+.page [data-step="3"] { --editorial-delay: 640ms; }
+.page [data-step="4"] { --editorial-delay: 800ms; }
+.page [data-step="5"] { --editorial-delay: 960ms; }
+.page [data-step="6"] { --editorial-delay: 1120ms; }
+.page [data-step="7"] { --editorial-delay: 1280ms; }
 .page [data-editorial="reveal"] { clip-path: none; }
-.founderIdentity h2 { --editorial-delay: 90ms; }
-.page[data-reveal="enter"] [data-editorial="reveal"] { animation: editorialReveal 480ms cubic-bezier(.16,1,.3,1) var(--editorial-delay,0ms) backwards; }
-.page[data-reveal="enter"] [data-editorial="reveal"][data-duration="multiline"] { animation-duration: 620ms; }
+.founderIdentity h2 { --editorial-delay: 160ms; }
+.page[data-reveal="enter"] [data-editorial="reveal"] { animation: editorialReveal 1000ms cubic-bezier(.22,.65,.3,1) var(--editorial-delay,0ms) backwards; }
+.page[data-reveal="enter"] [data-editorial="reveal"][data-duration="multiline"] { animation-duration: 1200ms; }
 .page[data-reveal] [data-editorial="cascade"],
 .page[data-reveal] [data-text-legacy] { opacity: 1; transform: none; animation: none; }
 .page[data-reveal="enter"] [data-editorial="cascade"],
-.page[data-reveal="enter"] [data-text-legacy]:not([data-editorial]):not([data-editorial] *) { animation: editorialCascade 340ms cubic-bezier(.16,1,.3,1) var(--editorial-delay,270ms) backwards; }
+.page[data-reveal="enter"] [data-text-legacy]:not([data-editorial]):not([data-editorial] *) { animation: editorialCascade 650ms cubic-bezier(.22,.65,.3,1) var(--editorial-delay,480ms) backwards; }
 /* A row is one semantic arrival; nested original description rules cannot lag. */
 .page[data-reveal] [data-editorial="cascade"] [data-text-legacy],
 .formatsPage[data-reveal] .formatRow > p { animation: none; opacity: 1; transform: none; }
-.page[data-reveal="pending"] :is(.nextStoryBody,.thaiProse) { opacity: 1; }
+.page[data-reveal="pending"] [data-editorial],
+.page[data-reveal="pending"] [data-text-legacy],
+.formatsPage[data-reveal="pending"] .formatRow > p,
+.page[data-reveal="pending"] :is(.nextStoryBody,.thaiProse) { opacity: 0; }
 .page[data-reveal="enter"] [data-editorial="cascade"] :is(.link,[data-editorial="cascade"]) { animation: none; }
-.page[data-reveal="enter"] :is(.formatNumber,.nextMarginal,.nextPlanning,.thaiRoute) svg { animation: editorialIcon 300ms ease-out var(--editorial-delay,270ms) backwards; }
+.page[data-reveal="enter"] :is(.formatNumber,.nextMarginal,.nextPlanning,.thaiRoute) svg { animation: editorialIcon 550ms ease-out var(--editorial-delay,480ms) backwards; }
 .page [data-draw] { position: relative; }
 .page [data-draw]::after { content: ""; position: absolute; pointer-events: none; background: var(--rule-color,currentColor); transform-origin: left center; }
 .page [data-draw="top"]::after { left: 0; right: 0; top: -1px; height: 1px; }
@@ -395,8 +399,11 @@
 .archiveEntries article { --rule-color: #7a715f; }
 .principles article { --rule-color: #bc849d; }
 .startProcess > div { --rule-color: #a26c82; }
-.page[data-reveal="enter"] [data-draw]::after { animation: editorialRule 380ms cubic-bezier(.16,1,.3,1) var(--editorial-delay,0ms) backwards; }
-.page[data-reveal="enter"] .folio::after { animation-duration: 250ms; }
+.page[data-reveal="pending"] [data-draw]::after { transform: scaleX(0); }
+.page[data-reveal="pending"] [data-draw="left"]::after { transform: scaleY(0); }
+.page[data-reveal="pending"] :is(.formatNumber,.nextMarginal,.nextPlanning,.thaiRoute) svg { opacity: 0; }
+.page[data-reveal="enter"] [data-draw]::after { animation: editorialRule 650ms cubic-bezier(.22,.65,.3,1) var(--editorial-delay,0ms) backwards; }
+.page[data-reveal="enter"] .folio::after { animation-duration: 450ms; }
 .page[data-reveal="enter"] [data-draw="left"]::after { animation-name: editorialRuleVertical; }
 .page :is(.link,.startActions > a) { position: relative; }
 .page :where(.link,.startActions > a)::before { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left center; transition: transform 190ms ease-out; pointer-events: none; }
@@ -425,6 +432,9 @@
   .page[data-reveal] [data-editorial],.page[data-reveal] [data-text-legacy],.page[data-reveal] [data-draw]::after { animation: none !important; opacity: 1; transform: none; clip-path: none; }
   .page a svg { transform: none !important; translate: none; }
   .page .link::before { transform: none !important; }
+  .formatsPage[data-reveal="pending"] .formatRow > p,
+  .page[data-reveal="pending"] :is(.nextStoryBody,.thaiProse),
+  .page[data-reveal="pending"] :is(.formatNumber,.nextMarginal,.nextPlanning,.thaiRoute) svg { opacity: 1; }
 }
 
 /* Masks rasterised from the bundled TC Golos at print resolution. */

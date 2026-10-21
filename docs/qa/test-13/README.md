@@ -46,3 +46,7 @@ npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-12-magazine.spe
 ## Isolation
 
 [protected-final.json](motion-final/protected-final.json): all **424** baseline working-byte SHA256 values match, zero mismatches. The coordinator independently confirmed zero protected old frontend changes and clean main/control worktrees. TEST_12/11/10, all other existing routes, shared code, configs, packages, assets, backend and environment files remain unchanged. Local capture/intro/turn engines and data.ts are byte-identical to TEST_12, and the motion suite verifies exact photo rules. No new dependencies, deployment or publication.
+
+## Follow-up — 21 October 2026
+
+Latest motion timings, pending-visibility flash fix, open-button placement and navigation hover: [refinement](refinement.md). Updated production browser run: **39 passed**; the 36-pass run above is the earlier baseline.

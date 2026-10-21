@@ -13,7 +13,7 @@ Independent noindex copy of `/test_12`, supported from **1100 × 700 px**. Seven
 
 ## Editorial motion
 
-Native headings reveal left to right in 480 ms (620 ms for multiline titles), with a safe final clip reset. Semantic text groups cascade in 340 ms with 8 px translation and 90 ms steps; the longest sequence completes in 1.06 s. Complete service rows keep name, description and price together. Existing rules draw over 250/380 ms using pseudo-elements and transparent borders that preserve layout. Existing Lucide icons enter once in 300 ms. Links, arrows and focus respond in 190 ms; the original CTA underline remains visible at rest and moves up 2 px. One measured navigation underline follows the displayed chapter without a second navigation state.
+Native headings reveal left to right in 1000 ms (1200 ms for multiline titles), with a safe final clip reset. Semantic text groups cascade in 650 ms with 8 px translation and 160 ms steps; the longest sequence completes in 1.93 s. Complete service rows keep name, description and price together. Existing rules draw over 450/650 ms using pseudo-elements and transparent borders that preserve layout. Existing Lucide icons enter once in 550 ms. Links, arrows and focus respond in 190 ms; the original CTA underline remains visible at rest and moves up 2 px. One measured navigation underline follows the displayed chapter without a second navigation state.
 
 | Chapter | Reveal and text groups | Rules and response |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Native headings reveal left to right in 480 ms (620 ms for multiline titles), wi
 | Archive | ARCHIVE and То, что остаётся; introduction, complete entries, caveat, CTA | Entry/folio rules; original contact prints |
 | Start | Не только куда and Начнём с разговора; principles, process, CTA, prototype note | Principle/process/folio rules; link arrows and underline |
 
-The existing `ReadingTurn.onComplete` → `finish` and `introComplete` set `reveal=enter` after leaf/decode handoff. Static capture remains fully printed; pending does not hide new text. Finite backwards-fill animations return to visible base CSS without animationend callbacks. Resize, hover and indicator measurements do not replay them; revisiting a chapter does. Reduced motion disables the new animations/transitions, resets clip/opacity/transforms, and interrupts an active turn. Indicator measurements use ResizeObserver, font readiness and scroll events with cleanup; there is no idle animation loop.
+The existing `ReadingTurn.onComplete` → `finish` and `introComplete` set `reveal=enter` after leaf/decode handoff. Static capture remains fully printed; pending hides incoming editorial text/icons/drawn rules before the captured leaf and live handoff while retaining fixed labels. Finite backwards-fill animations return to visible base CSS without animationend callbacks. Resize, hover and indicator measurements do not replay them; revisiting a chapter does. Reduced motion disables the new animations/transitions, resets clip/opacity/transforms, and interrupts an active turn. Indicator measurements use ResizeObserver, font readiness and scroll events with cleanup; there is no idle animation loop.
 
 ## Content and constraints
 
@@ -45,7 +45,11 @@ npm.cmd run typecheck
 npm.cmd test -- --run --testTimeout=15000
 npm.cmd run build
 $env:PLAYWRIGHT_BASE_URL='http://localhost:3114'
-npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-12-magazine.spec.ts e2e/test-12-review-comments.spec.ts e2e/test-11-reveal.spec.ts e2e/test-10-magazine.spec.ts -- --workers=2
+npm.cmd exec playwright test e2e/test-13-refinement.spec.ts e2e/test-13-motion.spec.ts e2e/test-12-magazine.spec.ts e2e/test-12-review-comments.spec.ts e2e/test-11-reveal.spec.ts e2e/test-10-magazine.spec.ts -- --workers=2
 ```
 
 Coordinator results: lint/typecheck passed, Vitest 113 passed in 26 files, isolated Docker production build passed. Final production Playwright suite after the underline correction: 36 passed (1.1 minutes). The CTA regression failed on the missing rest underline before the CSS specificity correction, then passed with a visible 1 px rest line, 2 px hover movement, unchanged bounds and reduced-motion static line. Independent browser acceptance and scoped source review passed. Final commands/logs, frame comparisons and limitations: [QA evidence](../../../../docs/qa/test-13/README.md).
+
+## Refinement — 21 October 2026
+
+Pending content is hidden until enter, eliminating the visible-hidden-visible flash. The open button sits directly below the cover. Chapter buttons rise from 44 to 50 px inside a fixed navigation slot, keeping the book and indicator steady. Full cause, regression and current verification: [refinement](../../../../docs/qa/test-13/refinement.md).
