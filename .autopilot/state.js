@@ -10,8 +10,8 @@ window.STATE = {
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-21T15:56:29+03:00",
-  "updatedAt": "2026-10-22T02:03:22+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-22T02:05:12+03:00",
+  "finishedAt": "2026-10-22T02:05:12+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -60,18 +60,19 @@ window.STATE = {
     },
     {
       "id": "final",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-10-22T02:03:22+03:00",
-      "note": "All implementation and checks complete; finalizing run metadata, commit and push to the authorized feature branch."
+      "finishedAt": "2026-10-22T02:05:12+03:00",
+      "note": "Feature commit and final run record are published to the authorized feature branch; main was not changed and no PR was opened."
     }
   ],
   "requirements": {
     "deferred": 0,
     "inSpec": 0,
-    "inTicket": 1,
+    "inTicket": 0,
     "total": 24,
     "placeholder": 0,
-    "done": 23,
+    "done": 24,
     "dropped": 0
   },
   "tickets": [
@@ -286,7 +287,8 @@ window.STATE = {
     "typecheck": "passed",
     "productionBuild": "passed; all 38 routes generated",
     "backend": "pytest 156 passed; Ruff passed; Alembic emits one path_separator deprecation warning",
-    "runtime": "G4 and focused Playwright confirmed login return-to, protected home, completed-interview versions and Research UI; research.spec.ts 3 passed; filter alignment 1 passed"
+    "runtime": "G4 and focused Playwright confirmed login return-to, protected home, completed-interview versions and Research UI; research.spec.ts 3 passed; filter alignment 1 passed",
+    "published": "codex/research-page-improvements; feature commit d7566be99da5cfdff595cadbd8e99b7eedc2d96d; main unchanged at 16ae8110ea9e702821ec58978873b1537e6c0934; no PR"
   },
   "debt": {
     "assumptions": [],
@@ -301,7 +303,7 @@ window.STATE = {
   },
   "concerns": [
     "craft_review T03: existing backend CAS concurrency test does not synchronize at the read boundary; behavior is protected by row locking, but test may pass sequentially.",
-      "T05: Vitest/JSDOM does not simulate native keyboard activation of <summary>; native details/summary semantics and click behavior remain intact.",
+    "T05: Vitest/JSDOM does not simulate native keyboard activation of <summary>; native details/summary semantics and click behavior remain intact.",
     "G4 observed wrapped labels in the separate new-respondent screening form; T08 was removed after Manifest+Spec review confirmed that R07 is scoped to the filter panel.",
     "T07 craft review: progress reconciliation currently checks the mounted textarea value before accepting initialization updates; non-blocking suggestion to make the source explicit.",
     "T07 craft review: E2E checks the progress fill transform as a DOMMatrix; accessible progress value is also asserted, but a future test could use rendered geometry."
@@ -311,5 +313,12 @@ window.STATE = {
     "craft": "/root/research_craft_review",
     "blind": "/root/blind_acceptance"
   },
-  "blind": null
+  "blind": null,
+  "git": {
+    "branch": "codex/research-page-improvements",
+    "featureCommit": "d7566be99da5cfdff595cadbd8e99b7eedc2d96d",
+    "pushed": true,
+    "mainBaseline": "16ae8110ea9e702821ec58978873b1537e6c0934",
+    "pullRequest": false
+  }
 };

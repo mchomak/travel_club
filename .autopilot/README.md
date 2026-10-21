@@ -46,4 +46,4 @@
 
 | 2026-10-19 | `2026-10-19-tc-research` | сдан 20 октября | TC Research: CustDev-интервью, JSON-банк, PostgreSQL, autosave, XLSX; 130 frontend tests, 149 backend tests, 2/2 browser acceptance; домен/VPS требуют настройки. |
 
-| 2026-10-21 | `2026-10-21-research-page-improvements` | готов к push | Авторизация и каталог `/home`, исправления Research и неизменяемые версии интервью; проверки пройдены, отдельная ветка ожидает публикации. |
+| 2026-10-21 | `2026-10-21-research-page-improvements` | сдан | Авторизация и каталог `/home`, исправления Research и неизменяемые версии интервью; 161 frontend / 156 backend tests, build и browser checks пройдены; commit `d7566be` опубликован в `codex/research-page-improvements`. |
