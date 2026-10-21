@@ -44,6 +44,4 @@
 
 | 2026-10-19 | `2026-10-19-test-11-comments` | сдан | Девять комментариев: новые фото, туман и слоган, услуги, Thailand, принципы и процесс; push main, production rebuild и browser acceptance. |
 
-| 2026-10-19 | `2026-10-19-tc-research` | сдан 20 октября | TC Research: CustDev-интервью, JSON-банк, PostgreSQL, autosave, XLSX; 130 frontend tests, 149 backend tests, 2/2 browser acceptance; домен/VPS требуют настройки. |
-
-| 2026-10-21 | `2026-10-21-research-page-improvements` | сдан | Авторизация и каталог `/home`, исправления Research и неизменяемые версии интервью; 161 frontend / 156 backend tests, build и browser checks пройдены; commit `d7566be` опубликован в `codex/research-page-improvements`. |
+| 2026-10-20 | `2026-10-20-test-12` | сдан | Семь глав, основатели, продукты и обложка; codex/test-12, отдельный production preview 3013; 36 browser + 113 unit, push и rebuild. |

@@ -1,73 +1,74 @@
-window.STATE = {
-  "slug": "research-page-improvements",
-  "dir": "2026-10-21-research-page-improvements",
-  "title": "Доработки Research и навигация",
+window.STATE =
+{
+  "slug": "test-12",
+  "dir": "2026-10-20-test-12",
+  "title": "Travel Club TEST_12",
   "mode": "full",
   "depth": "normal",
   "polish": null,
-  "tier": "T2",
-  "briefFile": "2026-10-21-brief.md",
+  "tier": "T1",
+  "briefFile": "2026-10-20-brief.md",
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
-  "startedAt": "2026-10-21T15:56:29+03:00",
-  "updatedAt": "2026-10-22T02:05:12+03:00",
-  "finishedAt": "2026-10-22T02:05:12+03:00",
+  "startedAt": "2026-10-20T02:25:14+03:00",
+  "updatedAt": "2026-10-20T05:10:56+03:00",
+  "finishedAt": "2026-10-20T05:10:56+03:00",
   "stages": [
     {
       "id": "preflight",
       "status": "done",
-      "startedAt": "2026-10-21T15:56:29+03:00",
-      "finishedAt": "2026-10-21T15:57:17+03:00"
+      "startedAt": "2026-10-20T02:25:14+03:00",
+      "finishedAt": "2026-10-20T02:27:06+03:00"
     },
     {
       "id": "manifest",
       "status": "done",
-      "startedAt": "2026-10-21T15:57:17+03:00",
-      "finishedAt": "2026-10-21T16:01:03+03:00"
+      "startedAt": "2026-10-20T02:25:14+03:00",
+      "finishedAt": "2026-10-20T02:27:06+03:00"
     },
     {
       "id": "briefing",
       "status": "skipped",
-      "startedAt": "2026-10-21T16:01:03+03:00",
-      "note": "Полный режим — самобрифинг; решения и допущения внесены в манифест."
+      "note": "Full mode; self-briefing, no blocking unknowns."
     },
     {
       "id": "spec",
       "status": "done",
-      "startedAt": "2026-10-21T16:02:26+03:00",
-      "finishedAt": "2026-10-21T16:17:27+03:00"
+      "startedAt": "2026-10-20T02:27:06+03:00",
+      "finishedAt": "2026-10-20T02:28:04+03:00"
     },
     {
       "id": "plan",
       "status": "done",
-      "startedAt": "2026-10-21T16:17:27+03:00",
-      "finishedAt": "2026-10-21T16:25:40+03:00",
-      "note": "4 задачи, T2; одна параллельная волна"
+      "startedAt": "2026-10-20T02:28:04+03:00",
+      "finishedAt": "2026-10-20T02:28:04+03:00"
     },
     {
       "id": "build",
       "status": "done",
-      "startedAt": "2026-10-21T16:25:40+03:00",
-      "finishedAt": "2026-10-22T02:03:22+03:00",
-      "note": "Frontend and backend checks passed; production build and browser regressions passed."
+      "startedAt": "2026-10-20T02:28:04+03:00",
+      "note": "1 of 3 done; editorial and acceptance run in parallel.",
+      "finishedAt": "2026-10-20T05:02:04+03:00"
     },
     {
       "id": "review",
       "status": "done",
-      "startedAt": "2026-10-21T16:42:34+03:00",
-      "finishedAt": "2026-10-22T02:03:22+03:00",
-      "note": "Manifest/spec and craft reviews complete; T07 has no blocking findings."
+      "startedAt": "2026-10-20T02:34:53+03:00",
+      "note": "Editorial review; browser acceptance continues.",
+      "finishedAt": "2026-10-20T05:02:04+03:00"
     },
     {
       "id": "final",
       "status": "done",
-      "startedAt": "2026-10-22T02:03:22+03:00",
-      "finishedAt": "2026-10-22T02:05:12+03:00",
-      "note": "Feature commit and final run record are published to the authorized feature branch; main was not changed and no PR was opened."
+      "startedAt": "2026-10-20T05:02:04+03:00",
+      "note": "Production checks and blind acceptance; source complete.",
+      "finishedAt": "2026-10-20T05:10:56+03:00"
     }
   ],
   "requirements": {
-    "deferred": 0,
+    "total": 73,
+    "done": 73,
+    "inTicket": 0,
     "inSpec": 0,
     "inTicket": 0,
     "total": 24,
@@ -78,247 +79,309 @@ window.STATE = {
   "tickets": [
     {
       "id": "01",
-      "title": "Возврат после входа и каталог страниц",
+      "title": "Independent shell, cover and contents",
       "requirements": [
         "R01",
         "R02",
         "R03",
         "R04",
         "R05",
-        "R06"
-      ],
-      "blockedBy": [],
-      "wave": 1,
-      "zone": [
-        "frontend/src/proxy.ts",
-        "frontend/src/lib/server-auth.ts",
-        "frontend/src/components/login-form.tsx",
-        "frontend/src/app/admin/login/",
-        "frontend/src/app/home/"
-      ],
-      "status": "done",
-      "startedAt": "2026-10-21T16:25:40+03:00",
-      "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "finishedAt": "2026-10-21T17:01:16+03:00",
-      "tests": "Frontend Vitest 159 passed; lint/typecheck passed; proxy path/query boundary test 2 passed; production build pending."
-    },
-    {
-      "id": "02",
-      "title": "Список и карточка респондента",
-      "requirements": [
+        "R06",
         "R07",
         "R08",
         "R09",
         "R10",
         "R11",
         "R12",
-        "R18",
-        "R19",
-        "R20",
-        "R21"
+        "R13",
+        "R14",
+        "R15",
+        "R16",
+        "R53",
+        "R54",
+        "R55",
+        "R56",
+        "R57",
+        "R58",
+        "R59",
+        "R65",
+        "R66",
+        "R67",
+        "R68",
+        "G01"
       ],
       "blockedBy": [],
       "wave": 1,
       "zone": [
-        "frontend/src/components/research/respondent-list.tsx",
-        "respondent-new.tsx",
-        "screening-form.tsx",
-        "research.module.css",
-        "age-range.ts",
-        "frontend/src/app/research/layout.tsx"
+        "test_12 shell"
+      ],
+      "status": "done",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0,
+      "startedAt": "2026-10-20T02:28:04+03:00",
+      "commit": "1ebea32",
+      "finishedAt": "2026-10-20T02:35:16+03:00",
+      "tests": {
+        "unit": 113,
+        "lint": "passed",
+        "typecheck": "passed",
+        "browserSmoke": "passed"
+      }
+    },
+    {
+      "id": "02",
+      "title": "Seven editorial chapters and founders",
+      "requirements": [
+        "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R21",
+        "R22",
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R27",
+        "R28",
+        "R29",
+        "R30",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "R41",
+        "R42",
+        "R43",
+        "R44",
+        "R45",
+        "R46",
+        "R47",
+        "R48",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R54",
+        "R55",
+        "R56",
+        "R57",
+        "R58",
+        "R59",
+        "R60",
+        "R61",
+        "R62",
+        "R63",
+        "R64",
+        "R66",
+        "R67",
+        "R68",
+        "R69",
+        "R70",
+        "G02"
+      ],
+      "blockedBy": [
+        "01"
+      ],
+      "wave": 2,
+      "zone": [
+        "test_12 spreads/data"
       ],
       "status": "done",
       "startedAt": "2026-10-21T16:25:40+03:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "tests": "Manifest+Spec review clean; craft findings repaired; exact 16-city test 5 passed.",
-      "finishedAt": "2026-10-21T17:12:39.0155458+03:00"
+      "startedAt": "2026-10-20T02:35:16+03:00",
+      "tests": {
+        "unit": 113,
+        "lint": "passed",
+        "typecheck": "passed",
+        "viewports": "passed"
+      },
+      "finishedAt": "2026-10-20T05:02:37+03:00",
+      "commit": "de93a1f"
     },
     {
       "id": "03",
-      "title": "Хранение и API версий анкет",
+      "title": "Browser and visual acceptance",
       "requirements": [
-        "R14",
-        "R15",
-        "R16",
-        "R17"
-      ],
-      "blockedBy": [],
-      "wave": 1,
-      "zone": [
-        "backend/app/",
-        "backend/migrations/",
-        "backend/tests/"
-      ],
-      "status": "done",
-      "startedAt": "2026-10-21T16:25:40+03:00",
-      "retries": 0,
-      "repairs": 2,
-      "handoffs": 0,
-      "note": "Second blocking repair: new Alembic revision creates a second head; attach it to current head and prove the graph is linear.",
-      "finishedAt": "2026-10-22T00:30:00+03:00",
-      "tests": "Clean isolated PostgreSQL migration startup; Alembic single head; backend pytest 156 passed; Ruff passed; re-reviews clean."
-    },
-    {
-      "id": "04",
-      "title": "Редактирование, прогресс и версии интервью",
-      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
         "R11",
+        "R12",
         "R13",
         "R14",
         "R15",
         "R16",
         "R17",
+        "R18",
+        "R19",
+        "R20",
+        "R21",
         "R22",
-        "R24"
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R27",
+        "R28",
+        "R29",
+        "R30",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "R41",
+        "R42",
+        "R43",
+        "R44",
+        "R45",
+        "R46",
+        "R47",
+        "R48",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53",
+        "R54",
+        "R55",
+        "R56",
+        "R57",
+        "R58",
+        "R59",
+        "R60",
+        "R61",
+        "R62",
+        "R63",
+        "R64",
+        "R65",
+        "R66",
+        "R67",
+        "R68",
+        "R69",
+        "R70",
+        "G01",
+        "G02",
+        "G03"
       ],
-      "blockedBy": [],
-      "wave": 1,
-      "zone": [
-        "frontend/src/components/research/respondent-detail.tsx",
-        "answer-card.tsx",
-        "frontend/src/lib/research.ts"
+      "blockedBy": [
+        "01"
       ],
-      "status": "done",
-      "startedAt": "2026-10-21T16:25:40+03:00",
-      "retries": 0,
-      "repairs": 1,
-      "handoffs": 0,
-      "finishedAt": "2026-10-22T00:30:00+03:00",
-      "tests": "Frontend snapshot contract and autosave tests passed; manifest/spec and craft re-reviews clean."
-    },
-    {
-      "id": "05",
-      "title": "Blind acceptance accessibility repairs",
-      "requirements": [
-        "R10",
-        "R12"
-      ],
-      "blockedBy": [],
-      "wave": 1,
-      "zone": [
-        "frontend/src/components/research/respondent-list.tsx",
-        "frontend/src/components/research/answer-card.tsx",
-        "frontend/src/components/research/respondent-detail.tsx",
-        "frontend/src/components/research/research.module.css"
-      ],
-      "status": "done",
-      "startedAt": "2026-10-22T00:02:05+03:00",
-      "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "finishedAt": "2026-10-22T00:30:00+03:00",
-      "tests": "Focused Research tests 24 passed across 4 files; lint/typecheck passed; manifest/spec and craft re-reviews report no blockers."
-    },
-    {
-      "id": "06",
-      "title": "Align Research filter labels and controls",
-      "requirements": [
-        "R07"
-      ],
-      "blockedBy": [],
       "wave": 2,
       "zone": [
-        "frontend/src/components/research/respondent-list.tsx",
-        "frontend/src/components/research/research.module.css",
-        "frontend/e2e/research.spec.ts"
+        "test-12 tests/docs"
       ],
       "status": "done",
-      "startedAt": "2026-10-22T00:30:00+03:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "finishedAt": "2026-10-22T11:20:00+03:00",
-      "tests": "Focused geometry browser test passed; final G4 confirmed all four toolbar controls aligned at desktop and vertically stacked at 390px."
-    },
-    {
-      "id": "07",
-      "title": "Keep live interview progress and align Research E2E flows",
-      "requirements": [
-        "R01",
-        "R15",
-        "R17",
-        "R22"
-      ],
-      "blockedBy": [],
-      "wave": 3,
-      "zone": [
-        "frontend/src/components/research/respondent-detail.tsx",
-        "frontend/e2e/research.spec.ts",
-        "focused tests for these flows"
-      ],
-      "status": "done",
-      "startedAt": "2026-10-22T11:30:00+03:00",
-      "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "finishedAt": "2026-10-22T02:03:22+03:00",
-      "tests": "research.spec.ts: 3 passed; filter alignment: 1 passed; Vitest 38 files/161 passed; lint, typecheck, production build passed; spec review PASS; craft review has no blockers."
-    },
-    {
-      "id": "08",
-      "title": "Keep Research screening labels and controls aligned",
-      "requirements": [
-        "R07"
-      ],
-      "blockedBy": [],
-      "wave": 3,
-      "zone": [
-        "frontend/src/components/research/screening-form.tsx",
-        "frontend/src/components/research/research.module.css",
-        "screening-form tests or focused browser coverage"
-      ],
-      "status": "dropped",
-      "startedAt": "2026-10-22T11:30:00+03:00",
-      "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "finishedAt": "2026-10-22T13:20:00+03:00",
-      "note": "Manifest+Spec review found screening-form alignment outside the R07 filter-panel scope; T08 CSS and browser test were removed."
+      "startedAt": "2026-10-20T02:35:16+03:00",
+      "commit": "bf17f3d",
+      "finishedAt": "2026-10-20T05:10:56+03:00",
+      "tests": {
+        "productionBrowser": 36,
+        "postPushBrowser": 4,
+        "productionCaptures": 39,
+        "controlComparisons": 15,
+        "unit": 113
+      }
     }
   ],
   "singlePass": null,
   "tests": {
-    "frontendVitest": "38 files, 161 passed",
+    "unit": 113,
+    "unitFiles": 26,
     "lint": "passed",
     "typecheck": "passed",
-    "productionBuild": "passed; all 38 routes generated",
-    "backend": "pytest 156 passed; Ruff passed; Alembic emits one path_separator deprecation warning",
-    "runtime": "G4 and focused Playwright confirmed login return-to, protected home, completed-interview versions and Research UI; research.spec.ts 3 passed; filter alignment 1 passed",
-    "published": "codex/research-page-improvements; feature commit d7566be99da5cfdff595cadbd8e99b7eedc2d96d; main unchanged at 16ae8110ea9e702821ec58978873b1537e6c0934; no PR"
+    "productionBuild": "passed, Docker Next36routes",
+    "devBrowser": 13,
+    "devCaptures": 39,
+    "protectedFilesUnchanged": 367,
+    "productionCaptures": 39,
+    "controlComparisons": 15,
+    "productionBrowser": 36,
+    "productionNew": 13,
+    "productionRegression": 23,
+    "productionHTTP": 200,
+    "finalLint": "passed",
+    "finalTypecheck": "passed",
+    "finalUnit": 113,
+    "postPushBrowser": 4,
+    "postPushHTTP": 200
   },
   "debt": {
-    "assumptions": [],
-    "emptyEnv": [],
-    "placeholders": []
+    "placeholders": [
+      "Two verified founder portraits."
+    ],
+    "assumptions": [
+      "Isolated codex/test-12 branch; preview on its own port.",
+      "Founder portraits not available: honest replaceable placeholders."
+    ],
+    "emptyEnv": []
   },
   "additions": [],
   "coverage": {
-    "found": 5,
-    "fixed": 5,
-    "deferred": 0
+    "found": 6,
+    "fixed": 6,
+    "deferred": 0,
+    "agent": "/root/coverage",
+    "note": "Added explicit preliminary audit, benefits, organisation experience, generic transitions, interaction, unavailable checks. Implementation decisions are not added capabilities; appended authorization encoding repaired.",
+    "verdict": "PASS on independent reread; zero missing requirements"
   },
   "concerns": [
-    "craft_review T03: existing backend CAS concurrency test does not synchronize at the read boundary; behavior is protected by row locking, but test may pass sequentially.",
-    "T05: Vitest/JSDOM does not simulate native keyboard activation of <summary>; native details/summary semantics and click behavior remain intact.",
-    "G4 observed wrapped labels in the separate new-respondent screening form; T08 was removed after Manifest+Spec review confirmed that R07 is scoped to the filter panel.",
-    "T07 craft review: progress reconciliation currently checks the mounted textarea value before accepting initialization updates; non-blocking suggestion to make the source explicit.",
-    "T07 craft review: E2E checks the progress fill transform as a DOMMatrix; accessible progress value is also asserted, but a future test could use rendered geometry."
+    {
+      "item": "Missing CSS module class and copied README",
+      "verdict": "fixed and independently reviewed"
+    },
+    {
+      "item": "Capture leaf-bound checks do not alone exclude nested clipping",
+      "verdict": "closed with personal visual review of changed pages in all3sizes and control contact sheet"
+    },
+    {
+      "item": "favicon404/CSS preload/Canvas warnings in blind run",
+      "verdict": "report; noncritical existing runtime observations, no application failure"
+    }
   ],
   "reviewers": {
-    "manifestSpec": "/root/research_manifest_spec_review",
-    "craft": "/root/research_craft_review",
-    "blind": "/root/blind_acceptance"
+    "manifestSpec": "/root/requirements",
+    "craft": "/root/craft"
+  },
+  "blind": {
+    "agent": "/root/blind",
+    "verdict": "PASS; source committed, pushed, production rebuilt after push",
+    "drift": [],
+    "evidence": "docs/qa/test-12/blind-acceptance.md",
+    "remaining": null
   },
   "blind": null,
   "git": {
-    "branch": "codex/research-page-improvements",
-    "featureCommit": "d7566be99da5cfdff595cadbd8e99b7eedc2d96d",
-    "pushed": true,
-    "mainBaseline": "16ae8110ea9e702821ec58978873b1537e6c0934",
-    "pullRequest": false
+    "branch": "codex/test-12",
+    "sourceCommit": "bf17f3d5409c50cddf9d6f32c22b0ea0199a396e",
+    "sourcePush": "remote HEAD matched source commit",
+    "postPushRebuild": "Docker production build exit0, isolated container restarted, HTTP200,4browser smoke passed",
+    "preview": "http://localhost:3013/test_12"
   }
 };
