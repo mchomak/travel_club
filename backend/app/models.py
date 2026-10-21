@@ -295,3 +295,20 @@ class ResearchAnswer(Base):
         UniqueConstraint("interview_id", "question_code", name="uq_research_answer_question"),
         CheckConstraint("revision > 0", name="research_answer_revision"),
     )
+
+
+class ResearchInterviewVersion(Base):
+    __tablename__ = "research_interview_versions"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    interview_id: Mapped[UUID] = mapped_column(
+        ForeignKey("research_interviews.id", ondelete="CASCADE")
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    snapshot: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    __table_args__ = (
+        UniqueConstraint("interview_id", "version_number", name="uq_research_interview_version"),
+        CheckConstraint("version_number > 0", name="research_interview_version_number"),
+    )

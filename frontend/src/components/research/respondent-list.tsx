@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Download, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { ResearchApiError, ResearchCategory, RespondentList, RespondentSummary, researchApi } from "@/lib/research";
+import { formatAgeRange } from "./age-range";
 import styles from "./research.module.css";
 
 const categories: { code: ResearchCategory; label: string }[] = [
@@ -15,6 +17,7 @@ const categoryLabel = (code: ResearchCategory) => categories.find((category) => 
 const dateLabel = (value: string) => new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 export function RespondentListPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
@@ -69,7 +72,7 @@ export function RespondentListPage() {
     </div>}
 
     <section className={`${styles.panel} ${styles.toolbar}`} aria-label="Поиск и фильтры">
-      <label className={styles.label}><span>Поиск по имени</span><div className={styles.inlineActions}><Search size={17} aria-hidden /><input className={styles.input} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Имя или псевдоним" /></div></label>
+      <label className={styles.label}><span>Поиск по имени</span><div className={`${styles.inlineActions} ${styles.searchControl}`}><Search size={17} aria-hidden /><input className={styles.input} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Имя или псевдоним" /></div></label>
       <label className={styles.label}><span>Категория</span><select className={styles.select} value={category} onChange={(event) => { setCategory(event.target.value); setPage(1); }}><option value="">Все категории</option>{categories.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}</select></label>
       <label className={styles.label}><span>Статус</span><select className={styles.select} value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="">Все статусы</option><option value="draft">Анкета</option><option value="in_progress">В процессе</option><option value="completed">Завершено</option></select></label>
       <label className={styles.label}><span><SlidersHorizontal size={14} aria-hidden /> Сортировка</span><select className={styles.select} value={`${sort}:${order}`} onChange={(event) => { const [nextSort, nextOrder] = event.target.value.split(":"); setSort(nextSort); setOrder(nextOrder); }}><option value="updated_at:desc">Недавно изменялись</option><option value="created_at:desc">Сначала новые</option><option value="created_at:asc">Сначала старые</option><option value="updated_at:asc">Давно не менялись</option></select></label>
@@ -84,21 +87,30 @@ export function RespondentListPage() {
       </div> : <div className={`${styles.panel} ${styles.tableWrap}`}>
         <table className={styles.table}>
           <thead><tr><th>Имя</th><th>Возраст</th><th>Город</th><th>Категория</th><th>Статус</th><th>Последнее изменение</th></tr></thead>
-          <tbody>{result.items.map((respondent: RespondentSummary) => <tr key={respondent.id}>
-            <td><Link className={styles.rowLink} href={`/research/${respondent.id}`}>{respondent.name}</Link></td>
-            <td>{respondent.age_range || <span className={styles.muted}>—</span>}</td><td>{respondent.city || <span className={styles.muted}>—</span>}</td>
+          <tbody>{result.items.map((respondent: RespondentSummary) => {
+            const href = `/research/${respondent.id}`;
+            return <tr key={respondent.id} tabIndex={0} aria-label={`Открыть карточку респондента ${respondent.name}`} onClick={() => router.push(href)} onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push(href);
+              }
+            }}>
+            <td><Link className={styles.rowLink} href={href} aria-label={`Открыть карточку респондента ${respondent.name}`} onClick={(event) => event.stopPropagation()}>{respondent.name}</Link></td>
+            <td>{respondent.age_range ? formatAgeRange(respondent.age_range) : <span className={styles.muted}>—</span>}</td><td>{respondent.city || <span className={styles.muted}>—</span>}</td>
             <td className={styles.category}>{categoryLabel(respondent.final_category)}{respondent.category_override ? " · вручную" : ""}</td>
             <td><span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span></td><td>{dateLabel(respondent.updated_at)}</td>
-          </tr>)}</tbody>
+          </tr>;
+          })}</tbody>
         </table>
         <div className={styles.mobileCards} role="list" aria-label="Респонденты">
-          {result.items.map((respondent: RespondentSummary) => <article key={respondent.id} className={styles.mobileCard} role="listitem" aria-label={"Респондент " + respondent.name}>
+          {result.items.map((respondent: RespondentSummary) => <article key={respondent.id} className={styles.mobileCard} role="listitem" aria-label={"Респондент " + respondent.name} onClick={() => router.push(`/research/${respondent.id}`)}>
             <div className={styles.mobileCardHead}>
-              <Link className={styles.rowLink} href={"/research/" + respondent.id}>{respondent.name}</Link>
+              <Link className={styles.rowLink} href={"/research/" + respondent.id} aria-label={`Открыть карточку респондента ${respondent.name}`} onClick={(event) => event.stopPropagation()}>{respondent.name}</Link>
               <span className={styles.badge} data-status={respondent.status}>{statusLabel[respondent.status]}</span>
             </div>
             <dl className={styles.mobileCardDetails}>
-              <div><dt>Возраст</dt><dd>{respondent.age_range || "—"}</dd></div>
+              <div><dt>Возраст</dt><dd>{respondent.age_range ? formatAgeRange(respondent.age_range) : "—"}</dd></div>
               <div><dt>Город</dt><dd>{respondent.city || "—"}</dd></div>
               <div><dt>Категория</dt><dd>{categoryLabel(respondent.final_category)}{respondent.category_override ? " · вручную" : ""}</dd></div>
               <div><dt>Последнее изменение</dt><dd>{dateLabel(respondent.updated_at)}</dd></div>

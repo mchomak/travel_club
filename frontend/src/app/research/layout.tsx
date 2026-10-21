@@ -12,7 +12,7 @@ export default async function ResearchLayout({ children }: { children: React.Rea
     <header className={styles.shell}>
       <nav className={styles.topbar} aria-label="TC Research">
         <Link className={styles.brand} href="/research"><span className={styles.brandMark}>TC</span>TC Research</Link>
-        <div className={styles.topLinks}><Link className={styles.topLink} href="/research">Респонденты</Link><Link className={styles.topLink} href="/admin/trips"><ArrowLeft size={15} aria-hidden /> Travel Club</Link></div>
+        <div className={styles.topLinks}><Link className={styles.topLink} href="/research">Респонденты</Link><Link className={styles.topLink} href="/home">Главная</Link><Link className={styles.topLink} href="/admin/trips"><ArrowLeft size={15} aria-hidden /> Travel Club</Link></div>
       </nav>
     </header>
     <main className={styles.shell}>{children}</main>

@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, CircleAlert, CircleCheck, CloudOff, LoaderCircle, Save } from "lucide-react";
 import { AnswerVersion, ResearchApiError, ResearchQuestion, clearAnswerDraft, readAnswerDraft, registerAnswerFlusher, researchApi, writeAnswerDraft } from "@/lib/research";
 import styles from "./research.module.css";
 
 type SaveState = "idle" | "saved" | "dirty" | "saving" | "offline" | "error" | "conflict";
+type AnswerSaveMode = "autosave" | "manual" | "readonly";
+const MIN_ANSWER_HEIGHT = 150;
+const MAX_ANSWER_HEIGHT = 440;
 
-export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChange }: {
-  interviewId: string; question: ResearchQuestion; initialAnswer: AnswerVersion | null; onAnswerChange?: (code: string, value: string) => void;
+export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChange, saveMode = "autosave" }: {
+  interviewId: string; question: ResearchQuestion; initialAnswer: AnswerVersion | null;
+  onAnswerChange?: (code: string, value: string) => void; saveMode?: AnswerSaveMode;
 }) {
-  const storedDraft = readAnswerDraft(interviewId, question.code);
+  const storedDraft = saveMode === "autosave" ? readAnswerDraft(interviewId, question.code) : null;
   const serverText = initialAnswer?.answer_text ?? "";
   const draftIsNewer = storedDraft !== null && (!initialAnswer?.updated_at || Date.parse(storedDraft.updated_at) > Date.parse(initialAnswer.updated_at));
   const initialText = draftIsNewer ? storedDraft.answer_text : serverText;
@@ -29,9 +33,29 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
   const draftAvailableRef = useRef(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(draftIsNewer);
   const [conflict, setConflict] = useState<AnswerVersion | null | undefined>(undefined);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const resizeTextarea = useCallback((textarea = textareaRef.current) => {
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    const contentHeight = textarea.scrollHeight;
+    const computed = window.getComputedStyle(textarea);
+    const minHeight = Number.parseFloat(computed.minHeight) || MIN_ANSWER_HEIGHT;
+    const maxHeight = Math.max(minHeight, Number.parseFloat(computed.maxHeight) || MAX_ANSWER_HEIGHT);
+    textarea.style.height = `${Math.max(minHeight, Math.min(contentHeight, maxHeight))}px`;
+    textarea.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
+  }, []);
+
+  useLayoutEffect(resizeTextarea, [resizeTextarea, value]);
+  useEffect(() => {
+    const handleWindowResize = () => resizeTextarea();
+    window.addEventListener("resize", handleWindowResize);
+    return () => window.removeEventListener("resize", handleWindowResize);
+  }, [resizeTextarea]);
 
   const flushRef = useRef<() => Promise<boolean>>(async () => false);
   const flush = useCallback(async (): Promise<boolean> => {
+    if (saveMode !== "autosave") return true;
     if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     if (inflightRef.current) {
       retryRef.current = true;
@@ -84,23 +108,27 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     }
     retryRef.current = false;
     return result;
-  }, [interviewId, question.code]);
+  }, [interviewId, question.code, saveMode]);
   useEffect(() => { flushRef.current = flush; }, [flush]);
 
   useEffect(() => {
-    const unregister = registerAnswerFlusher(
-      interviewId,
-      () => flushRef.current(),
-      () => sequenceRef.current !== savedSequenceRef.current,
-    );
-    if (draftIsNewer) void flushRef.current();
-    onAnswerChange?.(question.code, initialText);
-    return unregister;
+    if (saveMode === "autosave") {
+      const unregister = registerAnswerFlusher(
+        interviewId,
+        () => flushRef.current(),
+        () => sequenceRef.current !== savedSequenceRef.current,
+      );
+      if (draftIsNewer) void flushRef.current();
+      onAnswerChange?.(question.code, initialText);
+      return unregister;
+    }
+    if (saveMode === "manual") onAnswerChange?.(question.code, initialText);
   // Initial reconciliation must run only once for a newly opened question.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interviewId, question.code, initialText, onAnswerChange]);
+  }, [interviewId, question.code, initialText, onAnswerChange, saveMode]);
 
   useEffect(() => {
+    if (saveMode !== "autosave") return;
     const onOnline = () => { if (sequenceRef.current !== savedSequenceRef.current) void flushRef.current(); };
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (sequenceRef.current !== savedSequenceRef.current) { event.preventDefault(); event.returnValue = ""; }
@@ -108,16 +136,22 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     window.addEventListener("online", onOnline);
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => { window.removeEventListener("online", onOnline); window.removeEventListener("beforeunload", onBeforeUnload); };
-  }, []);
+  }, [saveMode]);
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const changeValue = (next: string) => {
+    if (saveMode === "readonly") return;
     valueRef.current = next;
     onAnswerChange?.(question.code, next);
+    setValue(next);
+    if (saveMode === "manual") {
+      setHasUnsavedChanges(true);
+      setState("dirty");
+      return;
+    }
     sequenceRef.current += 1;
     setHasUnsavedChanges(true);
-    setValue(next);
     setState(conflictRef.current ? "conflict" : "dirty");
     const draftStored = writeAnswerDraft(interviewId, question.code, next);
     draftAvailableRef.current = draftStored;
@@ -168,7 +202,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     </div>
     <h3>{question.text}</h3>
     <label className={styles.srOnly} htmlFor={`answer-${question.code}`}>Ответ {question.code}</label>
-    <textarea id={`answer-${question.code}`} value={value} onChange={(event) => changeValue(event.target.value)} onBlur={() => void flushRef.current()} placeholder="Запишите ответ или ключевые мысли…" rows={5} />
+    <textarea ref={textareaRef} className={styles.answerTextarea} id={`answer-${question.code}`} value={value} onInput={(event) => resizeTextarea(event.currentTarget)} onChange={(event) => changeValue(event.target.value)} onBlur={() => { if (saveMode === "autosave") void flushRef.current(); }} placeholder="Запишите ответ или ключевые мысли…" rows={5} readOnly={saveMode === "readonly"} />
     {state === "conflict" && <div className={styles.conflictBox} role="alert">
       <p>Ответ в другой вкладке уже изменён. {draftAvailable ? "Ваш текст сохранён отдельно в этом браузере." : "Ваш текст пока есть только в памяти этой вкладки."}</p>
       <div className={styles.inlineActions}>
@@ -178,7 +212,7 @@ export function AnswerCard({ interviewId, question, initialAnswer, onAnswerChang
     </div>}
     {state === "error" && <button type="button" className={styles.textButton} onClick={() => void flushRef.current()}>Повторить сохранение</button>}
     {(question.follow_ups?.length || question.hypothesis_ids?.length || question.interpretation || question.answer_guidance) ? <details className={styles.hints}>
-      <summary><ChevronDown size={16} aria-hidden /> Подсказки интервьюеру</summary>
+      <summary><ChevronDown size={16} aria-hidden /><span className={styles.singleLineSummary}>Подсказки интервьюеру</span></summary>
       <div className={styles.hintContent}>
         {question.follow_ups?.length ? <section><strong>Уточнить</strong><ul>{question.follow_ups.map((hint) => <li key={hint}>{hint}</li>)}</ul></section> : null}
         {question.hypothesis_ids?.length ? <p><strong>Гипотезы:</strong> {question.hypothesis_ids.join(", ")}</p> : null}

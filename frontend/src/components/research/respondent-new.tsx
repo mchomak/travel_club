@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { ResearchApiError, ResearchCategory, ResearchConfig, ResearchRespondent, researchApi, scrollResearchToTop } from "@/lib/research";
+import { formatAgeLabel } from "./age-range";
 import { ScreeningForm } from "./screening-form";
 import styles from "./research.module.css";
 
@@ -61,7 +62,7 @@ export function RespondentNewPage() {
     {!config ? <div className={`${styles.panel} ${styles.empty}`}><p>{error ? "Не удалось открыть анкету." : "Загружаем вопросы и варианты ответов…"}</p></div>
       : config.validation_issues.length > 0 ? <div className={`${styles.notice} ${styles.noticeError}`} role="alert"><div><strong>Банк вопросов нужно исправить перед созданием интервью.</strong><ul>{config.validation_issues.map((issue) => <li key={issue}>{issue}</li>)}</ul></div></div>
         : respondent ? <>
-          <div className={styles.profileStrip}><span className={styles.profileChip}><strong>{respondent.name}</strong>{respondent.age_range ? ` · ${respondent.age_range}` : ""}</span><span className={styles.profileChip}>{respondent.city || "Город не указан"}</span>
+          <div className={styles.profileStrip}><span className={styles.profileChip}><strong>{respondent.name}</strong></span>{respondent.age_range && <span className={styles.profileChip}>{formatAgeLabel(respondent.age_range)}</span>}<span className={styles.profileChip}>{respondent.city || "Город не указан"}</span>
             <span className={styles.profileChip}>Самостоятельные поездки: {answerLabel("independent_trips_24m") || "не указано"}</span><span className={styles.profileChip}>Групповые поездки: {answerLabel("group_experience") || "не указано"}</span></div>
           <section className={styles.recommendation} aria-label="Рекомендация сценария">
             <h2>Рекомендуем начать с «{scenarioLabel(respondent.recommendation.suggested_category)}»</h2>

@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ResearchApiError, researchApi } from "@/lib/research";
 import { AnswerCard } from "./answer-card";
+import styles from "./research.module.css";
 
 describe("AnswerCard", () => {
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     localStorage.clear();
     Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });
@@ -78,5 +81,65 @@ describe("AnswerCard", () => {
 
     expect(screen.getByLabelText("Ответ G01")).toHaveValue("");
     await waitFor(() => expect(screen.getByText("Заполнено 0 из 1")).toBeInTheDocument());
+  });
+
+  it("grows on input up to its maximum and scrolls beyond it", () => {
+    vi.spyOn(researchApi, "saveAnswer").mockReturnValue(new Promise(() => undefined));
+
+    render(<AnswerCard interviewId="interview-resize" question={{
+      code: "G01", section: "general", text: "Расскажите о последнем путешествии.", type: "long_text",
+      options: [], follow_ups: [], hypothesis_ids: [], interpretation: "", answer_guidance: "", bank_version: "1.0",
+    }} initialAnswer={null} />);
+
+    const answer = screen.getByLabelText("Ответ G01");
+    let contentHeight = 212;
+    Object.defineProperty(answer, "scrollHeight", { configurable: true, get: () => contentHeight });
+    fireEvent.input(answer, { target: { value: "Несколько строк текста" } });
+
+    expect(answer).toHaveStyle({ height: "212px", overflowY: "hidden" });
+
+    contentHeight = 520;
+    fireEvent.input(answer, { target: { value: "Очень длинный ответ" } });
+    expect(answer).toHaveStyle({ height: "440px", overflowY: "auto" });
+
+    contentHeight = 206;
+    fireEvent(window, new Event("resize"));
+    expect(answer).toHaveStyle({ height: "206px", overflowY: "hidden" });
+  });
+
+  it("keeps historical version answers read-only without autosaving them", () => {
+    const saveAnswer = vi.spyOn(researchApi, "saveAnswer").mockReturnValue(new Promise(() => undefined));
+
+    render(<AnswerCard interviewId="interview-history" question={{
+      code: "G01", section: "general", text: "Расскажите о последнем путешествии.", type: "long_text",
+      options: [], follow_ups: [], hypothesis_ids: [], interpretation: "", answer_guidance: "", bank_version: "1.0",
+    }} initialAnswer={{ answer_text: "Ответ из старой версии", revision: 1, updated_at: "2026-10-20T10:00:00Z" }} saveMode="readonly" />);
+
+    const answer = screen.getByLabelText("Ответ G01");
+    expect(answer).toHaveValue("Ответ из старой версии");
+    expect(answer).toHaveAttribute("readonly");
+    fireEvent.change(answer, { target: { value: "Не должно измениться" } });
+    expect(answer).toHaveValue("Ответ из старой версии");
+    expect(saveAnswer).not.toHaveBeenCalled();
+  });
+
+  it("keeps interviewer hints in a single-line, keyboard-operable disclosure", async () => {
+    render(<AnswerCard interviewId="interview-hints" question={{
+      code: "G01", section: "general", text: "Расскажите о последнем путешествии.", type: "long_text",
+      options: [], follow_ups: [], hypothesis_ids: [], interpretation: "", answer_guidance: "Длинная подсказка интервьюеру.", bank_version: "1.0",
+    }} initialAnswer={null} />);
+
+    const heading = screen.getByText("Подсказки интервьюеру");
+    expect(heading).toHaveClass(styles.singleLineSummary);
+    const disclosure = heading.closest("details");
+    const summary = heading.closest("summary");
+    expect(summary).toHaveAccessibleName("Подсказки интервьюеру");
+    expect(summary?.tagName).toBe("SUMMARY");
+    expect(disclosure).not.toHaveAttribute("open");
+    summary?.focus();
+    expect(document.activeElement).toBe(summary);
+    await userEvent.setup().click(summary!);
+    expect(disclosure).toHaveAttribute("open");
+    expect(screen.getByText("Длинная подсказка интервьюеру.")).toBeVisible();
   });
 });

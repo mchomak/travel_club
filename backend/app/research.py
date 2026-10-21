@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
@@ -13,7 +14,12 @@ from sqlalchemy.orm import Session
 
 from app.auth import Admin
 from app.db import get_db
-from app.models import ResearchAnswer, ResearchInterview, ResearchRespondent
+from app.models import (
+    ResearchAnswer,
+    ResearchInterview,
+    ResearchInterviewVersion,
+    ResearchRespondent,
+)
 from app.research_bank import (
     load_configuration,
     load_question_bank,
@@ -55,6 +61,26 @@ class AnswerUpdate(Payload):
     expected_revision: int = Field(ge=0)
 
 
+class VersionCreate(Payload):
+    answers: dict[str, str] = Field(max_length=200)
+
+
+class VersionSummary(Payload):
+    id: UUID
+    version_number: int
+    created_at: str
+
+
+class VersionListResponse(Payload):
+    items: list[VersionSummary]
+    latest_version_number: int
+
+
+class VersionDetailResponse(VersionSummary):
+    interview_id: UUID
+    snapshot: dict[str, Any]
+
+
 def _http_error(status: int, code: str, message: str, **extra: Any) -> HTTPException:
     return HTTPException(status, {"code": code, "message": message, **extra})
 
@@ -79,6 +105,142 @@ def _interview_or_404(db: Session, interview_id: UUID) -> ResearchInterview:
     if interview is None:
         raise _http_error(404, "INTERVIEW_NOT_FOUND", "Интервью не найдено")
     return interview
+
+
+def _respondent_for_update(db: Session, respondent_id: UUID) -> ResearchRespondent:
+    respondent = db.scalar(
+        select(ResearchRespondent)
+        .where(ResearchRespondent.id == respondent_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if respondent is None:
+        raise _http_error(404, "RESPONDENT_NOT_FOUND", "Респондент не найден")
+    return respondent
+
+
+def _locked_interviews_for_respondent(db: Session, respondent_id: UUID):
+    return db.scalars(
+        select(ResearchInterview)
+        .where(ResearchInterview.respondent_id == respondent_id)
+        .order_by(ResearchInterview.created_at, ResearchInterview.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).all()
+
+
+def _interview_for_update(db: Session, interview_id: UUID) -> ResearchInterview:
+    respondent_id = db.scalar(
+        select(ResearchInterview.respondent_id).where(ResearchInterview.id == interview_id)
+    )
+    if respondent_id is None:
+        raise _http_error(404, "INTERVIEW_NOT_FOUND", "Интервью не найдено")
+    respondent_exists = db.scalar(
+        select(ResearchRespondent.id)
+        .where(ResearchRespondent.id == respondent_id)
+        .with_for_update()
+    )
+    if respondent_exists is None:
+        raise _http_error(404, "INTERVIEW_NOT_FOUND", "Интервью не найдено")
+    interview = db.scalar(
+        select(ResearchInterview)
+        .where(ResearchInterview.id == interview_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if interview is None:
+        raise _http_error(404, "INTERVIEW_NOT_FOUND", "Интервью не найдено")
+    return interview
+
+
+def _iso_utc(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    else:
+        value = value.astimezone(UTC)
+    return value.isoformat().replace("+00:00", "Z")
+
+
+def _version_snapshot(db: Session, interview: ResearchInterview) -> dict[str, Any]:
+    respondent = db.get(ResearchRespondent, interview.respondent_id)
+    if respondent is None:
+        raise _http_error(404, "RESPONDENT_NOT_FOUND", "Респондент не найден")
+    stored_answers = db.scalars(
+        select(ResearchAnswer).where(ResearchAnswer.interview_id == interview.id)
+    ).all()
+    by_code = {answer.question_code: answer for answer in stored_answers}
+    question_codes = [
+        question["code"]
+        for question in interview.question_snapshot or []
+        if isinstance(question, dict) and isinstance(question.get("code"), str)
+    ]
+    answer_codes = list(dict.fromkeys([*question_codes, *by_code]))
+    answers = {}
+    for code in answer_codes:
+        answer = by_code.get(code)
+        answers[code] = (
+            {
+                "answer_text": answer.answer_text,
+                "revision": answer.revision,
+                "updated_at": _iso_utc(answer.updated_at),
+            }
+            if answer
+            else {"answer_text": "", "revision": 0, "updated_at": None}
+        )
+    return {
+        "respondent": {
+            "id": str(respondent.id),
+            "name": respondent.name,
+            "age_range": respondent.age_range,
+            "city": respondent.city,
+            "screening_answers": deepcopy(respondent.screening_answers or {}),
+            "research_goal": respondent.research_goal,
+            "suggested_category": respondent.suggested_category,
+            "final_category": respondent.final_category,
+            "category_override": respondent.category_override,
+            "recommendation": deepcopy(respondent.recommendation or {}),
+        },
+        "interview": {
+            "id": str(interview.id),
+            "status": interview.status,
+            "scenario_code": interview.scenario_code,
+            "scenario_version": interview.scenario_version,
+            "question_snapshot": deepcopy(interview.question_snapshot or []),
+            "answers": answers,
+        },
+    }
+
+
+def _new_version(db: Session, interview: ResearchInterview) -> ResearchInterviewVersion:
+    created_at = datetime.now(UTC)
+    _touch_interview(db, interview, created_at)
+    db.flush()
+    latest = db.scalar(
+        select(func.max(ResearchInterviewVersion.version_number)).where(
+            ResearchInterviewVersion.interview_id == interview.id
+        )
+    )
+    version = ResearchInterviewVersion(
+        interview_id=interview.id,
+        version_number=(latest or 0) + 1,
+        snapshot=_version_snapshot(db, interview),
+        created_at=created_at,
+    )
+    db.add(version)
+    db.flush()
+    return version
+
+
+def _version_json(version: ResearchInterviewVersion) -> dict[str, Any]:
+    return {
+        "id": version.id,
+        "interview_id": version.interview_id,
+        "version_number": version.version_number,
+        "created_at": _iso_utc(version.created_at),
+        "snapshot": version.snapshot,
+    }
 
 
 def _require_valid_bank() -> dict[str, dict[str, Any]]:
@@ -172,14 +334,19 @@ def _screening_values(answers: dict[str, Any]) -> tuple[str, str | None, str]:
     return name, age_range, city
 
 
-def _touch_interview(db: Session, interview: ResearchInterview) -> None:
-    now = datetime.now(UTC)
+def _touch_interview(
+    db: Session, interview: ResearchInterview, now: datetime | None = None
+) -> None:
+    now = now or datetime.now(UTC)
     interview.updated_at = now
     db.execute(
         update(ResearchRespondent)
         .where(ResearchRespondent.id == interview.respondent_id)
         .values(updated_at=now)
     )
+    respondent = db.get(ResearchRespondent, interview.respondent_id)
+    if respondent is not None:
+        respondent.updated_at = now
 
 
 def _answer_json(answer: ResearchAnswer | None) -> dict[str, Any] | None:
@@ -228,6 +395,28 @@ def _respondent_json(db: Session, respondent: ResearchRespondent) -> dict[str, A
         "updated_at": respondent.updated_at,
         "interviews": [_interview_json(db, item) for item in respondent.interviews],
     }
+
+
+def _respondent_snapshot_fields(respondent: ResearchRespondent) -> tuple[Any, ...]:
+    return (
+        respondent.name,
+        respondent.age_range,
+        respondent.city,
+        deepcopy(respondent.screening_answers or {}),
+        respondent.research_goal,
+        respondent.suggested_category,
+        respondent.final_category,
+        respondent.category_override,
+        deepcopy(respondent.recommendation or {}),
+    )
+
+
+def _version_completed_interviews(
+    db: Session, interviews: list[ResearchInterview]
+) -> None:
+    for interview in interviews:
+        if interview.status == "completed":
+            _new_version(db, interview)
 
 
 @router.get("/config")
@@ -386,7 +575,9 @@ def get_respondent(respondent_id: UUID, _: Admin, db: Database):
 
 @router.patch("/respondents/{respondent_id}/screening")
 def update_screening(respondent_id: UUID, payload: ScreeningUpdate, _: Admin, db: Database):
-    respondent = _respondent_or_404(db, respondent_id)
+    respondent = _respondent_for_update(db, respondent_id)
+    interviews = _locked_interviews_for_respondent(db, respondent.id)
+    previous_snapshot_fields = _respondent_snapshot_fields(respondent)
     name, age_range, city = _screening_values(payload.screening_answers)
     recommendation = _recommendation(payload.screening_answers, payload.research_goal)
     respondent.name = name
@@ -399,7 +590,7 @@ def update_screening(respondent_id: UUID, payload: ScreeningUpdate, _: Admin, db
     if payload.apply_suggestion:
         respondent.final_category = recommendation["suggested_category"]
         respondent.category_override = False
-    interview = max(respondent.interviews, key=lambda item: item.created_at, default=None)
+    interview = max(interviews, key=lambda item: item.created_at, default=None)
     if interview and interview.status == "draft":
         if payload.apply_suggestion:
             interview.scenario_code = respondent.final_category
@@ -409,27 +600,33 @@ def update_screening(respondent_id: UUID, payload: ScreeningUpdate, _: Admin, db
         interview.question_snapshot = []
         interview.updated_at = datetime.now(UTC)
     respondent.updated_at = datetime.now(UTC)
+    if previous_snapshot_fields != _respondent_snapshot_fields(respondent):
+        _version_completed_interviews(db, interviews)
     _save(db)
     return _respondent_json(db, respondent)
 
 
 @router.patch("/respondents/{respondent_id}/category")
 def update_category(respondent_id: UUID, payload: CategoryUpdate, _: Admin, db: Database):
-    respondent = _respondent_or_404(db, respondent_id)
+    respondent = _respondent_for_update(db, respondent_id)
+    interviews = _locked_interviews_for_respondent(db, respondent.id)
+    previous_snapshot_fields = _respondent_snapshot_fields(respondent)
     respondent.final_category = payload.final_category
     respondent.category_override = payload.final_category != respondent.suggested_category
-    interview = max(respondent.interviews, key=lambda item: item.created_at, default=None)
+    interview = max(interviews, key=lambda item: item.created_at, default=None)
     if interview and interview.status == "draft":
         interview.scenario_code = payload.final_category
         interview.question_snapshot = []
     respondent.updated_at = datetime.now(UTC)
+    if previous_snapshot_fields != _respondent_snapshot_fields(respondent):
+        _version_completed_interviews(db, interviews)
     _save(db)
     return _respondent_json(db, respondent)
 
 
 @router.post("/interviews/{interview_id}/start")
 def start_interview(interview_id: UUID, _: Admin, db: Database):
-    interview = _interview_or_404(db, interview_id)
+    interview = _interview_for_update(db, interview_id)
     respondent = _respondent_or_404(db, interview.respondent_id)
     if interview.status == "draft":
         configuration = _require_valid_bank()
@@ -449,9 +646,15 @@ def start_interview(interview_id: UUID, _: Admin, db: Database):
 
 @router.post("/interviews/{interview_id}/questions")
 def append_questions(interview_id: UUID, payload: QuestionAppend, _: Admin, db: Database):
-    interview = _interview_or_404(db, interview_id)
+    interview = _interview_for_update(db, interview_id)
     if interview.status == "draft":
         raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
+    if interview.status == "completed":
+        raise _http_error(
+            409,
+            "INTERVIEW_COMPLETED",
+            "A completed interview can only be changed by saving a version",
+        )
     configuration = _require_valid_bank()
     codes = list(dict.fromkeys(payload.question_codes))
     questions = _question_map(configuration["bank"])
@@ -497,9 +700,15 @@ def save_answer(
     _: Admin,
     db: Database,
 ):
-    interview = _interview_or_404(db, interview_id)
+    interview = _interview_for_update(db, interview_id)
     if interview.status == "draft":
         raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
+    if interview.status == "completed":
+        raise _http_error(
+            409,
+            "INTERVIEW_COMPLETED",
+            "A completed interview can only be changed by saving a version",
+        )
     if not any(
         isinstance(question, dict) and question.get("code") == question_code
         for question in interview.question_snapshot
@@ -579,15 +788,132 @@ def save_answer(
 
 @router.post("/interviews/{interview_id}/complete")
 def complete_interview(interview_id: UUID, _: Admin, db: Database):
-    interview = _interview_or_404(db, interview_id)
+    interview = _interview_for_update(db, interview_id)
     if interview.status == "draft":
         raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
     if interview.status != "completed":
         interview.status = "completed"
         interview.completed_at = datetime.now(UTC)
-        _touch_interview(db, interview)
+        _new_version(db, interview)
         _save(db, "Не удалось завершить интервью")
     return _interview_json(db, interview)
+
+
+@router.get(
+    "/interviews/{interview_id}/versions", response_model=VersionListResponse
+)
+def list_interview_versions(interview_id: UUID, _: Admin, db: Database):
+    interview = _interview_or_404(db, interview_id)
+    if interview.status != "completed":
+        raise _http_error(
+            409, "INTERVIEW_NOT_COMPLETED", "Versions are available after interview completion"
+        )
+    versions = db.scalars(
+        select(ResearchInterviewVersion)
+        .where(ResearchInterviewVersion.interview_id == interview.id)
+        .order_by(ResearchInterviewVersion.version_number.desc())
+    ).all()
+    items = [
+        {
+            "id": version.id,
+            "version_number": version.version_number,
+            "created_at": _iso_utc(version.created_at),
+        }
+        for version in versions
+    ]
+    return {
+        "items": items,
+        "latest_version_number": max(
+            (item["version_number"] for item in items), default=0
+        ),
+    }
+
+
+@router.get(
+    "/interviews/{interview_id}/versions/{version_id}", response_model=VersionDetailResponse
+)
+def get_interview_version(
+    interview_id: UUID, version_id: UUID, _: Admin, db: Database
+):
+    interview = _interview_or_404(db, interview_id)
+    if interview.status != "completed":
+        raise _http_error(
+            409, "INTERVIEW_NOT_COMPLETED", "Versions are available after interview completion"
+        )
+    version = db.scalar(
+        select(ResearchInterviewVersion).where(
+            ResearchInterviewVersion.id == version_id,
+            ResearchInterviewVersion.interview_id == interview.id,
+        )
+    )
+    if version is None:
+        raise _http_error(404, "INTERVIEW_VERSION_NOT_FOUND", "Interview version not found")
+    return _version_json(version)
+
+
+@router.post(
+    "/interviews/{interview_id}/versions",
+    response_model=VersionDetailResponse,
+    status_code=201,
+)
+def create_interview_version(
+    interview_id: UUID, payload: VersionCreate, _: Admin, db: Database
+):
+    interview = _interview_for_update(db, interview_id)
+    if interview.status != "completed":
+        raise _http_error(
+            409, "INTERVIEW_NOT_COMPLETED", "Only completed interviews can be saved as versions"
+        )
+
+    question_codes = [
+        question["code"]
+        for question in interview.question_snapshot or []
+        if isinstance(question, dict) and isinstance(question.get("code"), str)
+    ]
+    known_codes = set(question_codes)
+    unknown_codes = sorted(set(payload.answers) - known_codes)
+    if unknown_codes:
+        raise _http_error(
+            422,
+            "UNKNOWN_QUESTION",
+            "Answer codes must belong to this interview's saved questionnaire",
+            unknown_codes=unknown_codes,
+        )
+    missing_codes = [code for code in dict.fromkeys(question_codes) if code not in payload.answers]
+    if missing_codes:
+        raise _http_error(
+            422,
+            "ANSWERS_REQUIRED",
+            "Send the full set of answers for the saved questionnaire",
+            missing_codes=missing_codes,
+        )
+
+    now = datetime.now(UTC)
+    existing_answers = db.scalars(
+        select(ResearchAnswer).where(ResearchAnswer.interview_id == interview.id)
+    ).all()
+    by_code = {answer.question_code: answer for answer in existing_answers}
+    for code in dict.fromkeys(question_codes):
+        text = payload.answers[code]
+        answer = by_code.get(code)
+        if answer is None:
+            db.add(
+                ResearchAnswer(
+                    interview_id=interview.id,
+                    question_code=code,
+                    answer_text=text,
+                    revision=1,
+                    updated_at=now,
+                )
+            )
+        elif answer.answer_text != text:
+            answer.answer_text = text
+            answer.revision += 1
+            answer.updated_at = now
+
+    version = _new_version(db, interview)
+    _save(db, "Could not save interview version")
+    return _version_json(version)
 
 
 @router.get("/export.xlsx")

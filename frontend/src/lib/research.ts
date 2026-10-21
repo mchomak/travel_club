@@ -24,7 +24,7 @@ export interface Recommendation {
   suggested_category: ResearchCategory; alternative_category: ResearchCategory; scores: Record<ResearchCategory, number>;
   suggested_score: number; reasons: string[]; signal_strength: "low" | "medium" | "high";
 }
-export interface AnswerVersion { answer_text: string; revision: number; updated_at: string }
+export interface AnswerVersion { answer_text: string; revision: number; updated_at: string | null }
 export interface ResearchInterview {
   id: string; respondent_id: string; scenario_code: ResearchCategory; scenario_version: string;
   bank_version: string; status: InterviewStatus; question_snapshot: ResearchQuestion[];
@@ -46,6 +46,20 @@ export interface RespondentList {
   incomplete_count: number; page: number; page_size: number; pages: number;
 }
 export interface AnswerDraft { answer_text: string; updated_at: string }
+export interface ResearchInterviewVersionSummary { id: string; version_number: number; created_at: string }
+export interface ResearchInterviewVersions { items: ResearchInterviewVersionSummary[]; latest_version_number: number }
+export interface ResearchRespondentSnapshot {
+  id: string; name: string; age_range: string | null; city: string; screening_answers: Record<string, unknown>;
+  research_goal: ResearchRespondent["research_goal"]; suggested_category: ResearchCategory; final_category: ResearchCategory; category_override: boolean;
+}
+export interface ResearchInterviewSnapshot {
+  id: string; status: InterviewStatus; scenario_code: ResearchCategory; scenario_version: string;
+  question_snapshot: ResearchQuestion[]; answers: Record<string, AnswerVersion | null>;
+}
+export interface ResearchInterviewVersion {
+  id: string; interview_id: string; version_number: number; created_at: string;
+  snapshot: { respondent: ResearchRespondentSnapshot; interview: ResearchInterviewSnapshot };
+}
 
 export function scrollResearchToTop(): void {
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -92,6 +106,13 @@ export const researchApi = {
   createRespondent: (screening_answers: Record<string, unknown>, research_goal?: "trips" | "individual_services") =>
     request<ResearchRespondent>("/respondents", { method: "POST", body: JSON.stringify({ screening_answers, research_goal }) }),
   respondent: (id: string) => request<ResearchRespondent>(`/respondents/${encodeURIComponent(id)}`),
+  interviewVersions: (interviewId: string) => request<ResearchInterviewVersions>(`/interviews/${encodeURIComponent(interviewId)}/versions`),
+  interviewVersion: (interviewId: string, versionId: string) =>
+    request<ResearchInterviewVersion>(`/interviews/${encodeURIComponent(interviewId)}/versions/${encodeURIComponent(versionId)}`),
+  createInterviewVersion: (interviewId: string, answers: Record<string, string>) =>
+    request<ResearchInterviewVersion>(`/interviews/${encodeURIComponent(interviewId)}/versions`, {
+      method: "POST", body: JSON.stringify({ answers }),
+    }),
   updateScreening: (id: string, screening_answers: Record<string, unknown>, research_goal: ResearchRespondent["research_goal"], apply_suggestion: boolean) =>
     request<ResearchRespondent>(`/respondents/${encodeURIComponent(id)}/screening`, { method: "PATCH", body: JSON.stringify({ screening_answers, research_goal, apply_suggestion }) }),
   updateCategory: (id: string, final_category: ResearchCategory) =>

@@ -44,7 +44,7 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await page.getByLabel("Логин").fill(login);
     await page.getByRole("textbox", { name: "Пароль" }).fill(password);
     await page.getByRole("button", { name: "Войти в кабинет" }).click();
-    await page.waitForURL(/\/admin\/trips/);
+    await page.waitForURL(/\/home/);
     await page.goto("/research/new");
     await page.evaluate(() => {
       window.scrollTo = ((target: ScrollToOptions | number) => {
@@ -94,8 +94,18 @@ test("TC Research covers creation, recoverable interview notes, history and whol
   const answerRoute = /\/api\/research\/interviews\/[^/]+\/answers\/G01$/;
 
   await test.step("6–7. Save a note on the server and restore it after reloading", async () => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.route(answerRoute, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1400));
+      await route.continue();
+    });
     await answer.fill("Последняя поездка — самостоятельный маршрут по Италии.");
+    const saving = answerCard.getByText("Сохраняется");
+    await expect(saving).toBeVisible();
+    expect(await saving.locator("svg").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
+    expect(await page.getByRole("progressbar").locator("div").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
     await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+    await page.unroute(answerRoute);
     await page.reload();
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Последняя поездка — самостоятельный маршрут по Италии.");
   });
@@ -144,6 +154,8 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     const navigationDialog = await navigationPrompt;
     expect(navigationDialog.message()).toContain("ещё не подтверждены сервером");
     await navigationDialog.dismiss();
+    expect(page.isClosed()).toBe(false);
+    expect(page.url()).toBe(detailUrl);
     await expect(page).toHaveURL(detailUrl);
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Несохранённая заметка перед уходом.");
 
@@ -257,8 +269,30 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
     await page.getByRole("link", { name: respondentName }).click();
     await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
+    const versionSelect = page.getByLabel("Версия интервью");
+    const initialVersionId = await versionSelect.locator("option").first().getAttribute("value");
+    expect(initialVersionId).toBeTruthy();
+    await expect(versionSelect).toHaveValue(initialVersionId!);
+    await expect(versionSelect.locator("option")).toHaveCount(1);
     await page.getByLabel("Ответ G01").fill("Позднее дополнение к завершённому интервью.");
-    await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+    await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText(/Сохранена версия 2/, { timeout: 7000 });
+    await expect(versionSelect.locator("option")).toHaveCount(2);
+    const latestVersionId = await versionSelect.locator("option").nth(0).getAttribute("value");
+    const earlierVersionId = await versionSelect.locator("option").nth(1).getAttribute("value");
+    expect(latestVersionId).toBeTruthy();
+    expect(earlierVersionId).toBeTruthy();
+    await expect(versionSelect).toHaveValue(latestVersionId!);
+    await page.reload();
+    await expect(page.getByLabel("Версия интервью")).toHaveValue(latestVersionId!);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Позднее дополнение к завершённому интервью.");
+    await page.getByLabel("Версия интервью").selectOption(earlierVersionId!);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Unsaved note before confirmed browser navigation.");
+    await expect(page.getByLabel("Ответ G01")).toHaveAttribute("readonly", "");
+    await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toHaveCount(0);
+    await page.getByLabel("Версия интервью").selectOption(latestVersionId!);
+    await expect(page.getByLabel("Ответ G01")).toHaveValue("Позднее дополнение к завершённому интервью.");
+    await expect(page.getByLabel("Ответ G01")).toBeEditable();
     await page.getByRole("button", { name: "Изменить анкету" }).click();
     await page.getByLabel("Город проживания").fill("Екатеринбург");
     await page.getByRole("button", { name: "Сохранить изменения анкеты" }).click();
@@ -298,7 +332,8 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await expect(page.getByRole("link", { name: respondentName })).toBeVisible();
     await page.getByRole("link", { name: respondentName }).click();
     await page.getByLabel("Ответ G01").fill("Новая версия для повторной выгрузки.");
-    await expect(page.locator("#question-G01").getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+    await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText(/Сохранена версия \d+/, { timeout: 7000 });
     await page.goto("/research");
     await page.getByPlaceholder("Имя или псевдоним").fill(respondentName);
     const secondDownload = page.waitForEvent("download");
@@ -331,15 +366,6 @@ test("TC Research covers creation, recoverable interview notes, history and whol
     await expect(stickyMeta).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.route(answerRoute, async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 1400));
-      await route.continue();
-    });
-    await page.getByLabel("Ответ G01").fill("Проверка системной настройки уменьшения движения.");
-    const saving = page.getByText("Сохраняется").first();
-    await expect(saving).toBeVisible();
-    expect(await saving.locator("svg").evaluate((element) => getComputedStyle(element).animationName)).toBe("none");
     expect(await page.getByRole("progressbar").locator("div").evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
   });
 });
@@ -349,7 +375,8 @@ test("TC Research blocks a second browser traversal while the first dirty naviga
   await page.locator("input").nth(0).fill(process.env.RESEARCH_E2E_LOGIN ?? "tc_research_e2e");
   await page.locator('input[type="password"]').fill(process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026");
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/admin\/trips/);
+  await page.waitForURL(/\/home/);
+  await page.goto("/research");
 
   const respondentName = `History race ${Date.now()}`;
   const respondent = await page.evaluate(async (name) => {
@@ -438,4 +465,56 @@ test("TC Research blocks a second browser traversal while the first dirty naviga
   expect(retryWarning.type()).toBe("confirm");
   await retryWarning.accept();
   await expect(page).toHaveURL(/\/research$/);
+});
+
+test("TC Research live progress retains a saved answer after blur and clears it when emptied", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.locator("input").nth(0).fill(process.env.RESEARCH_E2E_LOGIN ?? "tc_research_e2e");
+  await page.locator('input[type="password"]').fill(process.env.RESEARCH_E2E_PASSWORD ?? "test-only-password-2026");
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/\/home/);
+  await page.goto("/research");
+
+  const respondentName = `Progress ${Date.now()}`;
+  const respondent = await page.evaluate(async (name) => {
+    const response = await fetch("/api/research/respondents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "TravelClub" },
+      body: JSON.stringify({ screening_answers: { name } }),
+    });
+    if (!response.ok) throw new Error(`create respondent failed: ${response.status}`);
+    return await response.json() as { id: string; interviews: Array<{ id: string }> };
+  }, respondentName);
+  const started = await page.evaluate(async (interviewId) => {
+    const response = await fetch(`/api/research/interviews/${interviewId}/start`, {
+      method: "POST",
+      headers: { "X-Requested-With": "TravelClub" },
+    });
+    if (!response.ok) throw new Error(`start interview failed: ${response.status}`);
+    return await response.json();
+  }, respondent.interviews[0].id);
+  expect(started).toBeTruthy();
+
+  await page.reload();
+  await page.getByRole("link", { name: respondentName }).click();
+  await page.waitForURL((url) => url.pathname === `/research/${respondent.id}`);
+
+  const answer = page.getByLabel("Ответ G01");
+  const answerCard = page.locator("#question-G01");
+  const progress = page.getByRole("progressbar", { name: "Заполнено вопросов" });
+  await expect(answer).toBeVisible();
+  await expect(progress).toHaveAttribute("aria-valuenow", "0");
+
+  await answer.fill("Ответ должен оставаться в прогрессе после потери фокуса.");
+  await answer.blur();
+  await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+  await expect(progress).toHaveAttribute("aria-valuenow", "1");
+  const savedProgressScale = await progress.locator("div").evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).a);
+  expect(savedProgressScale).toBeGreaterThan(0);
+
+  await answer.fill("");
+  await answer.blur();
+  await expect(answerCard.getByText("Сохранено")).toBeVisible({ timeout: 7000 });
+  await expect(progress).toHaveAttribute("aria-valuenow", "0");
+  await expect.poll(() => progress.locator("div").evaluate((element) => new DOMMatrixReadOnly(getComputedStyle(element).transform).a)).toBe(0);
 });

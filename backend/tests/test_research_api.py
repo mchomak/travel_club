@@ -4,8 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from threading import Barrier, Lock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,9 +14,14 @@ from sqlalchemy import delete, event
 from app import research as research_api
 from app.auth import token_digest
 from app.config import get_settings
-from app.db import SessionLocal, engine, get_db
+from app.db import SessionLocal, get_db
 from app.main import create_app
-from app.models import ResearchRespondent, User
+from app.models import (
+    ResearchInterview,
+    ResearchInterviewVersion,
+    ResearchRespondent,
+    User,
+)
 from app.models import Session as AdminSession
 from tests.conftest import FIXTURE_PASSWORD
 
@@ -41,6 +45,9 @@ def test_research_respondent_api_requires_admin_session(client):
         "/api/research/config",
         "/api/research/questions",
         "/api/research/export.xlsx",
+        "/api/research/interviews/00000000-0000-0000-0000-000000000001/versions",
+        "/api/research/interviews/00000000-0000-0000-0000-000000000001/versions/"
+        "00000000-0000-0000-0000-000000000002",
     ):
         response = client.get(path, headers=HEADERS)
         assert response.status_code == 401, path
@@ -232,7 +239,212 @@ def test_answer_compare_and_swap_is_idempotent_and_preserves_newer_text(authenti
     assert latest.json()["revision"] == 2
 
 
-def test_empty_completion_allows_later_question_and_answer_edits(authenticated):
+def test_completion_persists_initial_readable_version(authenticated):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Versioned respondent", "city": "Lisbon"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    started = authenticated.post(
+        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
+    )
+    assert started.status_code == 200
+    saved = authenticated.put(
+        f"/api/research/interviews/{interview_id}/answers/G01",
+        headers=HEADERS,
+        json={"answer_text": "The original answer", "expected_revision": 0},
+    )
+    assert saved.status_code == 200
+    completed = authenticated.post(
+        f"/api/research/interviews/{interview_id}/complete", headers=HEADERS
+    )
+    assert completed.status_code == 200
+
+    listed = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions", headers=HEADERS
+    )
+
+    assert listed.status_code == 200
+    versions = listed.json()
+    assert versions["latest_version_number"] == 1
+    assert [item["version_number"] for item in versions["items"]] == [1]
+    first = versions["items"][0]
+    assert first["created_at"].endswith("Z")
+
+    detail = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions/{first['id']}", headers=HEADERS
+    )
+
+    assert detail.status_code == 200
+    snapshot = detail.json()["snapshot"]
+    assert snapshot["respondent"]["name"] == "Versioned respondent"
+    assert snapshot["respondent"]["city"] == "Lisbon"
+    assert snapshot["interview"]["status"] == "completed"
+    assert any(
+        question["code"] == "G01" and question["text"]
+        for question in snapshot["interview"]["question_snapshot"]
+    )
+    assert snapshot["interview"]["answers"]["G01"]["answer_text"] == "The original answer"
+    assert snapshot["interview"]["answers"]["G01"]["revision"] == 1
+
+
+def test_manual_version_save_updates_answers_and_preserves_history(authenticated):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={
+            "screening_answers": {
+                "name": "Version edit",
+                "independent_trips_24m": "3_plus",
+            }
+        },
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    started = authenticated.post(
+        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
+    ).json()
+    original = authenticated.put(
+        f"/api/research/interviews/{interview_id}/answers/G01",
+        headers=HEADERS,
+        json={"answer_text": "Original answer", "expected_revision": 0},
+    )
+    assert original.status_code == 200
+    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
+    first_id = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions", headers=HEADERS
+    ).json()["items"][0]["id"]
+
+    answers = {question["code"]: "" for question in started["question_snapshot"]}
+    answers["G01"] = "Revised answer"
+    answers["G02"] = "Follow-up answer"
+    saved = authenticated.post(
+        f"/api/research/interviews/{interview_id}/versions",
+        headers=HEADERS,
+        json={"answers": answers},
+    )
+
+    assert saved.status_code == 201
+    second = saved.json()
+    assert second["version_number"] == 2
+    assert second["snapshot"]["interview"]["answers"]["G01"]["answer_text"] == "Revised answer"
+    assert second["snapshot"]["interview"]["answers"]["G01"]["revision"] == 2
+    assert second["snapshot"]["interview"]["answers"]["G02"]["revision"] == 1
+    assert second["created_at"].endswith("Z")
+
+    first = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions/{first_id}", headers=HEADERS
+    ).json()
+    assert first["snapshot"]["interview"]["answers"]["G01"]["answer_text"] == "Original answer"
+    assert first["snapshot"]["interview"]["answers"]["G01"]["revision"] == 1
+
+    repeated = authenticated.post(
+        f"/api/research/interviews/{interview_id}/versions",
+        headers=HEADERS,
+        json={"answers": answers},
+    )
+    assert repeated.status_code == 201
+    assert repeated.json()["version_number"] == 3
+    assert repeated.json()["snapshot"]["interview"]["answers"]["G01"]["revision"] == 2
+    history = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions", headers=HEADERS
+    ).json()
+    assert [item["version_number"] for item in history["items"]] == [3, 2, 1]
+    assert history["latest_version_number"] == 3
+
+
+def test_manual_version_save_rolls_back_answers_when_snapshot_commit_fails(authenticated, db):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Rollback version"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    started = authenticated.post(
+        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
+    ).json()
+    authenticated.put(
+        f"/api/research/interviews/{interview_id}/answers/G01",
+        headers=HEADERS,
+        json={"answer_text": "Persisted answer", "expected_revision": 0},
+    )
+    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
+    answers = {question["code"]: "" for question in started["question_snapshot"]}
+    answers["G01"] = "Uncommitted replacement"
+
+    def add_conflicting_version(session):
+        session.add(
+            ResearchInterviewVersion(
+                interview_id=UUID(interview_id),
+                version_number=2,
+                snapshot={},
+                created_at=datetime.now(UTC),
+            )
+        )
+
+    event.listen(db, "before_commit", add_conflicting_version)
+    try:
+        failed = authenticated.post(
+            f"/api/research/interviews/{interview_id}/versions",
+            headers=HEADERS,
+            json={"answers": answers},
+        )
+    finally:
+        event.remove(db, "before_commit", add_conflicting_version)
+
+    assert failed.status_code == 500
+    detail = authenticated.get(f"/api/research/respondents/{created['id']}").json()
+    assert detail["interviews"][0]["answers"]["G01"]["answer_text"] == "Persisted answer"
+    history = authenticated.get(
+        f"/api/research/interviews/{interview_id}/versions", headers=HEADERS
+    ).json()
+    assert history["latest_version_number"] == 1
+    assert [item["version_number"] for item in history["items"]] == [1]
+
+
+def test_version_endpoints_reject_incomplete_and_unknown_question_codes(authenticated):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Version validation"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    versions_path = f"/api/research/interviews/{interview_id}/versions"
+
+    incomplete_list = authenticated.get(versions_path, headers=HEADERS)
+    incomplete_save = authenticated.post(
+        versions_path, headers=HEADERS, json={"answers": {}}
+    )
+    assert incomplete_list.status_code == 409
+    assert incomplete_save.status_code == 409
+
+    started = authenticated.post(
+        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
+    ).json()
+    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
+    answers = {question["code"]: "" for question in started["question_snapshot"]}
+    omitted_code = next(iter(answers))
+    del answers[omitted_code]
+    missing_answer = authenticated.post(
+        versions_path, headers=HEADERS, json={"answers": answers}
+    )
+    unknown = authenticated.post(
+        versions_path, headers=HEADERS, json={"answers": {"ZZZ": "Invalid answer"}}
+    )
+    missing_detail = authenticated.get(
+        f"{versions_path}/{uuid4()}", headers=HEADERS
+    )
+
+    assert unknown.status_code == 422
+    assert unknown.json()["code"] == "UNKNOWN_QUESTION"
+    assert missing_answer.status_code == 422
+    assert missing_answer.json()["code"] == "ANSWERS_REQUIRED"
+    assert missing_answer.json()["missing_codes"] == [omitted_code]
+    assert missing_detail.status_code == 404
+    assert missing_detail.json()["code"] == "INTERVIEW_VERSION_NOT_FOUND"
+
+
+def test_completed_interview_rejects_question_changes_and_autosave(authenticated):
     created = authenticated.post(
         "/api/research/respondents",
         headers=HEADERS,
@@ -253,20 +465,21 @@ def test_empty_completion_allows_later_question_and_answer_edits(authenticated):
         headers=HEADERS,
         json={"question_codes": ["B01"]},
     )
-    assert appended.status_code == 200
-    assert appended.json()["question_snapshot"][-1]["code"] == "B01"
+    assert appended.status_code == 409
+    assert appended.json()["code"] == "INTERVIEW_COMPLETED"
     saved = authenticated.put(
         f"/api/research/interviews/{interview_id}/answers/B01",
         headers=HEADERS,
         json={"answer_text": "Поздняя запись", "expected_revision": 0},
     )
-    assert saved.status_code == 200
+    assert saved.status_code == 409
+    assert saved.json()["code"] == "INTERVIEW_COMPLETED"
     detail = authenticated.get(f"/api/research/respondents/{created['id']}").json()
     assert detail["interviews"][0]["status"] == "completed"
-    assert detail["interviews"][0]["answers"]["B01"]["answer_text"] == "Поздняя запись"
+    assert "B01" not in detail["interviews"][0]["answers"]
 
 
-def test_brand_questions_stay_at_end_when_supplementing_completed_interview(authenticated):
+def test_brand_questions_stay_at_end_when_supplementing_in_progress_interview(authenticated):
     created = authenticated.post(
         "/api/research/respondents",
         headers=HEADERS,
@@ -274,7 +487,6 @@ def test_brand_questions_stay_at_end_when_supplementing_completed_interview(auth
     ).json()
     interview_id = created["interviews"][0]["id"]
     authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
-    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
 
     first_addition = authenticated.post(
         f"/api/research/interviews/{interview_id}/questions",
@@ -327,6 +539,105 @@ def test_screening_recalculation_does_not_rewrite_started_route_or_answers(authe
     assert interview["answers"]["G01"]["answer_text"] == "Уже сохранено"
 
 
+def test_screening_and_category_changes_version_every_completed_interview(authenticated, db):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Original profile", "independent_trips_24m": "0"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    started = authenticated.post(
+        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
+    ).json()
+    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
+    version_path = f"/api/research/interviews/{interview_id}/versions"
+    first_version = authenticated.get(version_path, headers=HEADERS).json()["items"][0]
+    original_snapshot = authenticated.get(
+        f"{version_path}/{first_version['id']}", headers=HEADERS
+    ).json()["snapshot"]
+
+    second_interview = ResearchInterview(
+        respondent_id=UUID(created["id"]),
+        scenario_code=started["scenario_code"],
+        scenario_version=started["scenario_version"],
+        bank_version=started["bank_version"],
+        status="completed",
+        question_snapshot=deepcopy(started["question_snapshot"]),
+        completed_at=datetime.now(UTC),
+    )
+    db.add(second_interview)
+    db.flush()
+    second_snapshot = deepcopy(original_snapshot)
+    second_snapshot["interview"]["id"] = str(second_interview.id)
+    db.add(
+        ResearchInterviewVersion(
+            interview_id=second_interview.id,
+            version_number=1,
+            snapshot=second_snapshot,
+            created_at=datetime.now(UTC),
+        )
+    )
+    db.commit()
+
+    screening = authenticated.patch(
+        f"/api/research/respondents/{created['id']}/screening",
+        headers=HEADERS,
+        json={
+            "screening_answers": {
+                "name": "Updated profile",
+                "city": "Tokyo",
+                "independent_trips_24m": "3_plus",
+            },
+            "apply_suggestion": False,
+        },
+    )
+    assert screening.status_code == 200
+    interview_ids = (interview_id, str(second_interview.id))
+    histories = [
+        authenticated.get(
+            f"/api/research/interviews/{item_id}/versions", headers=HEADERS
+        ).json()
+        for item_id in interview_ids
+    ]
+    assert [history["latest_version_number"] for history in histories] == [2, 2]
+    first_history = authenticated.get(
+        f"{version_path}/{first_version['id']}", headers=HEADERS
+    ).json()
+    assert first_history["snapshot"]["respondent"]["name"] == "Original profile"
+    for item_id, history in zip(interview_ids, histories, strict=True):
+        latest = history["items"][0]
+        snapshot = authenticated.get(
+            f"/api/research/interviews/{item_id}/versions/{latest['id']}", headers=HEADERS
+        ).json()["snapshot"]
+        assert snapshot["respondent"]["name"] == "Updated profile"
+        assert snapshot["respondent"]["city"] == "Tokyo"
+
+    category = authenticated.patch(
+        f"/api/research/respondents/{created['id']}/category",
+        headers=HEADERS,
+        json={"final_category": "travel_ready"},
+    )
+    assert category.status_code == 200
+    for item_id in interview_ids:
+        history = authenticated.get(
+            f"/api/research/interviews/{item_id}/versions", headers=HEADERS
+        ).json()
+        assert history["latest_version_number"] == 3
+        latest = history["items"][0]
+        snapshot = authenticated.get(
+            f"/api/research/interviews/{item_id}/versions/{latest['id']}", headers=HEADERS
+        ).json()["snapshot"]
+        assert snapshot["respondent"]["final_category"] == "travel_ready"
+
+    repeated_category = authenticated.patch(
+        f"/api/research/respondents/{created['id']}/category",
+        headers=HEADERS,
+        json={"final_category": "travel_ready"},
+    )
+    assert repeated_category.status_code == 200
+    assert authenticated.get(version_path, headers=HEADERS).json()["latest_version_number"] == 3
+
+
 def test_respondent_list_search_filters_and_counts(authenticated):
     beginner = authenticated.post(
         "/api/research/respondents",
@@ -358,7 +669,7 @@ def test_respondent_list_search_filters_and_counts(authenticated):
     assert filtered.json()["incomplete_count"] == 1
 
 
-def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
+def test_concurrent_answer_cas_serializes_and_preserves_newer_text():
     token = uuid4().hex
     user = User(id=uuid4(), login=f"research-cas-{uuid4().hex}", password_hash="unused")
     with SessionLocal() as setup:
@@ -407,47 +718,18 @@ def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
             clients = (first_client, second_client)
 
             def race_writes(expected_revision, texts):
-                gate = Barrier(2)
-                read_hit_lock = Lock()
-                read_hits = 0
+                def write(index):
+                    return clients[index].put(
+                        f"/api/research/interviews/{interview_id}/answers/G01",
+                        headers=auth_headers,
+                        json={
+                            "answer_text": texts[index],
+                            "expected_revision": expected_revision,
+                        },
+                    )
 
-                def synchronize_current_answer_read(
-                    connection, cursor, statement, parameters, context, executemany
-                ):
-                    nonlocal read_hits
-                    normalized = statement.lstrip().upper()
-                    if (
-                        normalized.startswith("SELECT")
-                        and "FROM RESEARCH_ANSWERS" in normalized
-                        and "WHERE RESEARCH_ANSWERS.INTERVIEW_ID" in normalized
-                    ):
-                        with read_hit_lock:
-                            read_hits += 1
-                        gate.wait(timeout=10)
-
-                event.listen(engine, "after_cursor_execute", synchronize_current_answer_read)
-                try:
-                    def write(index):
-                        return clients[index].put(
-                            f"/api/research/interviews/{interview_id}/answers/G01",
-                            headers=auth_headers,
-                            json={
-                                "answer_text": texts[index],
-                                "expected_revision": expected_revision,
-                            },
-                        )
-
-                    with ThreadPoolExecutor(max_workers=2) as executor:
-                        responses = list(executor.map(write, (0, 1)))
-                    with read_hit_lock:
-                        assert read_hits == 2, (
-                            "expected both independent requests to reach the "
-                            "synchronized answer read; "
-                            f"observed {read_hits} hits"
-                        )
-                    return responses
-                finally:
-                    event.remove(engine, "after_cursor_execute", synchronize_current_answer_read)
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    return list(executor.map(write, (0, 1)))
 
             same_text_results = race_writes(1, ("shared retry", "shared retry"))
             assert [response.status_code for response in same_text_results] == [200, 200]
@@ -481,7 +763,6 @@ def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
                 )
             cleanup.execute(delete(User).where(User.id == user.id))
             cleanup.commit()
-
 
 def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(authenticated):
     created = authenticated.post(
