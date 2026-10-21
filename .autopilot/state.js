@@ -17,6 +17,11 @@ window.STATE =
     "assumptions": [
       "Повторять эффекты один раз на активацию разворота.",
       "Сохранить существующую поддержку экранов от 1100x700 и компактный fallback."
+    ],
+    "limitations": [
+      "Existingdesktopminimum1100x700andfallbackpreserved",
+      "Chromiumandemulatedtouchchecked; physicaldevices/otherenginesnotcertified",
+      "Finalhero rasterdiff up to21209pixels atidenticalgeometry; visuallyequivalentcropreview, exactcauseunestablished"
     ]
   },
   "slug": "test-13-motion",
@@ -333,7 +338,7 @@ window.STATE =
         "frontend/src/components/test_13",
         "frontend/e2e/test-13"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 1,
       "repairs": 2,
       "handoffs": 1,
@@ -344,6 +349,17 @@ window.STATE =
         "Chapter7bothCTAgroupcascade630ms",
         "Corelinkunderline must visiblymove/drawinstead ofoverlayingstaticborder",
         "Freshcontext: fixselector specificity soCTArestunderline remainsvisible"
+      ],
+      "finishedAt": "2026-10-21T03:30:14+03:00",
+      "commit": "e108ca8c9258b4e1ceeee2bfd63d85e20add698f",
+      "tests": [
+        "lint/typecheck finalpassed",
+        "Vitest113/26",
+        "Dockerproductionbuild",
+        "Playwright36/36",
+        "productiongeometry28/28",
+        "424protectedhashmatch",
+        "independentG4/sourcePASS"
       ]
     }
   ],
@@ -407,8 +423,9 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
-      "startedAt": "2026-10-21T03:28:52+03:00"
+      "status": "done",
+      "startedAt": "2026-10-21T03:28:52+03:00",
+      "finishedAt": "2026-10-21T03:30:14+03:00"
     }
   ],
   "blind": {
@@ -418,21 +435,23 @@ window.STATE =
     "report": "docs/qa/test-13/blind-acceptance.md"
   },
   "polish": null,
-  "updatedAt": "2026-10-21T03:28:52+03:00",
+  "updatedAt": "2026-10-21T03:30:14+03:00",
   "reviewers": {
     "manifestSpec": "/root/coverage",
-    "craft": "/root/craft"
+    "craft": "/root/craft",
+    "memory": "/root/memory",
+    "blind": "/root/blind"
   },
   "requirements": {
-    "done": 0,
-    "inTicket": 202,
+    "done": 202,
+    "inTicket": 0,
     "inSpec": 0,
     "total": 202,
     "deferred": 0,
     "dropped": 0,
     "placeholder": 0
   },
-  "finishedAt": null,
+  "finishedAt": "2026-10-21T03:30:14+03:00",
   "mode": "full",
   "depth": "normal",
   "concerns": [
