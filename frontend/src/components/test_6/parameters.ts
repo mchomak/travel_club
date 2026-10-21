@@ -1,13 +1,14 @@
 import { DEFAULT_SHAPE } from "./deformation";
-import { DEFAULT_TIMING } from "./timeline";
+import { ANIMATION_TIMINGS, DEFAULT_TIMING, type AnimationVariant } from "./timeline";
 export const DEFAULT_PARAMS = {
-  distance: 9.1, fov: 32, pitch: 18, yaw: -8, roll: -2,
-  scale: 1, tilt: -3, ...DEFAULT_SHAPE, thickness: .004,
+  distance: 9.1, fov: 32, pitch: 18, yaw: -8, roll: 0,
+  scale: 1, tilt: 0, ...DEFAULT_SHAPE, thickness: .004,
   ambient: 2.2, key: 2.1, lightX: -2, lightY: 1, lightZ: 12,
   shadowStrength: .19, shadowSoftness: 4, ...DEFAULT_TIMING, debug: false,
 };
 export type SceneParams = typeof DEFAULT_PARAMS;
-export type SliderKey = Exclude<keyof SceneParams, "debug">;
+export function paramsForVariant(variant: AnimationVariant): SceneParams { return { ...DEFAULT_PARAMS, ...ANIMATION_TIMINGS[variant] }; }
+export type SliderKey = Exclude<keyof SceneParams, "debug" | "variant" | "speedCurve">;
 export const CONTROL_GROUPS: { title: string; sliders: { key: SliderKey; label: string; min: number; max: number; step: number }[] }[] = [
   { title: "Camera", sliders: [
     { key: "distance", label: "Distance", min: 7, max: 15, step: .1 },
@@ -37,7 +38,7 @@ export const CONTROL_GROUPS: { title: string; sliders: { key: SliderKey; label: 
     { key: "shadowSoftness", label: "Shadow softness", min: 1, max: 6, step: .25 },
   ] },
   { title: "Animation", sliders: [
-    { key: "flipDuration", label: "Flip duration", min: .3, max: 2, step: .05 },
-    { key: "delay", label: "Delay between flips", min: 0, max: .8, step: .02 },
+    { key: "flipDuration", label: "Flip duration", min: .3, max: 2, step: .01 },
+    { key: "delay", label: "Delay between flips", min: 0, max: .8, step: .01 },
   ] },
 ];

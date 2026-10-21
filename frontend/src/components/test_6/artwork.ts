@@ -55,8 +55,8 @@ export async function createArtwork(): Promise<Artwork> {
     text(ctx, "People make the journey.", 62, 1145, 39, ink, true);
     text(ctx, "AN INDEPENDENT TRAVEL JOURNAL", 62, 1218, 17);
   });
-  const names = ["PEOPLE", "THAILAND ’26", "FIELD NOTES", "CHINA ’26"];
-  const routes = ["PLACES / CULTURE / STORIES", "ISLANDS → BANGKOK", "THE ARCHIVE / 2025", "BEIJING → SHANGHAI"];
+  const names = ["PEOPLE", "THAILAND ’26", "FIELD NOTES", "CHINA ’26", "PLACES", "CULTURE", "STORIES"];
+  const routes = ["PLACES / CULTURE / STORIES", "ISLANDS → BANGKOK", "THE ARCHIVE / 2025", "BEIJING → SHANGHAI", "ALONG THE WAY", "LOCAL LIFE / SHARED TABLES", "MEMORIES TO BRING HOME"];
   const spreads = names.map((name, index) => ({
     left: page(ctx => {
       ctx.fillStyle = index === 1 ? BASE_TOKENS.colors.thailand : ink; ctx.fillRect(0, 0, W, H);
@@ -69,7 +69,7 @@ export async function createArtwork(): Promise<Artwork> {
         crop(ctx, food, 62, 935, 265, 194);
         text(ctx, "A FRIENDS’ JOURNEY", 363, 1003, 18, cloud); text(ctx, "BEFORE THE CLUB BEGAN", 363, 1035, 17, cloud);
       } else {
-        const lines = index === 0 ? ["PEOPLE", "PLACES", "CULTURE", "STORIES"] : index === 1 ? ["THAILAND", "’26"] : ["FIELD", "NOTES", "2025"];
+        const lines = index === 0 ? ["PEOPLE", "PLACES", "CULTURE", "STORIES"] : index === 1 ? ["THAILAND", "’26"] : index === 2 ? ["FIELD", "NOTES", "2025"] : [name, "2026"];
         lines.forEach((line, i) => text(ctx, line, 62, 305 + i * 162, index === 0 ? 115 : 139, cloud, false, 600));
         text(ctx, "Collected along the way.", 62, 1020, 43, cloud, true);
       }
@@ -78,7 +78,7 @@ export async function createArtwork(): Promise<Artwork> {
     right: page(ctx => {
       meta(ctx, name, "TRAVEL CLUB");
       text(ctx, routes[index], 62, 169, 24, ink, false, 500);
-      crop(ctx, index === 1 ? islands : city, 62, 218, 900, 735);
+      crop(ctx, index === 1 || index === 4 ? islands : index === 5 ? food : city, 62, 218, 900, 735);
       text(ctx, index === 3 ? "Where matters." : "A place to remember.", 62, 1050, 43, ink, true);
       text(ctx, index === 3 ? "Who with matters more." : "A story to bring home.", 62, 1104, 43, ink, true);
       text(ctx, index === 3 ? "4 FRIENDS  +  2 LOCAL FRIENDS IN BEIJING" : "INDEPENDENT JOURNEYS / SHARED MEMORIES", 62, 1203, 18);

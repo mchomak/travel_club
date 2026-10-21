@@ -1,6 +1,6 @@
 server {
     listen @HTTPS_PORT@;
-    server_name @PUBLIC_IP@;
+    server_name @SERVER_NAME@;
 
     location = /__travel_club_port_probe {
         default_type text/plain;

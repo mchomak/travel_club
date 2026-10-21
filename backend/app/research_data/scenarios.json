@@ -1,0 +1,346 @@
+{
+  "version": "1.0",
+  "bank_version": "1.0",
+  "scenarios": [
+    {
+      "code": "trips_experienced",
+      "label": "Trips / Опытный путешественник",
+      "screening_question_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "question_codes": [
+        "G01",
+        "G02",
+        "G05",
+        "G06",
+        "G07",
+        "G10",
+        "T01",
+        "T03",
+        "T04",
+        "T07",
+        "T10",
+        "T14"
+      ],
+      "docx_route_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "G01",
+        "G02",
+        "G05",
+        "G06",
+        "G07",
+        "G10",
+        "T01",
+        "T03",
+        "T04",
+        "T07",
+        "T10",
+        "T14"
+      ],
+      "provided_route_codes": [
+        "G01",
+        "G02",
+        "G05",
+        "G06",
+        "G07",
+        "G10",
+        "T01",
+        "T03",
+        "T04",
+        "T07",
+        "T10",
+        "T14"
+      ]
+    },
+    {
+      "code": "trips_beginner",
+      "label": "Trips / Начинающий путешественник",
+      "screening_question_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "question_codes": [
+        "G01",
+        "G04",
+        "G05",
+        "G06",
+        "G10",
+        "G12",
+        "T02",
+        "T05",
+        "T06",
+        "T08",
+        "T14",
+        "T15"
+      ],
+      "docx_route_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "G01",
+        "G04",
+        "G05",
+        "G06",
+        "G10",
+        "G12",
+        "T02",
+        "T05",
+        "T06",
+        "T08",
+        "T14",
+        "T15"
+      ],
+      "provided_route_codes": [
+        "G01",
+        "G04",
+        "G05",
+        "G06",
+        "T02",
+        "T05",
+        "T06",
+        "T08",
+        "T14",
+        "T15"
+      ]
+    },
+    {
+      "code": "travel_design",
+      "label": "Travel Design",
+      "screening_question_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06"
+      ],
+      "question_codes": [
+        "G01",
+        "G04",
+        "G07",
+        "G08",
+        "G10",
+        "D01",
+        "D02",
+        "D04",
+        "D05",
+        "D07",
+        "D08"
+      ],
+      "docx_route_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "G01",
+        "G04",
+        "G07",
+        "G08",
+        "G10",
+        "D01",
+        "D02",
+        "D04",
+        "D05",
+        "D07",
+        "D08",
+        "X06"
+      ],
+      "provided_route_codes": [
+        "G01",
+        "G04",
+        "G07",
+        "D01",
+        "D02",
+        "D04",
+        "D05",
+        "D07",
+        "D08"
+      ]
+    },
+    {
+      "code": "travel_ready",
+      "label": "Travel Ready",
+      "screening_question_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06"
+      ],
+      "question_codes": [
+        "G01",
+        "G04",
+        "G07",
+        "G10",
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R12"
+      ],
+      "docx_route_codes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "G01",
+        "G04",
+        "G07",
+        "G10",
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R12",
+        "X07",
+        "X08"
+      ],
+      "provided_route_codes": [
+        "G01",
+        "G04",
+        "G07",
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R12"
+      ]
+    }
+  ],
+  "optional_modules": {
+    "brand": {
+      "enabled": true,
+      "append_to_end": true,
+      "question_codes": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10",
+        "B11",
+        "B12"
+      ],
+      "docx_ecosystem_route": [
+        "G01",
+        "G05",
+        "G09",
+        "G10",
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B07",
+        "B08"
+      ]
+    },
+    "offers": {
+      "enabled": false,
+      "question_codes": [
+        "X01",
+        "X02",
+        "X03",
+        "X04",
+        "X05",
+        "X06",
+        "X07",
+        "X08",
+        "X09",
+        "X10",
+        "X11",
+        "X12"
+      ],
+      "enable_only_when": "Есть реальные цены и условия предложения.",
+      "conditional_docx_questions": {
+        "travel_design": [
+          "X06"
+        ],
+        "travel_ready": [
+          "X07",
+          "X08"
+        ]
+      }
+    }
+  },
+  "docx_route_comparison": [
+    {
+      "scenario": "trips_beginner",
+      "docx_adds": [
+        "G10",
+        "G12"
+      ],
+      "resolution": "Использовать DOCX как первичный источник."
+    },
+    {
+      "scenario": "travel_design",
+      "docx_adds": [
+        "G08",
+        "G10"
+      ],
+      "resolution": "Использовать DOCX как первичный источник."
+    },
+    {
+      "scenario": "travel_ready",
+      "docx_adds": [
+        "G10"
+      ],
+      "resolution": "Использовать DOCX как первичный источник."
+    },
+    {
+      "scenario": "travel_design",
+      "conditional_offers": [
+        "X06"
+      ],
+      "resolution": "X выключен до реальной цены и условий; вопрос не входит в базовый массив."
+    },
+    {
+      "scenario": "travel_ready",
+      "conditional_offers": [
+        "X07",
+        "X08"
+      ],
+      "resolution": "X выключен до реальной цены и условий; вопросы не входят в базовый массив."
+    },
+    {
+      "scenario": "brand",
+      "docx_route": [
+        "G01",
+        "G05",
+        "G09",
+        "G10",
+        "B01",
+        "B02",
+        "B03",
+        "B05",
+        "B07",
+        "B08"
+      ],
+      "resolution": "B — необязательное приложение к любому основному сценарию, не пятая категория."
+    }
+  ]
+}

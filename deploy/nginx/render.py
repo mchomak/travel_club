@@ -13,6 +13,7 @@ from pathlib import Path
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 HTTPS_PORTS = {8443, 9443, 10443}
 SAFE_PATH = re.compile(r"^/[A-Za-z0-9_./-]+$")
+DNS_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$")
 
 
 def checked_ip(value: str) -> str:
@@ -23,6 +24,27 @@ def checked_ip(value: str) -> str:
     if parsed.version != 4:
         raise argparse.ArgumentTypeError("PUBLIC_IP must be IPv4 for this Nginx template")
     return str(parsed)
+
+
+def checked_server_name(value: str) -> str:
+    try:
+        parsed = ipaddress.ip_address(value)
+    except ValueError:
+        parsed = None
+    if parsed is not None:
+        if parsed.version != 4:
+            raise argparse.ArgumentTypeError("SERVER_NAME must be an IPv4 address or DNS hostname")
+        return str(parsed)
+
+    labels = value.split(".")
+    if (
+        len(value) > 253
+        or not value
+        or any(len(label) > 63 or not DNS_LABEL.fullmatch(label) for label in labels)
+        or not re.search(r"[A-Za-z]", labels[-1])
+    ):
+        raise argparse.ArgumentTypeError("SERVER_NAME must be an IPv4 address or DNS hostname")
+    return value.lower()
 
 
 def checked_port(value: str) -> int:
@@ -77,6 +99,7 @@ def parser() -> argparse.ArgumentParser:
     for name in ("http", "probe", "https"):
         command = commands.add_parser(name)
         command.add_argument("--public-ip", required=True, type=checked_ip)
+        command.add_argument("--server-name", type=checked_server_name)
         command.add_argument("--https-port", required=True, type=checked_port)
         if name == "http":
             command.add_argument("--acme-webroot", required=True, type=lambda value: checked_path(value, "ACME_WEBROOT"))
@@ -89,7 +112,7 @@ def parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = parser().parse_args()
     replacements = {
-        "PUBLIC_IP": args.public_ip,
+        "SERVER_NAME": args.server_name or args.public_ip,
         "HTTPS_PORT": str(args.https_port),
     }
     template = {

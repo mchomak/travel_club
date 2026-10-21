@@ -70,8 +70,10 @@ window.STATE =
     "done": 73,
     "inTicket": 0,
     "inSpec": 0,
+    "inTicket": 0,
+    "total": 24,
     "placeholder": 0,
-    "deferred": 0,
+    "done": 24,
     "dropped": 0
   },
   "tickets": [
@@ -193,6 +195,7 @@ window.STATE =
         "test_12 spreads/data"
       ],
       "status": "done",
+      "startedAt": "2026-10-21T16:25:40+03:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
@@ -373,6 +376,7 @@ window.STATE =
     "evidence": "docs/qa/test-12/blind-acceptance.md",
     "remaining": null
   },
+  "blind": null,
   "git": {
     "branch": "codex/test-12",
     "sourceCommit": "bf17f3d5409c50cddf9d6f32c22b0ea0199a396e",
@@ -380,4 +384,4 @@ window.STATE =
     "postPushRebuild": "Docker production build exit0, isolated container restarted, HTTP200,4browser smoke passed",
     "preview": "http://localhost:3013/test_12"
   }
-}
+};

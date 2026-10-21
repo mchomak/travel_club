@@ -1,0 +1,153 @@
+.page {
+  width: min(100%, 1280px);
+  margin-inline: auto;
+  padding: clamp(28px, 5vw, 68px) clamp(20px, 5vw, 64px) 72px;
+}
+
+.intro {
+  max-width: 780px;
+  padding-bottom: 30px;
+  margin-bottom: 38px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: #476b87;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.intro h1 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.12;
+}
+
+.summary {
+  max-width: 62ch;
+  margin: 14px 0 0;
+  color: var(--color-muted);
+}
+
+.catalog {
+  display: block;
+}
+
+.group + .group {
+  margin-top: 40px;
+}
+
+.group h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -.015em;
+}
+
+.entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(28px, 5vw, 72px);
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entries li {
+  min-width: 0;
+}
+
+.entry {
+  display: flex;
+  min-height: 82px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 0 13px;
+  border-top: 1px solid var(--color-line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.entry:hover .title {
+  color: #2d618a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.entry:focus-visible {
+  outline: 3px solid #4d83aa;
+  outline-offset: 3px;
+}
+
+.copy {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  display: block;
+  color: #315d7c;
+  font-size: .98rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.description {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: .875rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.status {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  padding: 4px 7px;
+  border: 1px solid #c4d4e1;
+  border-radius: 4px;
+  background: #edf3f7;
+  color: #385d78;
+  font-size: .72rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 28px 18px 48px;
+  }
+
+  .intro {
+    padding-bottom: 24px;
+    margin-bottom: 30px;
+  }
+
+  .entries {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .group + .group {
+    margin-top: 32px;
+  }
+
+  .entry {
+    min-height: 74px;
+  }
+}
+
+@media (max-width: 420px) {
+  .entry {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

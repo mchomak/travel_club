@@ -7,6 +7,7 @@ from app.auth import router as auth_router
 from app.config import get_settings
 from app.maps import router as maps_router
 from app.pricing import PricingError
+from app.research import router as research_router
 from app.trips import router as trips_router
 from app.validation import validation_message
 
@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
     application = FastAPI(title="Travel Club", docs_url=None, redoc_url=None)
     application.include_router(auth_router)
     application.include_router(trips_router)
+    application.include_router(research_router)
     application.include_router(maps_router)
 
     @application.exception_handler(PricingError)
@@ -28,8 +30,12 @@ def create_app() -> FastAPI:
     async def csrf_guard(request: Request, call_next):
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             origin = request.headers.get("origin")
+            settings = get_settings()
+            allowed_origins = {settings.allowed_origin}
+            if settings.research_origin:
+                allowed_origins.add(settings.research_origin)
             if request.headers.get("x-requested-with") != "TravelClub" or (
-                origin is not None and origin != get_settings().allowed_origin
+                origin is not None and origin not in allowed_origins
             ):
                 return JSONResponse(
                     {"code": "CSRF_REJECTED", "message": "Обновите страницу и повторите действие"},

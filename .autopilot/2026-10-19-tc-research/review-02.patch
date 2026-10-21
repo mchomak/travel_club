@@ -1,0 +1,1765 @@
+﻿diff --git a/.env.example b/.env.example
+index 3402a50..f6e3403 100644
+--- a/.env.example
++++ b/.env.example
+@@ -6,6 +6,7 @@ POSTGRES_USER=travel_club
+ POSTGRES_HOST=localhost
+ APP_ENV=development
+ ALLOWED_ORIGIN=http://localhost:3000
++RESEARCH_ORIGIN=
+ COOKIE_SECURE=false
+ # Optional; enter actual keys only in the local .env, never commit them.
+ GEOAPIFY_API_KEY=
+diff --git a/backend/app/config.py b/backend/app/config.py
+index 1d92fe6..1d47637 100644
+--- a/backend/app/config.py
++++ b/backend/app/config.py
+@@ -18,6 +18,7 @@ class Settings(BaseSettings):
+     postgres_user: str = "travel_club"
+     postgres_password: SecretStr
+     allowed_origin: str = "http://localhost:3000"
++    research_origin: str = ""
+     cookie_secure: bool = False
+     session_hours: int = 12
+     login_limit_per_login: int = 5
+diff --git a/backend/app/main.py b/backend/app/main.py
+index 251f3a5..e07e637 100644
+--- a/backend/app/main.py
++++ b/backend/app/main.py
+@@ -7,6 +7,7 @@ from app.auth import router as auth_router
+ from app.config import get_settings
+ from app.maps import router as maps_router
+ from app.pricing import PricingError
++from app.research import router as research_router
+ from app.trips import router as trips_router
+ from app.validation import validation_message
+@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
+     application = FastAPI(title="Travel Club", docs_url=None, redoc_url=None)
+     application.include_router(auth_router)
+     application.include_router(trips_router)
++    application.include_router(research_router)
+     application.include_router(maps_router)
+     @application.exception_handler(PricingError)
+@@ -28,8 +30,12 @@ def create_app() -> FastAPI:
+     async def csrf_guard(request: Request, call_next):
+         if request.method not in {"GET", "HEAD", "OPTIONS"}:
+             origin = request.headers.get("origin")
++            settings = get_settings()
++            allowed_origins = {settings.allowed_origin}
++            if settings.research_origin:
++                allowed_origins.add(settings.research_origin)
+             if request.headers.get("x-requested-with") != "TravelClub" or (
+-                origin is not None and origin != get_settings().allowed_origin
++                origin is not None and origin not in allowed_origins
+             ):
+                 return JSONResponse(
+                     {"code": "CSRF_REJECTED", "message": "Обновите страницу и повторите действие"},
+diff --git a/backend/app/models.py b/backend/app/models.py
+index 4b83316..0df1021 100644
+--- a/backend/app/models.py
++++ b/backend/app/models.py
+@@ -207,3 +207,91 @@ class TripCurrencyRate(Base):
+         UniqueConstraint("trip_id", "currency", name="uq_rate_currency"),
+         CheckConstraint("rate > 0", name="rate_positive"),
+     )
++
++
++class ResearchRespondent(Base):
++    __tablename__ = "research_respondents"
++    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
++    name: Mapped[str] = mapped_column(String(200))
++    age_range: Mapped[str | None] = mapped_column(String(80))
++    city: Mapped[str] = mapped_column(String(160), default="")
++    screening_answers: Mapped[dict] = mapped_column(JSONB, default=dict)
++    research_goal: Mapped[str | None] = mapped_column(String(30))
++    suggested_category: Mapped[str] = mapped_column(String(40))
++    final_category: Mapped[str] = mapped_column(String(40))
++    category_override: Mapped[bool] = mapped_column(Boolean, default=False)
++    recommendation: Mapped[dict] = mapped_column(JSONB, default=dict)
++    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
++    updated_at: Mapped[datetime] = mapped_column(
++        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
++    )
++    interviews: Mapped[list["ResearchInterview"]] = relationship(
++        cascade="all, delete-orphan", passive_deletes=True, order_by="ResearchInterview.created_at"
++    )
++    __table_args__ = (
++        CheckConstraint(
++            "suggested_category IN ('trips_experienced','trips_beginner',"
++            "'travel_design','travel_ready')",
++            name="research_suggested_category",
++        ),
++        CheckConstraint(
++            "final_category IN ('trips_experienced','trips_beginner',"
++            "'travel_design','travel_ready')",
++            name="research_final_category",
++        ),
++        CheckConstraint(
++            "research_goal IS NULL OR research_goal IN ('trips','individual_services')",
++            name="research_goal",
++        ),
++        Index("ix_research_respondents_created_at", "created_at"),
++        Index("ix_research_respondents_updated_at", "updated_at"),
++        Index("ix_research_respondents_final_category", "final_category"),
++    )
++
++
++class ResearchInterview(Base):
++    __tablename__ = "research_interviews"
++    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
++    respondent_id: Mapped[UUID] = mapped_column(
++        ForeignKey("research_respondents.id", ondelete="CASCADE"), index=True
++    )
++    scenario_code: Mapped[str] = mapped_column(String(40))
++    scenario_version: Mapped[str] = mapped_column(String(40))
++    bank_version: Mapped[str] = mapped_column(String(40))
++    status: Mapped[str] = mapped_column(String(20), default="draft")
++    question_snapshot: Mapped[list] = mapped_column(JSONB, default=list)
++    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
++    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
++    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
++    updated_at: Mapped[datetime] = mapped_column(
++        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
++    )
++    answers: Mapped[list["ResearchAnswer"]] = relationship(
++        cascade="all, delete-orphan", passive_deletes=True, order_by="ResearchAnswer.question_code"
++    )
++    __table_args__ = (
++        CheckConstraint(
++            "status IN ('draft','in_progress','completed')", name="research_interview_status"
++        ),
++        Index("ix_research_interviews_status", "status"),
++        Index("ix_research_interviews_created_at", "created_at"),
++        Index("ix_research_interviews_updated_at", "updated_at"),
++    )
++
++
++class ResearchAnswer(Base):
++    __tablename__ = "research_answers"
++    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
++    interview_id: Mapped[UUID] = mapped_column(
++        ForeignKey("research_interviews.id", ondelete="CASCADE"), index=True
++    )
++    question_code: Mapped[str] = mapped_column(String(3))
++    answer_text: Mapped[str] = mapped_column(Text, default="")
++    revision: Mapped[int] = mapped_column(Integer, default=1)
++    updated_at: Mapped[datetime] = mapped_column(
++        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
++    )
++    __table_args__ = (
++        UniqueConstraint("interview_id", "question_code", name="uq_research_answer_question"),
++        CheckConstraint("revision > 0", name="research_answer_revision"),
++    )
+diff --git a/backend/app/research.py b/backend/app/research.py
+new file mode 100644
+index 0000000..7ba4107
+--- /dev/null
++++ b/backend/app/research.py
+@@ -0,0 +1,632 @@
++from __future__ import annotations
++
++from datetime import UTC, datetime
++from typing import Annotated, Any, Literal
++from uuid import UUID
++
++from fastapi import APIRouter, Depends, HTTPException, Query, Response
++from pydantic import BaseModel, ConfigDict, Field
++from sqlalchemy import func, select, update
++from sqlalchemy.dialects.postgresql import insert as pg_insert
++from sqlalchemy.exc import SQLAlchemyError
++from sqlalchemy.orm import Session
++
++from app.auth import Admin
++from app.db import get_db
++from app.models import ResearchAnswer, ResearchInterview, ResearchRespondent
++from app.research_bank import (
++    load_configuration,
++    load_question_bank,
++    validate_configuration,
++)
++from app.research_domain import recommend_category
++
++Database = Annotated[Session, Depends(get_db)]
++router = APIRouter(prefix="/api/research", tags=["research"])
++Category = Literal["trips_experienced", "trips_beginner", "travel_design", "travel_ready"]
++ResearchGoal = Literal["trips", "individual_services"]
++
++
++class Payload(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++
++
++class RespondentCreate(Payload):
++    screening_answers: dict[str, Any]
++    research_goal: ResearchGoal | None = None
++
++
++class ScreeningUpdate(Payload):
++    screening_answers: dict[str, Any]
++    research_goal: ResearchGoal | None = None
++    apply_suggestion: bool = False
++
++
++class CategoryUpdate(Payload):
++    final_category: Category
++
++
++class QuestionAppend(Payload):
++    question_codes: list[str] = Field(min_length=1, max_length=82)
++
++
++class AnswerUpdate(Payload):
++    answer_text: str
++    expected_revision: int = Field(ge=0)
++
++
++def _http_error(status: int, code: str, message: str, **extra: Any) -> HTTPException:
++    return HTTPException(status, {"code": code, "message": message, **extra})
++
++
++def _save(db: Session, message: str = "Не удалось сохранить исследовательские данные") -> None:
++    try:
++        db.commit()
++    except SQLAlchemyError as error:
++        db.rollback()
++        raise _http_error(500, "RESEARCH_SAVE_FAILED", message) from error
++
++
++def _respondent_or_404(db: Session, respondent_id: UUID) -> ResearchRespondent:
++    respondent = db.get(ResearchRespondent, respondent_id)
++    if respondent is None:
++        raise _http_error(404, "RESPONDENT_NOT_FOUND", "Респондент не найден")
++    return respondent
++
++
++def _interview_or_404(db: Session, interview_id: UUID) -> ResearchInterview:
++    interview = db.get(ResearchInterview, interview_id)
++    if interview is None:
++        raise _http_error(404, "INTERVIEW_NOT_FOUND", "Интервью не найдено")
++    return interview
++
++
++def _require_valid_bank() -> dict[str, dict[str, Any]]:
++    configuration = load_configuration()
++    issues = validate_configuration(configuration)
++    if issues:
++        raise _http_error(
++            409,
++            "RESEARCH_BANK_INVALID",
++            "Банк вопросов требует исправления перед созданием или началом интервью",
++            issues=issues,
++        )
++    return configuration
++
++
++def _question_map(bank: dict[str, Any]) -> dict[str, dict[str, Any]]:
++    return {
++        question["code"]: question
++        for question in bank.get("questions", [])
++        if isinstance(question, dict) and isinstance(question.get("code"), str)
++    }
++
++
++def _scenario(configuration: dict[str, dict[str, Any]], code: str) -> dict[str, Any]:
++    for scenario in configuration["scenarios"].get("scenarios", []):
++        if scenario.get("code") == code:
++            return scenario
++    raise _http_error(409, "SCENARIO_NOT_FOUND", "Сценарий больше не доступен в конфигурации")
++
++
++def _make_snapshot(
++    configuration: dict[str, dict[str, Any]], codes: list[str]
++) -> list[dict[str, Any]]:
++    bank = configuration["bank"]
++    questions = _question_map(bank)
++    missing = [code for code in codes if code not in questions]
++    if missing:
++        raise _http_error(
++            409,
++            "RESEARCH_BANK_INVALID",
++            "В сценарии есть вопросы, которых нет в банке",
++            missing_codes=missing,
++        )
++    version = str(bank.get("bank_version", configuration["scenarios"].get("bank_version", "1")))
++    fields = (
++        "code",
++        "section",
++        "text",
++        "type",
++        "options",
++        "follow_ups",
++        "hypothesis_ids",
++        "interpretation",
++        "answer_guidance",
++    )
++    return [
++        {**{key: questions[code].get(key) for key in fields}, "bank_version": version}
++        for code in codes
++    ]
++
++
++def _recommendation(answers: dict[str, Any], goal: str | None) -> dict[str, Any]:
++    return recommend_category(answers, goal)
++
++
++def _scalar_screening(answers: dict[str, Any], key: str) -> str | None:
++    value = answers.get(key)
++    if value is None or value == "":
++        return None
++    if isinstance(value, str):
++        return value.strip() or None
++    return str(value)
++
++
++def _screening_values(answers: dict[str, Any]) -> tuple[str, str | None, str]:
++    name = _scalar_screening(answers, "name")
++    if not name:
++        raise _http_error(422, "NAME_REQUIRED", "Укажите имя респондента или псевдоним")
++    if len(name) > 200:
++        raise _http_error(
++            422, "NAME_TOO_LONG", "Имя или псевдоним не должно превышать 200 символов"
++        )
++    age_range = _scalar_screening(answers, "age_range")
++    city = _scalar_screening(answers, "city") or ""
++    if len(city) > 160:
++        raise _http_error(422, "CITY_TOO_LONG", "Город не должен превышать 160 символов")
++    if age_range is not None and len(age_range) > 80:
++        raise _http_error(
++            422, "AGE_TOO_LONG", "Возрастная категория не должна превышать 80 символов"
++        )
++    return name, age_range, city
++
++
++def _touch_interview(db: Session, interview: ResearchInterview) -> None:
++    now = datetime.now(UTC)
++    interview.updated_at = now
++    db.execute(
++        update(ResearchRespondent)
++        .where(ResearchRespondent.id == interview.respondent_id)
++        .values(updated_at=now)
++    )
++
++
++def _answer_json(answer: ResearchAnswer | None) -> dict[str, Any] | None:
++    if answer is None:
++        return None
++    return {
++        "answer_text": answer.answer_text,
++        "revision": answer.revision,
++        "updated_at": answer.updated_at.isoformat() if answer.updated_at else None,
++    }
++
++
++def _interview_json(db: Session, interview: ResearchInterview) -> dict[str, Any]:
++    answers = db.scalars(
++        select(ResearchAnswer).where(ResearchAnswer.interview_id == interview.id)
++    ).all()
++    return {
++        "id": interview.id,
++        "respondent_id": interview.respondent_id,
++        "scenario_code": interview.scenario_code,
++        "scenario_version": interview.scenario_version,
++        "bank_version": interview.bank_version,
++        "status": interview.status,
++        "question_snapshot": interview.question_snapshot,
++        "started_at": interview.started_at,
++        "completed_at": interview.completed_at,
++        "created_at": interview.created_at,
++        "updated_at": interview.updated_at,
++        "answers": {answer.question_code: _answer_json(answer) for answer in answers},
++    }
++
++
++def _respondent_json(db: Session, respondent: ResearchRespondent) -> dict[str, Any]:
++    return {
++        "id": respondent.id,
++        "name": respondent.name,
++        "age_range": respondent.age_range,
++        "city": respondent.city,
++        "screening_answers": respondent.screening_answers,
++        "research_goal": respondent.research_goal,
++        "suggested_category": respondent.suggested_category,
++        "final_category": respondent.final_category,
++        "category_override": respondent.category_override,
++        "recommendation": respondent.recommendation,
++        "created_at": respondent.created_at,
++        "updated_at": respondent.updated_at,
++        "interviews": [_interview_json(db, item) for item in respondent.interviews],
++    }
++
++
++@router.get("/config")
++def get_config(_: Admin):
++    configuration = load_configuration()
++    safe_configuration = configuration if isinstance(configuration, dict) else {}
++    scenarios = safe_configuration.get("scenarios")
++    if not isinstance(scenarios, dict):
++        scenarios = {}
++    optional_modules = scenarios.get("optional_modules")
++    if not isinstance(optional_modules, dict):
++        optional_modules = {}
++    offers = optional_modules.get("offers")
++    return {
++        **safe_configuration,
++        "validation_issues": validate_configuration(configuration),
++        "offers_enabled": isinstance(offers, dict) and offers.get("enabled") is True,
++    }
++
++
++@router.get("/questions")
++def get_questions(_: Admin):
++    bank = load_question_bank()
++    return {
++        "bank_version": bank.get("bank_version"),
++        "questions": bank.get("questions", []),
++        "hypotheses": bank.get("hypotheses", []),
++    }
++
++
++@router.get("/respondents")
++def list_respondents(
++    _: Admin,
++    db: Database,
++    q: str | None = Query(default=None, max_length=200),
++    category: Category | None = None,
++    status: Literal["draft", "in_progress", "completed"] | None = None,
++    sort: Literal["created_at", "updated_at"] = "updated_at",
++    order: Literal["asc", "desc"] = "desc",
++    page: int = Query(default=1, ge=1),
++    page_size: int = Query(default=25, ge=1, le=100),
++):
++    latest_status = (
++        select(ResearchInterview.status)
++        .where(ResearchInterview.respondent_id == ResearchRespondent.id)
++        .order_by(ResearchInterview.created_at.desc())
++        .limit(1)
++        .scalar_subquery()
++    )
++    latest_updated = (
++        select(ResearchInterview.updated_at)
++        .where(ResearchInterview.respondent_id == ResearchRespondent.id)
++        .order_by(ResearchInterview.created_at.desc())
++        .limit(1)
++        .scalar_subquery()
++    )
++    filtered = []
++    if q and q.strip():
++        filtered.append(ResearchRespondent.name.ilike(f"%{q.strip()}%"))
++    if category:
++        filtered.append(ResearchRespondent.final_category == category)
++    if status:
++        filtered.append(latest_status == status)
++    matched_count = (
++        db.scalar(select(func.count()).select_from(ResearchRespondent).where(*filtered)) or 0
++    )
++    total_count = db.scalar(select(func.count()).select_from(ResearchRespondent)) or 0
++    completed_count = (
++        db.scalar(
++            select(func.count()).select_from(ResearchRespondent).where(latest_status == "completed")
++        )
++        or 0
++    )
++    rows = db.execute(
++        select(ResearchRespondent, latest_status, latest_updated)
++        .where(*filtered)
++        .order_by(
++            ResearchRespondent.created_at.desc()
++            if sort == "created_at" and order == "desc"
++            else ResearchRespondent.created_at.asc()
++            if sort == "created_at"
++            else ResearchRespondent.updated_at.desc()
++            if order == "desc"
++            else ResearchRespondent.updated_at.asc()
++        )
++        .offset((page - 1) * page_size)
++        .limit(page_size)
++    ).all()
++    items = []
++    for respondent, interview_status, interview_updated in rows:
++        items.append(
++            {
++                "id": respondent.id,
++                "name": respondent.name,
++                "age_range": respondent.age_range,
++                "city": respondent.city,
++                "suggested_category": respondent.suggested_category,
++                "final_category": respondent.final_category,
++                "category_override": respondent.category_override,
++                "status": interview_status or "draft",
++                "created_at": respondent.created_at,
++                "updated_at": max(respondent.updated_at, interview_updated)
++                if interview_updated
++                else respondent.updated_at,
++            }
++        )
++    return {
++        "items": items,
++        "total": matched_count,
++        "total_count": total_count,
++        "completed_count": completed_count,
++        "incomplete_count": total_count - completed_count,
++        "page": page,
++        "page_size": page_size,
++        "pages": (matched_count + page_size - 1) // page_size,
++    }
++
++
++@router.post("/respondents", status_code=201)
++def create_respondent(payload: RespondentCreate, _: Admin, db: Database):
++    configuration = _require_valid_bank()
++    name, age_range, city = _screening_values(payload.screening_answers)
++    recommendation = _recommendation(payload.screening_answers, payload.research_goal)
++    category = recommendation["suggested_category"]
++    _scenario(configuration, category)
++    bank_version = str(configuration["bank"].get("bank_version", "1"))
++    scenario_version = str(configuration["scenarios"].get("version", "1"))
++    respondent = ResearchRespondent(
++        name=name,
++        age_range=age_range,
++        city=city,
++        screening_answers=payload.screening_answers,
++        research_goal=payload.research_goal,
++        suggested_category=category,
++        final_category=category,
++        category_override=False,
++        recommendation=recommendation,
++    )
++    interview = ResearchInterview(
++        scenario_code=category,
++        scenario_version=scenario_version,
++        bank_version=bank_version,
++        status="draft",
++        question_snapshot=[],
++    )
++    respondent.interviews.append(interview)
++    db.add(respondent)
++    _save(db, "Не удалось создать респондента и черновик интервью")
++    return _respondent_json(db, respondent)
++
++
++@router.get("/respondents/{respondent_id}")
++def get_respondent(respondent_id: UUID, _: Admin, db: Database):
++    return _respondent_json(db, _respondent_or_404(db, respondent_id))
++
++
++@router.patch("/respondents/{respondent_id}/screening")
++def update_screening(respondent_id: UUID, payload: ScreeningUpdate, _: Admin, db: Database):
++    respondent = _respondent_or_404(db, respondent_id)
++    name, age_range, city = _screening_values(payload.screening_answers)
++    recommendation = _recommendation(payload.screening_answers, payload.research_goal)
++    respondent.name = name
++    respondent.age_range = age_range
++    respondent.city = city
++    respondent.screening_answers = payload.screening_answers
++    respondent.research_goal = payload.research_goal
++    respondent.recommendation = recommendation
++    respondent.suggested_category = recommendation["suggested_category"]
++    if payload.apply_suggestion:
++        respondent.final_category = recommendation["suggested_category"]
++        respondent.category_override = False
++    interview = max(respondent.interviews, key=lambda item: item.created_at, default=None)
++    if interview and interview.status == "draft":
++        if payload.apply_suggestion:
++            interview.scenario_code = respondent.final_category
++        configuration = load_configuration()
++        interview.scenario_version = str(configuration["scenarios"].get("version", "1"))
++        interview.bank_version = str(configuration["bank"].get("bank_version", "1"))
++        interview.question_snapshot = []
++        interview.updated_at = datetime.now(UTC)
++    respondent.updated_at = datetime.now(UTC)
++    _save(db)
++    return _respondent_json(db, respondent)
++
++
++@router.patch("/respondents/{respondent_id}/category")
++def update_category(respondent_id: UUID, payload: CategoryUpdate, _: Admin, db: Database):
++    respondent = _respondent_or_404(db, respondent_id)
++    respondent.final_category = payload.final_category
++    respondent.category_override = payload.final_category != respondent.suggested_category
++    interview = max(respondent.interviews, key=lambda item: item.created_at, default=None)
++    if interview and interview.status == "draft":
++        interview.scenario_code = payload.final_category
++        interview.question_snapshot = []
++    respondent.updated_at = datetime.now(UTC)
++    _save(db)
++    return _respondent_json(db, respondent)
++
++
++@router.post("/interviews/{interview_id}/start")
++def start_interview(interview_id: UUID, _: Admin, db: Database):
++    interview = _interview_or_404(db, interview_id)
++    respondent = _respondent_or_404(db, interview.respondent_id)
++    if interview.status == "draft":
++        configuration = _require_valid_bank()
++        scenario = _scenario(configuration, respondent.final_category)
++        interview.scenario_code = respondent.final_category
++        interview.scenario_version = str(configuration["scenarios"].get("version", "1"))
++        interview.bank_version = str(configuration["bank"].get("bank_version", "1"))
++        interview.question_snapshot = _make_snapshot(
++            configuration, list(scenario.get("question_codes", []))
++        )
++        interview.started_at = datetime.now(UTC)
++        interview.status = "in_progress"
++        _touch_interview(db, interview)
++        _save(db, "Не удалось начать интервью")
++    return _interview_json(db, interview)
++
++
++@router.post("/interviews/{interview_id}/questions")
++def append_questions(interview_id: UUID, payload: QuestionAppend, _: Admin, db: Database):
++    interview = _interview_or_404(db, interview_id)
++    if interview.status == "draft":
++        raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
++    configuration = _require_valid_bank()
++    codes = list(dict.fromkeys(payload.question_codes))
++    questions = _question_map(configuration["bank"])
++    missing = [code for code in codes if code not in questions]
++    if missing:
++        raise _http_error(
++            422, "UNKNOWN_QUESTION", "Выберите вопросы из актуального банка", missing_codes=missing
++        )
++    offers_enabled = (
++        configuration["scenarios"].get("optional_modules", {}).get("offers", {}).get("enabled")
++        is True
++    )
++    if not offers_enabled and any(code.startswith("X") for code in codes):
++        raise _http_error(409, "OFFERS_DISABLED", "Модуль проверки предложений пока выключен")
++    snapshot = list(interview.question_snapshot or [])
++    existing = {item.get("code") for item in snapshot if isinstance(item, dict)}
++    added = [code for code in codes if code not in existing]
++    if added:
++        snapshot.extend(_make_snapshot(configuration, added))
++        brand_module = (
++            configuration["scenarios"].get("optional_modules", {}).get("brand", {})
++        )
++        if isinstance(brand_module, dict) and brand_module.get("append_to_end") is True:
++            brand_codes = set(brand_module.get("question_codes", []))
++            snapshot = [
++                question for question in snapshot
++                if not isinstance(question, dict) or question.get("code") not in brand_codes
++            ] + [
++                question for question in snapshot
++                if isinstance(question, dict) and question.get("code") in brand_codes
++            ]
++        interview.question_snapshot = snapshot
++        _touch_interview(db, interview)
++        _save(db, "Не удалось добавить вопросы")
++    return _interview_json(db, interview)
++
++
++@router.put("/interviews/{interview_id}/answers/{question_code}")
++def save_answer(
++    interview_id: UUID,
++    question_code: str,
++    payload: AnswerUpdate,
++    _: Admin,
++    db: Database,
++):
++    interview = _interview_or_404(db, interview_id)
++    if interview.status == "draft":
++        raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
++    if not any(
++        isinstance(question, dict) and question.get("code") == question_code
++        for question in interview.question_snapshot
++    ):
++        raise _http_error(
++            422, "QUESTION_NOT_IN_INTERVIEW", "Этот вопрос не входит в сохранённый сценарий"
++        )
++
++    statement = (
++        pg_insert(ResearchAnswer)
++        .values(
++            interview_id=interview.id,
++            question_code=question_code,
++            answer_text=payload.answer_text,
++            revision=1,
++        )
++        .on_conflict_do_nothing(constraint="uq_research_answer_question")
++        .returning(ResearchAnswer.id)
++    )
++    if payload.expected_revision == 0:
++        inserted = db.scalar(statement)
++        if inserted:
++            answer = db.get(ResearchAnswer, inserted)
++            _touch_interview(db, interview)
++            _save(db, "Не удалось сохранить ответ")
++            db.refresh(answer)
++            return _answer_json(answer)
++
++    current = db.scalar(
++        select(ResearchAnswer).where(
++            ResearchAnswer.interview_id == interview.id,
++            ResearchAnswer.question_code == question_code,
++        )
++    )
++    if current is None:
++        raise _http_error(
++            409,
++            "ANSWER_CONFLICT",
++            "Ответ изменился в другой вкладке; сохраните свой текст с актуальной версией",
++            current=None,
++        )
++    if current.revision == payload.expected_revision:
++        if current.answer_text == payload.answer_text:
++            return _answer_json(current)
++        updated_id = db.scalar(
++            update(ResearchAnswer)
++            .where(
++                ResearchAnswer.id == current.id,
++                ResearchAnswer.revision == payload.expected_revision,
++            )
++            .values(
++                answer_text=payload.answer_text,
++                revision=payload.expected_revision + 1,
++                updated_at=func.now(),
++            )
++            .returning(ResearchAnswer.id)
++        )
++        if updated_id:
++            _touch_interview(db, interview)
++            _save(db, "Не удалось сохранить ответ")
++            return _answer_json(db.get(ResearchAnswer, updated_id))
++        current = db.scalar(
++            select(ResearchAnswer)
++            .where(ResearchAnswer.id == current.id)
++            .execution_options(populate_existing=True)
++        )
++    if current and current.answer_text == payload.answer_text:
++        return _answer_json(current)
++    raise _http_error(
++        409,
++        "ANSWER_CONFLICT",
++        "Ответ уже изменён. Скопируйте текущую версию или сохраните свой текст "
++        "с актуальной версией",
++        current=_answer_json(current),
++    )
++
++
++@router.post("/interviews/{interview_id}/complete")
++def complete_interview(interview_id: UUID, _: Admin, db: Database):
++    interview = _interview_or_404(db, interview_id)
++    if interview.status == "draft":
++        raise _http_error(409, "INTERVIEW_NOT_STARTED", "Сначала начните интервью")
++    if interview.status != "completed":
++        interview.status = "completed"
++        interview.completed_at = datetime.now(UTC)
++        _touch_interview(db, interview)
++        _save(db, "Не удалось завершить интервью")
++    return _interview_json(db, interview)
++
++
++@router.get("/export.xlsx")
++def export_research(_: Admin, db: Database):
++    rows = db.execute(
++        select(ResearchRespondent, ResearchInterview, ResearchAnswer)
++        .outerjoin(
++            ResearchInterview,
++            ResearchInterview.respondent_id == ResearchRespondent.id,
++        )
++        .outerjoin(ResearchAnswer, ResearchAnswer.interview_id == ResearchInterview.id)
++        .order_by(
++            ResearchRespondent.created_at,
++            ResearchRespondent.id,
++            ResearchInterview.created_at,
++            ResearchInterview.id,
++            ResearchAnswer.question_code,
++        )
++    ).all()
++    # One joined SQL statement gives every sheet the same PostgreSQL MVCC snapshot.
++    respondents_by_id: dict[UUID, ResearchRespondent] = {}
++    interviews_by_id: dict[UUID, ResearchInterview] = {}
++    answers_by_id: dict[UUID, ResearchAnswer] = {}
++    for respondent, interview, answer in rows:
++        respondents_by_id[respondent.id] = respondent
++        if interview is not None:
++            interviews_by_id[interview.id] = interview
++        if answer is not None:
++            answers_by_id[answer.id] = answer
++    from app.research_export import build_research_workbook
++
++    content = build_research_workbook(
++        list(respondents_by_id.values()),
++        list(interviews_by_id.values()),
++        list(answers_by_id.values()),
++    )
++    filename = f"tc-research-{datetime.now(UTC).date().isoformat()}.xlsx"
++    return Response(
++        content,
++        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
++        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
++    )
+diff --git a/backend/app/research_export.py b/backend/app/research_export.py
+new file mode 100644
+index 0000000..6e4633c
+--- /dev/null
++++ b/backend/app/research_export.py
+@@ -0,0 +1,251 @@
++from __future__ import annotations
++
++from collections.abc import Iterable
++from datetime import date, datetime
++from io import BytesIO
++from typing import Any
++
++from openpyxl import Workbook
++from openpyxl.styles import Alignment, Font, PatternFill
++from openpyxl.utils import get_column_letter
++
++from app.models import ResearchAnswer, ResearchInterview, ResearchRespondent
++from app.research_bank import load_question_bank, load_screening
++
++EXCEL_CELL_LIMIT = 32_767
++
++
++def _iso(value: datetime | date | None) -> str | None:
++    return value.isoformat() if value is not None else None
++
++
++def _display(value: Any) -> str | int | bool | None:
++    if value is None or isinstance(value, (str, int, bool)):
++        return value
++    return str(value)
++
++
++def _append_row(sheet, values: Iterable[Any]) -> None:
++    row = 1 if sheet.max_row == 1 and sheet.cell(1, 1).value is None else sheet.max_row + 1
++    for column, value in enumerate(values, start=1):
++        cell = sheet.cell(row=row, column=column, value=_display(value))
++        if isinstance(value, str):
++            # openpyxl infers formulas from leading '='. Force interview text to string data.
++            cell.data_type = "s"
++        cell.alignment = Alignment(vertical="top", wrap_text=True)
++
++
++def _snapshot_questions(interview: ResearchInterview) -> list[dict[str, Any]]:
++    if isinstance(interview.question_snapshot, list):
++        return [item for item in interview.question_snapshot if isinstance(item, dict)]
++    return []
++
++
++def build_research_workbook(
++    respondents: list[ResearchRespondent],
++    interviews: list[ResearchInterview],
++    answers: list[ResearchAnswer],
++) -> bytes:
++    """Build a complete, formula-safe Excel export from an already consistent DB snapshot."""
++    workbook = Workbook()
++    respondents_sheet = workbook.active
++    respondents_sheet.title = "Respondents"
++    interviews_sheet = workbook.create_sheet("Interviews")
++    answers_sheet = workbook.create_sheet("Answers")
++    questions_sheet = workbook.create_sheet("Questions")
++    hypotheses_sheet = workbook.create_sheet("Hypotheses")
++
++    screening_fields = load_screening().get("fields", [])
++    screening_keys = [
++        (field["key"], field.get("label", field["key"]))
++        for field in screening_fields
++        if isinstance(field, dict) and isinstance(field.get("key"), str)
++    ]
++    known_screening = {key for key, _ in screening_keys}
++    historical_screening = sorted(
++        {
++            key
++            for respondent in respondents
++            for key in (respondent.screening_answers or {})
++            if isinstance(key, str) and key not in known_screening
++        }
++    )
++    screening_keys.extend((key, key) for key in historical_screening)
++    respondent_headers = [
++        "Respondent ID",
++        "Name",
++        "Age / age range",
++        "City",
++        "Suggested category",
++        "Final category",
++        "Category override",
++        "Research goal",
++        "Status",
++        "Created At",
++        "Updated At",
++        *[f"Screening: {label}" for _, label in screening_keys],
++    ]
++    _append_row(respondents_sheet, respondent_headers)
++
++    latest_interview: dict[Any, ResearchInterview] = {}
++    for interview in interviews:
++        current = latest_interview.get(interview.respondent_id)
++        if current is None or interview.created_at > current.created_at:
++            latest_interview[interview.respondent_id] = interview
++    for respondent in respondents:
++        interview = latest_interview.get(respondent.id)
++        screening = respondent.screening_answers or {}
++        _append_row(
++            respondents_sheet,
++            [
++                str(respondent.id),
++                respondent.name,
++                respondent.age_range,
++                respondent.city,
++                respondent.suggested_category,
++                respondent.final_category,
++                respondent.category_override,
++                respondent.research_goal,
++                interview.status if interview else None,
++                _iso(respondent.created_at),
++                _iso(respondent.updated_at),
++                *[screening.get(key) for key, _ in screening_keys],
++            ],
++        )
++
++    _append_row(
++        interviews_sheet,
++        [
++            "Interview ID",
++            "Respondent ID",
++            "Name",
++            "Final category",
++            "Scenario code",
++            "Scenario version",
++            "Bank version",
++            "Status",
++            "Started At",
++            "Completed At",
++            "Created At",
++            "Updated At",
++        ],
++    )
++    respondents_by_id = {respondent.id: respondent for respondent in respondents}
++    for interview in interviews:
++        respondent = respondents_by_id.get(interview.respondent_id)
++        _append_row(
++            interviews_sheet,
++            [
++                str(interview.id),
++                str(interview.respondent_id),
++                respondent.name if respondent else None,
++                respondent.final_category if respondent else None,
++                interview.scenario_code,
++                interview.scenario_version,
++                interview.bank_version,
++                interview.status,
++                _iso(interview.started_at),
++                _iso(interview.completed_at),
++                _iso(interview.created_at),
++                _iso(interview.updated_at),
++            ],
++        )
++
++    answers_by_interview: dict[Any, dict[str, ResearchAnswer]] = {}
++    for answer in answers:
++        answers_by_interview.setdefault(answer.interview_id, {})[answer.question_code] = answer
++
++    answer_records: list[
++        tuple[ResearchInterview, ResearchRespondent | None, dict[str, Any], ResearchAnswer | None]
++    ] = []
++    question_versions: dict[tuple[str, str], dict[str, Any]] = {}
++    max_answer_parts = 1
++    for interview in interviews:
++        respondent = respondents_by_id.get(interview.respondent_id)
++        saved = answers_by_interview.get(interview.id, {})
++        for question in _snapshot_questions(interview):
++            code = question.get("code")
++            if not isinstance(code, str):
++                continue
++            answer = saved.get(code)
++            answer_records.append((interview, respondent, question, answer))
++            question_bank_version = str(question.get("bank_version") or interview.bank_version)
++            key = (question_bank_version, code)
++            question_versions.setdefault(key, {**question, "bank_version": question_bank_version})
++            text = answer.answer_text if answer else ""
++            max_answer_parts = max(
++                max_answer_parts, (len(text) + EXCEL_CELL_LIMIT - 1) // EXCEL_CELL_LIMIT
++            )
++
++    _append_row(
++        answers_sheet,
++        [
++            "Respondent ID",
++            "Name",
++            "Category",
++            "Interview ID",
++            "Question Code",
++            "Question Text",
++            "Answer Text",
++            *[f"Answer Text (part {part})" for part in range(2, max_answer_parts + 1)],
++            "Hypothesis IDs",
++            "Updated At",
++        ],
++    )
++    for interview, respondent, question, answer in answer_records:
++        answer_text = answer.answer_text if answer else ""
++        chunks = [
++            answer_text[index : index + EXCEL_CELL_LIMIT]
++            for index in range(0, len(answer_text), EXCEL_CELL_LIMIT)
++        ]
++        _append_row(
++            answers_sheet,
++            [
++                str(respondent.id) if respondent else str(interview.respondent_id),
++                respondent.name if respondent else None,
++                respondent.final_category if respondent else None,
++                str(interview.id),
++                question.get("code"),
++                question.get("text"),
++                *(chunks + [""] * max(0, max_answer_parts - len(chunks))),
++                ", ".join(question.get("hypothesis_ids", [])),
++                _iso(answer.updated_at) if answer else None,
++            ],
++        )
++
++    _append_row(
++        questions_sheet,
++        ["Bank Version", "Question Code", "Section", "Question Text", "Type", "Hypothesis IDs"],
++    )
++    for key in sorted(question_versions):
++        question = question_versions[key]
++        _append_row(
++            questions_sheet,
++            [
++                question["bank_version"],
++                question.get("code"),
++                question.get("section"),
++                question.get("text"),
++                question.get("type"),
++                ", ".join(question.get("hypothesis_ids", [])),
++            ],
++        )
++
++    _append_row(hypotheses_sheet, ["Hypothesis ID", "Description"])
++    for hypothesis in load_question_bank().get("hypotheses", []):
++        if isinstance(hypothesis, dict):
++            _append_row(hypotheses_sheet, [hypothesis.get("code"), hypothesis.get("text")])
++
++    for sheet in workbook.worksheets:
++        sheet.freeze_panes = "A2"
++        sheet.auto_filter.ref = sheet.dimensions
++        for cell in sheet[1]:
++            cell.font = Font(bold=True, color="FFFFFF")
++            cell.fill = PatternFill("solid", fgColor="173F7A")
++        for column_cells in sheet.columns:
++            width = min(max(len(str(cell.value or "")) for cell in column_cells) + 2, 48)
++            sheet.column_dimensions[get_column_letter(column_cells[0].column)].width = width
++
++    output = BytesIO()
++    workbook.save(output)
++    return output.getvalue()
+diff --git a/backend/migrations/versions/71a3c82d9f04_add_research_tables.py b/backend/migrations/versions/71a3c82d9f04_add_research_tables.py
+new file mode 100644
+index 0000000..10fcaa8
+--- /dev/null
++++ b/backend/migrations/versions/71a3c82d9f04_add_research_tables.py
+@@ -0,0 +1,118 @@
++"""Add private research respondents, interviews, and answers."""
++
++import sqlalchemy as sa
++from alembic import op
++from sqlalchemy.dialects import postgresql
++
++revision = "71a3c82d9f04"
++down_revision = "c93f62a1b7d8"
++branch_labels = None
++depends_on = None
++
++
++def upgrade():
++    op.create_table(
++        "research_respondents",
++        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
++        sa.Column("name", sa.String(200), nullable=False),
++        sa.Column("age_range", sa.String(80), nullable=True),
++        sa.Column("city", sa.String(160), nullable=False, server_default=""),
++        sa.Column("screening_answers", postgresql.JSONB(), nullable=False, server_default="{}"),
++        sa.Column("research_goal", sa.String(30), nullable=True),
++        sa.Column("suggested_category", sa.String(40), nullable=False),
++        sa.Column("final_category", sa.String(40), nullable=False),
++        sa.Column("category_override", sa.Boolean(), nullable=False, server_default=sa.false()),
++        sa.Column("recommendation", postgresql.JSONB(), nullable=False, server_default="{}"),
++        sa.Column(
++            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
++        ),
++        sa.Column(
++            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
++        ),
++        sa.CheckConstraint(
++            "suggested_category IN ('trips_experienced','trips_beginner',"
++            "'travel_design','travel_ready')",
++            name="research_suggested_category",
++        ),
++        sa.CheckConstraint(
++            "final_category IN ('trips_experienced','trips_beginner',"
++            "'travel_design','travel_ready')",
++            name="research_final_category",
++        ),
++        sa.CheckConstraint(
++            "research_goal IS NULL OR research_goal IN ('trips','individual_services')",
++            name="research_goal",
++        ),
++    )
++    op.create_index("ix_research_respondents_created_at", "research_respondents", ["created_at"])
++    op.create_index("ix_research_respondents_updated_at", "research_respondents", ["updated_at"])
++    op.create_index(
++        "ix_research_respondents_final_category", "research_respondents", ["final_category"]
++    )
++
++    op.create_table(
++        "research_interviews",
++        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
++        sa.Column(
++            "respondent_id",
++            postgresql.UUID(as_uuid=True),
++            sa.ForeignKey("research_respondents.id", ondelete="CASCADE"),
++            nullable=False,
++        ),
++        sa.Column("scenario_code", sa.String(40), nullable=False),
++        sa.Column("scenario_version", sa.String(40), nullable=False),
++        sa.Column("bank_version", sa.String(40), nullable=False),
++        sa.Column("status", sa.String(20), nullable=False, server_default="draft"),
++        sa.Column("question_snapshot", postgresql.JSONB(), nullable=False, server_default="[]"),
++        sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
++        sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
++        sa.Column(
++            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
++        ),
++        sa.Column(
++            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
++        ),
++        sa.CheckConstraint(
++            "status IN ('draft','in_progress','completed')", name="research_interview_status"
++        ),
++    )
++    op.create_index(
++        "ix_research_interviews_respondent_id", "research_interviews", ["respondent_id"]
++    )
++    op.create_index("ix_research_interviews_status", "research_interviews", ["status"])
++    op.create_index("ix_research_interviews_created_at", "research_interviews", ["created_at"])
++    op.create_index("ix_research_interviews_updated_at", "research_interviews", ["updated_at"])
++
++    op.create_table(
++        "research_answers",
++        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
++        sa.Column(
++            "interview_id",
++            postgresql.UUID(as_uuid=True),
++            sa.ForeignKey("research_interviews.id", ondelete="CASCADE"),
++            nullable=False,
++        ),
++        sa.Column("question_code", sa.String(3), nullable=False),
++        sa.Column("answer_text", sa.Text(), nullable=False, server_default=""),
++        sa.Column("revision", sa.Integer(), nullable=False, server_default="1"),
++        sa.Column(
++            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
++        ),
++        sa.UniqueConstraint("interview_id", "question_code", name="uq_research_answer_question"),
++        sa.CheckConstraint("revision > 0", name="research_answer_revision"),
++    )
++    op.create_index("ix_research_answers_interview_id", "research_answers", ["interview_id"])
++
++
++def downgrade():
++    op.drop_index("ix_research_answers_interview_id", table_name="research_answers")
++    op.drop_table("research_answers")
++    op.drop_index("ix_research_interviews_updated_at", table_name="research_interviews")
++    op.drop_index("ix_research_interviews_created_at", table_name="research_interviews")
++    op.drop_index("ix_research_interviews_status", table_name="research_interviews")
++    op.drop_index("ix_research_interviews_respondent_id", table_name="research_interviews")
++    op.drop_table("research_interviews")
++    op.drop_index("ix_research_respondents_final_category", table_name="research_respondents")
++    op.drop_index("ix_research_respondents_updated_at", table_name="research_respondents")
++    op.drop_index("ix_research_respondents_created_at", table_name="research_respondents")
++    op.drop_table("research_respondents")
+diff --git a/backend/requirements.txt b/backend/requirements.txt
+index 20fba8e..ba24b1f 100644
+--- a/backend/requirements.txt
++++ b/backend/requirements.txt
+@@ -10,3 +10,4 @@ pytest==9.1.1
+ httpx==0.28.1
+ httpx2==2.13.1
+ ruff==0.16.9
++openpyxl==3.1.5
+diff --git a/backend/tests/test_research_api.py b/backend/tests/test_research_api.py
+new file mode 100644
+index 0000000..046cd70
+--- /dev/null
++++ b/backend/tests/test_research_api.py
+@@ -0,0 +1,567 @@
++from __future__ import annotations
++
++from concurrent.futures import ThreadPoolExecutor
++from copy import deepcopy
++from datetime import UTC, datetime, timedelta
++from io import BytesIO
++from threading import Barrier, Lock
++from uuid import uuid4
++
++import pytest
++from fastapi.testclient import TestClient
++from openpyxl import load_workbook
++from sqlalchemy import delete, event
++
++from app import research as research_api
++from app.auth import token_digest
++from app.config import get_settings
++from app.db import SessionLocal, engine, get_db
++from app.main import create_app
++from app.models import ResearchRespondent, User
++from app.models import Session as AdminSession
++from tests.conftest import FIXTURE_PASSWORD
++
++HEADERS = {"X-Requested-With": "TravelClub", "Origin": "http://localhost:3000"}
++
++
++@pytest.fixture
++def authenticated(client, admin):
++    response = client.post(
++        "/api/auth/login",
++        headers=HEADERS,
++        json={"login": admin.login, "password": FIXTURE_PASSWORD},
++    )
++    assert response.status_code == 200
++    return client
++
++
++def test_research_respondent_api_requires_admin_session(client):
++    for path in (
++        "/api/research/respondents",
++        "/api/research/config",
++        "/api/research/questions",
++        "/api/research/export.xlsx",
++    ):
++        response = client.get(path, headers=HEADERS)
++        assert response.status_code == 401, path
++        assert response.json()["message"]
++
++
++def test_research_origin_is_allowed_only_when_configured(authenticated, monkeypatch):
++    settings = get_settings()
++    monkeypatch.setattr(settings, "research_origin", "https://research.example.test")
++    body = {"screening_answers": {"name": "Configured origin"}}
++
++    accepted = authenticated.post(
++        "/api/research/respondents",
++        headers={**HEADERS, "Origin": "https://research.example.test"},
++        json=body,
++    )
++    assert accepted.status_code == 201
++
++    rejected = authenticated.post(
++        "/api/research/respondents",
++        headers={**HEADERS, "Origin": "https://other.example.test"},
++        json=body,
++    )
++    assert rejected.status_code == 403
++    assert rejected.json()["code"] == "CSRF_REJECTED"
++
++
++def test_authenticated_configuration_endpoint_exposes_editable_questionnaire(authenticated):
++    response = authenticated.get("/api/research/config")
++
++    assert response.status_code == 200
++    configuration = response.json()
++    assert configuration["validation_issues"] == []
++    assert len(configuration["bank"]["questions"]) == 82
++    assert len(configuration["bank"]["hypotheses"]) == 17
++    assert len(configuration["screening"]["fields"]) == 9
++    assert configuration["offers_enabled"] is False
++
++
++def test_config_reports_malformed_sections_without_dereferencing_them(authenticated, monkeypatch):
++    monkeypatch.setattr(
++        research_api,
++        "load_configuration",
++        lambda: {"bank": {}, "scenarios": None, "screening": None, "classification": None},
++    )
++
++    response = authenticated.get("/api/research/config")
++
++    assert response.status_code == 200
++    assert "scenarios JSON root must be an object" in response.json()["validation_issues"]
++    assert response.json()["offers_enabled"] is False
++
++
++def test_old_interview_keeps_question_text_after_json_bank_changes(authenticated, monkeypatch):
++    original_configuration = research_api.load_configuration()
++    first = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={
++            "screening_answers": {"name": "Банк версия один", "independent_trips_24m": "3_plus"}
++        },
++    ).json()
++    first_id = first["interviews"][0]["id"]
++    started = authenticated.post(
++        f"/api/research/interviews/{first_id}/start", headers=HEADERS
++    ).json()
++    original_text = next(q["text"] for q in started["question_snapshot"] if q["code"] == "G01")
++
++    changed = deepcopy(original_configuration)
++    next(q for q in changed["bank"]["questions"] if q["code"] == "G01")[
++        "text"
++    ] = "Новая формулировка"
++    monkeypatch.setattr(research_api, "load_configuration", lambda: changed)
++
++    old_detail = authenticated.get(f"/api/research/respondents/{first['id']}").json()
++    old_question = next(
++        q for q in old_detail["interviews"][0]["question_snapshot"] if q["code"] == "G01"
++    )
++    assert old_question["text"] == original_text
++
++    second = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={
++            "screening_answers": {"name": "Банк версия два", "independent_trips_24m": "3_plus"}
++        },
++    ).json()
++    second_started = authenticated.post(
++        f"/api/research/interviews/{second['interviews'][0]['id']}/start", headers=HEADERS
++    ).json()
++    new_question = next(
++        q for q in second_started["question_snapshot"] if q["code"] == "G01"
++    )
++    assert new_question["text"] == "Новая формулировка"
++
++
++def test_create_respondent_saves_screening_and_draft_interview_atomically(authenticated):
++    response = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Мария", "age_range": "26–35", "city": "Казань"}},
++    )
++
++    assert response.status_code == 201, response.text
++    created = response.json()
++    assert created["screening_answers"]["name"] == "Мария"
++    assert created["age_range"] == "26–35"
++    assert created["city"] == "Казань"
++    assert created["suggested_category"] == created["final_category"]
++    assert created["category_override"] is False
++    assert len(created["interviews"]) == 1
++    assert created["interviews"][0]["status"] == "draft"
++    assert created["interviews"][0]["question_snapshot"] == []
++
++
++def test_manual_category_override_is_snapshotted_when_interview_starts(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Василиса"}},
++    ).json()
++
++    selected = authenticated.patch(
++        f"/api/research/respondents/{created['id']}/category",
++        headers=HEADERS,
++        json={"final_category": "travel_ready"},
++    )
++    assert selected.status_code == 200
++    assert selected.json()["suggested_category"] != "travel_ready"
++    assert selected.json()["final_category"] == "travel_ready"
++    assert selected.json()["category_override"] is True
++
++    interview_id = created["interviews"][0]["id"]
++    started = authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
++    assert started.status_code == 200
++    interview = started.json()
++    assert interview["status"] == "in_progress"
++    assert interview["scenario_code"] == "travel_ready"
++    assert [question["code"] for question in interview["question_snapshot"]] == [
++        "G01",
++        "G04",
++        "G07",
++        "G10",
++        "R01",
++        "R02",
++        "R03",
++        "R05",
++        "R06",
++        "R12",
++    ]
++    assert all(
++        question["text"] and question["bank_version"] for question in interview["question_snapshot"]
++    )
++
++
++def test_answer_compare_and_swap_is_idempotent_and_preserves_newer_text(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Ирина"}},
++    ).json()
++    interview_id = created["interviews"][0]["id"]
++    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
++    path = f"/api/research/interviews/{interview_id}/answers/G01"
++
++    first = authenticated.put(
++        path, headers=HEADERS, json={"answer_text": "Первая заметка", "expected_revision": 0}
++    )
++    assert first.status_code == 200
++    assert first.json()["revision"] == 1
++    retry = authenticated.put(
++        path, headers=HEADERS, json={"answer_text": "Первая заметка", "expected_revision": 0}
++    )
++    assert retry.status_code == 200
++    assert retry.json()["revision"] == 1
++
++    stale = authenticated.put(
++        path, headers=HEADERS, json={"answer_text": "Устаревший текст", "expected_revision": 0}
++    )
++    assert stale.status_code == 409
++    assert stale.json()["current"]["answer_text"] == "Первая заметка"
++    assert stale.json()["current"]["revision"] == 1
++
++    latest = authenticated.put(
++        path, headers=HEADERS, json={"answer_text": "Обновлённая заметка", "expected_revision": 1}
++    )
++    assert latest.status_code == 200
++    assert latest.json()["answer_text"] == "Обновлённая заметка"
++    assert latest.json()["revision"] == 2
++
++
++def test_empty_completion_allows_later_question_and_answer_edits(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Полина"}},
++    ).json()
++    interview_id = created["interviews"][0]["id"]
++    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
++
++    completed = authenticated.post(
++        f"/api/research/interviews/{interview_id}/complete", headers=HEADERS
++    )
++    assert completed.status_code == 200
++    assert completed.json()["status"] == "completed"
++    assert completed.json()["completed_at"]
++
++    appended = authenticated.post(
++        f"/api/research/interviews/{interview_id}/questions",
++        headers=HEADERS,
++        json={"question_codes": ["B01"]},
++    )
++    assert appended.status_code == 200
++    assert appended.json()["question_snapshot"][-1]["code"] == "B01"
++    saved = authenticated.put(
++        f"/api/research/interviews/{interview_id}/answers/B01",
++        headers=HEADERS,
++        json={"answer_text": "Поздняя запись", "expected_revision": 0},
++    )
++    assert saved.status_code == 200
++    detail = authenticated.get(f"/api/research/respondents/{created['id']}").json()
++    assert detail["interviews"][0]["status"] == "completed"
++    assert detail["interviews"][0]["answers"]["B01"]["answer_text"] == "Поздняя запись"
++
++
++def test_brand_questions_stay_at_end_when_supplementing_completed_interview(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Brand order", "independent_trips_24m": "0"}},
++    ).json()
++    interview_id = created["interviews"][0]["id"]
++    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
++    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
++
++    first_addition = authenticated.post(
++        f"/api/research/interviews/{interview_id}/questions",
++        headers=HEADERS,
++        json={"question_codes": ["B01"]},
++    )
++    assert first_addition.status_code == 200
++    later_addition = authenticated.post(
++        f"/api/research/interviews/{interview_id}/questions",
++        headers=HEADERS,
++        json={"question_codes": ["T01"]},
++    )
++
++    assert later_addition.status_code == 200
++    codes = [question["code"] for question in later_addition.json()["question_snapshot"]]
++    assert codes.index("T01") < codes.index("B01")
++    assert all(code.startswith("B") for code in codes[codes.index("B01"):])
++
++
++def test_screening_recalculation_does_not_rewrite_started_route_or_answers(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Анна", "independent_trips_24m": "0"}},
++    ).json()
++    interview_id = created["interviews"][0]["id"]
++    started = authenticated.post(
++        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
++    ).json()
++    authenticated.put(
++        f"/api/research/interviews/{interview_id}/answers/G01",
++        headers=HEADERS,
++        json={"answer_text": "Уже сохранено", "expected_revision": 0},
++    )
++
++    edited = authenticated.patch(
++        f"/api/research/respondents/{created['id']}/screening",
++        headers=HEADERS,
++        json={
++            "screening_answers": {"name": "Анна", "independent_trips_24m": "3_plus"},
++            "apply_suggestion": False,
++        },
++    )
++    assert edited.status_code == 200
++    assert edited.json()["suggested_category"] == "trips_experienced"
++    assert edited.json()["final_category"] == "trips_beginner"
++    interview = edited.json()["interviews"][0]
++    assert interview["scenario_code"] == started["scenario_code"] == "trips_beginner"
++    assert interview["question_snapshot"] == started["question_snapshot"]
++    assert interview["answers"]["G01"]["answer_text"] == "Уже сохранено"
++
++
++def test_respondent_list_search_filters_and_counts(authenticated):
++    beginner = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Лена Наблюдение", "independent_trips_24m": "0"}},
++    ).json()
++    experienced = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={"screening_answers": {"name": "Максим Поездки", "independent_trips_24m": "3_plus"}},
++    ).json()
++    interview_id = beginner["interviews"][0]["id"]
++    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
++    authenticated.post(f"/api/research/interviews/{interview_id}/complete", headers=HEADERS)
++
++    found = authenticated.get("/api/research/respondents?q=Наблюдение&page=1&page_size=1")
++    assert found.status_code == 200
++    assert found.json()["total"] == 1
++    assert found.json()["items"][0]["id"] == beginner["id"]
++    assert found.json()["items"][0]["status"] == "completed"
++
++    filtered = authenticated.get(
++        "/api/research/respondents?category=trips_experienced&status=draft"
++    )
++    assert filtered.json()["total"] == 1
++    assert filtered.json()["items"][0]["id"] == experienced["id"]
++    assert filtered.json()["total_count"] == 2
++    assert filtered.json()["completed_count"] == 1
++    assert filtered.json()["incomplete_count"] == 1
++
++
++def test_concurrent_answer_cas_uses_fresh_row_after_losing_update():
++    token = uuid4().hex
++    user = User(id=uuid4(), login=f"research-cas-{uuid4().hex}", password_hash="unused")
++    with SessionLocal() as setup:
++        setup.add(user)
++        setup.flush()
++        setup.add(
++            AdminSession(
++                token_digest=token_digest(token),
++                user_id=user.id,
++                expires_at=datetime.now(UTC) + timedelta(hours=1),
++            )
++        )
++        setup.commit()
++
++    def independent_db():
++        with SessionLocal() as session:
++            yield session
++
++    application = create_app()
++    application.dependency_overrides[get_db] = independent_db
++    auth_headers = {**HEADERS, "Cookie": f"travel_session={token}"}
++    respondent_id = None
++    try:
++        with TestClient(application) as setup_client:
++            created_response = setup_client.post(
++                "/api/research/respondents",
++                headers=auth_headers,
++                json={"screening_answers": {"name": "CAS concurrency"}},
++            )
++            assert created_response.status_code == 201, created_response.text
++            created = created_response.json()
++            respondent_id = created["id"]
++            interview_id = created["interviews"][0]["id"]
++            started = setup_client.post(
++                f"/api/research/interviews/{interview_id}/start", headers=auth_headers
++            )
++            assert started.status_code == 200, started.text
++            initial = setup_client.put(
++                f"/api/research/interviews/{interview_id}/answers/G01",
++                headers=auth_headers,
++                json={"answer_text": "initial", "expected_revision": 0},
++            )
++            assert initial.status_code == 200, initial.text
++
++        with TestClient(application) as first_client, TestClient(application) as second_client:
++            clients = (first_client, second_client)
++
++            def race_writes(expected_revision, texts):
++                gate = Barrier(2)
++                read_hit_lock = Lock()
++                read_hits = 0
++
++                def synchronize_current_answer_read(
++                    connection, cursor, statement, parameters, context, executemany
++                ):
++                    nonlocal read_hits
++                    normalized = statement.lstrip().upper()
++                    if (
++                        normalized.startswith("SELECT")
++                        and "FROM RESEARCH_ANSWERS" in normalized
++                        and "WHERE RESEARCH_ANSWERS.INTERVIEW_ID" in normalized
++                    ):
++                        with read_hit_lock:
++                            read_hits += 1
++                        gate.wait(timeout=10)
++
++                event.listen(engine, "after_cursor_execute", synchronize_current_answer_read)
++                try:
++                    def write(index):
++                        return clients[index].put(
++                            f"/api/research/interviews/{interview_id}/answers/G01",
++                            headers=auth_headers,
++                            json={
++                                "answer_text": texts[index],
++                                "expected_revision": expected_revision,
++                            },
++                        )
++
++                    with ThreadPoolExecutor(max_workers=2) as executor:
++                        responses = list(executor.map(write, (0, 1)))
++                    with read_hit_lock:
++                        assert read_hits == 2, (
++                            "expected both independent requests to reach the "
++                            "synchronized answer read; "
++                            f"observed {read_hits} hits"
++                        )
++                    return responses
++                finally:
++                    event.remove(engine, "after_cursor_execute", synchronize_current_answer_read)
++
++            same_text_results = race_writes(1, ("shared retry", "shared retry"))
++            assert [response.status_code for response in same_text_results] == [200, 200]
++            assert {response.json()["revision"] for response in same_text_results} == {2}
++
++            idempotent_retry = clients[0].put(
++                f"/api/research/interviews/{interview_id}/answers/G01",
++                headers=auth_headers,
++                json={"answer_text": "shared retry", "expected_revision": 1},
++            )
++            assert idempotent_retry.status_code == 200
++            assert idempotent_retry.json()["revision"] == 2
++
++            competing_results = race_writes(2, ("writer one", "writer two"))
++            successes = [response for response in competing_results if response.status_code == 200]
++            conflicts = [response for response in competing_results if response.status_code == 409]
++            assert len(successes) == len(conflicts) == 1, [
++                (response.status_code, response.json()) for response in competing_results
++            ]
++            winner = successes[0].json()
++            current = conflicts[0].json()["current"]
++            assert current["revision"] == winner["revision"] == 3
++            assert current["answer_text"] == winner["answer_text"]
++    finally:
++        with SessionLocal() as cleanup:
++            if respondent_id:
++                cleanup.execute(
++                    delete(ResearchRespondent).where(
++                        ResearchRespondent.id == respondent_id
++                    )
++                )
++            cleanup.execute(delete(User).where(User.id == user.id))
++            cleanup.commit()
++
++
++def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(authenticated):
++    created = authenticated.post(
++        "/api/research/respondents",
++        headers=HEADERS,
++        json={
++            "screening_answers": {
++                "name": "=1+1",
++                "independent_trips_24m": "3_plus",
++            }
++        },
++    ).json()
++    interview_id = created["interviews"][0]["id"]
++    started = authenticated.post(
++        f"/api/research/interviews/{interview_id}/start", headers=HEADERS
++    ).json()
++    assert started["scenario_code"] == "trips_experienced"
++    long_text = ("Длинный ответ\n" * 3000) + ("x" * 32770)
++    for code, text in (
++        ("G01", '=HYPERLINK("https://example.invalid")\nстрока 2'),
++        ("G02", long_text),
++    ):
++        saved = authenticated.put(
++            f"/api/research/interviews/{interview_id}/answers/{code}",
++            headers=HEADERS,
++            json={"answer_text": text, "expected_revision": 0},
++        )
++        assert saved.status_code == 200
++
++    response = authenticated.get("/api/research/export.xlsx")
++    assert response.status_code == 200
++    workbook = load_workbook(BytesIO(response.content), data_only=False)
++    assert workbook.sheetnames == [
++        "Respondents",
++        "Interviews",
++        "Answers",
++        "Questions",
++        "Hypotheses",
++    ]
++
++    respondents = workbook["Respondents"]
++    respondent_headers = [cell.value for cell in respondents[1]]
++    assert respondents.cell(2, respondent_headers.index("Name") + 1).value == "=1+1"
++    assert respondents.cell(2, respondent_headers.index("Name") + 1).data_type != "f"
++
++    answers = workbook["Answers"]
++    answer_headers = [cell.value for cell in answers[1]]
++    by_code = {
++        row[answer_headers.index("Question Code")]: row
++        for row in answers.iter_rows(min_row=2, values_only=True)
++    }
++    assert (
++        by_code["G01"][answer_headers.index("Answer Text")]
++        == '=HYPERLINK("https://example.invalid")\nстрока 2'
++    )
++    formula_cell = answers.cell(2, answer_headers.index("Answer Text") + 1)
++    assert formula_cell.data_type != "f"
++    assert "\n" in by_code["G01"][answer_headers.index("Answer Text")]
++    assert by_code["G05"][answer_headers.index("Answer Text")] in {None, ""}
++    exported_long = "".join(
++        by_code["G02"][answer_headers.index("Answer Text") + offset] or ""
++        for offset in range(max(1, (len(long_text) + 32766) // 32767))
++    )
++    assert exported_long == long_text
++    assert by_code["G01"][answer_headers.index("Hypothesis IDs")]
++    assert workbook["Hypotheses"].max_row == 18
++
++    authenticated.put(
++        f"/api/research/interviews/{interview_id}/answers/G01",
++        headers=HEADERS,
++        json={"answer_text": "Новая версия заметки", "expected_revision": 1},
++    )
++    refreshed = load_workbook(
++        BytesIO(authenticated.get("/api/research/export.xlsx").content), data_only=False
++    )
++    refreshed_answers = refreshed["Answers"]
++    refreshed_headers = [cell.value for cell in refreshed_answers[1]]
++    refreshed_g01 = next(
++        row
++        for row in refreshed_answers.iter_rows(min_row=2, values_only=True)
++        if row[refreshed_headers.index("Question Code")] == "G01"
++    )
++    assert refreshed_g01[refreshed_headers.index("Answer Text")] == "Новая версия заметки"
+diff --git a/compose.deploy.yaml b/compose.deploy.yaml
+index 9e2829e..67be7a2 100644
+--- a/compose.deploy.yaml
++++ b/compose.deploy.yaml
+@@ -35,6 +35,7 @@ services:
+       POSTGRES_HOST: postgres
+       APP_ENV: production
+       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:?Set the verified HTTPS origin in the server .env}
++      RESEARCH_ORIGIN: ${RESEARCH_ORIGIN:-}
+       COOKIE_SECURE: "true"
+       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
+       GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}

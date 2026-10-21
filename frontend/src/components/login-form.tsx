@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api";
+import { safeAuthReturnTarget } from "@/lib/return-target";
 
-export function LoginForm() {
+export function LoginForm({ next = "/home" }: { next?: string }) {
   const router = useRouter();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +20,7 @@ export function LoginForm() {
     setPending(true); setError("");
     try {
       await authApi.login(login, password);
-      router.replace("/admin/trips");
+      router.replace(safeAuthReturnTarget(next));
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось войти. Попробуйте ещё раз.");
