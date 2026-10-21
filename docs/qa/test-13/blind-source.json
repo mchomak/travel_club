@@ -1,0 +1,38 @@
+{
+  "identicalControlFiles": {
+    "data.ts": true,
+    "intro-scene.ts": true,
+    "capture-page.ts": true,
+    "magazine-intro.tsx": true,
+    "reading-turn-engine.ts": true,
+    "reading-turn.tsx": true
+  },
+  "photoRulesIdentical": {
+    "heroPhotoReveal": true,
+    "nextAperture": true,
+    "thaiStrips": true,
+    "peopleFigure": true,
+    "cityFigure": true,
+    "chinaVertical": true,
+    "chinaDetail": true,
+    "contactSheet figure": true
+  },
+  "changedFrontendPaths": [
+    "frontend/src/app/test_13/page.tsx",
+    "frontend/src/components/test_13/README.md",
+    "frontend/src/components/test_13/capture-page.ts",
+    "frontend/src/components/test_13/data.ts",
+    "frontend/src/components/test_13/intro-scene.ts",
+    "frontend/src/components/test_13/magazine-experience.tsx",
+    "frontend/src/components/test_13/magazine-intro.tsx",
+    "frontend/src/components/test_13/magazine.module.css",
+    "frontend/src/components/test_13/reading-turn-engine.ts",
+    "frontend/src/components/test_13/reading-turn.tsx",
+    "frontend/src/components/test_13/spreads.module.css",
+    "frontend/src/components/test_13/spreads.tsx"
+  ],
+  "changedExistingFrontendPaths": [],
+  "history": [
+    "28c80ae feat(test-13): preserve independently verified test-12 baseline"
+  ]
+}

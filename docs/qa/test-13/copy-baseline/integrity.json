@@ -1,0 +1,30 @@
+{
+  "time": "2026-10-20T23:39:26.807579+00:00",
+  "baseCommit": "3a1dbf75b7db951e126b46113791e8d7fdad0bcb",
+  "protectedFiles": 424,
+  "canonicalGitMismatches": [],
+  "workingTreeMismatches": [],
+  "protectedTrackedGitDiff": [],
+  "byteIdenticalLocalSourceFiles": [
+    "capture-page.ts",
+    "data.ts",
+    "intro-scene.ts",
+    "magazine-experience.tsx",
+    "magazine-intro.tsx",
+    "magazine.module.css",
+    "reading-turn-engine.ts",
+    "reading-turn.tsx",
+    "spreads.module.css",
+    "spreads.tsx"
+  ],
+  "copyMismatches": [],
+  "routeOnlyIdentifierAndLocalImportChanges": true,
+  "initialPreCopyCheck": {
+    "protectedFiles": 424,
+    "workingTreeMismatches": [
+      "frontend/next-env.d.ts"
+    ],
+    "note": "Observed before first copy edit; Next dev generated file restored to Git baseline before this final check."
+  },
+  "pass": true
+}

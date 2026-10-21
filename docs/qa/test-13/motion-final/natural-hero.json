@@ -1,0 +1,30 @@
+[
+  {
+    "viewport": {
+      "width": 1100,
+      "height": 700
+    },
+    "complete": true
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 768
+    },
+    "complete": true
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "complete": true
+  },
+  {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "complete": true
+  }
+]

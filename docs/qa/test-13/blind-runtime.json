@@ -1,0 +1,3428 @@
+{
+  "origin": "http://localhost:3114",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "errors": [],
+  "chapters": [
+    {
+      "chapter": 1,
+      "early": [
+        {
+          "text": "Между строк\nThe art of going together\nКуда — важно.\nС кем — важнее.\nПутешествия начинаются с людей\nTravel Club / Независимая редакция путешествий\n02",
+          "label": "Travel Club — знакомство",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/hero-mountain.webp",
+              "alt": "Скалистая гора справа под чистым голубым небом. Иллюстративная фотография, не анонс направления.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/hero-mountain.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg",
+              "alt": "Travel Club",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.960784 0.941176 0.862745 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.960784 0.941176 0.862745 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Способ отправиться\nОбсудить поездку ↗\nС нами в путь\n\nСоздаём индивидуальные маршруты, помогаем организовывать путешествия и собираем небольшие компании для совместных поездок.\n\n01\nTravel Design\nИндивидуальный маршрут\n5 000 ₽\n\nТранспорт, районы проживания, интересные места и примерный бюджет под ваш запрос. Экономим время на поиске, убираем хаос планирования. Бронируете и оплачиваете сами.\n\nПодробнее о формате\n02\nTravel Ready\nПодготовка и организация поездки\n10 000 ₽\n\nПревращаем идею в план и берём согласованные задачи подготовки и координации. Снимаем с вас часть организационной нагрузки.\n\nПодробнее о формате\n03\nTC Trips\nАвторские групповые путешествия\nПо согласованию\n\nНебольшие путешествия с сопровождением, продуманной программой и вниманием к компании, с которой вы отправляетесь в путь.\n\nПодробнее о формате\n\n5 000 ₽ и 10 000 ₽ — стоимость услуг Travel Design и Travel Ready. Транспорт, проживание и прочие расходы оплачиваются отдельно.\n\nПодробнее о форматах\nВаше путешествие. Наше внимание к деталям.\n03",
+          "label": "Три формата путешествий",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "С нами в путь",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "48.6888px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Обсудить поездку ↗",
+              "href": "/start"
+            },
+            {
+              "text": "01Travel DesignИндивидуальный маршрут5 000 ₽Транспорт, районы проживания, интересные места и примерный бюджет под ваш запрос. Экономим время на поиске, убираем хаос планирования. Бронируете и оплачиваете сами.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "02Travel ReadyПодготовка и организация поездки10 000 ₽Превращаем идею в план и берём согласованные задачи подготовки и координации. Снимаем с вас часть организационной нагрузки.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "03TC TripsАвторские групповые путешествияПо согласованиюНебольшие путешествия с сопровождением, продуманной программой и вниманием к компании, с которой вы отправляетесь в путь.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "Подробнее о форматах",
+              "href": "/formats"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(18, 51, 93)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Между строк\nThe art of going together\nКуда — важно.\nС кем — важнее.\nПутешествия начинаются с людей\nTravel Club / Независимая редакция путешествий\n02",
+          "label": "Travel Club — знакомство",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/hero-mountain.webp",
+              "alt": "Скалистая гора справа под чистым голубым небом. Иллюстративная фотография, не анонс направления.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/hero-mountain.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg",
+              "alt": "Travel Club",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.960784 0.941176 0.862745 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.960784 0.941176 0.862745 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Способ отправиться\nОбсудить поездку ↗\nС нами в путь\n\nСоздаём индивидуальные маршруты, помогаем организовывать путешествия и собираем небольшие компании для совместных поездок.\n\n01\nTravel Design\nИндивидуальный маршрут\n5 000 ₽\n\nТранспорт, районы проживания, интересные места и примерный бюджет под ваш запрос. Экономим время на поиске, убираем хаос планирования. Бронируете и оплачиваете сами.\n\nПодробнее о формате\n02\nTravel Ready\nПодготовка и организация поездки\n10 000 ₽\n\nПревращаем идею в план и берём согласованные задачи подготовки и координации. Снимаем с вас часть организационной нагрузки.\n\nПодробнее о формате\n03\nTC Trips\nАвторские групповые путешествия\nПо согласованию\n\nНебольшие путешествия с сопровождением, продуманной программой и вниманием к компании, с которой вы отправляетесь в путь.\n\nПодробнее о формате\n\n5 000 ₽ и 10 000 ₽ — стоимость услуг Travel Design и Travel Ready. Транспорт, проживание и прочие расходы оплачиваются отдельно.\n\nПодробнее о форматах\nВаше путешествие. Наше внимание к деталям.\n03",
+          "label": "Три формата путешествий",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "С нами в путь",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "48.6888px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Обсудить поездку ↗",
+              "href": "/start"
+            },
+            {
+              "text": "01Travel DesignИндивидуальный маршрут5 000 ₽Транспорт, районы проживания, интересные места и примерный бюджет под ваш запрос. Экономим время на поиске, убираем хаос планирования. Бронируете и оплачиваете сами.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "02Travel ReadyПодготовка и организация поездки10 000 ₽Превращаем идею в план и берём согласованные задачи подготовки и координации. Снимаем с вас часть организационной нагрузки.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "03TC TripsАвторские групповые путешествияПо согласованиюНебольшие путешествия с сопровождением, продуманной программой и вниманием к компании, с которой вы отправляетесь в путь.Подробнее о формате ",
+              "href": "/formats"
+            },
+            {
+              "text": "Подробнее о форматах",
+              "href": "/formats"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(18, 51, 93)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 2,
+      "early": [
+        {
+          "text": "02 / О НАС\nPeople behind the journey\n\nЛюди, с которых\nначался Travel Club\n\nВасилиса\nСооснователь Travel Club\nВ\n\nФото Василисы\n\nМесто для настоящего портрета\nСопровождение\nи люди\n\nЗнакомство и общение с путешественниками, атмосфера и социальная сторона поездок.\n\nСопровождение участников и участие в разработке travel-продуктов.\n\nСначала — поездки друзей\n\nМы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.\n\nTravel Club / Люди и путешествия\n04",
+          "label": "О нас — Василиса, сооснователь Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Люди, с которыхначался Travel Club",
+              "clip": "inset(-4.7928px 100% -6.3904px -4.7928px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "31.952px"
+            },
+            {
+              "text": "Василиса",
+              "clip": "inset(-11.594px 100% -15.4587px -11.594px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "77.2934px"
+            }
+          ],
+          "images": [],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 480,
+              "delay": 90
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.35)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Travel Club / Основатели\nДва равноправных взгляда\n\nОдна общая идея.\nДва разных фокуса.\n\nРамиль\nСооснователь Travel Club\nР\n\nФото Рамиля\n\nМесто для настоящего портрета\nСистемы\nи организация\n\nТехнологии, цифровая инфраструктура, финансы и организационные процессы.\n\nРазвитие проекта и участие в разработке travel-продуктов.\n\nИз этого опыта вырос Travel Club\n\nИндивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.\n\nTravel Club / Системы и путешествия\n05",
+          "label": "О нас — Рамиль, сооснователь Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Одна общая идея.Два разных фокуса.",
+              "clip": "inset(-4.7928px 100% -6.3904px -4.7928px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "31.952px"
+            },
+            {
+              "text": "Рамиль",
+              "clip": "inset(-11.594px 100% -15.4587px -11.594px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "77.2934px"
+            }
+          ],
+          "images": [],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 480,
+              "delay": 90
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.35)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "02 / О НАС\nPeople behind the journey\n\nЛюди, с которых\nначался Travel Club\n\nВасилиса\nСооснователь Travel Club\nВ\n\nФото Василисы\n\nМесто для настоящего портрета\nСопровождение\nи люди\n\nЗнакомство и общение с путешественниками, атмосфера и социальная сторона поездок.\n\nСопровождение участников и участие в разработке travel-продуктов.\n\nСначала — поездки друзей\n\nМы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.\n\nTravel Club / Люди и путешествия\n04",
+          "label": "О нас — Василиса, сооснователь Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Люди, с которыхначался Travel Club",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "31.952px"
+            },
+            {
+              "text": "Василиса",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "77.2934px"
+            }
+          ],
+          "images": [],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.35)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Travel Club / Основатели\nДва равноправных взгляда\n\nОдна общая идея.\nДва разных фокуса.\n\nРамиль\nСооснователь Travel Club\nР\n\nФото Рамиля\n\nМесто для настоящего портрета\nСистемы\nи организация\n\nТехнологии, цифровая инфраструктура, финансы и организационные процессы.\n\nРазвитие проекта и участие в разработке travel-продуктов.\n\nИз этого опыта вырос Travel Club\n\nИндивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.\n\nTravel Club / Системы и путешествия\n05",
+          "label": "О нас — Рамиль, сооснователь Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Одна общая идея.Два разных фокуса.",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "31.952px"
+            },
+            {
+              "text": "Рамиль",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "77.2934px"
+            }
+          ],
+          "images": [],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.35)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.94902 0.941176 0.917647 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 3,
+      "early": [
+        {
+          "text": "Следующая глава\nTravel Club\nNEXT\nISSUE\n+\nПервое групповое / в подготовке\nЕщё не на карте. Уже в планах.\n\nJoseph Ruwa / Pexels\nИллюстративная фотография\n\nЭтот кадр передаёт настроение и не анонсирует направление поездки.\n\nПрограмма в подготовке\n06",
+          "label": "Next Issue — первое групповое путешествие в подготовке",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/together.webp",
+              "alt": "Горный гребень среди облаков. Иллюстративная фотография, не анонс направления.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__irisEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2800,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 1 0.992157 0.94902 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 1 0.992157 0.94902 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Письмо о будущем\nNext Issue\nСледующая\nистория — вместе.\n\nЕсть места, которые интереснее открывать вместе.\n\nГотовим первое групповое путешествие Travel Club. Небольшая компания, общая дорога и программа, собранная нами.\n\nСначала — знакомство.\nЗатем — дорога.\n\nВ подготовке\n\nНаправление и даты ещё не объявлены.\n\nХочу поехать с вами\n\nРасскажите о своём интересе. Это не бронирование.\n\nПервое путешествие начинается с разговора\n07",
+          "label": "Следующая история — вместе",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Следующаяистория — вместе.",
+              "clip": "inset(-9.12914px 100% -12.1722px -9.12914px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "60.8609px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Хочу поехать с вами",
+              "href": "/start?format=group"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialIcon",
+              "time": 0,
+              "state": "running",
+              "duration": 300,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialIcon",
+              "time": 0,
+              "state": "running",
+              "duration": 300,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Следующая глава\nTravel Club\nNEXT\nISSUE\n+\nПервое групповое / в подготовке\nЕщё не на карте. Уже в планах.\n\nJoseph Ruwa / Pexels\nИллюстративная фотография\n\nЭтот кадр передаёт настроение и не анонсирует направление поездки.\n\nПрограмма в подготовке\n06",
+          "label": "Next Issue — первое групповое путешествие в подготовке",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/together.webp",
+              "alt": "Горный гребень среди облаков. Иллюстративная фотография, не анонс направления.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 1 0.992157 0.94902 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 1 0.992157 0.94902 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Письмо о будущем\nNext Issue\nСледующая\nистория — вместе.\n\nЕсть места, которые интереснее открывать вместе.\n\nГотовим первое групповое путешествие Travel Club. Небольшая компания, общая дорога и программа, собранная нами.\n\nСначала — знакомство.\nЗатем — дорога.\n\nВ подготовке\n\nНаправление и даты ещё не объявлены.\n\nХочу поехать с вами\n\nРасскажите о своём интересе. Это не бронирование.\n\nПервое путешествие начинается с разговора\n07",
+          "label": "Следующая история — вместе",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Следующаяистория — вместе.",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "60.8609px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Хочу поехать с вами",
+              "href": "/start?format=group"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.2 0.364706 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 4,
+      "early": [
+        {
+          "text": "Field Notes / 2026\nДо запуска Travel Club\n’26\nТаиланд\nв двух ритмах\nОт островов до Бангкока\n\nЧетверо друзей.\nОдна поездка.\n\nAnastasia Yudin / Pexels\nИллюстративная фотография\n\nЛичный опыт друзей до запуска клуба\n08",
+          "label": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__stripEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2200,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__stripEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2200,
+              "delay": 350
+            },
+            {
+              "name": "spreads-module__jDnwkG__stripEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2200,
+              "delay": 700
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialIcon",
+              "time": 0,
+              "state": "running",
+              "duration": 300,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.92549 0.913725 0.792157 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.92549 0.913726 0.792157 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Разные ритмы одной поездки\nThailand ’26\nОстрова.\nИ большой город.\n\nЧетверо друзей. От островов до Бангкока. Thailand ’26 — поездка, которая состоялась до запуска Travel Club.\n\nПрирода, дороги и город в одной истории.\nЛодочник у берега.\nElina Sazonova / Pexels\nИллюстративная фотография\nДругая\nскорость.\n\nОстрова сменяются городом.\n\nБангкок. Margarita K / Pexels\nИллюстративная фотография\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nФотографии иллюстративные, не кадры команды\n09",
+          "label": "Thailand ’26 — история и фотографии",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Острова.И большой город.",
+              "clip": "inset(-7.12073px 100% -9.49431px -7.12073px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "47.4715px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/thailand-boat.webp",
+              "alt": "Лодочник у длиннохвостых лодок и скал в Таиланде. Иллюстративная фотография, человек не является участником поездки.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/bangkok-street.webp",
+              "alt": "Улица Бангкока с вывесками, транспортом и прохожими. Иллюстративная фотография.",
+              "decoded": true
+            }
+          ],
+          "links": [
+            {
+              "text": "К заметкам в архиве",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__lettersEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2300,
+              "delay": 200
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__photoSweep",
+              "time": 0,
+              "state": "running",
+              "duration": 2300,
+              "delay": 650
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Field Notes / 2026\nДо запуска Travel Club\n’26\nТаиланд\nв двух ритмах\nОт островов до Бангкока\n\nЧетверо друзей.\nОдна поездка.\n\nAnastasia Yudin / Pexels\nИллюстративная фотография\n\nЛичный опыт друзей до запуска клуба\n08",
+          "label": "Thailand ’26 — поездка друзей до запуска Travel Club",
+          "reveal": "enter",
+          "titles": [],
+          "images": [
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-bright.webp",
+              "alt": "",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.92549 0.913725 0.792157 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.92549 0.913726 0.792157 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Разные ритмы одной поездки\nThailand ’26\nОстрова.\nИ большой город.\n\nЧетверо друзей. От островов до Бангкока. Thailand ’26 — поездка, которая состоялась до запуска Travel Club.\n\nПрирода, дороги и город в одной истории.\nЛодочник у берега.\nElina Sazonova / Pexels\nИллюстративная фотография\nДругая\nскорость.\n\nОстрова сменяются городом.\n\nБангкок. Margarita K / Pexels\nИллюстративная фотография\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nФотографии иллюстративные, не кадры команды\n09",
+          "label": "Thailand ’26 — история и фотографии",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Острова.И большой город.",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "47.4715px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/thailand-boat.webp",
+              "alt": "Лодочник у длиннохвостых лодок и скал в Таиланде. Иллюстративная фотография, человек не является участником поездки.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/bangkok-street.webp",
+              "alt": "Улица Бангкока с вывесками, транспортом и прохожими. Иллюстративная фотография.",
+              "decoded": true
+            }
+          ],
+          "links": [
+            {
+              "text": "К заметкам в архиве",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 5,
+      "early": [
+        {
+          "text": "Field Notes / 2026\nДо запуска Travel Club\nCHINA\n’26\nBEIJING / SHANGHAI\n\nГорода разные.\nЛюди — свои.\n\nПекин\n↗\nШанхай\n\nSean Xu / Pexels\nИллюстративная фотография\n\nЛичная история друзей / China ’26\n10",
+          "label": "China ’26 — Field Notes",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "CHINA’26",
+              "clip": "inset(-20.997px 100% -27.996px -20.997px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "139.98px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__urbanEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2800,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.862745 0.909804 0.913725 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.862745 0.909804 0.913726 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Два города. Одна история.\nChina ’26\nДальше —\nвместе.\n\nЧетверо друзей прилетели из Москвы. В Пекине к ним присоединились двое местных друзей, а дальше маршрут продолжился до Шанхая.\n\nПоездка друзей до запуска Travel Club. Личный опыт, из которого постепенно вырос наш подход к путешествиям.\n\n4\nиз Москвы\n+2\nместных друга\nв Пекине\nПекин. Sean Xu / Pexels. Иллюстративный кадр, не фотография поездки.\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nField Notes — поездки друзей до запуска клуба\n11",
+          "label": "China ’26 — четверо из Москвы и встреча в Пекине",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Дальше —вместе.",
+              "clip": "inset(-11.2288px 100% -14.9718px -11.2288px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "74.859px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            }
+          ],
+          "links": [
+            {
+              "text": "К заметкам в архиве",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRuleVertical",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__photoSweep",
+              "time": 0,
+              "state": "running",
+              "duration": 2400,
+              "delay": 500
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.14902 0.203922 0.243137 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRuleVertical",
+              "transform": "matrix(1, 0, 0, 0, 0, 0)",
+              "color": "rgb(111, 130, 140)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.14902 0.203922 0.243137 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Field Notes / 2026\nДо запуска Travel Club\nCHINA\n’26\nBEIJING / SHANGHAI\n\nГорода разные.\nЛюди — свои.\n\nПекин\n↗\nШанхай\n\nSean Xu / Pexels\nИллюстративная фотография\n\nЛичная история друзей / China ’26\n10",
+          "label": "China ’26 — Field Notes",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "CHINA’26",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "139.98px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.862745 0.909804 0.913725 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.862745 0.909804 0.913726 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Два города. Одна история.\nChina ’26\nДальше —\nвместе.\n\nЧетверо друзей прилетели из Москвы. В Пекине к ним присоединились двое местных друзей, а дальше маршрут продолжился до Шанхая.\n\nПоездка друзей до запуска Travel Club. Личный опыт, из которого постепенно вырос наш подход к путешествиям.\n\n4\nиз Москвы\n+2\nместных друга\nв Пекине\nПекин. Sean Xu / Pexels. Иллюстративный кадр, не фотография поездки.\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nField Notes — поездки друзей до запуска клуба\n11",
+          "label": "China ’26 — четверо из Москвы и встреча в Пекине",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Дальше —вместе.",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "74.859px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            }
+          ],
+          "links": [
+            {
+              "text": "К заметкам в архиве",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.14902 0.203922 0.243137 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRuleVertical",
+              "transform": "none",
+              "color": "rgb(111, 130, 140)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.14902 0.203922 0.243137 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 6,
+      "early": [
+        {
+          "text": "Предыдущие страницы\nField Notes / 2025\nARCHIVE\n’25\n01 / China\n2025\n02 / Madagascar\n2025\n03 / Thailand\n2025\n\nДо клуба были\nпоездки с друзьями.\n\nИллюстративные фотографии / Pexels\nSean Xu · Herve Meftah · youseflns\n\nТри истории / один год\n12",
+          "label": "Archive ’25 — три поездки друзей",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "ARCHIVE’25",
+              "clip": "inset(-16.9802px 100% -22.6403px -16.9802px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "113.201px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/madagascar-baobabs.webp",
+              "alt": "Песчаная дорога между баобабами на Мадагаскаре. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-lagoon.webp",
+              "alt": "Бирюзовая лагуна и лодки между зелёными скалами в Таиланде. Иллюстративная фотография.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__contactEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2100,
+              "delay": 160
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__contactEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2100,
+              "delay": 440
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__contactEnter",
+              "time": 0,
+              "state": "running",
+              "duration": 2100,
+              "delay": 760
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.145098 0.172549 0.180392 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.145098 0.172549 0.180392 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Из личного архива\n2025\nТо, что\nостаётся.\n\nРазные страны и разный масштаб. Поездки друзей до запуска Travel Club.\n\n01\nКитай\n\nПекин → Шанхай → Сучжоу → Санья\n\n5 человек / 2025\n02\nМадагаскар\n\nДвое. Большой остров.\n\n2 человека / 2025\n03\nТаиланд\n\nОстрова → Бангкок\n\nНебольшая компания / 2025\n\nЭто личные путешествия, а не оказанные услуги Travel Club. Полные истории пока не опубликованы.\n\nОткрыть архив\nField Notes / Опыт, из которого вырос клуб\n13",
+          "label": "Архив 2025 — Китай, Мадагаскар, Таиланд",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "То, чтоостаётся.",
+              "clip": "inset(-8.67268px 100% -11.5636px -8.67268px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "57.8179px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Открыть архив",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 540
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.203922 0.192157 0.164706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.203922 0.192157 0.164706 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Предыдущие страницы\nField Notes / 2025\nARCHIVE\n’25\n01 / China\n2025\n02 / Madagascar\n2025\n03 / Thailand\n2025\n\nДо клуба были\nпоездки с друзьями.\n\nИллюстративные фотографии / Pexels\nSean Xu · Herve Meftah · youseflns\n\nТри истории / один год\n12",
+          "label": "Archive ’25 — три поездки друзей",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "ARCHIVE’25",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "113.201px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_11/beijing-hutong.webp",
+              "alt": "Кирпичный переулок Пекина, уходящий в глубину. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/madagascar-baobabs.webp",
+              "alt": "Песчаная дорога между баобабами на Мадагаскаре. Иллюстративная фотография, не кадр поездки друзей.",
+              "decoded": true
+            },
+            {
+              "src": "/test_11/thailand-lagoon.webp",
+              "alt": "Бирюзовая лагуна и лодки между зелёными скалами в Таиланде. Иллюстративная фотография.",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.145098 0.172549 0.180392 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.145098 0.172549 0.180392 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Из личного архива\n2025\nТо, что\nостаётся.\n\nРазные страны и разный масштаб. Поездки друзей до запуска Travel Club.\n\n01\nКитай\n\nПекин → Шанхай → Сучжоу → Санья\n\n5 человек / 2025\n02\nМадагаскар\n\nДвое. Большой остров.\n\n2 человека / 2025\n03\nТаиланд\n\nОстрова → Бангкок\n\nНебольшая компания / 2025\n\nЭто личные путешествия, а не оказанные услуги Travel Club. Полные истории пока не опубликованы.\n\nОткрыть архив\nField Notes / Опыт, из которого вырос клуб\n13",
+          "label": "Архив 2025 — Китай, Мадагаскар, Таиланд",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "То, чтоостаётся.",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "57.8179px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Открыть архив",
+              "href": "/archive"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.203922 0.192157 0.164706 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(122, 113, 95)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.203922 0.192157 0.164706 / 0.32)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": 7,
+      "early": [
+        {
+          "text": "Point of View\nПодход к делу\nНе только\nкуда.\nЕщё и как.\n01\nЛюди имеют значение.\n\nСовместимость — это близкий ритм, интересы и ожидания от общей дороги.\n\n02\nМеньше точек. Больше времени.\n\nОставляем время прожить место, а не только отметить его на карте.\n\n03\nВкус — не роскошь.\n\nВыбираем то, что делает поездку лучше, без расходов ради статуса.\n\nМесто × люди × память\nТри принципа одной общей дороги\n14",
+          "label": "Point of View — три принципа Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Не толькокуда.",
+              "clip": "inset(-9.12914px 100% -12.1722px -9.12914px)",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "60.8609px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg",
+              "alt": "Travel Club",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.94902 0.870588 0.854902 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.94902 0.870588 0.854902 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Ваша следующая история\nStart / Travel Club\nНачнём\n\nс разговора.\n\nОт первой идеи к понятному плану. Вот как строится наша работа.\n\n01\nРазговор\n\nОбсуждаем направление, сроки, компанию, бюджет и ваши пожелания.\n\n02\nПредложение\n\nГотовим подходящий формат работы и предварительный состав услуг.\n\n03\nСогласование\n\nВместе уточняем предложение и договариваемся о дальнейших действиях.\n\nОбсудить поездку\nСначала сравнить форматы\n\nФорма поможет сформулировать запрос. Сейчас это прототип: ответы не отправляются и не сохраняются.\n\nКонец номера / Продолжение следует\n15",
+          "label": "Начнём с разговора — Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Начнёмс разговора.",
+              "clip": "inset(-9.76818px 100% -13.0242px -9.76818px)",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "65.1212px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Обсудить поездку",
+              "href": "/start"
+            },
+            {
+              "text": "Сначала сравнить форматы ",
+              "href": "/formats"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialReveal",
+              "time": 0,
+              "state": "running",
+              "duration": 620,
+              "delay": 0
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 180
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 270
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 360
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 380,
+              "delay": 450
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 630
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialCascade",
+              "time": 0,
+              "state": "running",
+              "duration": 340,
+              "delay": 720
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "time": 0,
+              "state": "running",
+              "duration": 250,
+              "delay": 630
+            }
+          ],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.356863 0.137255 0.243137 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "matrix(0, 0, 0, 1, 0, 0)",
+              "color": "color(srgb 0.356863 0.137255 0.243137 / 0.32)"
+            }
+          ]
+        }
+      ],
+      "final": [
+        {
+          "text": "Point of View\nПодход к делу\nНе только\nкуда.\nЕщё и как.\n01\nЛюди имеют значение.\n\nСовместимость — это близкий ритм, интересы и ожидания от общей дороги.\n\n02\nМеньше точек. Больше времени.\n\nОставляем время прожить место, а не только отметить его на карте.\n\n03\nВкус — не роскошь.\n\nВыбираем то, что делает поездку лучше, без расходов ради статуса.\n\nМесто × люди × память\nТри принципа одной общей дороги\n14",
+          "label": "Point of View — три принципа Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Не толькокуда.",
+              "clip": "none",
+              "font": "\"TC Golos\", Arial, sans-serif",
+              "size": "60.8609px"
+            }
+          ],
+          "images": [
+            {
+              "src": "/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg",
+              "alt": "Travel Club",
+              "decoded": true
+            }
+          ],
+          "links": [],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.94902 0.870588 0.854902 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(188, 132, 157)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.94902 0.870588 0.854902 / 0.32)"
+            }
+          ]
+        },
+        {
+          "text": "Ваша следующая история\nStart / Travel Club\nНачнём\n\nс разговора.\n\nОт первой идеи к понятному плану. Вот как строится наша работа.\n\n01\nРазговор\n\nОбсуждаем направление, сроки, компанию, бюджет и ваши пожелания.\n\n02\nПредложение\n\nГотовим подходящий формат работы и предварительный состав услуг.\n\n03\nСогласование\n\nВместе уточняем предложение и договариваемся о дальнейших действиях.\n\nОбсудить поездку\nСначала сравнить форматы\n\nФорма поможет сформулировать запрос. Сейчас это прототип: ответы не отправляются и не сохраняются.\n\nКонец номера / Продолжение следует\n15",
+          "label": "Начнём с разговора — Travel Club",
+          "reveal": "enter",
+          "titles": [
+            {
+              "text": "Начнёмс разговора.",
+              "clip": "none",
+              "font": "\"TC Lora\", Georgia, serif",
+              "size": "65.1212px"
+            }
+          ],
+          "images": [],
+          "links": [
+            {
+              "text": "Обсудить поездку",
+              "href": "/start"
+            },
+            {
+              "text": "Сначала сравнить форматы ",
+              "href": "/formats"
+            }
+          ],
+          "overflow": [
+            0,
+            0
+          ],
+          "animations": [],
+          "rules": [
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.356863 0.137255 0.243137 / 0.4)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "rgb(162, 108, 130)"
+            },
+            {
+              "name": "spreads-module__jDnwkG__editorialRule",
+              "transform": "none",
+              "color": "color(srgb 0.356863 0.137255 0.243137 / 0.32)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "chapter": 1,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 2,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 3,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 4,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 5,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 6,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    },
+    {
+      "chapter": 7,
+      "textSame": true,
+      "imagesSame": true,
+      "linksSame": true
+    }
+  ],
+  "intro": [
+    {
+      "route": "test_12",
+      "trace": [
+        {
+          "t": 1363.7000000476837,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1369.8000000715256,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1448.6000000238419,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1491.7000000476837,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1531.1000000238419,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1572,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1611.3999999761581,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1650.6000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1691.6000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1730.8000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1770.8000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1811.2000000476837,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1850.3000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1890,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1930.1000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1976.6000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2016.6000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2057.100000023842,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2109.2000000476837,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2150.3000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2191.899999976158,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2233.3000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2275.600000023842,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2340.3000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2511.2000000476837,
+          "phase": "FLIP_2",
+          "stage": "opening"
+        },
+        {
+          "t": 2686.899999976158,
+          "phase": "FLIP_3",
+          "stage": "opening"
+        },
+        {
+          "t": 2862,
+          "phase": "FLIP_3",
+          "stage": "opening"
+        },
+        {
+          "t": 2952.899999976158,
+          "phase": "FLIP_3",
+          "stage": "opening"
+        },
+        {
+          "t": 3132,
+          "phase": "SPREAD_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3221.5,
+          "phase": "SPREAD_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3424.399999976158,
+          "phase": "FLIP_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3538.7000000476837,
+          "phase": "FLIP_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3686.2000000476837,
+          "phase": "FLIP_6",
+          "stage": "opening"
+        },
+        {
+          "t": 3847.3000000715256,
+          "phase": "SPREAD_7",
+          "stage": "opening"
+        },
+        {
+          "t": 3994.100000023842,
+          "phase": "FLIP_7",
+          "stage": "opening"
+        },
+        {
+          "t": 4167.200000047684,
+          "phase": "FLIP_7",
+          "stage": "opening"
+        },
+        {
+          "t": 4361.700000047684,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4577.200000047684,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4705.600000023842,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4960.100000023842,
+          "phase": "TARGET",
+          "stage": "opening",
+          "result": "target"
+        },
+        {
+          "t": 4965.200000047684,
+          "phase": "TARGET",
+          "stage": "reading",
+          "result": "target"
+        }
+      ],
+      "final": "target"
+    },
+    {
+      "route": "test_13",
+      "trace": [
+        {
+          "t": 1317.2000000476837,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1327.4000000953674,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1405.9000000953674,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1446.9000000953674,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1486.6000000238419,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1524.9000000953674,
+          "phase": "CLOSED",
+          "stage": "opening"
+        },
+        {
+          "t": 1562.2000000476837,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1602.4000000953674,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1639.4000000953674,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1676.9000000953674,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1716,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1774.6000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1825.8000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1871.1000000238419,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1923.3000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 1976,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2028.4000000953674,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2083,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2138.8000000715256,
+          "phase": "OPENING",
+          "stage": "opening"
+        },
+        {
+          "t": 2198.600000023842,
+          "phase": "SPREAD_1",
+          "stage": "opening"
+        },
+        {
+          "t": 2282.3000000715256,
+          "phase": "SPREAD_1",
+          "stage": "opening"
+        },
+        {
+          "t": 2486.2000000476837,
+          "phase": "FLIP_2",
+          "stage": "opening"
+        },
+        {
+          "t": 2672.100000023842,
+          "phase": "FLIP_3",
+          "stage": "opening"
+        },
+        {
+          "t": 2835.600000023842,
+          "phase": "SPREAD_4",
+          "stage": "opening"
+        },
+        {
+          "t": 2922.8000000715256,
+          "phase": "SPREAD_4",
+          "stage": "opening"
+        },
+        {
+          "t": 3103.5,
+          "phase": "SPREAD_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3206.4000000953674,
+          "phase": "SPREAD_5",
+          "stage": "opening"
+        },
+        {
+          "t": 3406.2000000476837,
+          "phase": "SPREAD_6",
+          "stage": "opening"
+        },
+        {
+          "t": 3508.8000000715256,
+          "phase": "SPREAD_6",
+          "stage": "opening"
+        },
+        {
+          "t": 3627.3000000715256,
+          "phase": "FLIP_6",
+          "stage": "opening"
+        },
+        {
+          "t": 3755.9000000953674,
+          "phase": "FLIP_6",
+          "stage": "opening"
+        },
+        {
+          "t": 3884.3000000715256,
+          "phase": "FLIP_7",
+          "stage": "opening"
+        },
+        {
+          "t": 4014.5,
+          "phase": "FLIP_7",
+          "stage": "opening"
+        },
+        {
+          "t": 4145.100000023842,
+          "phase": "FLIP_7",
+          "stage": "opening"
+        },
+        {
+          "t": 4303.700000047684,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4516,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4646.100000023842,
+          "phase": "FLIP_8",
+          "stage": "opening"
+        },
+        {
+          "t": 4940.5,
+          "phase": "TARGET",
+          "stage": "opening",
+          "result": "target"
+        },
+        {
+          "t": 4953.5,
+          "phase": "TARGET",
+          "stage": "reading",
+          "result": "target"
+        }
+      ],
+      "final": "target"
+    }
+  ],
+  "forwardTrace": [
+    {
+      "t": 3320.100000023842,
+      "turn": "false",
+      "spread": "1",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "01\nУслуги"
+    },
+    {
+      "t": 10320.300000071526,
+      "turn": "true",
+      "spread": "2",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "01\nУслуги"
+    },
+    {
+      "t": 10917,
+      "turn": "true",
+      "spread": "2",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "01\nУслуги"
+    },
+    {
+      "t": 11575.100000023842,
+      "turn": "true",
+      "spread": "2",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "02\nО нас"
+    },
+    {
+      "t": 11598.100000023842,
+      "turn": "false",
+      "spread": "2",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "02\nО нас"
+    },
+    {
+      "t": 18265.400000095367,
+      "turn": "true",
+      "spread": "3",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "02\nО нас"
+    },
+    {
+      "t": 18865.5,
+      "turn": "true",
+      "spread": "3",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "02\nО нас"
+    },
+    {
+      "t": 19544.600000023842,
+      "turn": "true",
+      "spread": "3",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "03\nПервая поездка"
+    },
+    {
+      "t": 19630.800000071526,
+      "turn": "false",
+      "spread": "3",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "03\nПервая поездка"
+    },
+    {
+      "t": 26395.700000047684,
+      "turn": "true",
+      "spread": "4",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "03\nПервая поездка"
+    },
+    {
+      "t": 27087.800000071526,
+      "turn": "true",
+      "spread": "4",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "03\nПервая поездка"
+    },
+    {
+      "t": 27749.900000095367,
+      "turn": "true",
+      "spread": "4",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "04\nТаиланд"
+    },
+    {
+      "t": 27830.5,
+      "turn": "false",
+      "spread": "4",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "04\nТаиланд"
+    },
+    {
+      "t": 34584,
+      "turn": "true",
+      "spread": "5",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "04\nТаиланд"
+    },
+    {
+      "t": 35446.700000047684,
+      "turn": "true",
+      "spread": "5",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "04\nТаиланд"
+    },
+    {
+      "t": 36076.60000002384,
+      "turn": "true",
+      "spread": "5",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "05\nКитай"
+    },
+    {
+      "t": 36097.800000071526,
+      "turn": "false",
+      "spread": "5",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "05\nКитай"
+    },
+    {
+      "t": 42881.40000009537,
+      "turn": "true",
+      "spread": "6",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "05\nКитай"
+    },
+    {
+      "t": 43812.800000071526,
+      "turn": "true",
+      "spread": "6",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "05\nКитай"
+    },
+    {
+      "t": 44378.90000009537,
+      "turn": "true",
+      "spread": "6",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "06\nАрхив"
+    },
+    {
+      "t": 44563.60000002384,
+      "turn": "false",
+      "spread": "6",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "06\nАрхив"
+    },
+    {
+      "t": 51329.5,
+      "turn": "true",
+      "spread": "7",
+      "phases": [
+        "static",
+        "static"
+      ],
+      "editorial": [],
+      "current": "06\nАрхив"
+    },
+    {
+      "t": 52057.800000071526,
+      "turn": "true",
+      "spread": "7",
+      "phases": [
+        "static",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "06\nАрхив"
+    },
+    {
+      "t": 52688.700000047684,
+      "turn": "true",
+      "spread": "7",
+      "phases": [
+        "pending",
+        "pending"
+      ],
+      "editorial": [],
+      "current": "07\nНачать"
+    },
+    {
+      "t": 52730.300000071526,
+      "turn": "false",
+      "spread": "7",
+      "phases": [
+        "enter",
+        "enter"
+      ],
+      "editorial": [],
+      "current": "07\nНачать"
+    }
+  ],
+  "lastBoundary": true,
+  "keyboard": {
+    "spread": "6"
+  },
+  "historyBack": {
+    "url": "http://localhost:3114/test_13?spread=7",
+    "spread": "7",
+    "active": "07\nНачать"
+  },
+  "historyForward": {
+    "url": "http://localhost:3114/test_13?spread=6",
+    "spread": "6"
+  },
+  "hover": {
+    "before": "none",
+    "after": "matrix(1, 0, 0, 1, 0, -2)",
+    "rowStable": true
+  },
+  "focus": {
+    "active": true,
+    "outline": "rgb(18, 51, 93) solid 2px",
+    "href": "/formats"
+  },
+  "cta": "http://localhost:3114/formats",
+  "reduced": {
+    "pages": [
+      {
+        "text": "02 / О НАС\nPeople behind the journey\n\nЛюди, с которых\nначался Travel Club\n\nВасилиса\nСооснователь Travel Club\nВ\n\nФото Василисы\n\nМесто для настоящего портрета\nСопровождение\nи люди\n\nЗнакомство и общение с путешественниками, атмосфера и социальная сторона поездок.\n\nСопровождение участников и участие в разработке travel-продуктов.\n\nСначала — поездки друзей\n\nМы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.\n\nTravel Club / Люди и путешествия\n04",
+        "label": "О нас — Василиса, сооснователь Travel Club",
+        "reveal": "static",
+        "titles": [
+          {
+            "text": "Люди, с которыхначался Travel Club",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Василиса",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.4)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.35)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.32)"
+          }
+        ]
+      },
+      {
+        "text": "Travel Club / Основатели\nДва равноправных взгляда\n\nОдна общая идея.\nДва разных фокуса.\n\nРамиль\nСооснователь Travel Club\nР\n\nФото Рамиля\n\nМесто для настоящего портрета\nСистемы\nи организация\n\nТехнологии, цифровая инфраструктура, финансы и организационные процессы.\n\nРазвитие проекта и участие в разработке travel-продуктов.\n\nИз этого опыта вырос Travel Club\n\nИндивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.\n\nTravel Club / Системы и путешествия\n05",
+        "label": "О нас — Рамиль, сооснователь Travel Club",
+        "reveal": "static",
+        "titles": [
+          {
+            "text": "Одна общая идея.Два разных фокуса.",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Рамиль",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.4)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.35)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.32)"
+          }
+        ]
+      }
+    ],
+    "afterKey": "3",
+    "turning": "false"
+  },
+  "noRerunBefore": [
+    {
+      "text": "Field Notes / 2026\nДо запуска Travel Club\n’26\nТаиланд\nв двух ритмах\nОт островов до Бангкока\n\nЧетверо друзей.\nОдна поездка.\n\nAnastasia Yudin / Pexels\nИллюстративная фотография\n\nЛичный опыт друзей до запуска клуба\n08",
+      "label": "Thailand ’26 — поездка друзей до запуска Travel Club",
+      "reveal": "enter",
+      "titles": [],
+      "images": [
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        }
+      ],
+      "links": [],
+      "overflow": [
+        0,
+        0
+      ],
+      "animations": [],
+      "rules": [
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.92549 0.913725 0.792157 / 0.4)"
+        },
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.92549 0.913726 0.792157 / 0.32)"
+        }
+      ]
+    },
+    {
+      "text": "Разные ритмы одной поездки\nThailand ’26\nОстрова.\nИ большой город.\n\nЧетверо друзей. От островов до Бангкока. Thailand ’26 — поездка, которая состоялась до запуска Travel Club.\n\nПрирода, дороги и город в одной истории.\nЛодочник у берега.\nElina Sazonova / Pexels\nИллюстративная фотография\nДругая\nскорость.\n\nОстрова сменяются городом.\n\nБангкок. Margarita K / Pexels\nИллюстративная фотография\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nФотографии иллюстративные, не кадры команды\n09",
+      "label": "Thailand ’26 — история и фотографии",
+      "reveal": "enter",
+      "titles": [
+        {
+          "text": "Острова.И большой город.",
+          "clip": "none",
+          "font": "\"TC Lora\", Georgia, serif",
+          "size": "47.4715px"
+        }
+      ],
+      "images": [
+        {
+          "src": "/test_11/thailand-boat.webp",
+          "alt": "Лодочник у длиннохвостых лодок и скал в Таиланде. Иллюстративная фотография, человек не является участником поездки.",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/bangkok-street.webp",
+          "alt": "Улица Бангкока с вывесками, транспортом и прохожими. Иллюстративная фотография.",
+          "decoded": true
+        }
+      ],
+      "links": [
+        {
+          "text": "К заметкам в архиве",
+          "href": "/archive"
+        }
+      ],
+      "overflow": [
+        0,
+        0
+      ],
+      "animations": [],
+      "rules": [
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.4)"
+        },
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.32)"
+        }
+      ]
+    }
+  ],
+  "noRerunAfter": [
+    {
+      "text": "Field Notes / 2026\nДо запуска Travel Club\n’26\nТаиланд\nв двух ритмах\nОт островов до Бангкока\n\nЧетверо друзей.\nОдна поездка.\n\nAnastasia Yudin / Pexels\nИллюстративная фотография\n\nЛичный опыт друзей до запуска клуба\n08",
+      "label": "Thailand ’26 — поездка друзей до запуска Travel Club",
+      "reveal": "enter",
+      "titles": [],
+      "images": [
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/thailand-bright.webp",
+          "alt": "",
+          "decoded": true
+        }
+      ],
+      "links": [],
+      "overflow": [
+        0,
+        0
+      ],
+      "animations": [],
+      "rules": [
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.92549 0.913725 0.792157 / 0.4)"
+        },
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.92549 0.913726 0.792157 / 0.32)"
+        }
+      ]
+    },
+    {
+      "text": "Разные ритмы одной поездки\nThailand ’26\nОстрова.\nИ большой город.\n\nЧетверо друзей. От островов до Бангкока. Thailand ’26 — поездка, которая состоялась до запуска Travel Club.\n\nПрирода, дороги и город в одной истории.\nЛодочник у берега.\nElina Sazonova / Pexels\nИллюстративная фотография\nДругая\nскорость.\n\nОстрова сменяются городом.\n\nБангкок. Margarita K / Pexels\nИллюстративная фотография\nК заметкам в архиве\n\nПолная история пока не опубликована.\n\nФотографии иллюстративные, не кадры команды\n09",
+      "label": "Thailand ’26 — история и фотографии",
+      "reveal": "enter",
+      "titles": [
+        {
+          "text": "Острова.И большой город.",
+          "clip": "none",
+          "font": "\"TC Lora\", Georgia, serif",
+          "size": "47.1315px"
+        }
+      ],
+      "images": [
+        {
+          "src": "/test_11/thailand-boat.webp",
+          "alt": "Лодочник у длиннохвостых лодок и скал в Таиланде. Иллюстративная фотография, человек не является участником поездки.",
+          "decoded": true
+        },
+        {
+          "src": "/test_11/bangkok-street.webp",
+          "alt": "Улица Бангкока с вывесками, транспортом и прохожими. Иллюстративная фотография.",
+          "decoded": true
+        }
+      ],
+      "links": [
+        {
+          "text": "К заметкам в архиве",
+          "href": "/archive"
+        }
+      ],
+      "overflow": [
+        0,
+        0
+      ],
+      "animations": [],
+      "rules": [
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.4)"
+        },
+        {
+          "name": "spreads-module__jDnwkG__editorialRule",
+          "transform": "none",
+          "color": "color(srgb 0.0705882 0.239216 0.188235 / 0.32)"
+        }
+      ]
+    }
+  ],
+  "touch": {
+    "spread": "2"
+  },
+  "fallback": {
+    "spread": "2",
+    "pages": [
+      {
+        "text": "02 / О НАС\nPeople behind the journey\n\nЛюди, с которых\nначался Travel Club\n\nВасилиса\nСооснователь Travel Club\nВ\n\nФото Василисы\n\nМесто для настоящего портрета\nСопровождение\nи люди\n\nЗнакомство и общение с путешественниками, атмосфера и социальная сторона поездок.\n\nСопровождение участников и участие в разработке travel-продуктов.\n\nСначала — поездки друзей\n\nМы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.\n\nTravel Club / Люди и путешествия\n04",
+        "label": "О нас — Василиса, сооснователь Travel Club",
+        "reveal": "enter",
+        "titles": [
+          {
+            "text": "Люди, с которыхначался Travel Club",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Василиса",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.4)"
+          },
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.35)"
+          },
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.32)"
+          }
+        ]
+      },
+      {
+        "text": "Travel Club / Основатели\nДва равноправных взгляда\n\nОдна общая идея.\nДва разных фокуса.\n\nРамиль\nСооснователь Travel Club\nР\n\nФото Рамиля\n\nМесто для настоящего портрета\nСистемы\nи организация\n\nТехнологии, цифровая инфраструктура, финансы и организационные процессы.\n\nРазвитие проекта и участие в разработке travel-продуктов.\n\nИз этого опыта вырос Travel Club\n\nИндивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.\n\nTravel Club / Системы и путешествия\n05",
+        "label": "О нас — Рамиль, сооснователь Travel Club",
+        "reveal": "enter",
+        "titles": [
+          {
+            "text": "Одна общая идея.Два разных фокуса.",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Рамиль",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.4)"
+          },
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.35)"
+          },
+          {
+            "name": "spreads-module__jDnwkG__editorialRule",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.32)"
+          }
+        ]
+      }
+    ]
+  },
+  "nojs": {
+    "notice": "Для интерактивного журнала нужен JavaScript. Открыть обычную версию ↗",
+    "pages": [
+      {
+        "text": "02 / О НАС\nPeople behind the journey\n\nЛюди, с которых\nначался Travel Club\n\nВасилиса\nСооснователь Travel Club\nВ\n\nФото Василисы\n\nМесто для настоящего портрета\nСопровождение\nи люди\n\nЗнакомство и общение с путешественниками, атмосфера и социальная сторона поездок.\n\nСопровождение участников и участие в разработке travel-продуктов.\n\nСначала — поездки друзей\n\nМы самостоятельно путешествовали с друзьями: организовывали поездки, планировали маршруты и вместе исследовали новые места.\n\nTravel Club / Люди и путешествия\n04",
+        "label": "О нас — Василиса, сооснователь Travel Club",
+        "reveal": "pending",
+        "titles": [
+          {
+            "text": "Люди, с которыхначался Travel Club",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Василиса",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.4)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.35)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.0901961 0.184314 0.313726 / 0.32)"
+          }
+        ]
+      },
+      {
+        "text": "Travel Club / Основатели\nДва равноправных взгляда\n\nОдна общая идея.\nДва разных фокуса.\n\nРамиль\nСооснователь Travel Club\nР\n\nФото Рамиля\n\nМесто для настоящего портрета\nСистемы\nи организация\n\nТехнологии, цифровая инфраструктура, финансы и организационные процессы.\n\nРазвитие проекта и участие в разработке travel-продуктов.\n\nИз этого опыта вырос Travel Club\n\nИндивидуальные услуги и авторские групповые путешествия. Мы равноправные партнёры: вместе развиваем проект и принимаем решения.\n\nTravel Club / Системы и путешествия\n05",
+        "label": "О нас — Рамиль, сооснователь Travel Club",
+        "reveal": "pending",
+        "titles": [
+          {
+            "text": "Одна общая идея.Два разных фокуса.",
+            "clip": "none",
+            "font": "\"TC Lora\", Georgia, serif",
+            "size": "31.952px"
+          },
+          {
+            "text": "Рамиль",
+            "clip": "none",
+            "font": "\"TC Golos\", Arial, sans-serif",
+            "size": "77.2934px"
+          }
+        ],
+        "images": [],
+        "links": [],
+        "overflow": [
+          0,
+          0
+        ],
+        "animations": [],
+        "rules": [
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.4)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.35)"
+          },
+          {
+            "name": "none",
+            "transform": "none",
+            "color": "color(srgb 0.94902 0.941176 0.917647 / 0.32)"
+          }
+        ]
+      }
+    ]
+  },
+  "mobile": {
+    "message": true,
+    "fallback": "/test_8"
+  }
+}

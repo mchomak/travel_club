@@ -1,0 +1,178 @@
+{
+  "results": [
+    {
+      "chapter": 1,
+      "rest": {
+        "text": "Подробнее о форматах",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(18, 51, 93)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "Подробнее о форматах",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(18, 51, 93)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(18, 51, 93) solid 2px"
+      },
+      "stable": true
+    },
+    {
+      "chapter": 3,
+      "rest": {
+        "text": "Хочу поехать с вами",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(18, 51, 93)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "Хочу поехать с вами",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(18, 51, 93)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(18, 51, 93) solid 2px"
+      },
+      "stable": true
+    },
+    {
+      "chapter": 4,
+      "rest": {
+        "text": "К заметкам в архиве",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(18, 61, 48)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "К заметкам в архиве",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(18, 61, 48)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(18, 61, 48) solid 2px"
+      },
+      "stable": true
+    },
+    {
+      "chapter": 5,
+      "rest": {
+        "text": "К заметкам в архиве",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(38, 52, 62)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "К заметкам в архиве",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(38, 52, 62)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(38, 52, 62) solid 2px"
+      },
+      "stable": true
+    },
+    {
+      "chapter": 6,
+      "rest": {
+        "text": "Открыть архив",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(52, 49, 42)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "Открыть архив",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(52, 49, 42)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(52, 49, 42) solid 2px"
+      },
+      "stable": true
+    },
+    {
+      "chapter": 7,
+      "rest": {
+        "text": "Обсудить поездку",
+        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+        "xScale": 1,
+        "yOffset": 0,
+        "height": "1px",
+        "color": "rgb(91, 35, 62)",
+        "content": "\"\""
+      },
+      "hover": {
+        "text": "Обсудить поездку",
+        "transform": "matrix(1, 0, 0, 1, 0, -2)",
+        "xScale": 1,
+        "yOffset": -2,
+        "height": "1px",
+        "color": "rgb(91, 35, 62)",
+        "content": "\"\""
+      },
+      "focus": {
+        "active": true,
+        "outline": "rgb(91, 35, 62) solid 2px"
+      },
+      "stable": true
+    }
+  ],
+  "reducedRest": {
+    "text": "Подробнее о форматах",
+    "transform": "none",
+    "xScale": 1,
+    "yOffset": 0,
+    "height": "1px",
+    "color": "rgb(18, 51, 93)",
+    "content": "\"\""
+  },
+  "reducedHover": {
+    "text": "Подробнее о форматах",
+    "transform": "none",
+    "xScale": 1,
+    "yOffset": 0,
+    "height": "1px",
+    "color": "rgb(18, 51, 93)",
+    "content": "\"\""
+  }
+}
