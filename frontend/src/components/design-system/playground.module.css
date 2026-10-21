@@ -405,6 +405,16 @@
   border-top: 1px solid #d2d3cc;
 }
 
+.roleEditor[data-control-selected="true"],
+.frameControl[data-control-selected="true"] {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #a66b3e;
+  outline-offset: 2px;
+  border-radius: 3px;
+  background: rgb(166 107 62 / .06);
+}
+
 .roleEditor > summary {
   display: flex;
   min-height: 42px;
@@ -603,6 +613,13 @@
   font-size: 12px;
 }
 
+.previewHint {
+  display: block;
+  margin-top: 5px;
+  color: #666962;
+  font-size: 10px;
+}
+
 .previewStatus {
   flex: 0 0 auto;
   padding: 5px 8px;
@@ -629,6 +646,31 @@
   font-family: "TC Golos Preview", "Segoe UI", sans-serif;
   container-type: inline-size;
   isolation: isolate;
+}
+
+.preview [data-control-target] {
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  cursor: pointer;
+  transition: outline-color 140ms ease, box-shadow 140ms ease;
+}
+
+.preview [data-control-target]:hover {
+  outline-color: rgb(166 107 62 / .72);
+}
+
+.preview [data-control-target]:focus-visible {
+  outline: 2px solid #172f50;
+  outline-offset: 3px;
+}
+
+.preview [data-control-selected="true"] {
+  outline: 2px solid #a66b3e;
+  box-shadow: 0 0 0 5px rgb(166 107 62 / .14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview [data-control-target] { transition: none; }
 }
 
 .previewPage {

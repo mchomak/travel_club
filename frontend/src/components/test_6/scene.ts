@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { BASE_TOKENS } from "../design-system/tokens";
 import { createArtwork } from "./artwork";
 import { deformPage, PAGE_HEIGHT, PAGE_WIDTH } from "./deformation";
-import { DEFAULT_PARAMS, type SceneParams } from "./parameters";
-import { sampleTimeline, timelineDuration, type TimelineFrame } from "./timeline";
+import { paramsForVariant, type SceneParams } from "./parameters";
+import { artworkIndex, buildTimeline, sampleTimeline, type TimelineFrame } from "./timeline";
 
 export type SceneReport = { phase: string; paused: boolean; elapsed: number; total: number; progress: number; fps: number; frames: number; columns: number };
 export type SceneController = {
@@ -112,9 +112,10 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   const lineMaterial = new THREE.LineBasicMaterial({ color: "#bd4a38", depthTest: false }); materials.push(lineMaterial);
   debug.add(new THREE.Line(lineGeometry, lineMaterial));
   let params = { ...initial }, elapsed = 0, paused = false, disposed = false, raf = 0, lastTime: number | null = null;
+  let timeline = buildTimeline(params);
   let frameCount = 0, fpsFrames = 0, fpsStart = 0, fps = 0, lastReport = 0;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (reduced.matches) { elapsed = timelineDuration(params); paused = true; }
+  if (reduced.matches) { elapsed = timeline.total; paused = true; }
   let current: TimelineFrame;
 
   function cameraFit() {
@@ -129,7 +130,13 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
     const distance = Math.max(params.distance, horizontalFit, verticalFit);
     const pitch = THREE.MathUtils.degToRad(params.pitch), yaw = THREE.MathUtils.degToRad(params.yaw);
     camera.position.set(Math.sin(yaw) * Math.sin(pitch) * distance, -Math.cos(yaw) * Math.sin(pitch) * distance, Math.cos(pitch) * distance);
-    camera.lookAt(0, 0, .28); camera.rotateZ(THREE.MathUtils.degToRad(params.roll)); camera.updateProjectionMatrix();
+    camera.lookAt(0, 0, .28); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+    // Level the resting lower edge without changing the oblique camera position.
+    // User roll remains an additional adjustment relative to this level frame.
+    const edgeZ = (.025 + params.thickness * 12.5) * params.scale;
+    const a = new THREE.Vector3(-PAGE_WIDTH * params.scale, -PAGE_HEIGHT / 2 * params.scale, edgeZ).project(camera);
+    const b = new THREE.Vector3(PAGE_WIDTH * params.scale, -PAGE_HEIGHT / 2 * params.scale, edgeZ).project(camera);
+    camera.rotateZ(Math.atan2(b.y - a.y, (b.x - a.x) * camera.aspect) + THREE.MathUtils.degToRad(params.roll));
   }
   function applyParams() {
     cameraFit(); magazine.scale.setScalar(params.scale); magazine.rotation.z = THREE.MathUtils.degToRad(params.tilt);
@@ -163,39 +170,43 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   }
   function render() {
     if (disposed) return;
-    current = sampleTimeline(elapsed, params);
+    current = sampleTimeline(elapsed, timeline);
     // Balance the closed single leaf, then gently release the offset as it opens.
     // The object starts in place; this is the changing centre of its footprint.
     const opening = current.cover ? current.progress * current.progress * (3 - 2 * current.progress) : 1;
     const openingOffset = -PAGE_WIDTH * .46 * (1 - opening) * params.scale;
     magazine.position.x = openingOffset;
-    leftGroup.visible = !current.cover || current.progress > .55;
+    // The inside-cover artwork belongs only to the turning shell until touchdown.
+    leftGroup.visible = !current.cover;
     contact.scale.x = current.cover ? .54 : 1;
     contact.position.x = openingOffset + (current.cover ? PAGE_WIDTH / 2 * params.scale : 0);
     contact.rotation.z = magazine.rotation.z;
-    leftMaterial.map = art.spreads[current.spread].left;
-    rightMaterial.map = art.spreads[Math.min(3, current.spread + (current.turning && !current.cover ? 1 : 0))].right;
+    const spread = artworkIndex(current.spread, params);
+    const nextSpread = artworkIndex(current.spread + 1, params);
+    leftMaterial.map = art.spreads[spread].left;
+    rightMaterial.map = art.spreads[current.turning && !current.cover ? nextSpread : spread].right;
     leaf.visible = current.turning;
     leaf.position.z = leftPage.position.z + .008 + params.thickness;
     if (current.turning) {
-      frontMaterial.map = current.cover ? art.cover : art.spreads[current.spread].right;
-      backMaterial.map = art.spreads[Math.min(3, current.cover ? 0 : current.spread + 1)].left;
+      frontMaterial.map = current.cover ? art.cover : art.spreads[spread].right;
+      backMaterial.map = art.spreads[current.cover ? 0 : nextSpread].left;
       deform(current);
     }
     renderer.render(scene, camera); frameCount++;
     host.dataset.phase = current.phase; host.dataset.elapsed = elapsed.toFixed(4); host.dataset.frames = String(frameCount);
     host.dataset.activeProgress = current.progress.toFixed(4); host.dataset.paused = String(paused);
+    host.dataset.total = timeline.total.toFixed(4); host.dataset.leafCount = String(timeline.count);
   }
   function publish() { report({ phase: current.phase, paused, elapsed: current.elapsed, total: current.total, progress: current.progress, fps, frames: frameCount, columns }); }
   function tick(time: number) {
     raf = 0;
     if (disposed || paused || document.hidden) { lastTime = null; return; }
-    if (lastTime !== null) elapsed = Math.min(timelineDuration(params), elapsed + (time - lastTime) / 1000);
+    if (lastTime !== null) elapsed = Math.min(timeline.total, elapsed + (time - lastTime) / 1000);
     lastTime = time;
     if (!fpsStart) fpsStart = time;
     fpsFrames++;
     if (time - fpsStart >= 500) { fps = fpsFrames * 1000 / (time - fpsStart); fpsFrames = 0; fpsStart = time; }
-    if (elapsed >= timelineDuration(params)) paused = true;
+    if (elapsed >= timeline.total) paused = true;
     render();
     if (paused) { lastTime = null; publish(); return; }
     if (time - lastReport > 100) { publish(); lastReport = time; }
@@ -210,18 +221,21 @@ export async function createScene(host: HTMLElement, initial: SceneParams, repor
   document.addEventListener("visibilitychange", visibility); reduced.addEventListener("change", preference); renderer.domElement.addEventListener("webglcontextlost", contextLost);
   const controller: SceneController = {
     update(next) {
-      const durationChanged = next.flipDuration !== params.flipDuration || next.delay !== params.delay;
-      const fraction = elapsed / timelineDuration(params);
+      if (next.variant !== params.variant) {
+        stop(); params = { ...next }; timeline = buildTimeline(params); applyParams(); controller.replay(); return;
+      }
+      const durationChanged = next.flipDuration !== params.flipDuration || next.delay !== params.delay || next.pageCount !== params.pageCount || next.speedCurve !== params.speedCurve;
+      const fraction = elapsed / timeline.total;
       params = { ...next };
       // Duration tuning preserves normalized sequence position and current play/pause state.
-      if (durationChanged) elapsed = fraction * timelineDuration(params);
+      if (durationChanged) { timeline = buildTimeline(params); elapsed = fraction * timeline.total; }
       applyParams(); render(); publish(); wake();
     },
-    replay() { stop(); elapsed = reduced.matches ? timelineDuration(params) : 0; paused = reduced.matches; fpsFrames = 0; fpsStart = 0; render(); publish(); wake(); },
-    togglePause() { if (reduced.matches) return; if (elapsed >= timelineDuration(params)) { controller.replay(); return; } paused = !paused; stop(); render(); publish(); wake(); },
-    final() { stop(); elapsed = timelineDuration(params); paused = true; render(); publish(); },
-    reset() { params = { ...DEFAULT_PARAMS }; applyParams(); controller.replay(); },
-    seek(fraction) { stop(); elapsed = Math.max(0, Math.min(1, fraction)) * timelineDuration(params); paused = true; render(); publish(); },
+    replay() { stop(); elapsed = reduced.matches ? timeline.total : 0; paused = reduced.matches; fpsFrames = 0; fpsStart = 0; render(); publish(); wake(); },
+    togglePause() { if (reduced.matches) return; if (elapsed >= timeline.total) { controller.replay(); return; } paused = !paused; stop(); render(); publish(); wake(); },
+    final() { stop(); elapsed = timeline.total; paused = true; render(); publish(); },
+    reset() { params = paramsForVariant(params.variant); timeline = buildTimeline(params); applyParams(); controller.replay(); },
+    seek(fraction) { stop(); elapsed = Math.max(0, Math.min(1, fraction)) * timeline.total; paused = true; render(); publish(); },
     dispose() {
       if (disposed) return; disposed = true; stop(); resize.disconnect();
       document.removeEventListener("visibilitychange", visibility); reduced.removeEventListener("change", preference); renderer.domElement.removeEventListener("webglcontextlost", contextLost);

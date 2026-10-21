@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Compass } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
+import { safeAuthReturnTarget } from "@/lib/return-target";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  const { next } = await searchParams;
   return <main className="grid min-h-dvh lg:grid-cols-[.9fr_1.1fr]">
     <section className="flex flex-col justify-between bg-accent p-7 text-white lg:p-14">
       <Link href="/" className="flex w-fit items-center gap-3 text-xl font-semibold"><Compass size={29} aria-hidden />Travel Club</Link>
@@ -13,7 +15,7 @@ export default function LoginPage() {
     <section className="flex items-center justify-center p-7 sm:p-12">
       <div className="w-full max-w-sm"><h2 className="text-3xl font-semibold tracking-tight">С возвращением</h2>
         <p className="mt-3 mb-9 text-muted">Войдите, чтобы продолжить работу с поездками.</p>
-        <LoginForm />
+        <LoginForm next={safeAuthReturnTarget(next)} />
         <p className="mt-7 text-sm text-muted">Доступ открыт только команде Travel Club. Если не получается войти, обратитесь к администратору.</p>
       </div>
     </section>

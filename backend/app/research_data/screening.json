@@ -1,0 +1,309 @@
+{
+  "version": "1.1",
+  "fields": [
+    {
+      "key": "name",
+      "label": "Имя респондента или псевдоним",
+      "control": "text",
+      "required": true,
+      "source": {
+        "kind": "user_prompt"
+      }
+    },
+    {
+      "key": "age_range",
+      "label": "Возраст или возрастная категория",
+      "control": "select",
+      "required": false,
+      "source": {
+        "kind": "docx",
+        "question_code": "S01",
+        "question_text": "В какой возрастной группе вы находитесь?"
+      },
+      "options": [
+        {
+          "value": "18_22",
+          "label": "18–22"
+        },
+        {
+          "value": "23_29",
+          "label": "23–29"
+        },
+        {
+          "value": "30_39",
+          "label": "30–39"
+        },
+        {
+          "value": "40_plus",
+          "label": "40+"
+        },
+        {
+          "value": "other",
+          "label": "Другая возрастная категория"
+        },
+        {
+          "value": "prefer_not_to_say",
+          "label": "не хочу отвечать"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ]
+    },
+    {
+      "key": "city",
+      "label": "Город проживания",
+      "control": "text",
+      "required": false,
+      "source": {
+        "kind": "docx",
+        "question_code": "S02",
+        "question_text": "В каком городе вы живёте и откуда обычно вылетаете в путешествия?"
+      },
+      "details_key": "departure_city",
+      "details_label": "Откуда обычно вылетаете в путешествия?"
+    },
+    {
+      "key": "independent_trips_24m",
+      "label": "Количество самостоятельных зарубежных путешествий за последние 24 месяца",
+      "control": "select",
+      "required": false,
+      "source": {
+        "kind": "docx",
+        "question_code": "S03",
+        "question_text": "Сколько самостоятельных зарубежных поездок было за последние 24 месяца и кто организовывал последнюю?"
+      },
+      "options": [
+        {
+          "value": "0",
+          "label": "Ни одного"
+        },
+        {
+          "value": "1",
+          "label": "Одно"
+        },
+        {
+          "value": "2",
+          "label": "Два"
+        },
+        {
+          "value": "3_plus",
+          "label": "Три и больше"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ],
+      "details_key": "last_trip_organizer",
+      "details_label": "Бронировали сами, с друзьями или через организатора?"
+    },
+    {
+      "key": "group_experience",
+      "label": "Опыт участия в организованных групповых путешествиях",
+      "control": "radio",
+      "required": false,
+      "source": {
+        "kind": "user_prompt"
+      },
+      "options": [
+        {
+          "value": "yes",
+          "label": "Да"
+        },
+        {
+          "value": "no",
+          "label": "Нет"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ]
+    },
+    {
+      "key": "has_upcoming_plans",
+      "label": "Есть ли конкретные планы путешествий в ближайшие месяцы?",
+      "control": "radio",
+      "required": false,
+      "source": {
+        "kind": "user_prompt"
+      },
+      "options": [
+        {
+          "value": "yes",
+          "label": "Да"
+        },
+        {
+          "value": "no",
+          "label": "Нет"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ],
+      "details_key": "upcoming_plans_details",
+      "details_label": "Что уже известно о поездке? (необязательно)"
+    },
+    {
+      "key": "paid_planning_services",
+      "label": "Пользовались ли платными услугами планирования или организации поездок?",
+      "control": "radio",
+      "required": false,
+      "source": {
+        "kind": "docx",
+        "question_code": "S06",
+        "question_text": "Есть ли у вас опыт оплаты авторского тура, готового маршрута или помощи в организации поездки?"
+      },
+      "options": [
+        {
+          "value": "route_design",
+          "label": "Да, покупал(а) готовый маршрут или его разработку"
+        },
+        {
+          "value": "trip_organization",
+          "label": "Да, оплачивал(а) организацию поездки"
+        },
+        {
+          "value": "no",
+          "label": "Нет"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ],
+      "details_key": "paid_planning_details",
+      "details_label": "Когда, что покупали и почему? (необязательно)"
+    },
+    {
+      "key": "organization_style",
+      "label": "Как обычно организуете путешествия?",
+      "control": "select",
+      "required": false,
+      "source": {
+        "kind": "user_prompt"
+      },
+      "options": [
+        {
+          "value": "self",
+          "label": "Самостоятельно"
+        },
+        {
+          "value": "jointly",
+          "label": "Совместно с попутчиками"
+        },
+        {
+          "value": "organizer",
+          "label": "Через организатора"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ]
+    },
+    {
+      "key": "preparation_difficulty",
+      "label": "Какая часть подготовки поездки вызывает наибольшие трудности?",
+      "control": "select",
+      "required": false,
+      "source": {
+        "kind": "user_prompt"
+      },
+      "options": [
+        {
+          "value": "itinerary_design",
+          "label": "Составление маршрута и выбор мест"
+        },
+        {
+          "value": "booking_logistics",
+          "label": "Поиск и бронирование билетов, жилья и транспорта"
+        },
+        {
+          "value": "coordination",
+          "label": "Согласование планов с попутчиками"
+        },
+        {
+          "value": "time_cost",
+          "label": "Нехватка времени на подготовку"
+        },
+        {
+          "value": "budget",
+          "label": "Планирование бюджета"
+        },
+        {
+          "value": "documents_language",
+          "label": "Документы, язык или незнакомые правила"
+        },
+        {
+          "value": "none",
+          "label": "Существенных трудностей нет"
+        },
+        {
+          "value": "other",
+          "label": "Другое"
+        },
+        {
+          "value": "unknown",
+          "label": "Затрудняюсь ответить"
+        }
+      ]
+    }
+  ],
+  "additional_fields": [
+    {
+      "key": "respondent_role",
+      "label": "Какова ваша роль в выборе и оплате путешествий?",
+      "control": "textarea",
+      "required": false,
+      "collapsed_by_default": true,
+      "source": {
+        "kind": "docx",
+        "question_code": "S04",
+        "question_text": "Какова ваша роль в выборе и оплате путешествий?"
+      }
+    }
+  ],
+  "goal": {
+    "key": "research_goal",
+    "label": "Цель исследования",
+    "control": "radio",
+    "required": false,
+    "options": [
+      {
+        "value": "trips",
+        "label": "Trips"
+      },
+      {
+        "value": "individual_services",
+        "label": "Индивидуальные услуги"
+      }
+    ],
+    "source": {
+      "kind": "user_prompt"
+    }
+  }
+}

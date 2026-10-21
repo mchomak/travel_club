@@ -1,0 +1,42 @@
+{
+  "runs": [
+    {
+      "phases": [
+        "OPENING",
+        "CLOSED",
+        "OPENING",
+        "SPREAD_1",
+        "FLIP_1",
+        "SPREAD_2",
+        "FLIP_2",
+        "SPREAD_3",
+        "FLIP_3",
+        "TARGET"
+      ],
+      "elapsed": "3.4600",
+      "frames": "434"
+    },
+    {
+      "phases": [
+        "CLOSED",
+        "OPENING",
+        "SPREAD_1",
+        "FLIP_1",
+        "SPREAD_2",
+        "FLIP_2",
+        "SPREAD_3",
+        "FLIP_3",
+        "SPREAD_4",
+        "FLIP_4",
+        "SPREAD_5",
+        "FLIP_5",
+        "SPREAD_6",
+        "FLIP_6",
+        "TARGET"
+      ],
+      "elapsed": "3.3900",
+      "frames": "832"
+    }
+  ],
+  "errors": []
+}

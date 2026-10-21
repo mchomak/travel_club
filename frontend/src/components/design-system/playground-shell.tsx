@@ -245,6 +245,7 @@ function TypographyEditor({
   role,
   value,
   drafts,
+  selected,
   onFamilyChange,
   onNumberChange,
   onRangeChange,
@@ -253,6 +254,7 @@ function TypographyEditor({
   role: TypeRole;
   value: TypographyRole;
   drafts: Record<string, string>;
+  selected: boolean;
   onFamilyChange: (family: TypographyRole["family"]) => void;
   onNumberChange: (field: TypeField, value: string) => void;
   onRangeChange: (field: TypeField, value: number) => void;
@@ -261,7 +263,7 @@ function TypographyEditor({
   const label = roleLabels[role];
   const fields: TypeField[] = ["desktopSize", "mobileSize", "lineHeight", "weight", "letterSpacing"];
   return (
-    <details className={styles.roleEditor} open={role === "displayXL"}>
+    <details className={styles.roleEditor} open={role === "displayXL"} data-control-target={`typography:${role}`} data-control-selected={selected ? "true" : undefined}>
       <summary>
         <span>{label}</span>
         <span className={styles.roleExample}>{typographyExamples[role]}</span>
@@ -346,6 +348,8 @@ export default function PlaygroundShell() {
   const [copyOutput, setCopyOutput] = useState<string | null>(null);
   const [draftMessage, setDraftMessage] = useState("Исходные значения загружены.");
   const [browserWidth, setBrowserWidth] = useState(1440);
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const controlPanelRef = useRef<HTMLElement>(null);
   const skipNextSave = useRef(false);
 
   useEffect(() => {
@@ -509,10 +513,34 @@ export default function PlaygroundShell() {
   const targetWidth = viewportWidths[state.viewport];
   const previewWidth = state.viewport === "mobile" && browserWidth < 360 ? browserWidth : targetWidth;
 
+  function selectPreviewTarget(target: string) {
+    setSelectedTarget(target);
+
+    const panel = controlPanelRef.current;
+    const control = panel?.querySelector<HTMLElement>(`[data-control-target="${target}"]`);
+    if (!panel || !control) return;
+
+    const group = control.closest("details.controlGroup");
+    if (group instanceof HTMLDetailsElement) group.open = true;
+    if (control instanceof HTMLDetailsElement) control.open = true;
+
+    window.requestAnimationFrame(() => {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      if (panel.scrollHeight > panel.clientHeight) {
+        const panelRect = panel.getBoundingClientRect();
+        const controlRect = control.getBoundingClientRect();
+        const top = panel.scrollTop + controlRect.top - panelRect.top - 14;
+        panel.scrollTo({ top, behavior });
+      } else {
+        control.scrollIntoView({ behavior, block: "center" });
+      }
+    });
+  }
+
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <aside className={styles.controlPanel} aria-label="Playground controls">
+        <aside ref={controlPanelRef} className={styles.controlPanel} aria-label="Playground controls">
           <header className={styles.panelHeader}>
             <Link className={styles.backLink} href="/">Travel Club</Link>
             <p className={styles.panelEyebrow}>Внутренняя студия / Tokens</p>
@@ -598,6 +626,7 @@ export default function PlaygroundShell() {
                 role={role}
                 value={state.tokens.typography[role]}
                 drafts={numericDrafts}
+                selected={selectedTarget === `typography:${role}`}
                 onFamilyChange={(family) => updateTypography(role, "family", family)}
                 onNumberChange={(field, value) => editTypographyNumber(role, field, value)}
                 onRangeChange={(field, value) => editTypographyRange(role, field, value)}
@@ -663,7 +692,7 @@ export default function PlaygroundShell() {
               <button type="button" aria-label="Reset group Images / frames" onClick={() => setState((current) => ({ ...current, tokens: { ...current.tokens, frames: JSON.parse(JSON.stringify(BASE_TOKENS.frames)) as PlaygroundState["tokens"]["frames"] } }))}>Reset group</button>
             </div>
             {(Object.keys(BASE_TOKENS.frames) as FrameRole[]).map((role) => (
-              <div className={styles.frameControl} key={role}>
+              <div className={styles.frameControl} key={role} data-control-target={`frame:${role}`} data-control-selected={selectedTarget === `frame:${role}` ? "true" : undefined}>
                 <div><strong>{frameLabels[role]}</strong><span>{state.tokens.frames[role].aspectRatio.toFixed(2)} : 1</span></div>
                 <RangeControl
                   id={`frame-${role}`}
@@ -679,11 +708,20 @@ export default function PlaygroundShell() {
 
         <section className={styles.previewColumn} aria-label="Preview area">
           <div className={styles.previewHeading}>
-            <div><span>Live preview</span><p>Композиция Travel Club · {previewWidth} px canvas</p></div>
+            <div>
+              <span>Live preview</span>
+              <p>Композиция Travel Club · {previewWidth} px canvas</p>
+              <small className={styles.previewHint}>Click text or an image to jump to its settings.</small>
+            </div>
             <span className={styles.previewStatus}>{state.theme.toUpperCase()} / {viewportLabels[state.viewport]}</span>
           </div>
           <div className={styles.previewStage}>
-            <PlaygroundPreview state={state} canvasWidth={previewWidth} />
+            <PlaygroundPreview
+              state={state}
+              canvasWidth={previewWidth}
+              selectedTarget={selectedTarget}
+              onSelectTarget={selectPreviewTarget}
+            />
           </div>
         </section>
       </div>
