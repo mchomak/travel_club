@@ -1,6 +1,6 @@
 @import "../public-site/fonts.css";
 
-/* Composition: TC_Homepage_Full_Concept_01.html. Visual roles: BASE_TOKENS. */
+/* Composition: docs/design/references/TC_Homepage_Full_Concept_01.html. Visual roles: BASE_TOKENS. */
 .root {
   --paper: var(--pub-color-editorial-paper); --ink: var(--pub-color-editorial-ink);
   --blue: var(--pub-color-brand-blue); --muted: var(--pub-color-muted); --line: var(--pub-color-line);

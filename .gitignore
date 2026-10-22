@@ -16,3 +16,36 @@ __pycache__/
 test-results/
 playwright-report/
 .playwright-mcp
+
+# Generated agent and code-graph artifacts (kept in local worktrees).
+/.autopilot/**/*.log
+/.autopilot/2026-10-06-test-4-field-notes--wip/qa/field-*.png
+/.autopilot/2026-10-06-test-4-field-notes--wip/qa/editor-*.png
+/.autopilot/2026-10-06-test-4-field-notes--wip/qa/stock-contact-sheet.jpg
+/.autopilot/2026-10-06-test-4-field-notes--wip/qa/field-*-metrics.json
+/.autopilot/2026-10-20-test-12/shell-cover*.png
+/.autopilot/2026-10-21-research-page-improvements/push-bundles/
+/graphify-out/
+
+# Generated visual QA captures and per-frame DOM dumps.
+/docs/qa/test-10/*.png
+/docs/qa/test-10/initial-matrix.json
+/docs/qa/test-13/copy-baseline/*.png
+/docs/qa/test-13/copy-baseline/*-dom.json
+/docs/qa/test-13/motion-final/*.png
+!/docs/qa/test-13/motion-final/hero-raster-review.png
+/docs/qa/test-13/motion-final/*.json
+!/docs/qa/test-13/motion-final/results.json
+!/docs/qa/test-13/motion-final/pixel-comparison.json
+!/docs/qa/test-13/motion-final/natural-hero.json
+!/docs/qa/test-13/motion-final/natural-hero-pixel.json
+!/docs/qa/test-13/motion-final/protected-final.json
+/docs/qa/test-13/graphic-details/after/**/*.png
+!/docs/qa/test-13/graphic-details/after/1440x900/spacing-correction.png
+/docs/qa/test-13/graphic-details/after/**/*.json
+!/docs/qa/test-13/graphic-details/after/report.json
+!/docs/qa/test-13/graphic-details/after/interactions.json
+!/docs/qa/test-13/graphic-details/after/compact-axis-report.json
+/docs/qa/test-13/graphic-details/before/**/*.png
+/docs/qa/test-13/graphic-details/before/**/*.json
+/docs/qa/test-13/graphic-details/production/*.png

@@ -16,6 +16,8 @@ Both exited 0. [results.json](motion-final/results.json) records 28/28 exact geo
 
 [Contact sheet](motion-final/contact-sheet.jpg) was visually inspected across all seven early/middle/final rows. Reveal and cascade appear progressively; final multiline headings, Cyrillic, service rows, prices, captions, disclaimers and CTA remain complete. Final heading clip resets to none; all recorded clipping ancestors and bounds match the control. Service-row geometry is unchanged. The separate production motion suite checks timing only after handoff, bounded text sequences, revisit replay, no resize/hover replay, static/reduced visibility and preserved photo ancestors.
 
+The full frame-by-frame PNG captures and per-pair geometry JSON files remain in the local worktree and are ignored by Git; the contact sheet and linked summary reports remain tracked.
+
 ## Pixel comparison and limits
 
 [pixel-comparison.json](motion-final/pixel-comparison.json) records decoded RGB differences rather than claiming full-page identity. Most pairs differ by four navigation-edge pixels from the new measured underline. A few photo/text compositing edges differ by 27–58 additional pixels. The hero page differs more: 1,196 / 21,209 / 1,694 pixels at the first three viewport sizes, with identical recorded geometry and unchanged photo source/CSS. A natural-animation-completion follow-up (no pause/cancel) also shows this hero raster variance: [natural-hero-pixel.json](motion-final/natural-hero-pixel.json), and [side-by-side crop](motion-final/hero-raster-review.png). The crop is visually equivalent; this is not zero-pixel final parity. The exact compositor/raster cause was not established and is an explicit evidence limitation, not attributed solely to the capture harness. Source preservation plus geometry, final visual inspection and independent natural-reading acceptance support unchanged composition.
@@ -41,7 +43,7 @@ $env:PLAYWRIGHT_BASE_URL='http://localhost:3114'
 npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-12-magazine.spec.ts e2e/test-12-review-comments.spec.ts e2e/test-11-reveal.spec.ts e2e/test-10-magazine.spec.ts -- --workers=2
 ```
 
-**36 passed (1.1 minutes)** after the final specificity fix. Coordinator logs: `.autopilot/2026-10-21-test-13-motion/production-playwright-final.log`, `production-build-final.log`, `handoff-vitest.log`. Scoped source review and independent blind browser review passed; these are separate from the capture probe.
+**36 passed (1.1 minutes)** after the final specificity fix. The local-only, Git-ignored coordinator logs are `.autopilot/2026-10-21-test-13-motion/production-playwright-final.log`, `production-build-final.log` and `handoff-vitest.log`. Scoped source review and independent blind browser review passed; these are separate from the capture probe.
 
 ## Isolation
 

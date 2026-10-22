@@ -6,8 +6,10 @@ second transparent cutout. The normal right-page camera/cutout path is retained.
 
 `frontend/scripts/capture-test-10.mjs` records the closed cover, cover opening,
 automatic flips and twenty frames at 25 ms intervals through the eighth turn.
-See `intro-final-00.png` through `intro-final-19.png`, `intro-reading.png` and
-`intro-final-samples.json`. These were inspected visually: the turning reverse
+The generated `intro-final-00.png` through `intro-final-19.png` sequence and
+`intro-reading.png` remain in the local worktree and are ignored by Git;
+`intro-final-samples.json` records the capture samples. The frames were inspected
+visually: the turning reverse
 carries the actual first-page logo, photo and copy, then settles into the live
 page without a replacement flash. The preceding printed spread remains behind
 the moving leaf until covered. No right-half zoom or later intro replay occurs.

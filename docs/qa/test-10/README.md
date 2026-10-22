@@ -24,8 +24,9 @@ The experiment contains exactly HERO + FORMATS, NEXT ISSUE and THAILAND ’26.
    disposed. There is no right-page zoom or reintro on navigation. The final
    1440 × 900 projection differs by less than 0.001 px from the native book;
    the browser test requires less than 1 px. See [dense intro notes](intro-and-shell.md),
-   `intro-final-00.png` through `intro-final-19.png`, `intro-reading.png` and
-   `intro-final-samples.json`.
+   the local-only `intro-final-00.png` through `intro-final-19.png` sequence and
+   `intro-reading.png`; the generated images are ignored by Git. The capture
+   samples remain in `intro-final-samples.json`.
 
 4. **Navigation.** A double-sided CSS leaf rotates around the spine in 450 ms,
    with perspective and a moving shadow. Edge buttons, ArrowLeft/ArrowRight,
@@ -63,8 +64,9 @@ The experiment contains exactly HERO + FORMATS, NEXT ISSUE and THAILAND ’26.
 
    All three spreads were checked at 1280/1440/1728/1920 × 768/900: **24 views**,
    zero document/page overflow and zero broken images. Data: [final matrix](final-matrix.json).
-   Final screenshots: `final-{spread}-{width}x{height}.png`;
-   [contact sheet](contact-sheet.jpg). Refinement addressed logo/type hierarchy,
+   Per-viewport screenshots (`final-{spread}-{width}x{height}.png`) remain local
+   and are ignored by Git; the [contact sheet](contact-sheet.jpg) and final matrix
+   are tracked. Refinement addressed logo/type hierarchy,
    photo crops/saturation, margins, CTA placement, page balance, fold/shadows and
    readable metadata. The outer masthead now clears the book. With visible images
    decoded, test_8 before/after at 1440 × 900 matched exactly pixel-for-pixel;

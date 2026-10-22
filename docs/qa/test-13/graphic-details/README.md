@@ -7,17 +7,17 @@ A small vocabulary of fine routes, open corners and nodal points gives the journ
 ## Preserved surface
 
 - Only local test_13 components/CSS/documentation and this QA folder changed in this implementation. No data, assets, shared code, previous versions, dependencies or engines changed.
-- `before/` contains the coordinator's seven original 1440×900 screenshots and content/link/image/page bounds.
-- `after/1440x900/` and `after/1100x700/` contain all seven final chapter screenshots, contact sheets and `capture.json` (text, URLs, image src/alt/bounds, page bounds, h1/h2/h3 bounds and direct block bounds).
+- `before/` contains the coordinator's seven original 1440×900 screenshots locally; the generated PNGs are ignored by Git.
+- `after/1440x900/` and `after/1100x700/` contain local final chapter screenshots and `capture.json` (text, URLs, image src/alt/bounds, page bounds, h1/h2/h3 bounds and direct block bounds). Generated screenshots are ignored by Git; the contact sheets remain tracked.
 - `after/report.json` compares the initial graphic pass with the supplied 1440 baseline: zero differences across all seven chapters for text, links, images including bounds, page bounds and labels. The later D01 spacing correction below intentionally changes only service-row internals. The baseline has no per-heading bounds.
-- At 1100×700, an original service-table overflow was found: the third row ran into the terms/footer area. Before the compact correction, restoring the old CTA surface produced unchanged content geometry (`legacyCtaGeometryUnchanged=true`); `after/1100x700/legacy-cta-comparison.png` records that original overflow with the old dark surface. It is a diagnostic screenshot, not the final design.
+- At 1100×700, an original service-table overflow was found: the third row ran into the terms/footer area. Before the compact correction, restoring the old CTA surface produced unchanged content geometry (`legacyCtaGeometryUnchanged=true`); the local-only `after/1100x700/legacy-cta-comparison.png` records that original overflow with the old dark surface. It is a diagnostic screenshot, not the final design.
 - The scoped width ≤1200px **or** height ≤790px CSS correction tightens only service-page internal spacing, title size and line-height whenever either axis limits the book. Body remains 13px. Third-row bottom is 524.375px and terms begin at 529.266px at 1100×700. Page geometry, photography and all other chapters retain their layout.
 
 ## Browser checks
 
 Both seven-spread contact sheets were inspected. Final 1100 service spread was re-inspected after the compact correction: no overlap or cut-off. New marginal marks clear headings/body at both sizes. Next/Thailand icons remain in their allocated slots.
 
-`capture.mjs` and `interactions.mjs` are local Playwright QA scripts, not application dependencies or mirrored unit tests. `after/interactions.json` records:
+`capture.mjs` and `interactions.mjs` are local Playwright QA scripts, not application dependencies or mirrored unit tests. Tracked `after/report.json` and `after/interactions.json` record:
 
 - transparent format action surface, inherited navy, permanent 1px rule;
 - hover/focus with unchanged bounds, 190ms transition and a 2px rule movement;
@@ -59,11 +59,11 @@ npm.cmd exec playwright test e2e/test-13-motion.spec.ts e2e/test-13-refinement.s
 npm.cmd exec playwright test e2e/test-12-magazine.spec.ts -- --grep 'pointer activation supports skip' --workers=1 --timeout=30000 --output=test-results/test-13-graphic-details-legacy-skip
 ```
 
-Final production visual evidence is in [production/report.json](production/report.json), [1440×900 contact sheet](production/contact-sheet-1440.jpg) and [1100×700 contact sheet](production/contact-sheet-1100.jpg). Fourteen final screenshots cover all seven spreads at both sizes. At 1440×900, all seven spreads preserve text, links, page bounds and image bounds exactly. All three format links reached /formats through keyboard activation; page and network errors were empty. The compact correction leaves a 4.89px gap between the third service row and terms at 1100×700.
+Final production visual evidence is in [production/report.json](production/report.json), [1440×900 contact sheet](production/contact-sheet-1440.jpg) and [1100×700 contact sheet](production/contact-sheet-1100.jpg). Fourteen per-spread screenshots remain in the local worktree and are ignored by Git. At 1440×900, all seven spreads preserve text, links, page bounds and image bounds exactly. All three format links reached /formats through keyboard activation; page and network errors were empty. The compact correction leaves a 4.89px gap between the third service row and terms at 1100×700.
 
 Independent blind acceptance passed 14/14 spread views, all three CTA checks, normal page turns and ArrowRight navigation with zero page errors. Independent SVG/CTA and compact-layout reviews passed. The QA detector returned an empty findings list. The coordinator's scoped diff check confirmed no changes to old versions, shared code or dependencies (exit 0).
 
-The `after/` contact sheets have been regenerated from their final individual PNGs. `production/contact-sheet.jpg` is an alias of the final 1440 sheet. Original baseline images and the explicitly labelled legacy-overflow diagnostic remain for comparison; stale result-sheet versions were overwritten.
+The `after/` contact sheets have been regenerated from their final individual PNGs. `production/contact-sheet.jpg` is an alias of the final 1440 sheet. Raw before/after and production screenshots remain in the local worktree and are ignored by Git; the tracked contact sheets and final spacing-correction screenshot remain available for comparison.
 
 ## D01: either-axis and ordinary-desktop spacing correction
 

@@ -1,6 +1,6 @@
 # TC Research implementation plan
 
-Build the internal interview tool in the existing FastAPI/PostgreSQL + Next.js application. Keep public site routes independent. Use the exact interview source bank from `Travel_Club_CustDev.docx`, deterministic editable rules, admin-only access, PostgreSQL question snapshots, conflict-safe answer saves, complete XLSX export, and a responsive interview workflow.
+Build the internal interview tool in the existing FastAPI/PostgreSQL + Next.js application. Keep public site routes independent. Use the exact interview source bank in `../../research/source/Travel_Club_CustDev.docx`, deterministic editable rules, admin-only access, PostgreSQL question snapshots, conflict-safe answer saves, complete XLSX export, and a responsive interview workflow.
 
 ## Work sequence
 

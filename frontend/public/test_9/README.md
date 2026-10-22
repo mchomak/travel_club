@@ -1,9 +1,11 @@
 # Hero exploration assets
 
 The original `TC_Logo_Editorial_Signature_Navy.svg` and
-`TC_Logo_Editorial_Signature_Cream.svg` were supplied by the owner in the
-repository root. These copies are byte-identical; no letterform, path or color
-changes. SVG viewBox: `0 0 452 215`. Root PNGs are reference previews only.
+`TC_Logo_Editorial_Signature_Cream.svg` are kept here as the only copies; these
+are the assets served by the site. The byte-identical root duplicates were
+removed. No letterform, path or color changes. SVG viewBox: `0 0 452 215`.
+Reference PNG previews are stored in
+[`docs/design/references/brand/`](../../../docs/design/references/brand/).
 
 Twenty local WebP photographs illustrate candidate destinations; they do not
 announce TC tours. Individual source pages, photographers, download URLs,

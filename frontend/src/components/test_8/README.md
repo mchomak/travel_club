@@ -1,7 +1,7 @@
 # `/test_8` — Homepage Concept 01
 
 An isolated version of `/test_7` with the homepage composition and Russian copy
-from the supplied `TC_Homepage_Full_Concept_01.html`. Chapter order: hero,
+from the supplied `docs/design/references/TC_Homepage_Full_Concept_01.html`. Chapter order: hero,
 formats, next trip, Field Notes (Thailand and China), 2025 archive, approach,
 conversation/process, footer. The reference's scripts, demo toasts, external
 fonts and embedded images are not shipped.

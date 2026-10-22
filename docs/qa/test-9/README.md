@@ -67,11 +67,12 @@ TC и не отзывы/поездки изображённых людей. Пр
 о размерах, преобразованиях и происхождении —
 [`manifest.json`](../../../frontend/public/test_9/manifest.json).
 
-Оригинальные SVG `TC_Logo_Editorial_Signature_Navy.svg` и
-`TC_Logo_Editorial_Signature_Cream.svg` скопированы из корня в
-`frontend/public/test_9/`. SHA-256 совпадают с оригиналами. Геометрия, цвета
-и пропорции не менялись. Временный знак полностью удалён после появления
-исходных файлов. Все варианты имеют доступный текстовый эквивалент Travel Club.
+Рабочие SVG `TC_Logo_Editorial_Signature_Navy.svg` и
+`TC_Logo_Editorial_Signature_Cream.svg` находятся в `frontend/public/test_9/`;
+побайтно идентичные дубли из корня удалены. PNG-превью перенесены в
+[`docs/design/references/brand/`](../../design/references/brand/). Геометрия,
+цвета и пропорции не менялись. Временный знак удалён после появления исходных
+файлов. Все варианты имеют доступный текстовый эквивалент Travel Club.
 
 ## Что сохранено
 
