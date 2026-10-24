@@ -1,0 +1,384 @@
+.page,
+.reader {
+  --paper: #f5f2e9;
+  --ink: #172b36;
+  --muted: #53666d;
+  --rule: #b7b7aa;
+  min-height: 100svh;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-golos), Arial, sans-serif;
+}
+
+.page {
+  max-width: 100%;
+  padding: clamp(1.25rem, 5vw, 4rem) max(1rem, calc((100vw - 1040px) / 2));
+  overflow: clip;
+}
+
+.indexIntro {
+  max-width: 720px;
+  margin: 0 auto clamp(1.5rem, 4vw, 3rem);
+}
+
+.publicationName,
+.layoutNote,
+.readerPublication,
+.readerPosition,
+.cardLabel,
+.cardAction,
+.indexFooter {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.publicationName {
+  margin: 0 0 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.publicationName span,
+.indexFooter span {
+  margin-inline: 0.3em;
+  color: #8b6c49;
+}
+
+.indexIntro h1,
+.readerTitle h1 {
+  margin: 0;
+  max-width: 15ch;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: clamp(2.2rem, 7vw, 4.25rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.introCopy {
+  max-width: 40ch;
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.layoutNote {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+}
+
+.chapterIndex {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.8rem;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.chapterCard {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 180px;
+  align-items: flex-end;
+  overflow: hidden;
+  color: #f9f5ec;
+  background: #28454c;
+  isolation: isolate;
+  text-decoration: none;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+.chapterCard:hover {
+  background-color: #1d3942;
+}
+
+.chapterCard:focus-visible,
+.backLink:focus-visible {
+  outline: 3px solid #9d572e;
+  outline-offset: 4px;
+  z-index: 2;
+}
+
+.chapter1 {
+  grid-column: span 4;
+  min-height: 270px;
+  background: #1f3b47;
+}
+
+.chapter2,
+.chapter3 {
+  grid-column: span 2;
+}
+
+.chapter4,
+.chapter5,
+.chapter6 {
+  grid-column: span 2;
+}
+
+.chapter7 {
+  grid-column: span 3;
+}
+
+.cardPhoto {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.68;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out;
+}
+
+.chapterCard:hover .cardPhoto {
+  transform: scale(1.025);
+  opacity: 0.78;
+}
+
+.chapter2 {
+  color: #203642;
+  background: #d8c8ae;
+}
+
+.chapter2:hover {
+  background: #cdb997;
+}
+
+.chapter3 {
+  background: #465657;
+}
+
+.chapter4 {
+  background: #236369;
+}
+
+.chapter5 {
+  background: #684733;
+}
+
+.chapter6 {
+  background: #454b39;
+}
+
+.chapter7 {
+  color: #f8f1e4;
+  background: #784b34;
+}
+
+.cardNames {
+  position: absolute;
+  inset: 1.15rem 1rem auto;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+
+.cardNumber {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+  z-index: 1;
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: 1.4rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardCopy {
+  display: flex;
+  width: 100%;
+  min-height: 106px;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: linear-gradient(0deg, rgb(14 31 36 / 88%), rgb(14 31 36 / 0%));
+}
+
+.chapter2 .cardCopy {
+  background: linear-gradient(0deg, rgb(216 200 174 / 96%), rgb(216 200 174 / 0%));
+}
+
+.cardLabel {
+  color: inherit;
+  opacity: 0.88;
+}
+
+.cardTitle {
+  font-family: var(--font-lora), Georgia, serif;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 500;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.cardAction {
+  margin-top: 0.35rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.indexFooter {
+  max-width: 1040px;
+  margin: 2rem auto 0;
+  color: var(--muted);
+}
+
+.reader {
+  width: 100%;
+  overflow: clip;
+}
+
+.readerHeader {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem max(1rem, calc((100vw - 800px) / 2));
+  background: rgb(245 242 233 / 96%);
+  border-bottom: 1px solid var(--rule);
+}
+
+.backLink {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  padding: 0.5rem 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  text-underline-offset: 0.22em;
+}
+
+.readerPosition {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.readerPosition span {
+  color: var(--muted);
+}
+
+.readerTitle {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 1.5rem;
+}
+
+.readerPublication {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+}
+
+.readerTitle h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+}
+
+.readerSpread {
+  width: min(100%, 800px);
+  margin: 0 auto;
+}
+
+.readerSpread > div {
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 680px) {
+  .page {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .publicationName {
+    margin-bottom: 1.25rem;
+  }
+
+  .chapterIndex {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .chapterCard,
+  .chapter1,
+  .chapter2,
+  .chapter3,
+  .chapter4,
+  .chapter5,
+  .chapter6,
+  .chapter7 {
+    grid-column: 1;
+    min-height: 132px;
+  }
+
+  .chapter1 {
+    min-height: 186px;
+  }
+
+  .chapter2 {
+    min-height: 142px;
+  }
+
+  .cardCopy {
+    min-height: 96px;
+    padding: 0.75rem;
+  }
+
+  .cardTitle {
+    font-size: 1.4rem;
+  }
+
+  .cardNames {
+    top: 0.9rem;
+    left: 0.8rem;
+    font-size: 1.35rem;
+  }
+
+  .readerHeader {
+    min-height: 60px;
+  }
+
+  .readerTitle {
+    padding: 1.4rem 1rem 1.15rem;
+  }
+
+  .readerSpread {
+    border-top: 1px solid var(--rule);
+  }
+
+  .readerSpread > div {
+    border: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding-inline: 0.75rem;
+  }
+
+  .cardCopy {
+    padding-inline: 0.75rem;
+  }
+
+  .readerHeader {
+    padding-inline: 0.75rem;
+  }
+
+  .readerTitle {
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapterCard,
+  .cardPhoto {
+    transition: none;
+  }
+}
