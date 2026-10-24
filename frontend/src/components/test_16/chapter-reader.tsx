@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { SPREADS } from "@/components/test_13/data";
 import { MobileIssueSpread } from "@/components/test_mobile/issue-content";
 import s from "./chapter-reader.module.css";
@@ -13,20 +13,44 @@ function indexFromSearch(search: string) {
 
 export function ChapterReader({ initialIndex }: { initialIndex: number }) {
   const [index, setIndex] = useState(initialIndex);
+  const currentIndex = useRef(initialIndex);
+  const scrollAfterChange = useRef(false);
+  const chapterBarRef = useRef<HTMLElement | null>(null);
+  const chapterRef = useRef<HTMLElement | null>(null);
   const chapter = SPREADS[index] ?? SPREADS[0];
 
-  useEffect(() => {
-    const syncFromHistory = () => setIndex(indexFromSearch(window.location.search));
-    window.addEventListener("popstate", syncFromHistory);
-    return () => window.removeEventListener("popstate", syncFromHistory);
+  const changeIndex = useCallback((nextIndex: number) => {
+    if (nextIndex === currentIndex.current || nextIndex < 0 || nextIndex >= SPREADS.length) return;
+    currentIndex.current = nextIndex;
+    scrollAfterChange.current = true;
+    setIndex(nextIndex);
   }, []);
 
+  useEffect(() => {
+    const syncFromHistory = () => changeIndex(indexFromSearch(window.location.search));
+    window.addEventListener("popstate", syncFromHistory);
+    return () => window.removeEventListener("popstate", syncFromHistory);
+  }, [changeIndex]);
+
+  useLayoutEffect(() => {
+    if (!scrollAfterChange.current) return;
+    scrollAfterChange.current = false;
+
+    const heading = chapterRef.current?.querySelector<HTMLElement>("h1, h2");
+    const chapterBar = chapterBarRef.current;
+    if (!heading || !chapterBar) return;
+
+    const top = heading.getBoundingClientRect().top + window.scrollY - chapterBar.getBoundingClientRect().height - 12;
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.scrollTo({ top: Math.max(0, top), behavior });
+  }, [index]);
+
   function chooseChapter(nextIndex: number) {
-    if (nextIndex === index || nextIndex < 0 || nextIndex >= SPREADS.length) return;
+    if (nextIndex === currentIndex.current || nextIndex < 0 || nextIndex >= SPREADS.length) return;
     const url = new URL(window.location.href);
     url.searchParams.set("spread", String(nextIndex + 1));
     window.history.pushState({ spread: nextIndex + 1 }, "", url);
-    setIndex(nextIndex);
+    changeIndex(nextIndex);
   }
 
   return (
@@ -37,7 +61,7 @@ export function ChapterReader({ initialIndex }: { initialIndex: number }) {
         <p>Мобильный формат: одна глава за раз, страницы идут одна под другой.</p>
       </header>
 
-      <nav className={s.chapterBar} aria-label="Положение и выбор главы">
+      <nav className={s.chapterBar} aria-label="Положение и выбор главы" ref={chapterBarRef}>
         <div className={s.positionRow}>
           <span role="status" aria-label="Положение в выпуске">Глава {index + 1} из {SPREADS.length} · {chapter.navLabel}</span>
           <progress value={index + 1} max={SPREADS.length} aria-label={`Глава ${index + 1} из ${SPREADS.length}`} />
@@ -52,7 +76,7 @@ export function ChapterReader({ initialIndex }: { initialIndex: number }) {
       </nav>
 
       <main className={s.reader}>
-        <article className={s.chapter} aria-label={`Глава ${index + 1}: ${chapter.navLabel}`}>
+        <article className={s.chapter} aria-label={`Глава ${index + 1}: ${chapter.navLabel}`} ref={chapterRef}>
           <MobileIssueSpread index={index} />
         </article>
 

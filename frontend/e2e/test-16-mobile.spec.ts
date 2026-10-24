@@ -46,6 +46,27 @@ test("named previous and next controls work from the keyboard", async ({ page })
   await expect(page.getByRole("status", { name: "Положение в выпуске" })).toHaveText("Глава 1 из 7 · Услуги");
 });
 
+test("chapter changes bring the new reading heading below the sticky controls", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/test_16?spread=6");
+
+  const firstReadingHeading = page.locator('[data-mobile-issue] [data-magazine-page] h1, [data-mobile-issue] [data-magazine-page] h2').first();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(firstReadingHeading).not.toBeInViewport();
+
+  await page.getByRole("button", { name: "← Предыдущая: Китай" }).click();
+
+  const newReadingHeading = page.locator('[data-mobile-issue] [data-magazine-page] h1, [data-mobile-issue] [data-magazine-page] h2').first();
+  await expect(newReadingHeading).toHaveText("CHINA’26");
+  await expect(newReadingHeading).toBeInViewport();
+  const [headingTop, controlsBottom] = await Promise.all([
+    newReadingHeading.evaluate(element => element.getBoundingClientRect().top),
+    page.getByRole("navigation", { name: "Положение и выбор главы" }).evaluate(element => element.getBoundingClientRect().bottom),
+  ]);
+  expect(headingTop).toBeGreaterThanOrEqual(controlsBottom);
+});
+
 for (const viewport of [
   { width: 320, height: 700 },
   { width: 390, height: 844 },
