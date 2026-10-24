@@ -1,0 +1,126 @@
+.mobileIssue {
+  display: block;
+  min-width: 0;
+}
+
+.mobileIssue :global([data-magazine-page]) {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  container-type: inline-size !important;
+  contain: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: clamp(1.25rem, 5vw, 2.5rem) !important;
+  box-sizing: border-box !important;
+  break-inside: avoid;
+}
+
+.mobileIssue :global([data-magazine-page] *) {
+  position: static !important;
+  inset: auto !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  flex: none !important;
+  overflow: visible !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+  mask: none !important;
+  writing-mode: horizontal-tb !important;
+  text-align: left !important;
+  white-space: normal !important;
+  box-sizing: border-box !important;
+}
+
+.mobileIssue :global([data-magazine-page] h1),
+.mobileIssue :global([data-magazine-page] h2) {
+  margin: 1.25rem 0 0.75rem !important;
+  font-size: clamp(1.75rem, 7vw, 2.75rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.mobileIssue :global([data-magazine-page] h3) {
+  margin: 1.1rem 0 0.5rem !important;
+  font-size: clamp(1.25rem, 5vw, 1.65rem) !important;
+  line-height: 1.2 !important;
+}
+
+.mobileIssue :global([data-magazine-page] p) {
+  max-width: 68ch !important;
+  margin: 0.75rem 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.55 !important;
+}
+
+.mobileIssue :global([data-magazine-page] figure) {
+  margin: 1.25rem 0 !important;
+}
+
+.mobileIssue :global([data-magazine-page] figcaption),
+.mobileIssue :global([data-magazine-page] .credit),
+.mobileIssue :global([data-magazine-page] .folio) {
+  font-size: 0.75rem !important;
+  line-height: 1.4 !important;
+}
+
+.mobileIssue :global([data-magazine-page] img) {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  margin: 0.75rem 0 !important;
+  object-fit: contain !important;
+}
+
+.mobileIssue :global([data-magazine-page] img[alt="Travel Club"]) {
+  width: min(100%, 14rem) !important;
+  margin-inline: auto !important;
+}
+
+.mobileIssue :global([data-magazine-page] svg) {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  flex: none !important;
+}
+
+.mobileIssue :global([data-magazine-page] [aria-hidden="true"]) {
+  display: none !important;
+}
+
+.mobileIssue :global([data-magazine-page] a) {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+.mobileIssue :global([data-magazine-page] a:focus-visible) {
+  outline: 3px solid currentColor !important;
+  outline-offset: 4px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileIssue :global([data-magazine-page] *),
+  .mobileIssue :global([data-magazine-page] *::before),
+  .mobileIssue :global([data-magazine-page] *::after) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
