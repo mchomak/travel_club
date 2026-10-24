@@ -105,6 +105,11 @@
 }
 
 .mobileIssue :global([data-magazine-page] a) {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center;
+  min-height: 44px !important;
+  padding-block: 0.625rem !important;
   color: inherit;
   text-underline-offset: 0.2em;
 }

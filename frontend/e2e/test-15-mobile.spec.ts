@@ -19,8 +19,13 @@ test("chapter links jump to their section and announce the current chapter", asy
 
   await destination.click();
 
-  const heading = page.locator(`[id="${href?.slice(1)}"]`);
+  const heading = page.locator(`[id="${href?.slice(1)}"]`).locator("h1, h2").first();
   await expect(heading).toBeInViewport();
+  const [headingTop, navigationBottom] = await Promise.all([
+    heading.evaluate(element => element.getBoundingClientRect().top),
+    navigation.evaluate(element => element.getBoundingClientRect().bottom),
+  ]);
+  expect(headingTop).toBeGreaterThanOrEqual(navigationBottom);
   await expect(destination).toHaveAttribute("aria-current", "location");
 });
 
@@ -36,11 +41,13 @@ for (const viewport of [
     const layout = await page.evaluate(() => {
       const navigation = document.querySelector('nav[aria-label]');
       const links = [...(navigation?.querySelectorAll("a") ?? [])];
+      const sourceLinks = [...document.querySelectorAll('[data-mobile-issue] a')];
       const bodyCopy = document.querySelector("main p");
       return {
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         linkHeights: links.map(link => link.getBoundingClientRect().height),
+        sourceLinkHeights: sourceLinks.map(link => link.getBoundingClientRect().height),
         bodyFontSize: bodyCopy ? Number.parseFloat(getComputedStyle(bodyCopy).fontSize) : 0,
       };
     });
@@ -49,5 +56,7 @@ for (const viewport of [
     expect(layout.bodyFontSize).toBeGreaterThanOrEqual(16);
     expect(layout.linkHeights.length).toBe(7);
     expect(layout.linkHeights.every(height => height >= 44)).toBe(true);
+    expect(layout.sourceLinkHeights.length).toBeGreaterThan(0);
+    expect(layout.sourceLinkHeights.every(height => height >= 44)).toBe(true);
   });
 }
