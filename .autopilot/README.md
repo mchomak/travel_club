@@ -49,4 +49,4 @@
 
 | 2026-10-21 | `2026-10-21-test-13-graphic-details` | сдан | /test_13: авторские SVG-символы и редакционные CTA; исправлена плотность первого разворота; 113 unit, финальный production Playwright — 11 passed; lint, typecheck и build прошли. |
 
-| 2026-10-25 | 2026-10-25-test-18-phone-magazine--wip | in progress | Phone magazine preserving test_13 concept |
+| 2026-10-25 | `2026-10-25-test-18-phone-magazine` | сдан | `/test_18`: мобильное карманное издание `test_13` на 15 портретных страницах; unit 163 passed, browser 13 passed локально и на preview. |

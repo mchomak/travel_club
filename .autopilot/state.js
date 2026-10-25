@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "test-18-phone-magazine",
-  "dir": "2026-10-25-test-18-phone-magazine--wip",
+  "dir": "2026-10-25-test-18-phone-magazine",
   "title": "Travel Club / test_18: phone magazine",
   "mode": "full",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "AGENTS.md",
   "skillDir": "C:/Users/McHomak/.agents/skills/autopilot",
   "startedAt": "2026-10-25T04:53:41+03:00",
-  "updatedAt": "2026-10-25T06:06:53+03:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-25T13:32:05+03:00",
+  "finishedAt": "2026-10-25T13:32:05+03:00",
   "stages": [
     {
       "id": "preflight",
@@ -48,8 +48,9 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
-      "startedAt": "2026-10-25T04:58:06+03:00"
+      "status": "done",
+      "startedAt": "2026-10-25T04:58:06+03:00",
+      "finishedAt": "2026-10-25T13:16:00+03:00"
     },
     {
       "id": "review",
@@ -60,13 +61,15 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-10-25T13:19:50+03:00",
+      "finishedAt": "2026-10-25T13:32:05+03:00"
     }
   ],
   "requirements": {
     "total": 7,
-    "done": 5,
-    "inTicket": 2,
+    "done": 7,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -161,20 +164,28 @@ window.STATE =
         "isolated release revision",
         "existing preview frontend"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-10-25T06:06:53+03:00"
+      "startedAt": "2026-10-25T06:06:53+03:00",
+      "finishedAt": "2026-10-25T13:16:00+03:00",
+      "tests": {
+        "deployment": "Frontend-only preview update; trusted HTTPS route returned 200",
+        "productionBrowser": "13 passed / 36.8 sec on public preview",
+        "serviceIsolation": "Backend, PostgreSQL, VPN and Telegram container IDs/PIDs/restart counts unchanged; no OOM; temporary upload removed"
+      }
     }
   ],
   "singlePass": null,
   "tests": {
-    "vitest": "163 passed /39files",
+    "vitest": "163 passed /39files; final rerun passed",
     "productionBrowser": "13 passed /22.1sec",
     "linuxProductionBuild": "passed",
     "lint": "passed",
-    "typecheck": "passed"
+    "typecheck": "passed",
+    "publicProductionBrowser": "13 passed /36.8sec; trusted HTTPS route returned 200",
+    "finalLocalBrowser": "390x844 live mobile emulation; document width 390/390; controls 48-49px"
   },
   "debt": {
     "placeholders": [],
@@ -203,11 +214,45 @@ window.STATE =
       "finding": "Back with open contents focus race and touch error collector",
       "triage": "fixed",
       "evidence": "red old production; new production regression and scoped review PASS"
+    },
+    {
+      "finding": "Live browser reports missing favicon (404) and a CSS preload warning",
+      "triage": "reported as non-blocking before public launch; reading/navigation remained available",
+      "evidence": "independent live browser acceptance"
     }
   ],
   "reviewers": {
     "manifestSpec": "/root/phone_manifest_review",
     "craft": "/root/phone_craft_review"
   },
-  "blind": null
-}
+  "blind": {
+    "reviewedBy": "/root/blind_final_check",
+    "verdict": "6/7 fulfilled in mobile browser emulation; R02 partial for commercial/public release",
+    "found": 1,
+    "fixed": 0,
+    "deferred": 1,
+    "fulfilled": 6,
+    "partial": 1,
+    "missing": 0,
+    "runtime": {
+      "preview": "Trusted HTTPS /test_18 returned 200",
+      "browser": "320x568 and 390x844; no horizontal overflow; contents, navigation, Back and scroll restoration observed",
+      "notes": "Noindex/nofollow; favicon.ico returned 404; Next CSS preload warning; reading continued"
+    },
+    "drift": [
+      {
+        "id": "R02",
+        "manifest": "done",
+        "blind": "partial",
+        "reason": "A test route remains noindex/nofollow and was checked in browser emulation rather than physical iOS/Android devices; source materials/forms remain experimental.",
+        "resolution": "Disclose as a working preview and feasibility proof, not a commercial release. Physical-device and real-content/form checks remain before public launch."
+      }
+    ],
+    "report": "blind-acceptance.md"
+  },
+  "artifacts": {
+    "report": "report.md",
+    "blind": "blind-acceptance.md",
+    "memory": "AGENTS.md"
+  }
+};
