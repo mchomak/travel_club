@@ -1,0 +1,6 @@
+# Interfaces and constraints
+Single coherent frontend pass owns frontend/src/app/test_14/, frontend/src/components/test_14/, new frontend/public/test_14/ assets, and test_14 behavior tests. Existing source pages, shared token adapter, base design tokens and assets are read-only references. No backend changes. Existing 7-spread DOM, initialIndex/skipIntro props, MagazineSpread and MagazineCover contracts, inert/reveal/turn lifecycle remain compatible.
+
+Stack follows frontend/package.json and lockfile. Windows uses npm.cmd. Commands in frontend/: npm.cmd run lint; npm.cmd run typecheck; npm.cmd test -- --run --testTimeout=15000 --maxWorkers=2; npm.cmd run build; npm.cmd exec playwright test e2e/test-14-*.spec.ts -- --workers=2. Playwright requires running local site with PLAYWRIGHT_BASE_URL. Avoid running builds concurrently against same .next. Missing essential dependency => report BLOCKED, no package installation without justified necessity. Current user untracked DOCX/QA directories must remain untouched.
+
+Spec is source of full acceptance. No shared-system extraction or test_8 update until user approves iterative result. Assets must be real photos with provenance; do not invent founder pictures. Route remains noindex, not a public deployment.
