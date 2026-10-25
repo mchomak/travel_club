@@ -48,3 +48,5 @@
 | 2026-10-21 | `2026-10-21-test-13-motion` | сдан | Six motion primitives;36productiontests;424protectedfiles |
 
 | 2026-10-21 | `2026-10-21-test-13-graphic-details` | сдан | /test_13: авторские SVG-символы и редакционные CTA; исправлена плотность первого разворота; 113 unit, финальный production Playwright — 11 passed; lint, typecheck и build прошли. |
+
+| 2026-10-25 | 2026-10-25-test-18-phone-magazine--wip | in progress | Phone magazine preserving test_13 concept |
