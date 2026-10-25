@@ -29,13 +29,13 @@ ItemType = Literal[
     "other",
 ]
 ItemSubtype = Literal[
-    "bus", "train", "taxi", "rental", "water", "restaurant", "cafe", "bar",
+    "bus", "train", "taxi", "car", "walk", "rental", "water", "restaurant", "cafe", "bar",
     "street_food", "excursion", "activity", "insurance", "sim", "communication",
     "visa_fee", "service_fee", "other",
 ]
 SUBTYPES_BY_TYPE: dict[str, set[str]] = {
     "train_bus": {"bus", "train", "other"},
-    "transfer": {"bus", "train", "taxi", "rental", "water", "other"},
+    "transfer": {"bus", "train", "taxi", "car", "walk", "rental", "water", "other"},
     "rental": {"bus", "train", "taxi", "rental", "water", "other"},
     "meal": {"restaurant", "cafe", "bar", "street_food", "other"},
     "excursion": {"excursion", "activity", "other"},
@@ -92,6 +92,28 @@ Currency = Annotated[str, Field(pattern=r"^[A-Z]{3}$")]
 People = Annotated[int, Field(strict=True, gt=0, le=10000)]
 Note = Annotated[str, Field(max_length=10000)]
 Title = Annotated[str, Field(min_length=1, max_length=200)]
+
+# ISO 3166-1 alpha-2, shared by the trip and geocoding API boundaries.
+COUNTRY_CODES = frozenset("""
+AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ
+BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM
+DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS
+GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN
+KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP
+MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL
+PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST
+SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG
+VI VN VU WF WS YE YT ZA ZM ZW
+""".split())
+
+
+def country_code(value):
+    if not isinstance(value, str) or value not in COUNTRY_CODES:
+        raise ValueError("Выберите страну по коду ISO alpha-2")
+    return value
+
+
+CountryCode = Annotated[str, BeforeValidator(country_code)]
 
 
 class DTO(BaseModel):
@@ -204,6 +226,19 @@ class DayInput(DTO):
         return self
 
 
+class AutoTransfer(MapLegMode):
+    mode: Literal["drive", "walk"]
+    duration_seconds: int = Field(ge=0, strict=True)
+    source_signature: str = Field(max_length=2000)
+
+    @field_validator("source_signature")
+    @classmethod
+    def valid_signature(cls, value):
+        if "\x00" in value:
+            raise ValueError("Подпись маршрута содержит недопустимый символ")
+        return value
+
+
 class ItemInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     day_id: UUID | None = None
@@ -213,6 +248,14 @@ class ItemInput(DTO):
     subtype: ItemSubtype | None = None
     airport_before_minutes: int = Field(default=180, ge=0, le=1440, strict=True)
     airport_after_minutes: int = Field(default=60, ge=0, le=1440, strict=True)
+    departure_country_code: CountryCode | None = None
+    departure_city: str = Field(default="", max_length=120)
+    arrival_country_code: CountryCode | None = None
+    arrival_city: str = Field(default="", max_length=120)
+    departure_label: str = Field(default="", max_length=200)
+    arrival_label: str = Field(default="", max_length=200)
+    auto_transfer: AutoTransfer | None = None
+    price_pending: bool = False
     calculation_mode: CalculationMode
     title: Title
     description: Note = ""
@@ -242,6 +285,19 @@ class ItemInput(DTO):
         if self.subtype is not None and self.subtype not in SUBTYPES_BY_TYPE.get(self.type, set()):
             raise ValueError("Выберите допустимый подвид для категории пункта")
         return self
+
+    @model_validator(mode="after")
+    def pending_price_excluded(self):
+        if self.price_pending and self.included:
+            raise ValueError("Укажите стоимость перед включением пункта в смету")
+        return self
+
+    @field_validator("departure_city", "arrival_city", "departure_label", "arrival_label")
+    @classmethod
+    def valid_city(cls, value):
+        if "\x00" in value:
+            raise ValueError("Название города содержит недопустимый символ")
+        return value
 
     @field_validator("external_url")
     @classmethod

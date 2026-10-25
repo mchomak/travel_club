@@ -41,6 +41,34 @@ def login(client, admin):
     )
 
 
+def test_city_search_filters_provider_and_validates_country(client, admin, monkeypatch):
+    path = "/api/maps/search?q=Paris&kind=city&country_code=FR"
+    assert client.get(path).status_code == 401
+    login(client, admin)
+    requests = []
+
+    def provider(route, params):
+        requests.append((route, params))
+        return {"results": [{"name": "Paris", "formatted": "Paris, France",
+                             "lat": 48.85, "lon": 2.35}]}
+
+    monkeypatch.setattr("app.maps.provider_json", provider)
+    assert client.get(path).status_code == 200
+    assert requests == [("geocode/search", {
+        "text": "Paris", "format": "json", "limit": 5,
+        "type": "city", "filter": "countrycode:fr",
+    })]
+    requests.clear()
+    for suffix in ("&country_code=ZZ", "&country_code=fra", "&country_code=fr",
+                   "&country_code=FR,DE", "&kind=country"):
+        assert client.get("/api/maps/search?q=Paris" + suffix).status_code == 422
+    assert requests == []
+    assert client.get("/api/maps/search?q=Paris").status_code == 200
+    assert requests[-1][1] == {"text": "Paris", "format": "json", "limit": 5}
+    assert client.get("/api/maps/search?q=Paris&kind=city").status_code == 200
+    assert requests[-1][1]["type"] == "city" and "filter" not in requests[-1][1]
+
+
 def test_maps_auth_and_unconfigured_runtime(client, admin, monkeypatch):
     monkeypatch.setenv("GEOAPIFY_API_KEY", "")
     monkeypatch.setenv("GEOAPIFY_MAPS_API_KEY", "")

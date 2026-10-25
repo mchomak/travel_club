@@ -54,6 +54,99 @@ def editable(document):
     return payload
 
 
+def test_flight_and_auto_transfer_roundtrip_duplicate_and_preview(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    flight_id, transfer_id = str(uuid4()), str(uuid4())
+    metadata = {
+        "from_key": f"item:{flight_id}:end", "to_key": "day:end", "mode": "drive",
+        "duration_seconds": 540,
+        "source_signature": '[[35.68,139.76,"02:00"],[35.7,139.8,"03:00"]]',
+    }
+    payload["items"] = [
+        {"id": flight_id, "day_id": trip["days"][0]["id"], "type": "flight",
+         "title": "Flight", "calculation_mode": "fixed", "currency": "RUB", "unit_price": "120",
+         "departure_country_code": "RU", "departure_city": "Москва",
+         "arrival_country_code": "JP", "arrival_city": "Токио"},
+        {"id": transfer_id, "day_id": trip["days"][0]["id"], "type": "transfer",
+         "subtype": "car", "title": "Car", "calculation_mode": "fixed", "currency": "RUB",
+         "included": False, "price_pending": True, "auto_transfer": metadata},
+    ]
+    payload["items"][1].update(departure_label="Терминал", arrival_label="Гостиница")
+    response = authenticated.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert authenticated.get(path).json() == saved
+    by_id = {item["id"]: item for item in saved["items"]}
+    assert by_id[flight_id]["departure_city"] == "Москва"
+    assert by_id[flight_id]["arrival_country_code"] == "JP"
+    assert by_id[transfer_id]["auto_transfer"] == metadata
+    assert by_id[transfer_id]["price_pending"] is True
+    assert by_id[transfer_id]["departure_label"] == "Терминал"
+    assert by_id[transfer_id]["arrival_label"] == "Гостиница"
+    assert saved["calculation"]["cost_total"] == "120.00"
+    copied = authenticated.post(path + "/duplicate", headers=HEADERS).json()
+    flight = next(item for item in copied["items"] if item["type"] == "flight")
+    transfer = next(item for item in copied["items"] if item["type"] == "transfer")
+    assert flight["departure_city"] == "Москва" and flight["arrival_city"] == "Токио"
+    assert transfer["price_pending"] is True
+    assert transfer["departure_label"] == "Терминал" and transfer["arrival_label"] == "Гостиница"
+    assert transfer["auto_transfer"] == {**metadata, "from_key": f"item:{flight['id']}:end"}
+    assert authenticated.get(f"/api/trips/{copied['id']}").json() == copied
+    preview = authenticated.get(path + "/preview").text
+    assert "auto_transfer" not in preview and "source_signature" not in preview
+    assert "price_pending" not in preview
+    priced = editable(saved)
+    priced_transfer = next(item for item in priced["items"] if item["id"] == transfer_id)
+    priced_transfer.update(price_pending=False, included=True, unit_price="50")
+    response = authenticated.put(path, headers=HEADERS, json=priced)
+    assert response.status_code == 200, response.text
+    assert response.json()["calculation"]["cost_total"] == "170.00"
+    legacy = editable(response.json())
+    legacy_transfer = next(item for item in legacy["items"] if item["id"] == transfer_id)
+    legacy_transfer["auto_transfer"]["source_signature"] = f"legacy:item:{flight_id}:end"
+    response = authenticated.put(path, headers=HEADERS, json=legacy)
+    assert response.status_code == 200, response.text
+    copied_response = authenticated.post(path + "/duplicate", headers=HEADERS)
+    assert copied_response.status_code == 201, copied_response.text
+    copied = copied_response.json()
+    transfer = next(item for item in copied["items"] if item["type"] == "transfer")
+    assert transfer["auto_transfer"]["source_signature"] == ""
+
+
+def test_flight_and_auto_transfer_invalid_data_rejected_atomically(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    base = editable(trip)
+    item = {"day_id": trip["days"][0]["id"], "type": "transfer", "subtype": "walk",
+            "calculation_mode": "fixed", "title": "Walk", "currency": "RUB"}
+    metadata = {"from_key": "day:start", "to_key": "day:end", "mode": "walk",
+                "duration_seconds": 540, "source_signature": "snapshot"}
+    changes = [
+        {"departure_country_code": []}, {"departure_country_code": "ZZ"},
+        {"arrival_country_code": "rus"}, {"arrival_country_code": "ru"},
+        {"departure_city": "x" * 121}, {"arrival_city": "bad\x00city"},
+        {"price_pending": True, "included": True},
+        *[{"auto_transfer": {**metadata, **change}} for change in (
+            {"from_key": "item:bad:start"}, {"to_key": "day:start"}, {"mode": "transit"},
+            {"duration_seconds": -1}, {"duration_seconds": "NaN"},
+            {"duration_seconds": True}, {"duration_seconds": 1.5},
+            {"source_signature": "x" * 2001}, {"source_signature": "bad\x00signature"},
+        )],
+    ]
+    for change in changes:
+        payload = {**base, "items": [{**item, **change}]}
+        response = authenticated.put(path, headers=HEADERS, json=payload)
+        assert response.status_code == 422, (change, response.text)
+        assert authenticated.get(path).json() == trip
+    accepted = authenticated.put(path, headers=HEADERS, json={**base, "items": [item]})
+    assert accepted.status_code == 200, accepted.text
+    saved = accepted.json()["items"][0]
+    assert saved["auto_transfer"] is None and saved["price_pending"] is False
+    assert saved["departure_country_code"] is None and saved["arrival_city"] == ""
+
+
 def test_map_places_and_day_preferences_roundtrip_and_duplicate(authenticated):
     trip = create_trip(authenticated)
     path = f"/api/trips/{trip['id']}"

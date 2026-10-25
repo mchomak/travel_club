@@ -16,7 +16,7 @@ from pydantic import Field, ValidationError
 
 from app.auth import Admin
 from app.config import get_settings
-from app.schemas import DTO, MapPlace, TravelMode
+from app.schemas import DTO, CountryCode, MapPlace, TravelMode
 
 router = APIRouter(prefix="/api/maps", tags=["maps"])
 PROVIDER_TIMEOUT = httpx.Timeout(8.0, connect=3.0)
@@ -160,19 +160,25 @@ def geocoded_places(result: dict, limit: int) -> list[MapPlace]:
 
 
 @router.get("/search", response_model=SearchResult)
-def search(admin: Admin, q: Annotated[str, Query(min_length=2, max_length=500)]):
+def search(
+    admin: Admin,
+    q: Annotated[str, Query(min_length=2, max_length=500)],
+    kind: Literal["city"] | None = None,
+    country_code: CountryCode | None = None,
+):
     q = q.strip()
     if len(q) < 2 or "\x00" in q:
         raise HTTPException(422, "Введите название или адрес места")
+    params = {"text": q, "format": "json", "limit": 5}
+    if kind == "city":
+        params["type"] = "city"
+    if country_code:
+        params["filter"] = f"countrycode:{country_code.lower()}"
     return {
         "places": geocoded_places(
             provider_json(
                 "geocode/search",
-                {
-                    "text": q,
-                    "format": "json",
-                    "limit": 5,
-                },
+                params,
             ),
             5,
         )

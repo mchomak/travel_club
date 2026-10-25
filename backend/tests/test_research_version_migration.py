@@ -14,11 +14,16 @@ from alembic.script import ScriptDirectory
 from app.db import engine
 
 
-def test_research_version_migration_is_the_single_alembic_head():
+def test_migrations_have_single_head_and_preserve_research_version_history():
     backend_dir = Path(__file__).resolve().parents[1]
     config = Config(str(backend_dir / "alembic.ini"))
 
-    assert ScriptDirectory.from_config(config).get_heads() == ["a2f7c91b4d60"]
+    scripts = ScriptDirectory.from_config(config)
+    heads = scripts.get_heads()
+    assert len(heads) == 1
+    assert "a2f7c91b4d60" in {
+        revision.revision for revision in scripts.iterate_revisions(heads[0], "base")
+    }
 
 
 def test_migration_backfills_completed_interviews_as_version_one():

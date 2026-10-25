@@ -131,6 +131,14 @@ class TripItem(Base):
     subtype: Mapped[str | None] = mapped_column(String(30))
     airport_before_minutes: Mapped[int] = mapped_column(default=180)
     airport_after_minutes: Mapped[int] = mapped_column(default=60)
+    departure_country_code: Mapped[str | None] = mapped_column(String(2))
+    departure_city: Mapped[str] = mapped_column(String(120), default="")
+    arrival_country_code: Mapped[str | None] = mapped_column(String(2))
+    arrival_city: Mapped[str] = mapped_column(String(120), default="")
+    departure_label: Mapped[str] = mapped_column(String(200), default="")
+    arrival_label: Mapped[str] = mapped_column(String(200), default="")
+    auto_transfer: Mapped[dict | None] = mapped_column(JSONB)
+    price_pending: Mapped[bool] = mapped_column(Boolean, default=False)
     calculation_mode: Mapped[str] = mapped_column(String(30))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
@@ -179,6 +187,7 @@ class TripItem(Base):
             "participants_override IS NULL OR participants_override > 0", name="item_people"
         ),
         CheckConstraint("position >= 0", name="item_position"),
+        CheckConstraint("NOT (price_pending AND included)", name="item_pending_price_excluded"),
         CheckConstraint(
             "type IN ('flight','train_bus','transfer','hotel','excursion',"
             "'activity','rental','insurance','meal','other')",

@@ -1,5 +1,6 @@
 """Transactional trip aggregate API. Calculation snapshots are server owned."""
 
+import re
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -368,6 +369,19 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
                         "id": item_ids[item.id],
                         "day_id": day_ids.get(item.day_id),
                         "end_day_id": day_ids.get(item.end_day_id),
+                        "auto_transfer": (
+                            item.auto_transfer.model_copy(update={
+                                "from_key": copied_node_key(item.auto_transfer.from_key),
+                                "to_key": copied_node_key(item.auto_transfer.to_key),
+                                # Opaque legacy signatures may embed identities. Replacing
+                                # UUIDs cannot prove freshness: force explicit recalculation.
+                                "source_signature": "" if re.search(
+                                    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+                                    r"[0-9a-f]{4}-[0-9a-f]{12}",
+                                    item.auto_transfer.source_signature, re.I,
+                                ) else item.auto_transfer.source_signature,
+                            }) if item.auto_transfer else None
+                        ),
                     }
                 )
                 for item in payload.items

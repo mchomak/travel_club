@@ -2,7 +2,7 @@
 export type DecimalString = string;
 export type UUID = string;
 export type ItemType = "flight" | "train_bus" | "transfer" | "hotel" | "excursion" | "activity" | "rental" | "insurance" | "meal" | "other";
-export type ItemSubtype = "bus" | "train" | "taxi" | "rental" | "water" | "restaurant" | "cafe" | "bar" | "street_food" | "excursion" | "activity" | "insurance" | "sim" | "communication" | "visa_fee" | "service_fee" | "other";
+export type ItemSubtype = "bus" | "train" | "taxi" | "car" | "walk" | "rental" | "water" | "restaurant" | "cafe" | "bar" | "street_food" | "excursion" | "activity" | "insurance" | "sim" | "communication" | "visa_fee" | "service_fee" | "other";
 export type CalculationMode = "per_person" | "fixed" | "capacity" | "hotel" | "per_day" | "per_person_per_day" | "manual";
 export type PricingMode = "markup" | "target_margin";
 export type TripStatus = "draft" | "ready" | "archived";
@@ -15,6 +15,10 @@ export interface MapPlace {
   provider_place_id?: string | null; source_url?: string | null;
 }
 export interface MapLegMode { from_key: string; to_key: string; mode: TravelMode }
+export interface AutoTransfer {
+  from_key: string; to_key: string; mode: "drive" | "walk";
+  duration_seconds: number; source_signature: string;
+}
 export interface DayInput {
   id: UUID; date: string; country: string; city: string; place: string; title: string;
   status: string; internal_note: string; client_note: string;
@@ -23,6 +27,10 @@ export interface DayInput {
 export interface ItemInput {
   id: UUID; day_id: UUID | null; end_day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
   subtype?: ItemSubtype | null; airport_before_minutes?: number; airport_after_minutes?: number;
+  departure_country_code?: string | null; departure_city?: string;
+  arrival_country_code?: string | null; arrival_city?: string;
+  departure_label?: string; arrival_label?: string;
+  price_pending?: boolean; auto_transfer?: AutoTransfer | null;
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
   map_place?: MapPlace | null; map_end_place?: MapPlace | null;
   external_url: string | null; internal_note: string; client_note: string; included: boolean; currency: string;
