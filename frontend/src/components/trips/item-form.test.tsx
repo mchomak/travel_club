@@ -4,8 +4,72 @@ import userEvent from "@testing-library/user-event";
 import {mapsClient} from "@/lib/maps-client";
 import { ItemForm } from "./item-form";
 import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
+import {tripInput} from '@/lib/trips';
+import type {TripDocument} from '@/lib/contracts';
+import {calculateTrip} from '@/lib/pricing';
 
 afterEach(cleanup);
+
+test('untouched new names are numbered and a pending taxi requires an explicit price including zero',async()=>{
+ const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
+ const old={...newItem('transfer',day,'RUB',day.date),subtype:'taxi' as const,title:'Такси 4'};
+ const item={...old,id:crypto.randomUUID(),title:'Такси',price_pending:true,included:false};
+ const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[old],rates:[]};
+ const view=render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ expect(screen.getByLabelText('Название элемента')).toHaveValue('Такси 5');
+ expect(screen.getByLabelText('Цена машины')).toHaveValue('');
+ expect(screen.getByText('Стоимость не указана')).toBeVisible();
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({price_pending:true,included:false,unit_price:'0',title:'Такси 5'}),undefined);
+ await user.type(screen.getByLabelText('Цена машины'),'0');
+ expect(screen.queryByText('Стоимость не указана')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({price_pending:false,included:true,unit_price:'0'}),undefined);
+ view.unmount();
+});
+
+test('flight country and custom city choices survive submit and editable document conversion with independent airport data',async()=>{
+ const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
+ const airport={name:'Аэропорт',address:'Terminal',latitude:1,longitude:2,provider:'manual' as const};
+ const item={...newItem('flight',day,'RUB',day.date),location:'Старый маршрут',map_place:airport,arrival_country_code:'JP',arrival_city:'Токио'};
+ const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[],rates:[]};
+ const view=render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ fireEvent.change(screen.getByRole('combobox',{name:'Вылет — страна'}),{target:{value:'Россия'}});
+ fireEvent.click(screen.getByRole('option',{name:/Россия.*RU/}));
+ fireEvent.change(screen.getByRole('combobox',{name:'Вылет — город'}),{target:{value:'Мой город'}});
+ fireEvent.click(screen.getByRole('option',{name:/Использовать «Мой город»/}));
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({departure_country_code:'RU',departure_city:'Мой город',arrival_country_code:'JP',arrival_city:'Токио',map_place:airport,location:'Старый маршрут'}),undefined);
+ const saved=onSubmit.mock.calls[0][0];
+ const calculation=calculateTrip({...trip,items:[saved]});
+ const document:TripDocument={...trip,id:crypto.randomUUID(),version:1,created_by:crypto.randomUUID(),created_at:'2026-10-01T00:00:00Z',updated_at:'2026-10-01T00:00:00Z',items:[{...saved,...calculation.items[0]}],calculation};
+ const converted=tripInput(document);
+ expect(converted.items[0]).toEqual(expect.objectContaining({departure_city:'Мой город',arrival_city:'Токио',departure_country_code:'RU'}));
+ view.rerender(<ItemForm key="reopened-geography" initial={converted.items[0]} trip={converted} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ expect(screen.getByRole('combobox',{name:'Вылет — город'})).toHaveValue('Мой город');
+ expect(screen.getByRole('combobox',{name:'Прилёт — страна'})).toHaveValue('Япония');
+});
+
+test('custom transport endpoints and manually typed names survive subtype changes and submission',async()=>{
+ const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
+ const item=newItem('transfer',day,'RUB',day.date),trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[],rates:[]};
+ const view=render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ await user.clear(screen.getByLabelText('Название элемента'));
+ await user.type(screen.getByLabelText('Название элемента'),'Дорога к друзьям');
+ await user.selectOptions(screen.getByRole('combobox',{name:'Подвид'}),'car');
+ for(const [label,value] of [['Откуда','У вокзала'],['Куда','Дом друзей']]){
+  fireEvent.change(screen.getByRole('combobox',{name:label}),{target:{value}});
+  fireEvent.click(screen.getByRole('option',{name:new RegExp(`Использовать «${value}»`)}));
+ }
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({title:'Дорога к друзьям',subtype:'car',departure_label:'У вокзала',arrival_label:'Дом друзей',map_place:null,map_end_place:null}),undefined);
+ const saved=onSubmit.mock.calls[0][0];
+ view.rerender(<ItemForm key="saved-transport" initial={saved} trip={{...trip,items:[saved]}} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ await user.selectOptions(screen.getByRole('combobox',{name:'Подвид'}),'taxi');
+ expect(screen.getByLabelText('Название элемента')).toHaveValue('Дорога к друзьям');
+ expect(screen.getByRole('combobox',{name:'Откуда'})).toHaveValue('У вокзала');
+ expect(screen.getByRole('combobox',{name:'Куда'})).toHaveValue('Дом друзей');
+});
 
 test('inline place editing saves departure and arrival without changing legacy fields', async () => {
  const day=emptyDay('2026-10-01'),next=emptyDay('2026-10-02');
@@ -244,7 +308,7 @@ test("grid creation requires category before editing and retains the selected in
   expect(screen.getByLabelText(/Прилёт.*местному времени/)).toHaveValue("10:45");
   expect(screen.getByRole("combobox", { name: "Правило расчёта" })).toHaveValue("per_person");
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
-  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: "flight", title: "Перелёт", start_time: "09:15", end_time: "10:45" }), undefined);
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: "flight", title: "Перелёт 1", start_time: "09:15", end_time: "10:45" }), undefined);
 });
 
 test("grid creation switched to hotel clears the hidden generic schedule", async () => {

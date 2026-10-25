@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
-import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, itemLabels, modeLabels, subtypeOptions, timeLabel } from "@/lib/trip-ui";
+import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, isAutomaticItemTitle, itemLabels, modeLabels, nextItemTitle, subtypeOptions, timeLabel } from "@/lib/trip-ui";
 import { ErrorNotice, Field } from "./ui";
 import { LocationPicker } from './location-picker';
+import { CountryCity } from './country-city';
+import { TransportEndpoints } from './transport-endpoints';
 
 const nullableInteger = (v: string | number | null | undefined) => v === "" || v === null || v === undefined ? null : Number(v);
 const scheduleError = "Окончание должно быть позже начала";
@@ -27,6 +29,12 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     ? trip.days.find(day => day.date === nextDate(initialStartDate))?.id ?? null : null;
   const defaults = {
     ...initial,
+    title: isNew ? nextItemTitle(trip,initial) : initial.title,
+    departure_country_code: initial.departure_country_code ?? null,
+    arrival_country_code: initial.arrival_country_code ?? null,
+    departure_city: initial.departure_city ?? '', arrival_city: initial.arrival_city ?? '',
+    departure_label: initial.departure_label ?? '', arrival_label: initial.arrival_label ?? '',
+    unit_price: initial.price_pending ? '' : initial.unit_price,
     airport_before_minutes: initial.airport_before_minutes ?? 180,
     airport_after_minutes: initial.airport_after_minutes ?? 60,
     end_day_id: inferredEnd ?? initial.end_day_id,
@@ -35,6 +43,9 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   };
   const { register, handleSubmit, setValue, setError: setFieldError, clearErrors, control, formState: { errors, isDirty } } = useForm<ItemInput>({ defaultValues: defaults });
   const item = useWatch({ control }) as ItemInput;
+  const manualTitle = useRef(!isAutomaticItemTitle(initial.title));
+  const titleField = register("title", { required: "Укажите название", maxLength: 200 });
+  const priceField = register("unit_price", { required: !item.price_pending });
   const chosenEndDay = useRef(false);
   const suggestedEndDay = useRef<string | null>(null);
   const timedSchedule = useRef({ start: defaults.start_time, end: defaults.end_time, endDayId: defaults.end_day_id });
@@ -75,9 +86,10 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   try { amount = calculateTrip({ ...trip, rates, items: [item] }).items[0].normalized_amount; } catch { /* Incomplete form has no trustworthy estimate. */ }
   function changeType(type: ItemType) {
     setTypeChosen(true);
-    if (item.title === itemLabels[item.type]) setValue("title", itemLabels[type], { shouldDirty: true });
+    const subtype = ({ transfer: "bus", meal: "restaurant", activity: "activity", other: "other" } as Partial<Record<ItemType, ItemInput["subtype"]>>)[type] ?? null;
+    if (!manualTitle.current) setValue("title", nextItemTitle({items:trip.items.filter(existing=>existing.id!==item.id)}, {...item,type,subtype}), { shouldDirty: true });
     setValue("type", type, { shouldDirty: true });
-    setValue("subtype", ({ transfer: "bus", meal: "restaurant", activity: "activity", other: "other" } as Partial<Record<ItemType, ItemInput["subtype"]>>)[type] ?? null, { shouldDirty: true });
+    setValue("subtype", subtype, { shouldDirty: true });
     setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
     if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
     if (type === "hotel") {
@@ -100,9 +112,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   }
   function changeSubtype(value: ItemInput["subtype"]) {
     const category = eventCategory(item.type);
-    const currentLabel = subtypeOptions[category]?.find(option => option.value === displaySubtype(item))?.label;
-    const nextLabel = subtypeOptions[category]?.find(option => option.value === value)?.label;
-    if (nextLabel && (item.title === itemLabels[item.type] || item.title === currentLabel)) setValue("title", nextLabel, { shouldDirty: true });
+    if (!manualTitle.current) setValue("title", nextItemTitle({items:trip.items.filter(existing=>existing.id!==item.id)}, {...item,type:category,subtype:value}), { shouldDirty: true });
     if (["train_bus", "rental", "excursion", "insurance"].includes(item.type)) setValue("type", category, { shouldDirty: true });
     setValue("subtype", value, { shouldDirty: true });
   }
@@ -144,7 +154,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     }
     const urlResult = validUrl(values.external_url);
     if (urlResult !== true) { setFieldError("external_url", { message: urlResult }); return; }
-    const normalized = { ...values, external_url: values.external_url || null,
+    const normalized = { ...values, unit_price: values.price_pending ? '0' : values.unit_price, included:values.price_pending ? false : values.included, external_url: values.external_url || null,
       end_day_id: values.type === "hotel" ? null : values.end_day_id,
       start_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.start_time : values.start_time,
       end_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.end_time : values.end_time };
@@ -172,9 +182,10 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     <Field label="Тип события" wide><select value={typeChosen ? category : ""} onChange={event => { if (event.target.value) changeType(event.target.value as ItemType); else setTypeChosen(false); }}><option value="" disabled={!requireTypeChoice}>Выберите тип события</option>{eventCategories.map(({ type, label }) => <option key={type} value={type}>{label}</option>)}{category === "other" && typeChosen && <option value="other">Допрасход</option>}</select></Field>
     {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
-      <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...register("title", { required: "Укажите название", maxLength: 200 })} /></Field>
+      <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...titleField} onChange={event=>{manualTitle.current=true;void titleField.onChange(event);}} /></Field>
+      {item.type==='flight'&&<><CountryCity label="Вылет" country={item.departure_country_code??null} city={item.departure_city??''} onChange={(country,city)=>{setValue('departure_country_code',country,{shouldDirty:true});setValue('departure_city',city,{shouldDirty:true});}}/><CountryCity label="Прилёт" country={item.arrival_country_code??null} city={item.arrival_city??''} onChange={(country,city)=>{setValue('arrival_country_code',country,{shouldDirty:true});setValue('arrival_city',city,{shouldDirty:true});}}/></>}
       <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>
-      <div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||['flight','train_bus','transfer','rental'].includes(item.type)||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>
+      {category==='transfer'?<TransportEndpoints item={item} trip={trip} isNew={isNew} onChange={patch=>{for(const field of Object.keys(patch) as (keyof ItemInput)[])setValue(field,patch[field],{shouldDirty:true});}}/>:<div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||item.type==='flight'||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>}
       <Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
       <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
       {item.external_url && validUrl(item.external_url) === true && <a className="text-link field-wide" href={item.external_url} target="_blank" rel="noopener noreferrer">Открыть ссылку в новой вкладке</a>}
@@ -188,14 +199,15 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       </>}
     </div></fieldset>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Стоимость" disabled={!typeChosen}><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" error={errors.calculation_mode?.message} wide><select {...modeField} onChange={event => { void modeField.onChange(event); clearErrors("calculation_mode"); }}>{item.type !== "hotel" && mode === "hotel" && <option value="hotel" disabled>Номер за ночь — недоступен для этого типа</option>}{Object.entries(modeLabels).filter(([value]) => item.type === "hotel" || value !== "hotel").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-      <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : mode === defaultModes[item.type] ? labels.price : "Цена за единицу"}><input inputMode="decimal" {...register("unit_price", { required: true })} /></Field><Field label="Валюта цены"><input list="item-currencies" maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code, { shouldDirty: true }); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id="item-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
+      {item.price_pending&&<p role="status" className="field-hint field-wide">Стоимость не указана</p>}
+      <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : mode === defaultModes[item.type] ? labels.price : "Цена за единицу"} hint={item.price_pending?'Смета неполная. Введите цену, включая 0 для бесплатного переезда.':undefined}><input inputMode="decimal" {...priceField} onChange={event=>{void priceField.onChange(event);if(initial.price_pending){const pending=!event.target.value.trim();setValue('price_pending',pending,{shouldDirty:true});setValue('included',!pending,{shouldDirty:true});}}} /></Field><Field label="Валюта цены"><input list="item-currencies" maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code, { shouldDirty: true }); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id="item-currencies">{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
       {foreign && <Field label={`Курс ${item.currency || "валюты"}`} hint={`1 ${item.currency || "единица"} = указанная сумма в ${trip.base_currency}`} wide><input value={rate} onChange={e => setRate(e.target.value)} inputMode="decimal" required /></Field>}
       {mode !== "manual" && mode !== "hotel" && <Field label="Количество" hint="Например, число билетов на человека или повторений услуги"><input inputMode="decimal" {...register("quantity")} /></Field>}
       {(mode === "capacity" || mode === "hotel") && <Field label={mode === "hotel" ? "Гостей в номере" : "Вместимость одной машины / группы"} hint="Количество единиц округляем вверх"><input type="number" min="1" {...register("capacity", { setValueAs: nullableInteger })} /></Field>}
       {(mode === "per_day" || mode === "per_person_per_day") && <Field label="Число дней" hint={selectedDay ? `Стоимость распределится с ${formatDate(selectedDay.date)} по дням поездки (доступно ${availableDays}).` : "Без дня маршрута вся стоимость относится к общим расходам."}><input type="number" min="1" max={availableDays} {...register("duration_days", { valueAsNumber: true })} /></Field>}
       {mode === "hotel" && <Field label="Число номеров вручную" hint="Пусто — рассчитаем по числу гостей"><input type="number" min="1" {...register("rooms_override", { setValueAs: nullableInteger })} /></Field>}
       {["per_person", "capacity", "hotel", "per_person_per_day"].includes(mode) && <Field label="Участники элемента" hint={`Пусто — все ${trip.participants} участников поездки`}><input type="number" min="1" max={trip.participants} placeholder={`Все ${trip.participants}`} {...register("participants_override", { setValueAs: nullableInteger })} /></Field>}
-      <label className="check-field field-wide"><input type="checkbox" {...register("included")} /><span>Учитывать в стоимости поездки</span></label>
+      <label className="check-field field-wide"><input type="checkbox" disabled={!!item.price_pending} {...register("included")} /><span>Учитывать в стоимости поездки</span></label>
     </div><p className="field-hint mt-3">{mode === "hotel" ? "Сумма распределяется по ночам. Остаток округления относится к последней ночи." : mode === "per_day" || mode === "per_person_per_day" ? "Итог элемента учитывается один раз; в дневной смете он разделён между днями." : "Вся сумма в выбранный день или в общие расходы."}</p><div className="item-estimate"><span>{item.included ? "Стоимость элемента" : "Исключён из итоговой стоимости"}</span><strong>{amount ? formatMoney(amount, trip.base_currency) : "Заполните условия расчёта"}</strong></div></fieldset>
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Заметки" disabled={!typeChosen}><h3>Заметки</h3><div className="form-grid"><Field label="Заметка для клиента" wide><textarea rows={3} {...register("client_note", { maxLength: 10000 })} /></Field><Field label="Внутренняя заметка" hint="Видна только команде" wide><textarea rows={3} {...register("internal_note", { maxLength: 10000 })} /></Field></div></fieldset>
     {!!error && <ErrorNotice error={error} />}<span className="sr-only">{timeLabel(item)}</span><div className="form-actions"><button type="button" className="secondary-button" onClick={onCancel}>Отмена</button><button className="primary-button" disabled={!typeChosen}>Сохранить элемент</button></div>
