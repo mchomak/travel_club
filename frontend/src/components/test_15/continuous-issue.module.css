@@ -71,3 +71,28 @@
     scroll-behavior: auto;
   }
 }
+
+@media (max-width: 640px) {
+  .issue {
+    --chapter-rail-height: 5.875rem;
+  }
+
+  .chapterLinks {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(44px, auto);
+    min-height: var(--chapter-rail-height);
+    padding-inline:
+      max(0.5rem, env(safe-area-inset-left, 0px))
+      max(0.5rem, env(safe-area-inset-right, 0px));
+    overflow: visible;
+  }
+
+  .chapterLinks a {
+    min-width: 0;
+    padding-inline: 0.25rem;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+}
