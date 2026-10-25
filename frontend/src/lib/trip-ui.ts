@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import type { CalculationMode, DayInput, ItemInput, ItemSubtype, ItemType, TripCreate } from "./contracts";
+import type { CalculationMode, DayInput, ItemInput, ItemSubtype, ItemType, TripCreate, TripInput } from "./contracts";
 import { nextDate } from "./pricing";
 
 export const itemLabels: Record<ItemType, string> = { flight: "Перелёт", train_bus: "Поезд / автобус", transfer: "Трансфер", hotel: "Проживание", excursion: "Экскурсия", activity: "Активность", rental: "Аренда транспорта", insurance: "Страховка", meal: "Еда", other: "Прочее" };
@@ -22,7 +22,7 @@ export const extraExpenses = [
   { subtype: "other", label: "Другое" },
 ] as const;
 export const subtypeOptions: Partial<Record<ItemType, readonly { value: ItemSubtype; label: string }[]>> = {
-  transfer: [{ value: "bus", label: "Автобус" }, { value: "train", label: "Поезд" }, { value: "taxi", label: "Такси" }, { value: "rental", label: "Аренда" }, { value: "water", label: "Водный транспорт" }, { value: "other", label: "Другое" }],
+  transfer: [{ value: "bus", label: "Автобус" }, { value: "train", label: "Поезд" }, { value: "taxi", label: "Такси" }, { value: "car", label: "Автомобиль" }, { value: "walk", label: "Пеший переход" }, { value: "rental", label: "Аренда" }, { value: "water", label: "Водный транспорт" }, { value: "other", label: "Другое" }],
   meal: [{ value: "restaurant", label: "Ресторан" }, { value: "cafe", label: "Кафе" }, { value: "bar", label: "Бар" }, { value: "street_food", label: "Уличная еда" }, { value: "other", label: "Другое" }],
   activity: [{ value: "excursion", label: "Экскурсия" }, { value: "activity", label: "Активность" }, { value: "other", label: "Другое" }],
   other: extraExpenses.map(({ subtype, label }) => ({ value: subtype, label })),
@@ -40,6 +40,19 @@ export function itemDisplayLabel(item: Pick<ItemInput, "type" | "subtype">): str
   const category = eventCategory(item.type);
   const subtype = displaySubtype(item);
   return subtypeOptions[category]?.find(option => option.value === subtype)?.label ?? itemLabels[item.type];
+}
+export function isAutomaticItemTitle(title: string): boolean {
+  const labels = [...Object.values(itemLabels), ...Object.values(subtypeOptions).flatMap(options => options.map(option => option.label))];
+  return labels.some(label => title === label || (title.startsWith(`${label} `) && /^[1-9]\d*$/.test(title.slice(label.length + 1))));
+}
+export function nextItemTitle(trip: Pick<TripInput, "items">, item: Pick<ItemInput, "type" | "subtype" | "title">): string {
+  if (item.title && !isAutomaticItemTitle(item.title)) return item.title;
+  const label = itemDisplayLabel(item);
+  const numbers = trip.items.filter(existing => itemDisplayLabel(existing) === label).flatMap(existing => {
+    const suffix = existing.title.startsWith(`${label} `) ? existing.title.slice(label.length + 1) : "";
+    return /^[1-9]\d*$/.test(suffix) && Number.isSafeInteger(Number(suffix)) ? [Number(suffix)] : [];
+  });
+  return `${label} ${Math.max(0, ...numbers) + 1}`;
 }
 export function newCategoryItem(type: ItemType, subtype: ItemSubtype | null, day: DayInput | null, currency: string, start: string): ItemInput {
   const item = newItem(type, day, currency, start);

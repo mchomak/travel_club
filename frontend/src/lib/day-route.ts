@@ -12,6 +12,8 @@ export interface RouteLeg {
   kind: "connection" | "scheduled"; itemId?: string;
   departureDate?: string; arrivalDate?: string;
   departureTime?: string | null; arrivalTime?: string | null;
+  /** Original sources for a saved local auto transfer; itemId identifies its calendar item. */
+  sourceFromKey?: string; sourceToKey?: string;
 }
 export interface BoundaryResolution {
   source: "manual" | "hotel" | "overnight" | "ambiguous" | "none";
@@ -98,8 +100,9 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
       ...(schedule.endDate === day.date && (isTransport(item) || schedule.overnight || item.map_end_place) ? [arrival] : []),
     ];
     if (localNodes.length) eventGroups.push({ item, time: localNodes[0].time, nodes: localNodes });
-    if (isTransport(item) && schedule.startDate <= day.date && schedule.endDate >= day.date) scheduledLegs.push({
-      key: `${departure.key}>${arrival.key}`, from: departure, to: arrival, mode: "transit", kind: "scheduled", itemId: item.id,
+    if (isTransport(item) && schedule.startDate <= day.date && schedule.endDate >= day.date && (!item.auto_transfer || schedule.startDate === day.date)) scheduledLegs.push({
+      key: `${departure.key}>${arrival.key}`, from: departure, to: arrival, mode: item.auto_transfer?.mode ?? "transit", kind: item.auto_transfer ? "connection" : "scheduled", itemId: item.id,
+      ...(item.auto_transfer ? { sourceFromKey: item.auto_transfer.from_key, sourceToKey: item.auto_transfer.to_key } : {}),
       departureDate: schedule.startDate, arrivalDate: schedule.endDate, departureTime: schedule.startTime, arrivalTime: schedule.endTime,
     });
   }
@@ -110,10 +113,12 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
   const legs: RouteLeg[] = nodes.slice(1).flatMap((to, i) => {
     const from = nodes[i];
     if (scheduledLegs.some(leg => leg.from.key === from.key && leg.to.key === to.key)) return [];
-    return [{ key: `${from.key}>${to.key}`, from, to, mode: day.map_leg_modes?.find(pref => pref.from_key === from.key && pref.to_key === to.key)?.mode ?? "drive", kind: "connection" as const }];
+    const preference = day.map_leg_modes?.find(pref => pref.from_key === from.key && pref.to_key === to.key)?.mode;
+    return [{ key: `${from.key}>${to.key}`, from, to, mode: preference === "walk" ? "walk" : "drive", kind: "connection" as const }];
   });
   const warnings: string[] = [];
   for (const leg of scheduledLegs) {
+    if (leg.kind !== "scheduled") continue;
     if (!leg.departureTime || !leg.arrivalTime) continue;
     const departure = `${leg.departureDate}T${leg.departureTime.slice(0, 5)}`;
     const arrival = `${leg.arrivalDate}T${leg.arrivalTime.slice(0, 5)}`;

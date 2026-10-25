@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import type { ItemInput, MapPlace, TripInput } from "./contracts";
 import { emptyDay, newItem, newTrip } from "./trip-ui";
 import { buildDayRoute, setMapLegMode, summarizeDayRoute, formatRouteDistance, formatRouteDuration } from "./day-route";
+import { planAutoTransfer } from "./auto-transfers";
 
 const days = ["2026-10-01", "2026-10-02", "2026-10-03"].map((date, i) => ({ ...emptyDay(date), id: `day-${i}` }));
 const place = (name: string, latitude = 35): MapPlace => ({ name, address: name, latitude, longitude: 139, provider: "manual" });
@@ -112,7 +113,7 @@ test("saved pair modes survive reordering and immutable updates; distance and ti
   const first = buildDayRoute(input, days[1].id);
   const reordered = buildDayRoute({ ...input, items: [...input.items].reverse() }, days[1].id);
   expect(reordered).toEqual(first);
-  expect(first.legs.find(l => l.from.key === "item:a:start" && l.to.key === "item:b:start")?.mode).toBe("transit");
+  expect(first.legs.find(l => l.from.key === "item:a:start" && l.to.key === "item:b:start")?.mode).toBe("drive");
   expect([null, 0, 850, 1500].map(formatRouteDistance)).toEqual(["Нет данных", "На месте", "850 м", "1,5 км"]);
   expect([null, 0, 1, 60, 3660].map(formatRouteDuration)).toEqual(["Нет данных", "На месте", "1 мин", "1 мин", "1 ч 1 мин"]);
   expect(formatRouteDistance(Number.NaN)).toBe("Нет данных");
@@ -151,4 +152,24 @@ test("explicit overnight end days infer untimed arrival and departure boundaries
     expect(arrival.nodes.filter(node => node.itemId === "night")).toHaveLength(1);
     expect(arrival.nodes[0]).toMatchObject({ key: "item:night:end", date: days[1].date, time: null });
   }
+});
+
+test("generated local transfers retain one routed leg and cannot double a direct edge or daily totals", () => {
+  const input = trip([
+    event("origin", { start_time: "10:00", end_time: "11:00", map_place: place("museum", 35) }),
+    event("target", { start_time: "15:00", end_time: "16:00", map_place: place("park", 36) }),
+  ], { days: days.map(day => day.id === days[1].id ? { ...day, map_start: place("museum", 35), map_end: place("park", 36) } : day) });
+  const original = buildDayRoute(input, days[1].id).legs.find(leg => leg.from.itemId === "origin" && leg.to.itemId === "target")!;
+  const planned = planAutoTransfer(input, original, { status: "ok", distance_m: 900, duration_s: 540 });
+  expect(planned.ok).toBe(true); if (!planned.ok) return;
+  const saved = { ...input, items: [...input.items, planned.item] };
+  const route = buildDayRoute(saved, days[1].id);
+  const generated = route.legs.find(leg => leg.itemId === planned.item.id)!;
+  expect(generated).toMatchObject({ kind: "connection", mode: "drive", sourceFromKey: original.from.key, sourceToKey: original.to.key });
+  expect(route.legs.filter(leg => leg.kind === "scheduled")).toHaveLength(0);
+  expect(route.legs.filter(leg => leg.from.key === original.from.key && leg.to.key === original.to.key)).toHaveLength(0);
+  expect(route.legs.filter(leg => leg.from.place?.latitude !== leg.to.place?.latitude)).toEqual([generated]);
+  expect(summarizeDayRoute(route, { [generated.key]: { status: "ok", distance_m: 900, duration_s: 540 } })).toMatchObject({ distance_m: 900, duration_s: 540, complete: true });
+  const legacyTransit = { ...input, days: input.days.map(day => ({ ...day, map_leg_modes: [{ from_key: original.from.key, to_key: original.to.key, mode: "transit" as const }] })) };
+  expect(buildDayRoute(legacyTransit, days[1].id).legs.find(leg => leg.key === original.key)?.mode).toBe("drive");
 });
