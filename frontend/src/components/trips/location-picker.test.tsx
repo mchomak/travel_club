@@ -1,3 +1,4 @@
+import {Modal} from './ui';
 import {useState} from 'react';
 import type {MapPlace} from '@/lib/contracts';
 import {afterEach,expect,test,vi} from 'vitest';
@@ -93,4 +94,20 @@ test('a real parent update retains the URL and reopens candidates for replacemen
  expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://maps.google.com/?q=Museum');
  await user.click(await screen.findByRole('option',{name:/Another museum/}));
  expect(screen.getByText('Another museum')).toBeInTheDocument();expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+});
+
+test('reopened candidates can close inside the dialog and keep the saved place or reselect',async()=>{
+ const saved={...place,source_url:'https://maps.google.com/?q=Museum'},replacement={...place,name:'Replacement'};
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place:replacement,query:null});
+ const onChange=vi.fn(),onClose=vi.fn(),user=userEvent.setup();
+ render(<Modal title="Место события" onClose={onClose}><LocationPicker value={saved} onChange={onChange}/></Modal>);
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ const candidate=await screen.findByRole('option',{name:/Replacement/});expect(candidate).toBeInTheDocument();
+ const keep=screen.getByRole('button',{name:'Оставить выбранное место'}),combo=screen.getByRole('combobox');
+ expect(keep.compareDocumentPosition(combo)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+ await user.keyboard('{Escape}');expect(onClose).not.toHaveBeenCalled();expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+ await user.click(keep);expect(screen.getByText('Selected pin')).toBeInTheDocument();expect(onChange).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ await user.click(await screen.findByRole('option',{name:/Replacement/}));
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Replacement'}));expect(onClose).not.toHaveBeenCalled();
 });
