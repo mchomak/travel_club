@@ -30,6 +30,15 @@
 .results button {text-align:left;white-space:normal;overflow-wrap:anywhere}
 
 .warning {color:var(--warning);margin:8px 0}
+.boundaryPicker {margin-top:8px}
+.boundaryPicker .picker {margin-block:8px;padding:12px}
+.transferAction {display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px;background:var(--color-surface);border-radius:8px}
+.transferAction p {margin:0;width:100%}
+.transferAction>div[role=alert] {width:100%}
+.transferAction ul {padding-left:20px;font-size:.875rem;margin:8px 0}
+.arrivalInputs {display:flex;gap:12px;flex-wrap:wrap;width:100%}
+.arrivalInputs label {display:grid;gap:6px;font-size:.8125rem;min-width:0;flex:1}
+.arrivalInputs input {width:100%;min-width:0}
 @media(max-width:760px){.section{padding:16px}.boundaries{grid-template-columns:1fr}.canvas{height:380px;min-height:380px}.mode{min-width:100px}}
 
 .urlRow {display:flex;align-items:stretch;gap:8px;min-width:0;margin-top:6px}

@@ -110,10 +110,16 @@ function Editor({ document }: { document: TripDocument }) {
     setSelected(targetDayId);
   }
   function openItem(itemId: string) { const item = trip.items.find(candidate => candidate.id === itemId); if (item) openEditor(item); }
+  function applyTransfer(item: ItemInput) {
+    const current = session.draft;
+    change({ items: current.items.some(value => value.id === item.id) ? current.items.map(value => value.id === item.id ? item : value) : [...current.items, item] });
+    setSelected(item.day_id);
+  }
   function openAirport(itemId: string, kind: AirportKind) { setAirportEditing({ itemId, kind }); setAirportPanelOpen(true); }
   const airportFlight = airportEditing && trip.items.find(item => item.id === airportEditing.itemId && item.type === "flight");
   const saveLabel = { saved: "Сохранено", dirty: "Есть изменения", saving: "Сохранение…", error: "Не удалось сохранить" }[state.status];
   return <><Link href="/admin/trips" className="back-link"><ArrowLeft size={17} aria-hidden />Все поездки</Link><div className="editor-heading"><div className="min-w-0"><span className={`status-badge status-${trip.status}`}>{statusLabels[trip.status]}</span><h1>{trip.internal_title}</h1><p>{formatDate(trip.start_date)} — {formatDate(trip.end_date)} · {days.length} дней · {trip.participants} участников</p><p className="editor-quick-total">Себестоимость <strong>{calculation ? formatMoney(calculation.cost_total, trip.base_currency) : "—"}</strong></p></div><div className="editor-actions"><button className="secondary-button" onClick={() => setDialog("settings")}><Settings2 size={17} aria-hidden />Параметры</button><button className="secondary-button" onClick={() => { void preview(); }} disabled={previewBusy}><Eye size={17} aria-hidden />Клиентский вид</button><button className="primary-button" onClick={() => { void save(); }} disabled={state.status === "saving"}><Save size={17} aria-hidden />Сохранить</button><p role="status" className={`save-status ${state.status === "error" ? "text-danger" : ""}`}>{saveLabel}</p></div></div>
+    {trip.items.some(item => item.price_pending) && <p className="finance-warning" role="status">Смета неполная: стоимость некоторых переездов не указана. Добавьте цены в финансовой сводке.</p>}
     {error && <ErrorNotice error={error} retry={() => { void save(); }} />}{error instanceof ApiError && error.code === "VERSION_CONFLICT" && <button className="secondary-button mt-3" onClick={() => setReloadConfirm(true)}>Перечитать с сервера</button>}{!parity && <div className="error-notice" role="alert">Предварительный расчёт отличается от сервера. {state.dirty ? "До сохранения показан предварительный расчёт." : "Показана сохранённая серверная смета."} Проверьте условия расчёта.</div>}
     {datesChanged && error instanceof ApiError && error.status === 422 && <div className="mt-3 mb-6" role="status"><p className="text-muted mb-3">Новые даты ещё не сохранены. Исправьте условия элементов или верните диапазон {formatDate(state.document.start_date)} — {formatDate(state.document.end_date)}. Остальные изменения останутся в черновике.</p><button className="secondary-button" onClick={restoreDates}>Вернуть прежние даты</button></div>}
     <div className="editor-layout">
@@ -132,7 +138,7 @@ function Editor({ document }: { document: TripDocument }) {
           onMoveItem={moveItem}
           onMoveHotel={moveHotel}
         />
-        {dayId&&<DayRouteMap trip={trip} dayId={dayId} onChange={change}/>}
+        {dayId&&<DayRouteMap trip={trip} dayId={dayId} onChange={change} onAddTransfer={applyTransfer} onOpenItem={openItem}/>}
         <section className="add-item-section" aria-label="Добавить в маршрут">
           <div><h2>Добавить в маршрут</h2><p>{day ? `Выбран ${formatDate(day.date)}. Выберите тип события.` : "Выберите тип события. Дату можно указать в форме."}</p></div>
           <div className="item-type-buttons">{eventCategories.map(({ type, label }) => <button key={type} onClick={() => add(type)}><Plus size={15} aria-hidden />{label}</button>)}</div>
@@ -147,7 +153,7 @@ function Editor({ document }: { document: TripDocument }) {
           {eventsWithoutSchedule.length ? <div className="unscheduled-list">{eventsWithoutSchedule.map(item => { const cost = calculation?.items.find(value => value.id === item.id); const itemDay = days.find(value => value.id === item.day_id); return <button key={item.id} className="unscheduled-item" onClick={() => openEditor(item)}><span><small>{item.day_id ? itemDay ? formatDate(itemDay.date, true) : "День вне диапазона" : "Вся поездка"} · {itemDisplayLabel(item)}</small><strong>{item.title}</strong></span><b>{cost ? formatMoney(cost.normalized_amount, trip.base_currency) : "—"}</b><ChevronRight size={18} aria-hidden /></button>; })}</div> : <p className="unscheduled-empty">Пока нет пунктов маршрута без времени.</p>}
         </section>
       </div>
-      <Finances trip={trip} calculation={calculation} error={state.dirty ? estimate.error : null} onChange={change} onRates={() => setDialog("rates")} />
+      <Finances trip={trip} calculation={calculation} error={state.dirty ? estimate.error : null} onChange={change} onRates={() => setDialog("rates")} onOpenItem={openItem} />
     </div>
     {dialog === "settings" && <Modal title="Параметры поездки" onClose={() => { setFormDirty(false); setDialog(null); }}><TripForm initial={trip} action="Применить изменения" onDirtyChange={setFormDirty} onCancel={() => { setFormDirty(false); setDialog(null); }} onSubmit={values => { const range = dateList(values.start_date, values.end_date); const added = range.filter(date => !trip.days.some(d => d.date === date)).map(emptyDay); change({ ...values, days: [...trip.days, ...added], rates: values.base_currency !== trip.base_currency ? [] : trip.rates }); setFormDirty(false); setDialog(null); }} /></Modal>}
     {dialog === "day" && day && <Modal title="Детали дня" onClose={() => { setFormDirty(false); setDialog(null); }}><DayForm day={day} onDirtyChange={setFormDirty} onCancel={() => { setFormDirty(false); setDialog(null); }} onSave={updated => { change({ days: trip.days.map(d => d.id === updated.id ? updated : d) }); setFormDirty(false); setDialog(null); }} /></Modal>}

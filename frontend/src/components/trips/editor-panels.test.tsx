@@ -1,10 +1,21 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DayForm } from "./editor-panels";
-import { emptyDay } from "@/lib/trip-ui";
+import { DayForm, Finances } from "./editor-panels";
+import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
+import { calculateTrip } from "@/lib/pricing";
 
 afterEach(cleanup);
+
+test('pending transfer cost marks the estimate incomplete and opens the normal price editor',async()=>{
+ const day=emptyDay('2026-10-01'),item={...newItem('transfer',day,'RUB',day.date),title:'Такси 1',included:false,price_pending:true};
+ const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[item],rates:[]},open=vi.fn();
+ render(<Finances trip={trip} calculation={calculateTrip(trip)} error={null} onChange={()=>{}} onRates={()=>{}} onOpenItem={open}/>);
+ expect(screen.getByRole('status')).toHaveTextContent('Смета неполная');
+ expect(screen.getByText(/Стоимость не указана/)).toBeVisible();
+ await userEvent.click(screen.getByRole('button',{name:'Указать стоимость: Такси 1'}));
+ expect(open).toHaveBeenCalledWith(item.id);
+});
 
 test("day saves an empty status", async () => {
   const user = userEvent.setup();

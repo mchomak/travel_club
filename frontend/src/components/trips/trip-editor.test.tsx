@@ -9,10 +9,12 @@ import type { TripDocument, TripInput } from "@/lib/contracts";
 import { vectors } from "../../test-fixtures";
 import { emptyDay, newItem } from "@/lib/trip-ui";
 import { buildCalendarEntries } from "@/lib/calendar";
+import { mapsClient } from '@/lib/maps-client';
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
-vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:false},error:null,retry:vi.fn()})}));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+const mapsConfig=vi.hoisted(()=>({routing_enabled:false}));
+vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:mapsConfig.routing_enabled},error:null,retry:vi.fn()})}));
+afterEach(() => { cleanup(); vi.restoreAllMocks(); mapsConfig.routing_enabled=false; });
 vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onOpenAirport, onOpenItem, onSelectDate }: {
   days: TripInput["days"]; items: TripInput["items"]; calculation: TripDocument["calculation"] | null; baseCurrency: string;
   onCreateRange: (dayId: string, start: string, end: string) => void;
@@ -43,6 +45,36 @@ test('day map immediately follows the calendar and changes date with its selecti
  expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-01');
  await userEvent.click(screen.getByRole('button',{name:'Выбрать второй день'}));
  expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-02');
+});
+
+test('map creation persists a calendar taxi and its pending price opens the standard editor',async()=>{
+ mapsConfig.routing_enabled=true;
+ const day=emptyDay('2026-10-01');
+ const input=structuredClone(vectors.cases[0].input) as TripInput;
+ input.start_date=day.date;input.end_date=day.date;input.days=[day];input.rates=[];
+ const point={name:'Парк',address:'',latitude:1,longitude:2,provider:'manual' as const};
+ input.items=[{...newItem('activity',day,input.base_currency,day.date),title:'Парк',start_time:'12:00',end_time:'13:00',map_place:point},{...newItem('meal',day,input.base_currency,day.date),title:'Кафе',start_time:'15:00',end_time:'16:00',map_place:{...point,name:'Кафе',latitude:3}}];
+ const document={...input,id:'map-save-trip',version:1,created_at:'',updated_at:'',created_by:'user',calculation:calculateTrip(input)} as TripDocument;
+ vi.spyOn(tripApi,'get').mockResolvedValue(document);
+ const save=vi.spyOn(tripApi,'save').mockImplementation(async(_id,update)=>({...document,...update,version:update.version+1,calculation:calculateTrip(update)}) as TripDocument);
+ vi.spyOn(mapsClient,'route').mockResolvedValue({status:'ok',distance_m:900,duration_s:540,geometry:null,approximate:false,message:null});
+ const user=userEvent.setup();render(<TripProvider><TripEditor id="map-save-trip"/></TripProvider>);
+ const button=await screen.findByRole('button',{name:'Добавить трансфер в маршрут'});
+ await waitFor(()=>expect(button).toBeEnabled());await user.click(button);
+ await user.click(screen.getByRole('button',{name:/^Сохранить$/}));
+ await waitFor(()=>expect(save).toHaveBeenCalled());
+ expect(save.mock.calls.at(-1)![1].items.find(item=>item.auto_transfer)).toMatchObject({subtype:'taxi',start_time:'14:51',end_time:'15:00',price_pending:true,included:false});
+ const finance=screen.getByRole('complementary',{name:'Финансовая сводка'});
+ await user.click(within(finance).getByRole('button',{name:'Указать стоимость: Такси 1'}));
+ const editor=screen.getByRole('dialog');
+ expect(within(editor).getByRole('button',{name:'Сохранить элемент'})).toBeVisible();
+ const price=within(editor).getByLabelText('Цена за единицу');
+ await user.clear(price);await user.type(price,'500');
+ await user.click(within(editor).getByRole('button',{name:'Сохранить элемент'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+ await user.click(screen.getByRole('button',{name:/^Сохранить$/}));
+ await waitFor(()=>expect(save.mock.calls.at(-1)![1].items.find(item=>item.auto_transfer)).toMatchObject({unit_price:'500',price_pending:false,included:true}));
+ expect(within(finance).queryByText('Смета неполная')).not.toBeInTheDocument();
 });
 
 test("extra expense buttons create an unscheduled per-person item and keep legacy insurance visible", async () => {
