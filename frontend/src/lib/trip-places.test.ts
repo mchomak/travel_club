@@ -28,3 +28,18 @@ test('transport origin across midnight ranks a preceding arrival ahead of future
  const trip={...newTrip(),days,rates:[],items:[flight,item('future',days[1],'15:00')]};
  expect(getTripPlaceOptions(trip,'d1',{endpoint:'start',time:'00:10'})[0].key).toBe('item:flight:end');
 });
+test('transport direction and endpoint preference stay lexicographic across decades',()=>{
+ const distantDays=['1990-10-01','2026-10-02','2050-10-03'].map((date,i)=>({...emptyDay(date),id:`long-${i}`}));
+ const previous={...item('previous',distantDays[0],'08:00'),type:'flight' as const,end_time:'10:00',map_end_place:place};
+ const following={...item('following',distantDays[2],'08:00'),type:'flight' as const,end_time:'10:00',map_end_place:place};
+ const nearbyPast=item('past',distantDays[1],'11:59');
+ const nearbyFuture=item('future',distantDays[1],'12:01');
+ const input={...newTrip(),days:distantDays,rates:[],items:[previous,following,nearbyPast,nearbyFuture]};
+ const origins=getTripPlaceOptions(input,'long-1',{endpoint:'start',time:'12:00'}).map(option=>option.key);
+ expect(origins.indexOf('item:previous:end')).toBeLessThan(origins.indexOf('item:future:start'));
+ const destinations=getTripPlaceOptions(input,'long-1',{endpoint:'end',time:'12:00'}).map(option=>option.key);
+ expect(destinations.indexOf('item:following:start')).toBeLessThan(destinations.indexOf('item:past:start'));
+ const overlappingFlight={...item('ongoing',distantDays[0],'11:00'),type:'flight' as const,end_day_id:distantDays[2].id,end_time:'12:00',map_end_place:place};
+ const endpointInput={...input,items:[previous,overlappingFlight]};
+ expect(getTripPlaceOptions(endpointInput,'long-1',{endpoint:'start',time:'12:00'})[0].key).toBe('item:previous:end');
+});

@@ -104,3 +104,24 @@ test("legacy invalidated signatures can explicitly refresh valid sources without
     expect(saved.items).toHaveLength(3);
   }
 });
+
+test("day-boundary duplicate identity includes the original day even when the snapshot crosses midnight", () => {
+  const mappedDays = days.map(day => ({ ...day, map_start: place("Start", 35), map_end: place("End", 36) }));
+  const input = { ...trip([]), days: mappedDays };
+  const boundaryLeg = (date: string, mode: "drive" | "walk" = "drive"): RouteLeg => ({ key: "day:start>day:end", kind: "connection", mode,
+    from: { key: "day:start", kind: "start", label: "Start", place: mappedDays[0].map_start, date },
+    to: { key: "day:end", kind: "end", label: "End", place: mappedDays[0].map_end, date } });
+  const created = planAutoTransfer(input, boundaryLeg(days[1].date), eta, { arrivalTime: "00:05" });
+  expect(created.ok).toBe(true); if (!created.ok) return;
+  expect(created.item).toMatchObject({ day_id: days[0].id, end_day_id: days[1].id });
+  const saved = { ...input, items: [created.item] };
+  expect(planAutoTransfer(saved, boundaryLeg(days[1].date), eta, { arrivalTime: "00:05" })).toMatchObject({ ok: false, reason: "already_exists", existingItemId: created.item.id });
+  expect(planAutoTransfer(saved, boundaryLeg(days[2].date), eta, { arrivalTime: "00:05" })).toMatchObject({ ok: true, item: { day_id: days[1].id, end_day_id: days[2].id } });
+  expect(planAutoTransfer(saved, boundaryLeg(days[1].date, "walk"), eta, { arrivalTime: "12:00" })).toMatchObject({ ok: true, item: { subtype: "walk" } });
+  const refreshed = refreshAutoTransfer(saved, created.item, eta, { arrivalTime: "00:05" });
+  expect(refreshed).toMatchObject({ ok: true, item: { id: created.item.id, day_id: days[0].id, end_day_id: days[1].id } });
+  const legacy = { ...created.item, auto_transfer: { ...created.item.auto_transfer!, source_signature: "" } };
+  const legacySaved = { ...saved, items: [legacy] };
+  expect(planAutoTransfer(legacySaved, boundaryLeg(days[1].date), eta, { arrivalTime: "00:05" })).toMatchObject({ ok: false, reason: "already_exists" });
+  expect(refreshAutoTransfer(legacySaved, legacy, eta, { arrivalTime: "00:05" })).toMatchObject({ ok: true, item: { id: legacy.id, day_id: days[0].id, end_day_id: days[1].id } });
+});

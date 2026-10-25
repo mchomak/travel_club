@@ -23,18 +23,23 @@ export function getTripPlaceOptions(trip:TripInput,dayId:string,options:TripPlac
   }
  }
  const group=(option:TripPlaceOption)=>!option.place?2:option.date===day.date?0:1;
- const rank=(option:TripPlaceOption)=>{
-  if(!options.endpoint)return 0;
+ const rank=(option:TripPlaceOption):readonly [number,number,number]=>{
+  if(!options.endpoint)return [0,0,0];
   const item=trip.items.find(item=>item.id===option.itemId)!;
   const transport=['flight','train_bus','transfer'].includes(item.type);
-  const endpointPenalty=transport&&option.endpoint!==(options.endpoint==='start'?'end':'start')?1e9:0;
+  const endpointMismatch=Number(transport&&option.endpoint!==(options.endpoint==='start'?'end':'start'));
   const time=option.time??(item.type!=='hotel'&&options.endpoint==='start'?item.end_time?.slice(0,5):undefined);
-  if(!time||!option.date)return 1e10+endpointPenalty;
+  if(!time||!option.date)return [1,endpointMismatch,0];
   const target=Date.parse(day.date+'T'+(options.time||(options.endpoint==='start'?'23:59':'00:00'))+':00Z');
   const instant=Date.parse(option.date+'T'+time+':00Z');
+  if(!Number.isFinite(target)||!Number.isFinite(instant))return [1,endpointMismatch,0];
   const wrongDirection=options.endpoint==='start'?instant>target:instant<target;
-  return (wrongDirection?1e11:0)+endpointPenalty+Math.abs(target-instant);
+  return [wrongDirection?2:0,endpointMismatch,Math.abs(target-instant)];
  };
- return result.sort((a,b)=>(options.endpoint?Number(!a.place)-Number(!b.place)||rank(a)-rank(b):group(a)-group(b))||(a.date??'9999').localeCompare(b.date??'9999')||(a.time??'99:99').localeCompare(b.time??'99:99')||a.key.localeCompare(b.key));
+ const compareRank=(a:TripPlaceOption,b:TripPlaceOption)=>{
+  const left=rank(a),right=rank(b);
+  return left[0]-right[0]||left[1]-right[1]||left[2]-right[2];
+ };
+ return result.sort((a,b)=>(options.endpoint?Number(!a.place)-Number(!b.place)||compareRank(a,b):group(a)-group(b))||(a.date??'9999').localeCompare(b.date??'9999')||(a.time??'99:99').localeCompare(b.time??'99:99')||a.key.localeCompare(b.key));
 }
 function dateLabel(date:string|undefined){return date?`${date.slice(8,10)}.${date.slice(5,7)}`:'Без даты';}

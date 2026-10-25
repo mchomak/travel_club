@@ -96,6 +96,30 @@ function snapshot(source: Source): SourceSnapshot {
 function signature(trip: TripInput, mode: "drive" | "walk", from: Source, to: Source): string {
   return JSON.stringify({ v: 1, mode, bounds: [trip.start_date, trip.end_date], from: snapshot(from), to: snapshot(to) } satisfies Signature);
 }
+function readSignature(value: string): Signature | null {
+  try {
+    const parsed = JSON.parse(value) as Signature | null;
+    if (parsed?.v === 1 && typeof parsed.from?.date === "string" && typeof parsed.to?.date === "string") return parsed;
+  } catch { /* Duplicating legacy metadata may invalidate its opaque signature. */ }
+  return null;
+}
+function isDayBoundary(key: string): boolean { return key === "day:start" || key === "day:end"; }
+function sourceDates(trip: TripInput, item: ItemInput): { from: string | undefined; to: string | undefined } {
+  const saved = item.auto_transfer ? readSignature(item.auto_transfer.source_signature) : null;
+  const start = trip.days.find(day => day.id === item.day_id)?.date;
+  const end = start ? endDate(trip, item, start) ?? start : undefined;
+  // Boundaries belong to the selected route day, including a departure just before midnight.
+  return { from: saved?.from.date ?? (isDayBoundary(item.auto_transfer?.from_key ?? "") ? end : start), to: saved?.to.date ?? end };
+}
+function sameTransferSource(trip: TripInput, item: ItemInput, leg: RouteLeg, options: AutoTransferOptions): boolean {
+  const meta = item.auto_transfer;
+  if (!meta) return false;
+  if (item.id === leg.itemId) return true;
+  if (meta.from_key !== leg.from.key || meta.to_key !== leg.to.key || meta.mode !== leg.mode) return false;
+  const dates = sourceDates(trip, item);
+  return (!isDayBoundary(meta.from_key) || dates.from === leg.from.date)
+    && (!isDayBoundary(meta.to_key) || dates.to === (leg.to.date ?? options.arrivalDate));
+}
 /** Same key as the protected maps client's routing cache. */
 export function autoTransferRouteKey(leg: RouteLeg): string | null {
   const from = leg.from.place, to = leg.to.place;
@@ -130,7 +154,7 @@ function findConflicts(trip: TripInput, from: Source, departure: number, arrival
 /** Creates a proposed item only. The caller explicitly inserts it into the trip. */
 export function planAutoTransfer(trip: TripInput, leg: RouteLeg, result: RouteMeasurement, options: AutoTransferOptions = {}): AutoTransferPlan {
   if (leg.mode !== "drive" && leg.mode !== "walk" || leg.kind !== "connection") return fail("unsupported_mode", "Выберите автомобиль или пеший переход.");
-  const existing = trip.items.find(item => item.auto_transfer && (item.id === leg.itemId || item.auto_transfer.from_key === leg.from.key && item.auto_transfer.to_key === leg.to.key && item.auto_transfer.mode === leg.mode));
+  const existing = trip.items.find(item => sameTransferSource(trip, item, leg, options));
   if (existing) return fail("already_exists", "Для этого участка уже добавлен переезд.", { existingItemId: existing.id });
   if (!leg.from.place || !leg.to.place) return fail("missing_places", "Укажите оба места на карте и повторите расчёт.");
   const targetId = /^item:(.+):(start|end)$/.exec(leg.to.key)?.[1];
@@ -165,16 +189,10 @@ export function planAutoTransfer(trip: TripInput, leg: RouteLeg, result: RouteMe
 export function autoTransferStatus(trip: TripInput, item: ItemInput): AutoTransferStatus {
   const meta = item.auto_transfer;
   if (!meta) return { stale: false, state: "not_auto", leg: null };
-  let saved: Signature | null = null;
-  try {
-    const parsed = JSON.parse(meta.source_signature) as Signature | null;
-    if (parsed?.v === 1 && typeof parsed.from?.date === "string" && typeof parsed.to?.date === "string") saved = parsed;
-  } catch { /* A legacy signature may be invalidated by duplication; its references remain usable. */ }
-  const startDate = trip.days.find(day => day.id === item.day_id)?.date;
-  const finishDate = startDate ? endDate(trip, item, startDate) : null;
+  const dates = sourceDates(trip, item);
   const makeNode = (key: string, date: string | undefined): RouteNode => ({ key, label: "", kind: "event", place: null, date });
-  const from = resolveSource(trip, makeNode(meta.from_key, saved?.from.date ?? startDate), "from");
-  const to = resolveSource(trip, makeNode(meta.to_key, saved?.to.date ?? finishDate ?? startDate), "to");
+  const from = resolveSource(trip, makeNode(meta.from_key, dates.from), "from");
+  const to = resolveSource(trip, makeNode(meta.to_key, dates.to), "to");
   if (!from || !to || !from.node.place || !to.node.place) return { stale: true, state: "source_missing", leg: null };
   const leg: RouteLeg = { key: `${meta.from_key}>${meta.to_key}`, from: { ...from.node, label: from.item?.title ?? from.node.place.name },
     to: { ...to.node, label: to.item?.title ?? to.node.place.name }, mode: meta.mode, kind: "connection" };
