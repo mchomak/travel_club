@@ -19,6 +19,8 @@ export interface DayRouteMapProps {
  onAddTransfer?:(item:ItemInput)=>void;onOpenItem?:(itemId:string)=>void;
 }
 export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem}:DayRouteMapProps){
+ const latest=useRef({trip,onChange,onAddTransfer});
+ useLayoutEffect(()=>{latest.current={trip,onChange,onAddTransfer};},[trip,onChange,onAddTransfer]);
  const plan=useMemo(()=>buildDayRoute(trip,dayId),[trip,dayId]);
  const {config,error,retry:retryConfig}=useMapsConfig();
  const [attempt,setAttempt]=useState(0);
@@ -42,7 +44,7 @@ export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem}:DayRo
  const summary=summarizeDayRoute(plan,selected);
  const geometries=Object.values(selected).flatMap(result=>result?.status==='ok'&&result.geometry?[result.geometry]:[]);
  const updateDay=(patch:Partial<TripInput['days'][number]>)=>onChange({days:trip.days.map(value=>value.id===dayId?{...value,...patch}:value)});
- const applyTransfer=(item:ItemInput)=>onAddTransfer?onAddTransfer(item):onChange({items:trip.items.some(value=>value.id===item.id)?trip.items.map(value=>value.id===item.id?item:value):[...trip.items,item]});
+ const applyTransfer=(item:ItemInput)=>{const current=latest.current;return current.onAddTransfer?current.onAddTransfer(item):current.onChange({items:current.trip.items.some(value=>value.id===item.id)?current.trip.items.map(value=>value.id===item.id?item:value):[...current.trip.items,item]});};
  const untimed=trip.items.filter(item=>item.day_id===dayId&&!item.start_time&&item.type!=='hotel').sort((a,b)=>a.position-b.position||a.id.localeCompare(b.id));
  function move(index:number,direction:number){const ordered=[...untimed];[ordered[index],ordered[index+direction]]=[ordered[index+direction],ordered[index]];const positions=new Map(ordered.map((item,index)=>[item.id,index]));onChange({items:trip.items.map(item=>positions.has(item.id)?{...item,position:positions.get(item.id)!}:item)});}
  const options=getTripPlaceOptions(trip,dayId);

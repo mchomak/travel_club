@@ -137,3 +137,26 @@ test('source refresh rejects a late route response, then explicitly updates the 
  view.rerender(<DayRouteMap trip={{...newer,items:newer.items.filter(item=>item.id!==base.items[0].id)}} dayId={day.id} onChange={()=>{}}/>);
  expect(screen.getByText(/Исходное место удалено или не указано/)).toBeVisible();
 });
+
+test('compatibility onChange refresh preserves unrelated item edits made while routing is pending',async()=>{
+ configState.config={maps_key:null,routing_enabled:true,search_enabled:false};
+ const day=emptyDay('2026-10-01'),point:MapPlace={name:'Парк',address:'',latitude:1,longitude:2,provider:'manual'};
+ const base:TripInput={...newTrip(),start_date:day.date,end_date:day.date,days:[day],rates:[],items:[{...newItem('activity',day,'RUB',day.date),title:'Парк',start_time:'12:00',end_time:'13:00',map_place:point},{...newItem('meal',day,'RUB',day.date),title:'Кафе',start_time:'15:00',end_time:'16:00',map_place:{...point,name:'Кафе',latitude:3}},{...newItem('insurance',null,'RUB',day.date),title:'Страховка',internal_note:'Прежняя заметка'}]};
+ const measured={status:'ok' as const,distance_m:900,duration_s:540,geometry:null,approximate:false,message:null};
+ const planned=planAutoTransfer(base,buildDayRoute(base,day.id).legs.find(leg=>leg.from.label==='Парк'&&leg.to.label==='Кафе')!,measured);if(!planned.ok)throw Error(planned.message);
+ const trip:TripInput={...base,items:[...base.items.map(item=>item.id===base.items[1].id?{...item,start_time:'16:00',end_time:'17:00'}:item),planned.item]};
+ const changed=vi.fn(),route=vi.spyOn(mapsClient,'route').mockResolvedValue(measured),user=userEvent.setup();
+ function Harness(){const [draft,setDraft]=useState(trip);return <><DayRouteMap trip={draft} dayId={day.id} onChange={patch=>{changed(patch);setDraft(current=>({...current,...patch}));}}/><button onClick={()=>setDraft(current=>({...current,items:current.items.map(item=>item.type==='insurance'?{...item,internal_note:'Новая заметка'}:item)}))}>Изменить страховку</button><output aria-label="Заметка страховки">{draft.items.find(item=>item.type==='insurance')?.internal_note}</output></>;}
+ render(<Harness/>);
+ await waitFor(()=>expect(route).toHaveBeenCalled());
+ let finish!:(value:typeof measured)=>void;
+ route.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
+ await user.click(screen.getByRole('button',{name:'Обновить трансфер по исходным событиям'}));
+ await user.click(screen.getByRole('button',{name:'Изменить страховку'}));
+ expect(screen.getByLabelText('Заметка страховки')).toHaveTextContent('Новая заметка');
+ finish(measured);
+ await waitFor(()=>expect(changed).toHaveBeenCalledTimes(1));
+ expect(changed.mock.calls[0][0].items.find((item:{type:string})=>item.type==='insurance')).toMatchObject({internal_note:'Новая заметка'});
+ expect(changed.mock.calls[0][0].items.find((item:{id:string})=>item.id===planned.item.id)).toMatchObject({start_time:'15:51',end_time:'16:00'});
+ expect(screen.getByLabelText('Заметка страховки')).toHaveTextContent('Новая заметка');
+});
