@@ -19,7 +19,7 @@ test("chapter links jump to their section and announce the current chapter", asy
 
   await destination.click();
 
-  const heading = page.locator(`[id="${href?.slice(1)}"]`).locator("h1, h2").last();
+  const heading = page.locator(`[id="${href?.slice(1)}"]`).locator("h1, h2").first();
   await expect(heading).toBeInViewport();
   const [headingTop, navigationBottom] = await Promise.all([
     heading.evaluate(element => element.getBoundingClientRect().top),
@@ -38,7 +38,7 @@ test("mobile chapter jumps keep the selected heading below the sticky rail", asy
   const href = await destination.getAttribute("href");
   await destination.click();
 
-  const heading = page.locator(`[id="${href?.slice(1)}"]`).locator("h1, h2").last();
+  const heading = page.locator(`[id="${href?.slice(1)}"]`).locator("h1, h2").first();
   await expect(heading).toBeInViewport();
   const [headingTop, navigationBottom] = await Promise.all([
     heading.evaluate(element => element.getBoundingClientRect().top),
