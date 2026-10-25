@@ -52,3 +52,4 @@
 | 2026-10-25 | `2026-10-25-test-14-design--wip` | Implemented; production verification blocked | /test_14 visual iteration and client checks |
 
 | 2026-10-25 | 2026-10-25-test-13-mobile-variants--wip | in progress | Mobile reading variants on /test_15, /test_16, and /test_17 |
+| 2026-10-25 | `2026-10-25-test-18-phone-magazine` | сдан | `/test_18`: мобильное карманное издание `test_13` на 15 портретных страницах; unit 163 passed, browser 13 passed локально и на preview. |
