@@ -34,3 +34,16 @@ test.each([1440,320])('real map keeps every point inside padded bounds after res
  expectVisible();
  for(const next of [390,320]){width=next;act(()=>notify([],{} as ResizeObserver));expectVisible();}
 });
+test('updating labels and unrelated renders retains the camera and map instance',async()=>{
+ const L=await import('leaflet'),fit=vi.spyOn(L.Map.prototype,'fitBounds'),remove=vi.spyOn(L.Map.prototype,'remove');
+ const node={key:'a',label:'Original',place:{name:'A',address:'',latitude:1,longitude:2,provider:'manual' as const}};
+ const {rerender,container}=render(<MapCanvas mapsKey="test-browser" nodes={[node]}/>);
+ await waitFor(()=>expect(fit).toHaveBeenCalled());
+ const map=fit.mock.contexts.at(-1)! as import('leaflet').Map;
+ act(()=>{map.setView([10,20],5,{animate:false});});
+ const before=map.getCenter();fit.mockClear();
+ rerender(<MapCanvas mapsKey="test-browser" nodes={[{...node,label:'Renamed'}]}/>);
+ await waitFor(()=>expect(container.querySelector('.leaflet-marker-icon')).toHaveAttribute('title','Renamed'));
+ expect(remove).not.toHaveBeenCalled();expect(fit).not.toHaveBeenCalled();
+ expect(map.getCenter()).toEqual(before);
+});

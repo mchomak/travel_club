@@ -1,6 +1,7 @@
-﻿import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {mapsClient} from "@/lib/maps-client";
 import { ItemForm } from "./item-form";
 import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 
@@ -14,14 +15,13 @@ test('inline place editing saves departure and arrival without changing legacy f
  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
  const departure=screen.getByRole('group',{name:'Место посещения / отправления'});
  const {within}=await import('@testing-library/react');
- await user.type(within(departure).getByLabelText('Название точки'),'Начало');
- await user.type(within(departure).getByLabelText('Широта'),'55.75');
- await user.type(within(departure).getByLabelText('Долгота'),'37.61');
- await user.click(within(departure).getByRole('button',{name:'Подтвердить место'}));
+ const resolve=vi.spyOn(mapsClient,'resolveLink').mockResolvedValueOnce({place:{name:'Начало',address:'First address',latitude:55.75,longitude:37.61,provider:'google_link'},query:null}).mockResolvedValueOnce({place:{name:'Конец',address:'Last address',latitude:59.93,longitude:30.31,provider:'google_link'},query:null});
+ fireEvent.change(within(departure).getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=55.75,37.61'}});
+ await user.click(await within(departure).findByRole('option',{name:/Начало/}));
  const arrival=screen.getByRole('group',{name:'Место окончания / прибытия'});
- await user.type(within(arrival).getByLabelText('Широта'),'59.93');
- await user.type(within(arrival).getByLabelText('Долгота'),'30.31');
- await user.click(within(arrival).getByRole('button',{name:'Подтвердить место'}));
+ fireEvent.change(within(arrival).getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=59.93,30.31'}});
+ await user.click(await within(arrival).findByRole('option',{name:/Конец/}));
+ resolve.mockRestore();
  await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({map_place:expect.objectContaining({latitude:55.75,longitude:37.61}),map_end_place:expect.objectContaining({latitude:59.93}),location:'Legacy address',external_url:'https://example.com'}),undefined);
 });
@@ -329,4 +329,3 @@ test("hotel calculation is unavailable to other types and legacy values require 
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ calculation_mode: "per_person" }), undefined);
 });
-

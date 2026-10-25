@@ -7,7 +7,7 @@
 .boundary h3,.leg h3 {font-size:1rem;font-weight:650;margin-bottom:8px;overflow-wrap:anywhere}
 .boundary p {color:var(--color-muted);margin:8px 0}
 .canvasWrap {position:relative;min-width:0;isolation:isolate}
-.canvas {height:360px;width:100%;border-radius:10px;background:var(--color-surface);z-index:0}
+.canvas {height:560px;min-height:560px;flex-shrink:0;width:100%;border-radius:10px;background:var(--color-surface);z-index:0}
 .pin {display:grid;place-items:center;background:var(--color-accent);color:white;border:2px solid white;border-radius:50%;font-weight:700;box-shadow:0 1px 5px #0005}
 .notice {background:var(--color-surface);padding:16px;border-radius:8px;margin:12px 0}
 .stops {list-style:decimal;padding-left:24px;margin:16px 0}
@@ -24,10 +24,36 @@
 .picker legend {font-weight:650;padding:0 6px;font-size:.875rem}
 .picker label {display:grid;gap:6px;font-size:.875rem;margin:10px 0;min-width:0}
 .picker input {min-width:0;width:100%}
-.coords {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
 .actions {display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .results {display:grid;gap:8px;margin-top:10px}
 .results button {text-align:left;white-space:normal;overflow-wrap:anywhere}
-.picker .canvas {height:230px}
+
 .warning {color:var(--warning);margin:8px 0}
-@media(max-width:760px){.section{padding:16px}.boundaries{grid-template-columns:1fr}.canvas{height:280px}.mode{min-width:100px}.coords{grid-template-columns:1fr}}
+@media(max-width:760px){.section{padding:16px}.boundaries{grid-template-columns:1fr}.canvas{height:380px;min-height:380px}.mode{min-width:100px}}
+
+.urlRow {display:flex;align-items:stretch;gap:8px;min-width:0;margin-top:6px}
+.urlRow input {flex:1;width:0;min-width:0;margin:0}
+.urlRow button {flex:none;min-height:44px;padding:8px 14px}
+.selectedPlace {display:flex;justify-content:space-between;align-items:center;gap:12px}
+.selectedPlace>div {min-width:0;display:grid;gap:4px}
+.selectedPlace strong {font-size:.875rem;font-weight:650;overflow-wrap:anywhere}
+.selectedPlace span {font-size:.8125rem;color:var(--color-muted);overflow-wrap:anywhere}
+.selectedPlace button {flex:none;font-size:.8125rem}
+.combobox {position:relative;min-width:0;margin:8px 0 12px}
+.combobox>label {display:block;font-size:.8125rem;font-weight:600;margin:0 0 6px}
+.comboInput {position:relative;min-width:0}
+.comboInput input {width:100%;min-width:0;padding-right:32px;font-size:.875rem;min-height:44px}
+.comboInput>span {position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--color-muted)}
+.comboMenu {position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:40;border:1px solid var(--color-line);border-radius:10px;background:var(--color-paper);box-shadow:0 12px 30px #172b2020;max-height:300px;overflow:auto;overscroll-behavior:contain}
+.comboMenu ul {list-style:none;margin:0;padding:5px}
+.comboMenu li {display:block;padding:9px 10px;border-radius:6px;cursor:pointer;min-height:44px;overflow-wrap:anywhere;font-size:.875rem}
+.comboMenu li[aria-disabled=true] {opacity:.45;cursor:default}
+.comboMenu li[aria-selected=true] .comboLabel {color:var(--color-accent);font-weight:650}
+.comboMenu .comboActive {background:var(--color-surface)}
+.comboLabel {display:block}
+.comboDescription {display:block;font-size:.75rem;line-height:1.5;color:var(--color-muted);overflow-wrap:anywhere;margin-top:3px}
+.comboGroup {display:block;font-size:.6875rem;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--color-muted);margin:2px 0 8px}
+.comboMenu p {font-size:.8125rem;color:var(--color-muted);padding:8px 14px;margin:0}
+.combobox input:focus-visible {outline:2px solid var(--color-accent);outline-offset:2px}
+@media(max-width:400px){.selectedPlace{align-items:flex-start;flex-direction:column}.comboMenu{max-height:240px}.urlRow{gap:6px}.urlRow button{padding-inline:10px}}

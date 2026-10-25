@@ -1,64 +1,96 @@
+import {useState} from 'react';
+import type {MapPlace} from '@/lib/contracts';
 import {afterEach,expect,test,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {LocationPicker} from './location-picker';
 import {mapsClient} from '@/lib/maps-client';
-import {ApiError} from '@/lib/api';
-vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:false},error:null,retry:vi.fn()})}));
+vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:true,routing_enabled:false},error:null,retry:vi.fn()})}));
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
-test('unsupported link keeps typed values and allows an explicit coordinate confirmation without keys',async()=>{
- vi.spyOn(mapsClient,'resolveLink').mockRejectedValue(new ApiError(422,'invalid_maps_link','Unsupported URL'));
- const onChange=vi.fn(),user=userEvent.setup();
- render(<LocationPicker value={null} onChange={onChange}/>);
- await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
- await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://example.com/place');
- await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
- expect(await screen.findByRole('alert')).toHaveTextContent('Используйте ссылку Google Maps');
- expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://example.com/place');
- expect(onChange).not.toHaveBeenCalled();
- await user.type(screen.getByLabelText('Широта'),'91');
- await user.type(screen.getByLabelText('Долгота'),'0');
- await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
- expect(onChange).not.toHaveBeenCalled();
- await user.clear(screen.getByLabelText('Широта'));
- await user.type(screen.getByLabelText('Широта'),'0');
- await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
- expect(onChange).toHaveBeenCalledWith(expect.objectContaining({latitude:0,longitude:0,provider:'manual'}));
-});
-
-test.each(['place','query','error'] as const)('late link %s cannot overwrite newer coordinate and search input',async(outcome)=>{
- let finish!:(value:{place:import('@/lib/contracts').MapPlace|null;query:string|null})=>void;
- let fail!:(reason:Error)=>void;
- vi.spyOn(mapsClient,'resolveLink').mockReturnValue(new Promise((resolve,reject)=>{finish=resolve;fail=reject;}));
- const onChange=vi.fn(),user=userEvent.setup();
- render(<LocationPicker value={null} onChange={onChange}/>);
- await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
- await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://maps.google.com/?q=1,2');
- await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
- fireEvent.change(screen.getByLabelText('Название точки'),{target:{value:'Моя точка'}});
- fireEvent.change(screen.getByLabelText('Широта'),{target:{value:'55'}});
- fireEvent.change(screen.getByLabelText('Долгота'),{target:{value:'37'}});
- fireEvent.change(screen.getByLabelText('Название или адрес'),{target:{value:'Новый поиск'}});
- await act(async()=>{if(outcome==='error')fail(new Error('Late error'));else finish(outcome==='query'?{place:null,query:'Old query'}:{place:{name:'Old point',address:'Old address',latitude:1,longitude:2,provider:'google_link'},query:null});});
- expect(screen.getByLabelText('Название точки')).toHaveValue('Моя точка');
- expect(screen.getByLabelText('Широта')).toHaveValue('55');
- expect(screen.getByLabelText('Долгота')).toHaveValue('37');
- expect(screen.getByLabelText('Название или адрес')).toHaveValue('Новый поиск');
- expect(screen.queryByRole('alert')).not.toBeInTheDocument();
- await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
- expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Моя точка',latitude:55,longitude:37}));
-});
-
-test('current link result still requires explicit confirmation',async()=>{
- const place={name:'Selected pin',address:'Address',latitude:1,longitude:2,provider:'google_link' as const};
+const place={name:'Selected pin',address:'Address',latitude:1,longitude:2,provider:'google_link' as const};
+test('link-only input offers an exact candidate and confirms only after selection',async()=>{
  vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place,query:null});
+ const onChange=vi.fn();
+ render(<LocationPicker value={null} onChange={onChange}/>);
+ expect(screen.queryByLabelText('Название или адрес')).not.toBeInTheDocument();
+ expect(screen.queryByLabelText('Широта')).not.toBeInTheDocument();
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=1,2'}});
+ const option=await screen.findByRole('option',{name:/Selected pin/});expect(onChange).not.toHaveBeenCalled();fireEvent.click(option);
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({...place,source_url:'https://maps.google.com/?q=1,2'}));
+ expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+});
+test('link query automatically opens candidates and keyboard selection confirms and collapses them',async()=>{
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place:null,query:'Museum'});
+ vi.spyOn(mapsClient,'search').mockResolvedValue({places:[{...place,name:'Museum',address:'Main street'}]});
  const onChange=vi.fn(),user=userEvent.setup();
  render(<LocationPicker value={null} onChange={onChange}/>);
- await user.click(screen.getByText('Найти место или вставить Google Maps ссылку'));
- await user.type(screen.getByLabelText('Ссылка Google Maps'),'https://maps.google.com/?q=1,2');
- await user.click(screen.getByRole('button',{name:'Получить место из ссылки'}));
- expect(screen.getByLabelText('Название точки')).toHaveValue('Selected pin');
- expect(onChange).not.toHaveBeenCalled();
- await user.click(screen.getByRole('button',{name:'Подтвердить место'}));
- expect(onChange).toHaveBeenCalledWith(expect.objectContaining(place));
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=Museum'}});
+ expect(await screen.findByRole('option',{name:/Museum.*Main street/})).toBeInTheDocument();
+ const input=screen.getByRole('combobox');
+ await user.click(input);await user.keyboard('{ArrowDown}{Enter}');
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Museum',address:'Main street'}));
+ expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://maps.google.com/?q=Museum');
+});
+
+test('numeric Google point enriches its label without replacing the exact coordinates',async()=>{
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place:{...place,name:'1, 2',address:''},query:null});
+ const reverse=vi.spyOn(mapsClient,'reverse').mockResolvedValue({place:{...place,name:'Museum',address:'Main street',latitude:1.001,longitude:2.001,provider:'geoapify'}});
+ const onChange=vi.fn();render(<LocationPicker value={null} onChange={onChange}/>);
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=1,2'}});
+ fireEvent.click(await screen.findByRole('option',{name:/Museum/}));
+ expect(reverse).toHaveBeenCalledWith(1,2,expect.anything());
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Museum',address:'Main street',latitude:1,longitude:2,provider:'google_link'}));
+ expect(screen.queryByText('1, 2')).not.toBeInTheDocument();
+});
+test('unsupported link keeps the URL and reveals text fallback without changing a saved place',async()=>{
+ vi.spyOn(mapsClient,'resolveLink').mockRejectedValue(new Error('Unsupported link'));
+ vi.spyOn(mapsClient,'search').mockResolvedValue({places:[{...place,name:'Replacement'}]});
+ const onChange=vi.fn(),user=userEvent.setup();render(<LocationPicker value={place} onChange={onChange}/>);
+ expect(screen.getByText('Selected pin')).toBeInTheDocument();expect(screen.queryByLabelText('Широта')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://example.com/place'}});
+ expect(await screen.findByRole('alert')).toHaveTextContent('Не удалось определить место по ссылке');
+ expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://example.com/place');expect(onChange).not.toHaveBeenCalled();
+ await user.type(screen.getByRole('combobox'),'Replacement');
+ await user.click(await screen.findByRole('option',{name:/Replacement/}));
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({name:'Replacement'}));expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Удалить привязку'}));expect(onChange).toHaveBeenLastCalledWith(null);
+});
+test.each(['place','query','error'] as const)('late link %s cannot overwrite a newer URL or the saved selection',async(outcome)=>{
+ let finish!:(value:{place:typeof place|null;query:string|null})=>void,fail!:(reason:Error)=>void;
+ vi.spyOn(mapsClient,'resolveLink').mockReturnValue(new Promise((resolve,reject)=>{finish=resolve;fail=reject;}));
+ const onChange=vi.fn(),user=userEvent.setup();render(<LocationPicker value={place} onChange={onChange}/>);
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=Old'}});
+ await user.click(screen.getByRole('button',{name:'Найти'}));
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=New'}});
+ await act(async()=>{if(outcome==='error')fail(new Error('Late error'));else finish(outcome==='query'?{place:null,query:'Old query'}:{place:{...place,name:'Old point'},query:null});});
+ expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://maps.google.com/?q=New');
+ expect(screen.queryByRole('alert')).not.toBeInTheDocument();expect(screen.queryByRole('combobox')).not.toBeInTheDocument();expect(onChange).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'Оставить выбранное место'}));expect(screen.getByText('Selected pin')).toBeInTheDocument();
+});
+test('reverse failure preserves the exact usable point with a neutral human label',async()=>{
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place:{...place,name:'1, 2',address:''},query:null});
+ vi.spyOn(mapsClient,'reverse').mockRejectedValue(new Error('Offline'));
+ const onChange=vi.fn();render(<LocationPicker value={null} onChange={onChange}/>);
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=1,2'}});
+ fireEvent.click(await screen.findByRole('option',{name:/Точка из Google Maps/}));expect(screen.getByText('Адрес не определён')).toBeInTheDocument();
+ expect(onChange).toHaveBeenCalledWith(expect.objectContaining({latitude:1,longitude:2}));
+});
+
+test('a real parent update retains the URL and reopens candidates for replacement',async()=>{
+ const replacement={...place,name:'Another museum',address:'Other street'};
+ vi.spyOn(mapsClient,'resolveLink').mockResolvedValue({place:null,query:'Museum'});
+ vi.spyOn(mapsClient,'search').mockResolvedValue({places:[{...place,name:'Museum'},replacement]});
+ function Parent(){const [value,setValue]=useState<MapPlace|null>(null);return <LocationPicker value={value} onChange={setValue}/>;}
+ const user=userEvent.setup();render(<Parent/>);
+ fireEvent.change(screen.getByLabelText('Ссылка Google Maps'),{target:{value:'https://maps.google.com/?q=Museum'}});
+ await user.click(await screen.findByRole('option',{name:/^Museum/}));
+ expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Изменить место'}));
+ expect(screen.getByLabelText('Ссылка Google Maps')).toHaveValue('https://maps.google.com/?q=Museum');
+ await user.click(await screen.findByRole('option',{name:/Another museum/}));
+ expect(screen.getByText('Another museum')).toBeInTheDocument();expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
 });
