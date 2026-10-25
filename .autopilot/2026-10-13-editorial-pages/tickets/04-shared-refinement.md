@@ -1,9 +1,0 @@
-# 04 — Финальная доработка общей типографики и документации
-
-Волна3, blockers01/02/03. Final concern task, исходная система T1; дополнительных функций нет. Trace: spec «Общая система и дизайн», «Уточнения G2: refinement»; требования брифа sections2/3/33/34/36/39. Зона только public-site/site-tokens.ts/publication.module.css/README.md и новые tests если meaningful. Никаких других product изменений.
-
-Condition 1: --pub-font-editorial имеет единственный авторитетный источник (BASE h3 family через adapter), без мёртвого дублирующего CSS alias. Primitive serif switch продолжает распространяться на H1/H2/H3. Не менять реальные выбранные fonts/sizes/colors по вкусу.
-Condition 2: README точно называет где менять primitive/semantic token, BASE и центральные aliases/overrides, все reusable components/routegroup/pages/archive/start и prototype/document statuses. Inventory новых и изменённых existing файлов может быть отдельной секцией компактно; никакого spec намерения вместо code.
-Condition 3: Проведи visual refinement review скриншотов рабочих страниц на local3000 desktop/mobile, используя browser или готовые artifacts. Оцени hierarchy/rhythm/whitespace/length/images/transitions/CTA/mobile. Formats/archive визуально уже осмотрены родителем и выглядят цельными. Сейчас radio overflow Start чинит автор03 (не вмешиваться). Если bounded deficiency именно shared CSS есть — narrow fix, иначе запиши review без косметических edits ради edits. Проверь readable legal headings. No new animations/dependencies/pages.
-
-Прочитай executor контракт, interfaces и только эти spec headings. Пользователь autopilot full. Перед alias fix назови cause одной строкой. Lint/typecheck; browser propagation1 test после fix на source/dev при возможности, prod rebuildparent. Коммит/AGENTS/autopilotне менять. Возврат≤25lines contract, visualreviewfacts отдельнократко. BrowserQA матрица и финальный productionродитель. Не менять usermodifiedPlayground. Не писать mirror tests.

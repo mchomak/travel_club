@@ -1,3 +1,0 @@
-#03 — Final acceptance fixes
-Requirements:D03 + original cleanconsole/passingchecks. Zone:test6scene/helper,e2e,scoped metadata/docs only. Blockedby02,wave3.
-G4 ownhardwarewalkthroughpassed everycorefeature inclmidcurl,3flips,controls,4sizes,reducedmotion,lifecycle. Unit88pass. Consolemapundefined warnings; unusedCSSpreload warning(reproduceisolated). E2Eline56Playexpectsoftware observedTARGETafter7.42secs insteadplaying, actualhardwarePlayworks. Fixcause, preserve coverage andreal-time timeline. Runlint/typecheck,target10browser onsoftwareandhardware,productionbuild/Composeonlyfrontend thenwarn+error networkclean. Documentationtruthful. No new dependencies/otherroutechanges/geometryrefinement.

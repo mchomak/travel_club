@@ -49,3 +49,4 @@ playwright-report/
 /docs/qa/test-13/graphic-details/before/**/*.png
 /docs/qa/test-13/graphic-details/before/**/*.json
 /docs/qa/test-13/graphic-details/production/*.png
+/.autopilot/
