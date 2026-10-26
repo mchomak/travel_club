@@ -56,6 +56,25 @@ async function provider(page: Page) {
     return route.fulfill({ json: { status: 'ok', distance_m, duration_s, geometry: { type: 'LineString', coordinates: [[from.longitude, from.latitude], [to.longitude, to.latitude]] }, approximate: mode === 'transit', message: null } });
   });
 }
+async function keylessProvider(page: Page) {
+  await page.route('**/api/maps/config', route => route.fulfill({ json: { maps_key: null, search_enabled: false, routing_enabled: false } }));
+}
+
+test('keyboard selection on a map marker keeps the marker focused and its popup open', async ({ page }) => {
+  await provider(page);
+  const trip = await fixture(page, input => {
+    input.items = [event(input, 0, 'Музей на карте', a)];
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`/admin/trips/${trip.id}/builder?step=4&day=${trip.days[0].id}`);
+  const marker = map(page).locator('.leaflet-marker-icon[title="Музей на карте"]');
+  await expect(marker).toBeVisible();
+  await marker.focus();
+  await marker.press('Enter');
+  await expect(map(page).locator('.leaflet-popup-content')).toContainText('Музей на карте');
+  await expect(marker).toBeFocused();
+  await expect(marker).toHaveAttribute('aria-pressed', 'true');
+});
 async function saved(page: Page) { await expect(page.locator('.save-status')).toHaveText('Сохранено', { timeout: 15000 }); }
 const section = (page: Page) => page.getByRole('region', { name: 'Маршрут дня', exact: true, includeHidden: true });
 const map = (page: Page) => section(page).getByLabel('Карта выбранного дня', { exact: true });
@@ -105,15 +124,66 @@ test('real Leaflet route, mode and boundaries survive save/reload/duplicate; mis
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     await section(page).scrollIntoViewIfNeeded();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await section(page).screenshot({ path: path.join(qa, `route-${width}.png`) });
     const overflow = await page.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth, elements: Array.from(document.querySelectorAll('body *')).filter(el => el.getBoundingClientRect().right > innerWidth + 1 && getComputedStyle(el).position !== 'absolute').slice(0, 12).map(el => ({ tag: el.tagName, class: el.className, right: el.getBoundingClientRect().right })) }));
     expect.soft(overflow.scroll, JSON.stringify(overflow)).toBeLessThanOrEqual(width);
     expect((await map(page).boundingBox())!.height).toBeGreaterThanOrEqual(width > 760 ? 550 : 375);
     const beforePanel = (await map(page).boundingBox())!.height;
     await page.getByRole('region', { name: 'Добавить в маршрут' }).getByRole('button', { name: 'Впечатления', exact: true }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    if (width === 390) await dialog.evaluate(async element => { await Promise.all(element.getAnimations().map(animation => animation.finished)); });
     expect((await map(page).boundingBox())!.height).toBe(beforePanel);
+    if (width === 390) {
+      const dialogBox = await dialog.boundingBox();
+      expect(dialogBox).not.toBeNull();
+      expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
+      expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(width);
+      await dialog.getByLabel('Название элемента', { exact: true }).fill('Форма доступна на 390px');
+      await expect(dialog.getByRole('button', { name: 'Сохранить элемент', exact: true })).toBeVisible();
+      const formControls = await dialog.locator('input, select, textarea, button').evaluateAll(elements => elements
+        .filter(element => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        })
+        .map(element => {
+          const rect = element.getBoundingClientRect();
+          return { name: element.getAttribute('aria-label') || element.textContent?.trim(), left: rect.left, right: rect.right };
+        }));
+      expect(formControls.length).toBeGreaterThan(0);
+      expect(formControls.filter(control => control.left < 0 || control.right > width), JSON.stringify(formControls)).toEqual([]);
+    }
     await page.getByRole('dialog').getByRole('button', { name: 'Отмена', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    if (width === 390) {
+      const sectionBox = await section(page).boundingBox();
+      expect(sectionBox).not.toBeNull();
+      expect(sectionBox!.x).toBeGreaterThanOrEqual(0);
+      expect(sectionBox!.x + sectionBox!.width).toBeLessThanOrEqual(width);
+      const controls = await section(page).locator('button, select, input').evaluateAll(elements => elements
+        .filter(element => {
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        })
+        .map(element => {
+          const rect = element.getBoundingClientRect();
+          return { name: element.getAttribute('aria-label') || element.textContent?.trim(), left: rect.left, right: rect.right };
+        }));
+      expect(controls.length).toBeGreaterThan(0);
+      expect(controls.filter(control => control.left < sectionBox!.x - 1 || control.right > sectionBox!.x + sectionBox!.width + 1), JSON.stringify(controls)).toEqual([]);
+      await expect(section(page).getByRole('group').first().getByRole('button').first()).toBeEnabled();
+      const layout = await page.locator('.editor-layout').evaluate(element => {
+        const route = element.querySelector('.route-workspace')!.getBoundingClientRect();
+        const finances = element.querySelector('.finance-panel')!.getBoundingClientRect();
+        return { routeBottom: route.bottom, financeTop: finances.top, financeLeft: finances.left, financeRight: finances.right };
+      });
+      expect(layout.routeBottom).toBeLessThanOrEqual(layout.financeTop + 1);
+      expect(layout.financeLeft).toBeGreaterThanOrEqual(0);
+      expect(layout.financeRight).toBeLessThanOrEqual(width);
+    }
     const bounds = await map(page).evaluate(el => { const r=el.getBoundingClientRect(); return Array.from(el.querySelectorAll('.leaflet-marker-icon')).map(marker => { const m=marker.getBoundingClientRect(); return {title:marker.getAttribute('title'),inside:m.left>=r.left&&m.right<=r.right&&m.top>=r.top&&m.bottom<=r.bottom}; }); });
     expect.soft(bounds.filter(marker => !marker.inside), `fit bounds after resize ${width}`).toEqual([]);
   }
@@ -147,10 +217,11 @@ test('real Leaflet route, mode and boundaries survive save/reload/duplicate; mis
 });
 
 test('keyless Google point selects inline, collapses, reopens and persists without coordinate UI', async ({ page }) => {
+  await keylessProvider(page);
   const trip = await fixture(page);
-  const config = await (await page.request.get('/api/maps/config')).json();
-  expect(config).toEqual({ maps_key: null, search_enabled: false, routing_enabled: false });
   await page.goto(`/admin/trips/${trip.id}`);
+  const config = await page.evaluate(async () => await (await fetch('/api/maps/config')).json());
+  expect(config).toEqual({ maps_key: null, search_enabled: false, routing_enabled: false });
   await expect(section(page)).toContainText('Карта ещё не настроена');
   await expect(map(page)).toHaveCount(0);
   await page.getByRole('region', { name: 'Добавить в маршрут' }).getByRole('button', { name: 'Впечатления', exact: true }).click();
@@ -495,6 +566,7 @@ test('compact boundary orders day places and fills an addressless event from the
 });
 
 test('Escape closes a place dropdown inside the real item dialog and keeps the typed draft', async ({page})=>{
+  await keylessProvider(page);
   const trip=await fixture(page);
   await page.goto(`/admin/trips/${trip.id}`);
   await page.getByRole('region',{name:'Добавить в маршрут'}).getByRole('button',{name:'Впечатления',exact:true}).click();

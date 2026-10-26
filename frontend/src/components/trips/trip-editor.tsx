@@ -27,12 +27,12 @@ function canonical(value: unknown): unknown {
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)]));
   return value;
 }
-function Editor({ document, mode }: { document: TripDocument; mode: "editor" | "builder" }) {
+function Editor({ document, mode, initialStep, initialDay }: { document: TripDocument; mode: "editor" | "builder"; initialStep: number; initialDay?: string }) {
   const [session] = useState(() => new DraftSession(document, tripApi.save));
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const trip = state.draft, router = useRouter();
-  const [selected, setSelected] = useState<string | null>(() => mode === "builder" && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("day") ?? document.days[0]?.id ?? null : document.days[0]?.id ?? null);
-  const [step, setStep] = useState(() => { const value = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("step")) : 2; return value >= 1 && value <= 6 && Number.isInteger(value) ? value : 2; });
+  const [selected, setSelected] = useState<string | null>(() => mode === "builder" ? initialDay ?? document.days[0]?.id ?? null : document.days[0]?.id ?? null);
+  const [step, setStep] = useState(initialStep);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<"settings" | "day" | "rates" | null>(null), [editing, setEditing] = useState<ItemInput | null>(null), [deleting, setDeleting] = useState<ItemInput | null>(null);
   const [itemPanelOpen, setItemPanelOpen] = useState(false), [requireTypeChoice, setRequireTypeChoice] = useState(false);
@@ -229,4 +229,13 @@ function Editor({ document, mode }: { document: TripDocument; mode: "editor" | "
     {reloadConfirm && <Confirm title="Открыть последнюю версию?" action="Перечитать с сервера" onClose={() => setReloadConfirm(false)} onConfirm={() => { confirmedReload.current = true; window.location.reload(); }}>Поездка изменена в другой вкладке. При перезагрузке ваши несохранённые изменения будут потеряны. Текущий черновик остаётся доступным до подтверждения.</Confirm>}
   </>;
 }
-export function TripEditor({ id, mode = "editor" }: { id: string; mode?: "editor" | "builder" }) { const query = useQuery({ queryKey: ["trip", id], queryFn: () => tripApi.get(id), gcTime: 0 }); if (query.isPending) return <Loading />; if (query.isError) return <ErrorNotice error={query.error} retry={() => { void query.refetch(); }} />; return <Editor key={id} document={query.data} mode={mode} />; }
+export function TripEditor({ id, mode = "editor", initialStep, initialDay }: { id: string; mode?: "editor" | "builder"; initialStep?: number; initialDay?: string }) {
+  const query = useQuery({ queryKey: ["trip", id], queryFn: () => tripApi.get(id), gcTime: 0 });
+  const url = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
+  const requestedStep = Number(url?.get("step")), urlStep = Number.isInteger(requestedStep) && requestedStep >= 1 && requestedStep <= 6 ? requestedStep : 2;
+  const step = initialStep ?? (mode === "builder" ? urlStep : 2);
+  const day = initialDay ?? (mode === "builder" ? url?.get("day") ?? undefined : undefined);
+  if (query.isPending) return <Loading />;
+  if (query.isError) return <ErrorNotice error={query.error} retry={() => { void query.refetch(); }} />;
+  return <Editor key={`${id}:${mode}`} document={query.data} mode={mode} initialStep={step} initialDay={day} />;
+}

@@ -52,5 +52,15 @@
 - `ItemForm({ ..., context?: "default" | "long-haul" })`; default `default`. Step 2 скрывает local taxi/walk options, day editor сохраняет их, включая редактирование прежних элементов.
 - Новый `/admin/trips/[id]/builder` и `TripBuilder` — композиция общего полного `TripCalendar`, дневной навигации, второго `TripCalendar(visibleDayId)`, `getDayProgram`, `DayRouteBoundaries`, `DayRouteMap(hideBoundaries)`, прежних форм и `Finances`/`RatesForm`. Нет второго itinerary aggregate или новых API/DB/dependencies.
 - Preview/full-editor/finish переходы выполняют `DraftSession.save()` до navigation и остаются в draft при ошибке. Изменения revision во время подтверждения save ещё раз flush-ятся перед сообщением о сохранении/переходом.
-- T03 acceptance и suite: `acceptance-03.md`, 235 frontend tests/50 files; lint/typecheck/build green. Реальная API/DB/browser integration отнесена к T04.
+- T03 acceptance и suite: `acceptance-03.md`, 237 frontend tests/50 files; lint/typecheck/build green. Реальная API/DB/browser integration отнесена к T04.
 
+## Из handoff T04 — карта
+
+- `MapCanvas` сохраняет Leaflet marker layer при изменении только выбранного item; Enter и Space передают selection в общий TripEditor state, popup и keyboard focus остаются на живом маркере. Полный layer rebuild выполняется только при изменении nodes/geometries.
+- Playwright regression в `frontend/e2e/trip-map.spec.ts` проверяет keyboard selection, `aria-pressed`, popup и сохранённый DOM focus. T04 acceptance дополнительно проверил linked selection на реальной поездке с API/DB.
+- Root full frontend 237/50 и isolated backend 174 + Ruff зелёные на текущем дереве после handoff; Compose backend/frontend здоровы после rebuild.
+
+- `MapCanvas` selection-only updates меняют active Leaflet marker in place, не очищая layer; Enter и Space синхронно выбирают item, сохраняя keyboard focus и popup. Полный layer rebuild выполняется только при изменении geometry/nodes.
+- `/admin/trips/[id]/builder` передаёт `step`/`day` query в `TripEditor`; standalone builder читает URL, default stage 2. Переход из full editor сначала ждёт подтверждённое сохранение, возвращается на stage 4.
+- `frontend/e2e/trip-builder.spec.ts` — authenticated UI/API 8-day create/edit/move/delete/reload/direct SQL scenario, UI long-haul + hotel forms, failure/retry/delay/409, legacy null-offset full editor, route restore and responsive checks. Map-provider requests are stubbed; auth, main API, save and PostgreSQL are real.
+- Документы: `docs/trip-builder.md`; `acceptance-04.md` фиксирует R51, R62–R80, migration/DB proof, команды и ограничения. Final browser suite 42/42; frontend237/50; backend174/Ruff; populated-legacy migration и Compose passed.

@@ -277,6 +277,9 @@ test("new trip form warns on unsaved input and creates without a false leave war
   await expect.poll(() => unloadWouldWarn(page)).toBe(false);
   await title.fill("Сохранённая новая поездка");
   await page.getByRole("button", { name: "Создать поездку", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/trips\/[0-9a-f-]+\/builder\?step=2/);
+  await expect(page.getByRole("heading", { name: "Перелёты и переезды", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Полный редактор", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/trips\/[0-9a-f-]+$/);
   await saved(page);
   expect(dialogs).toEqual(["confirm"]);
@@ -547,6 +550,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.goto("/admin/trips");
   await page.getByRole("link", { name: "Создать поездку", exact: true }).click();
   await page.getByLabel("Название поездки", { exact: true }).fill("Проверка маршрута в Японии");
+  await page.locator("details > summary").filter({ hasText: "Дополнительные параметры" }).click();
   await page.getByLabel("Название для клиента", { exact: false }).fill("Пять дней в Японии");
   await page.getByLabel("Начало", { exact: true }).fill("2026-10-01");
   await page.getByLabel("Окончание", { exact: true }).fill("2026-10-05");
@@ -554,6 +558,9 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.getByLabel("Заметка для клиента", { exact: true }).fill("Клиентская заметка поездки");
   await page.getByLabel("Внутренняя заметка", { exact: false }).fill("PRIVATE_TRIP_SECRET");
   await page.getByRole("button", { name: "Создать поездку", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/trips\/[0-9a-f-]+\/builder\?step=2/);
+  await expect(page.getByRole("heading", { name: "Перелёты и переезды", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Полный редактор", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/trips\/[0-9a-f-]+$/);
   const url = page.url();
   const created = await (await page.request.get(`/api/trips/${url.split("/").at(-1)}`)).json() as TripDocument;
@@ -685,8 +692,8 @@ test("calendar opens overnight travel and hotel from a tablet without page overf
   await expect(calendar.locator(".trip-calendar-day-heading")).toContainText([/1 окт/, /2 окт/, /3 окт/]);
   const departure = firstDay.getByRole("button", { name: "Открыть перелёт Ночной рейс, 2026-10-01, 23:00 — 24:00" });
   const arrival = secondDay.getByRole("button", { name: "Открыть перелёт Ночной рейс, 2026-10-02, 00:00 — 01:00" });
-  await expect(departure).toContainText("23:00–24:00");
-  await expect(arrival).toContainText("00:00–01:00");
+  await expect(departure).toContainText("23:00 — 24:00");
+  await expect(arrival).toContainText("00:00 — 01:00");
   const hotelBar = calendar.getByRole("button", { name: "Открыть отель Отель у моря, 2026-10-01 — 2026-10-03" });
   await expect(hotelBar).toContainText("2026-10-01 — 2026-10-03");
   const headerGap = await calendar.locator(".trip-calendar-scroll").evaluate(scroll => {
