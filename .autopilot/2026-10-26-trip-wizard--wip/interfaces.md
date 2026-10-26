@@ -45,3 +45,12 @@
 - MapCanvas/TripCalendar поддерживают optional linked selection. Старые default props сохраняют прежний редактор.
 - Проверки/композиция: acceptance-02.md. Full frontend226/48files, lint/typecheck/build passed; backend не менялся.
 
+## Из таска 03 — сценарий конструктора
+
+- `TripEditor({ id, mode?: "editor" | "builder" })`; default `editor`. Обе страницы используют одну mounted `DraftSession`, CRUD/handlers/modal forms; builder state в `?step=1..6&day=<UUID>` без refetch.
+- `TripForm({ ..., variant?: "full" | "basic" })`; default `full`. Создание из basic-варианта сохраняет новый draft и открывает builder на step 2; старое полное редактирование формы доступно отдельно.
+- `ItemForm({ ..., context?: "default" | "long-haul" })`; default `default`. Step 2 скрывает local taxi/walk options, day editor сохраняет их, включая редактирование прежних элементов.
+- Новый `/admin/trips/[id]/builder` и `TripBuilder` — композиция общего полного `TripCalendar`, дневной навигации, второго `TripCalendar(visibleDayId)`, `getDayProgram`, `DayRouteBoundaries`, `DayRouteMap(hideBoundaries)`, прежних форм и `Finances`/`RatesForm`. Нет второго itinerary aggregate или новых API/DB/dependencies.
+- Preview/full-editor/finish переходы выполняют `DraftSession.save()` до navigation и остаются в draft при ошибке. Изменения revision во время подтверждения save ещё раз flush-ятся перед сообщением о сохранении/переходом.
+- T03 acceptance и suite: `acceptance-03.md`, 235 frontend tests/50 files; lint/typecheck/build green. Реальная API/DB/browser integration отнесена к T04.
+

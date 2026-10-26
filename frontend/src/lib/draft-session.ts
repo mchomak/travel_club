@@ -15,11 +15,18 @@ export class DraftSession {
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
   private emit(next: Partial<DraftState>) { this.state = { ...this.state, ...next }; this.listeners.forEach(fn => fn()); }
   change(draft: TripInput) { this.revision += 1; this.emit({ draft, dirty: true, status: this.inFlight ? "saving" : "dirty", error: null }); }
-  save(confirm = false): Promise<TripDocument> {
-    if (this.inFlight) return this.inFlight;
+  async save(confirm = false): Promise<TripDocument> {
+    if (this.inFlight) {
+      await this.inFlight;
+      return this.state.dirty ? this.save(confirm) : this.document;
+    }
     if (!this.state.dirty) return Promise.resolve(this.document);
-    this.inFlight = this.flush(confirm).finally(() => { this.inFlight = null; });
-    return this.inFlight;
+    this.inFlight = this.flush(confirm).finally(() => {
+      this.inFlight = null;
+      if (this.state.dirty && this.state.status === "saving") this.emit({ status: "dirty" });
+    });
+    await this.inFlight;
+    return this.state.dirty ? this.save() : this.document;
   }
   private async flush(confirm: boolean) {
     this.emit({ status: "saving", error: null });

@@ -1,0 +1,20 @@
+import { afterEach, expect, test, vi } from "vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { NewTrip } from "./new-trip";
+import { tripApi } from "@/lib/trips";
+import type { TripDocument } from "@/lib/contracts";
+const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
+afterEach(() => { cleanup(); vi.restoreAllMocks(); navigation.replace.mockReset(); });
+test("basic creation hides advanced fields, always creates a draft and resumes at transport", async () => {
+  const create = vi.spyOn(tripApi, "create").mockResolvedValue({ id: "created" } as TripDocument);
+  const user = userEvent.setup(); render(<NewTrip />);
+  expect(screen.queryByLabelText("Статус")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Название для клиента", { exact: false })).not.toBeVisible();
+  await user.type(screen.getByLabelText("Название поездки"), "Япония");
+  await user.click(screen.getByRole("button", { name: "Создать поездку" }));
+  await waitFor(() => expect(create).toHaveBeenCalledOnce());
+  expect(create.mock.calls[0][0]).toMatchObject({ status: "draft", internal_title: "Япония" });
+  expect(navigation.replace).toHaveBeenCalledWith("/admin/trips/created/builder?step=2");
+});

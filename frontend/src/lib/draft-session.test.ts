@@ -19,3 +19,23 @@ test("save serializes changes made in flight and waits for the latest draft", as
   expect(persist.mock.calls[1][1]).toMatchObject({ internal_title: "Свежий ввод", version: 2 });
   expect(session.draft.internal_title).toBe("Свежий ввод");
 });
+
+test("an edit queued by the final acknowledgement cannot leave the session saving forever", async () => {
+  const input = vectors.cases[0].input as TripInput;
+  const doc = { ...input, id: "trip", version: 1, created_by: "user", created_at: "", updated_at: "", calculation: calculateTrip(input), items: [] } as TripDocument;
+  const persist = vi.fn(async (_id, update) => ({ ...doc, ...update, version: update.version + 1 }));
+  const session = new DraftSession(doc, persist);
+  let queued = false;
+  session.subscribe(() => {
+    if (session.getSnapshot().status === "saved" && !queued) {
+      queued = true;
+      queueMicrotask(() => session.change({ ...session.draft, internal_title: "После ответа" }));
+    }
+  });
+  session.change({ ...session.draft, internal_title: "До ответа" });
+  await session.save();
+  expect(session.getSnapshot().status).not.toBe("saving");
+  await session.save();
+  expect(session.getSnapshot()).toMatchObject({ dirty: false, status: "saved", draft: { internal_title: "После ответа" } });
+  expect(persist).toHaveBeenCalledTimes(2);
+});

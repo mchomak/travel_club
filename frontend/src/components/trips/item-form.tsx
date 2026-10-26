@@ -23,7 +23,7 @@ function validUrl(value: string | null) {
   } catch { return urlError; }
 }
 
-export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, requireTypeChoice = false }: { initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void; requireTypeChoice?: boolean }) {
+export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, requireTypeChoice = false, context = "default" }: { context?: "default" | "long-haul"; initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void; requireTypeChoice?: boolean }) {
   const isNew = !trip.items.some(existing => existing.id === initial.id);
   const initialStartDate = trip.days.find(day => day.id === initial.day_id)?.date;
   const inferredEnd = initialStartDate && !hasUtcOffsets(initial) && !initial.end_day_id && initial.start_time && initial.end_time && initial.end_time < initial.start_time
@@ -197,12 +197,12 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   };
   const labels = profile[item.type] ?? profile.other;
   const category = eventCategory(item.type);
-  const subtypes = subtypeOptions[category];
+  const subtypes = subtypeOptions[category]?.filter(option => context !== "long-haul" || (option.value !== "taxi" && option.value !== "walk") || option.value === displaySubtype(initial));
   const selectedSubtype = displaySubtype(item);
   const legacySubtype = item.type === "train_bus" && !selectedSubtype;
   const expenseWithoutSchedule = (item.type === "other" || item.type === "insurance") && !item.day_id && !item.start_time && !item.end_time;
   return <form onSubmit={handleSubmit(save)} className="trip-form">
-    <Field label="Тип события" wide><select value={typeChosen ? category : ""} onChange={event => { if (event.target.value) changeType(event.target.value as ItemType); else setTypeChosen(false); }}><option value="" disabled={!requireTypeChoice}>Выберите тип события</option>{eventCategories.map(({ type, label }) => <option key={type} value={type}>{label}</option>)}{category === "other" && typeChosen && <option value="other">Допрасход</option>}</select></Field>
+    <Field label="Тип события" wide><select value={typeChosen ? category : ""} onChange={event => { if (event.target.value) changeType(event.target.value as ItemType); else setTypeChosen(false); }}><option value="" disabled={!requireTypeChoice}>Выберите тип события</option>{eventCategories.filter(option => context !== "long-haul" || option.type === "flight" || option.type === "transfer").map(({ type, label }) => <option key={type} value={type}>{label}</option>)}{category === "other" && typeChosen && <option value="other">Допрасход</option>}</select></Field>
     {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...titleField} onChange={event=>{manualTitle.current=true;void titleField.onChange(event);}} /></Field>
