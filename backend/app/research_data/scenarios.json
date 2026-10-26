@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "bank_version": "1.0",
+  "version": "2.2",
+  "bank_version": "2.2",
   "scenarios": [
     {
       "code": "trips_experienced",
@@ -341,6 +341,202 @@
         "B08"
       ],
       "resolution": "B — необязательное приложение к любому основному сценарию, не пятая категория."
+    }
+  ],
+  "expanded_modules": [
+    {
+      "code": "A",
+      "label": "Нужны ли две услуги: Design и Ready",
+      "question_codes": [
+        "N01",
+        "N02",
+        "N03",
+        "N04",
+        "N05",
+        "N06"
+      ],
+      "hypothesis_ids": [
+        "H18",
+        "H20"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "B",
+      "label": "Бесплатные гайды, соцсети и ИИ как альтернатива",
+      "question_codes": [
+        "N07",
+        "N08",
+        "N09",
+        "N10",
+        "N11"
+      ],
+      "hypothesis_ids": [
+        "H19"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "C",
+      "label": "Ценность, боли и цена Services",
+      "question_codes": [
+        "N12",
+        "N13",
+        "N14",
+        "N15",
+        "N16",
+        "N17"
+      ],
+      "hypothesis_ids": [
+        "H21"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "D",
+      "label": "Момент оплаты и предоплата",
+      "question_codes": [
+        "N18",
+        "N19",
+        "N20",
+        "N21",
+        "N22",
+        "N23"
+      ],
+      "hypothesis_ids": [
+        "H22"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "E",
+      "label": "Доверие к TC и роль основателей",
+      "question_codes": [
+        "N24",
+        "N25",
+        "N26",
+        "N27",
+        "N28",
+        "N29"
+      ],
+      "hypothesis_ids": [
+        "H23"
+      ],
+      "scenario_codes": [
+        "trips_experienced",
+        "trips_beginner",
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "G",
+      "label": "Поддержка в путешествии",
+      "question_codes": [
+        "N38",
+        "N39",
+        "N40",
+        "N41",
+        "N42"
+      ],
+      "hypothesis_ids": [
+        "H25"
+      ],
+      "scenario_codes": [
+        "trips_experienced",
+        "trips_beginner",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "H",
+      "label": "Правки и изменение вводных",
+      "question_codes": [
+        "N43",
+        "N44",
+        "N45",
+        "N46",
+        "N47"
+      ],
+      "hypothesis_ids": [
+        "H26"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "I",
+      "label": "Отдельная оплата TC и прямые платежи поставщикам",
+      "question_codes": [
+        "N48",
+        "N49",
+        "N50",
+        "N51",
+        "N52",
+        "N53"
+      ],
+      "hypothesis_ids": [
+        "H27"
+      ],
+      "scenario_codes": [
+        "trips_experienced",
+        "trips_beginner",
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "J",
+      "label": "Заявка, анкета, консультация и путь заказа",
+      "question_codes": [
+        "N54",
+        "N55",
+        "N56",
+        "N57",
+        "N58",
+        "N59"
+      ],
+      "hypothesis_ids": [
+        "H28"
+      ],
+      "scenario_codes": [
+        "travel_design",
+        "travel_ready"
+      ]
+    },
+    {
+      "code": "L",
+      "label": "Trips: компания, полная цена и набор группы",
+      "question_codes": [
+        "N65",
+        "N66",
+        "N67",
+        "N68",
+        "N69",
+        "N70",
+        "N71"
+      ],
+      "hypothesis_ids": [
+        "H30"
+      ],
+      "scenario_codes": [
+        "trips_experienced",
+        "trips_beginner"
+      ]
     }
   ]
 }

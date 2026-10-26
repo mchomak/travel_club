@@ -296,10 +296,15 @@ def _make_snapshot(
         "interpretation",
         "answer_guidance",
     )
-    return [
-        {**{key: questions[code].get(key) for key in fields}, "bank_version": version}
-        for code in codes
-    ]
+    snapshots = []
+    for code in codes:
+        question = questions[code]
+        snapshot = {**{key: question.get(key) for key in fields}, "bank_version": version}
+        module_code = question.get("module_code")
+        if isinstance(module_code, str):
+            snapshot["module_code"] = module_code
+        snapshots.append(snapshot)
+    return snapshots
 
 
 def _recommendation(answers: dict[str, Any], goal: str | None) -> dict[str, Any]:

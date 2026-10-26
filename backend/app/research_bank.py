@@ -15,14 +15,20 @@ EXPECTED_QUESTION_CODES = {
     *(f"R{number:02}" for number in range(1, 13)),
     *(f"B{number:02}" for number in range(1, 13)),
     *(f"X{number:02}" for number in range(1, 13)),
+    *(f"N{number:02}" for number in (*range(1, 30), *range(38, 60), *range(65, 72))),
 }
-EXPECTED_HYPOTHESIS_CODES = {f"H{number:02}" for number in range(1, 18)}
+EXPECTED_HYPOTHESIS_CODES = {
+    *(f"H{number:02}" for number in range(1, 24)),
+    *(f"H{number:02}" for number in range(25, 29)),
+    "H30",
+}
 EXPECTED_CATEGORIES = {
     "trips_experienced",
     "trips_beginner",
     "travel_design",
     "travel_ready",
 }
+EXPECTED_EXPANDED_MODULE_CODES = {"A", "B", "C", "D", "E", "G", "H", "I", "J", "L"}
 SUPPORTED_CLASSIFICATION_OPERATORS = {
     "equals",
     "in",
@@ -261,6 +267,12 @@ def validate_configuration(
         expected=EXPECTED_HYPOTHESIS_CODES,
         issues=issues,
     )
+    bank_version = bank.get("bank_version")
+    scenarios_bank_version = scenarios.get("bank_version")
+    if not isinstance(bank_version, str) or not bank_version.strip():
+        issues.append("question bank bank_version must be a non-empty string")
+    elif scenarios_bank_version != bank_version:
+        issues.append("scenarios bank_version must match question bank bank_version")
 
     hypotheses = bank.get("hypotheses")
     if isinstance(hypotheses, list):
@@ -354,6 +366,157 @@ def validate_configuration(
                     label=f"scenario {code} {key}",
                     known_codes=question_codes,
                     issues=issues,
+                )
+
+    expanded_modules = _array_section(
+        scenarios, "expanded_modules", label="scenarios expanded_modules", issues=issues
+    )
+    non_object_modules = sum(1 for entry in expanded_modules if not isinstance(entry, dict))
+    if non_object_modules:
+        issues.append(f"expanded_modules contains {non_object_modules} non-object entries")
+    module_codes = [
+        entry.get("code", "<missing>")
+        for entry in expanded_modules
+        if isinstance(entry, dict)
+    ]
+    invalid_module_codes = sorted(
+        repr(code) for code in module_codes if not isinstance(code, str)
+    )
+    if invalid_module_codes:
+        issues.append("expanded module codes must be strings: " + ", ".join(invalid_module_codes))
+    string_module_codes = [code for code in module_codes if isinstance(code, str)]
+    duplicate_module_codes = sorted(
+        code for code, count in Counter(string_module_codes).items() if count > 1
+    )
+    missing_module_codes = sorted(EXPECTED_EXPANDED_MODULE_CODES - set(string_module_codes))
+    unknown_module_codes = sorted(set(string_module_codes) - EXPECTED_EXPANDED_MODULE_CODES)
+    if duplicate_module_codes:
+        issues.append("duplicate expanded module codes: " + ", ".join(duplicate_module_codes))
+    if missing_module_codes:
+        issues.append("missing expanded module codes: " + ", ".join(missing_module_codes))
+    if unknown_module_codes:
+        issues.append("unknown expanded module codes: " + ", ".join(unknown_module_codes))
+    for module in expanded_modules:
+        if not isinstance(module, dict):
+            continue
+        code = module.get("code", "<unknown>")
+        if not isinstance(module.get("label"), str) or not module["label"].strip():
+            issues.append(f"expanded module {code} has no label")
+        refs = module.get("question_codes", [])
+        if not isinstance(refs, list):
+            issues.append(f"expanded module {code} question_codes must be an array")
+        else:
+            _validate_question_refs(
+                refs,
+                label=f"expanded module {code}",
+                known_codes=question_codes,
+                issues=issues,
+            )
+            duplicates = sorted(
+                ref
+                for ref, count in Counter(ref for ref in refs if isinstance(ref, str)).items()
+                if count > 1
+            )
+            if duplicates:
+                issues.append(
+                    f"expanded module {code} repeats question codes: {', '.join(duplicates)}"
+                )
+
+        hypothesis_refs = module.get("hypothesis_ids", [])
+        if not isinstance(hypothesis_refs, list):
+            issues.append(f"expanded module {code} hypothesis_ids must be an array")
+        else:
+            non_string_refs = sorted(
+                repr(ref) for ref in hypothesis_refs if not isinstance(ref, str)
+            )
+            if non_string_refs:
+                issues.append(
+                    f"expanded module {code} has non-string hypothesis IDs: "
+                    + ", ".join(non_string_refs)
+                )
+            invalid_refs = sorted(
+                {
+                    ref
+                    for ref in hypothesis_refs
+                    if isinstance(ref, str) and ref not in hypothesis_codes
+                }
+            )
+            if invalid_refs:
+                issues.append(
+                    f"expanded module {code} references unknown hypotheses: "
+                    + ", ".join(invalid_refs)
+                )
+            string_hypothesis_refs = [ref for ref in hypothesis_refs if isinstance(ref, str)]
+            duplicates = sorted(
+                ref for ref, count in Counter(string_hypothesis_refs).items() if count > 1
+            )
+            if duplicates:
+                issues.append(
+                    f"expanded module {code} repeats hypothesis IDs: {', '.join(duplicates)}"
+                )
+
+        category_refs = module.get("scenario_codes", [])
+        if not isinstance(category_refs, list):
+            issues.append(f"expanded module {code} scenario_codes must be an array")
+        else:
+            non_string_refs = sorted(
+                repr(ref) for ref in category_refs if not isinstance(ref, str)
+            )
+            if non_string_refs:
+                issues.append(
+                    f"expanded module {code} has non-string scenario codes: "
+                    + ", ".join(non_string_refs)
+                )
+            invalid_refs = sorted(
+                {
+                    ref
+                    for ref in category_refs
+                    if isinstance(ref, str) and ref not in EXPECTED_CATEGORIES
+                }
+            )
+            if invalid_refs:
+                issues.append(
+                    f"expanded module {code} references unknown categories: "
+                    + ", ".join(invalid_refs)
+                )
+            string_category_refs = [ref for ref in category_refs if isinstance(ref, str)]
+            duplicates = sorted(
+                ref for ref, count in Counter(string_category_refs).items() if count > 1
+            )
+            if duplicates:
+                issues.append(
+                    f"expanded module {code} repeats scenario codes: {', '.join(duplicates)}"
+                )
+
+    modules_by_code = {
+        module["code"]: module
+        for module in expanded_modules
+        if isinstance(module, dict) and isinstance(module.get("code"), str)
+    }
+    if isinstance(question_entries, list):
+        for question in question_entries:
+            if not isinstance(question, dict):
+                continue
+            if question.get("section") != "expanded" and "module_code" not in question:
+                continue
+            question_code = question.get("code", "<unknown>")
+            module_code = question.get("module_code")
+            if not isinstance(module_code, str) or not module_code:
+                issues.append(f"question {question_code} must reference an expanded module")
+                continue
+            module = modules_by_code.get(module_code)
+            if module is None:
+                issues.append(
+                    f"question {question_code} references unknown expanded module: {module_code}"
+                )
+                continue
+            module_question_codes = module.get("question_codes")
+            if (
+                isinstance(module_question_codes, list)
+                and question_code not in module_question_codes
+            ):
+                issues.append(
+                    f"question {question_code} is not listed in expanded module {module_code}"
                 )
 
     optional_modules = _object_section(

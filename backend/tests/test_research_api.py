@@ -81,8 +81,11 @@ def test_authenticated_configuration_endpoint_exposes_editable_questionnaire(aut
     assert response.status_code == 200
     configuration = response.json()
     assert configuration["validation_issues"] == []
-    assert len(configuration["bank"]["questions"]) == 82
-    assert len(configuration["bank"]["hypotheses"]) == 17
+    assert len(configuration["bank"]["questions"]) == 140
+    assert len(configuration["bank"]["hypotheses"]) == 28
+    assert {module["code"] for module in configuration["scenarios"]["expanded_modules"]} == {
+        "A", "B", "C", "D", "E", "G", "H", "I", "J", "L"
+    }
     assert len(configuration["screening"]["fields"]) == 9
     assert configuration["offers_enabled"] is False
 
@@ -506,6 +509,30 @@ def test_brand_questions_stay_at_end_when_supplementing_in_progress_interview(au
     assert all(code.startswith("B") for code in codes[codes.index("B01"):])
 
 
+def test_new_expanded_question_can_be_appended_with_its_module_metadata(authenticated):
+    created = authenticated.post(
+        "/api/research/respondents",
+        headers=HEADERS,
+        json={"screening_answers": {"name": "Expanded module", "independent_trips_24m": "0"}},
+    ).json()
+    interview_id = created["interviews"][0]["id"]
+    authenticated.post(f"/api/research/interviews/{interview_id}/start", headers=HEADERS)
+
+    appended = authenticated.post(
+        f"/api/research/interviews/{interview_id}/questions",
+        headers=HEADERS,
+        json={"question_codes": ["N43"]},
+    )
+
+    assert appended.status_code == 200
+    question = next(
+        item for item in appended.json()["question_snapshot"] if item["code"] == "N43"
+    )
+    assert question["module_code"] == "H"
+    assert question["hypothesis_ids"] == ["H26"]
+    assert question["bank_version"] == "2.2"
+
+
 def test_screening_recalculation_does_not_rewrite_started_route_or_answers(authenticated):
     created = authenticated.post(
         "/api/research/respondents",
@@ -845,7 +872,7 @@ def test_xlsx_export_contains_full_database_empty_answers_and_safe_long_text(aut
     )
     assert exported_long == long_text
     assert by_code["G01"][answer_headers.index("Hypothesis IDs")]
-    assert workbook["Hypotheses"].max_row == 18
+    assert workbook["Hypotheses"].max_row == 29
 
     authenticated.put(
         f"/api/research/interviews/{interview_id}/answers/G01",
