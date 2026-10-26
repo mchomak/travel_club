@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ResearchConfig, ResearchInterview, ResearchInterviewVersion, ResearchInterviewVersions, ResearchQuestion, ResearchRespondent } from "@/lib/research";
+import type { ResearchCategory, ResearchConfig, ResearchInterview, ResearchInterviewVersion, ResearchInterviewVersions, ResearchQuestion, ResearchRespondent } from "@/lib/research";
 import { researchApi } from "@/lib/research";
 import { RespondentDetailPage } from "./respondent-detail";
 
@@ -184,7 +184,7 @@ describe("Respondent interview snapshot fallback", () => {
     vi.mocked(researchApi.respondent).mockResolvedValueOnce(respondent);
     vi.mocked(researchApi.config).mockResolvedValueOnce({
       ...config,
-      scenarios: { version: "2", scenarios: [] },
+      scenarios: { version: "2", scenarios: [], expanded_modules: [] },
     });
     const startInterview = vi.spyOn(researchApi, "startInterview");
 
@@ -230,6 +230,7 @@ describe("Respondent interview snapshot fallback", () => {
       scenarios: {
         version: "2",
         scenarios: [{ code: "trips_beginner", label: "Trips / Начинающий путешественник", question_codes: ["G99"] }],
+        expanded_modules: [],
       },
       validation_issues: ["missing scenarios: travel_design"],
     });
@@ -285,6 +286,103 @@ describe("Respondent interview snapshot fallback", () => {
     expect(screen.getByLabelText("Ответ G02")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Изменить анкету" })).toBeDisabled();
     expect(screen.getByText("Актуальная конфигурация анкеты недоступна. Изменение ответов анкеты временно отключено.")).toBeInTheDocument();
+  });
+});
+
+describe("Expanded question modules", () => {
+  it.each([
+    ["trips_experienced", ["E", "G", "I", "L"]],
+    ["trips_beginner", ["E", "G", "I", "L"]],
+    ["travel_design", ["A", "B", "C", "D", "E", "H", "I", "J"]],
+    ["travel_ready", ["A", "B", "C", "D", "E", "G", "H", "I", "J"]],
+  ] as Array<[ResearchCategory, string[]]>) (
+    "shows only the documented module choices for %s and filters out questions already in the interview",
+    async (scenarioCode, expectedModuleCodes) => {
+      const alreadyAddedQuestion = config.bank.questions.find((question) => question.code === "N24");
+      expect(alreadyAddedQuestion).toBeDefined();
+      const activeInterview = {
+        ...interview,
+        status: "in_progress",
+        scenario_code: scenarioCode,
+        question_snapshot: [alreadyAddedQuestion as ResearchQuestion],
+      } satisfies ResearchInterview;
+      vi.mocked(researchApi.respondent).mockResolvedValueOnce({ ...respondent, interviews: [activeInterview] });
+      const user = userEvent.setup();
+
+      render(<RespondentDetailPage />);
+      await user.click(await screen.findByRole("button", { name: "Выбрать вопросы" }));
+
+      const modulePicker = await screen.findByRole("combobox", { name: "Тематический модуль" });
+      expect(Array.from(modulePicker.querySelectorAll("option")).map((option) => option.value))
+        .toEqual(["all", ...expectedModuleCodes]);
+      expect(screen.getByRole("region", { name: "Расширенный банк CustDev" })).toBeInTheDocument();
+
+      await user.selectOptions(modulePicker, "E");
+      for (const code of ["N25", "N26", "N27", "N28", "N29"]) {
+        expect(screen.getByRole("checkbox", { name: new RegExp(`^${code}\\b`) })).toBeInTheDocument();
+      }
+      expect(screen.queryByRole("checkbox", { name: /^N24\b/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("checkbox", { name: /^N23\b/ })).not.toBeInTheDocument();
+    },
+  );
+
+  it("keeps the all-bank search available, including brand questions, while offers stay hidden", async () => {
+    const activeInterview = { ...interview, status: "in_progress" } satisfies ResearchInterview;
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce({ ...respondent, interviews: [activeInterview] });
+    const user = userEvent.setup();
+
+    render(<RespondentDetailPage />);
+    await user.click(await screen.findByRole("button", { name: "Выбрать вопросы" }));
+
+    const modulePicker = await screen.findByRole("combobox", { name: "Тематический модуль" });
+    expect(modulePicker).toHaveValue("all");
+    const search = screen.getByRole("textbox", { name: "Поиск вопроса" });
+    await user.type(search, "B01");
+    expect(screen.getByRole("checkbox", { name: /^B01\b/ })).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "X01");
+    expect(screen.queryByRole("checkbox", { name: /^X01\b/ })).not.toBeInTheDocument();
+    expect(screen.getByText("Подходящих вопросов не найдено.")).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "N24");
+    expect(screen.getByRole("checkbox", { name: /^N24\b/ })).toBeInTheDocument();
+  });
+
+  it("explains when the current category has no module and keeps the whole bank selectable", async () => {
+    const activeInterview = { ...interview, status: "in_progress" } satisfies ResearchInterview;
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce({ ...respondent, interviews: [activeInterview] });
+    vi.mocked(researchApi.config).mockResolvedValueOnce({
+      ...config,
+      scenarios: { ...config.scenarios, expanded_modules: [] },
+    } as ResearchConfig);
+    const user = userEvent.setup();
+
+    render(<RespondentDetailPage />);
+    await user.click(await screen.findByRole("button", { name: "Выбрать вопросы" }));
+
+    const modulePicker = await screen.findByRole("combobox", { name: "Тематический модуль" });
+    expect(Array.from(modulePicker.querySelectorAll("option")).map((option) => option.value)).toEqual(["all"]);
+    expect(screen.getByText("Для этой категории нет тематических модулей. Переключитесь на «Весь банк», чтобы искать среди всех вопросов."))
+      .toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Поиск вопроса" })).toBeEnabled();
+  });
+
+  it("does not present module choices as successfully loaded when config validation has issues", async () => {
+    const activeInterview = { ...interview, status: "in_progress" } satisfies ResearchInterview;
+    vi.mocked(researchApi.respondent).mockResolvedValueOnce({ ...respondent, interviews: [activeInterview] });
+    vi.mocked(researchApi.config).mockResolvedValueOnce({
+      ...config,
+      validation_issues: ["expanded module points to a missing question"],
+    });
+    const user = userEvent.setup();
+
+    render(<RespondentDetailPage />);
+    await user.click(await screen.findByRole("button", { name: "Выбрать вопросы" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Тематические модули временно недоступны: конфигурация вопросника содержит ошибки.");
+    expect(screen.getByRole("combobox", { name: "Тематический модуль" })).toHaveValue("all");
   });
 });
 

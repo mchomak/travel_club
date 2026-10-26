@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, Plus } from "lucide-react";
 import {
-  InterviewStatus, ResearchCategory, ResearchConfig, ResearchInterview, ResearchInterviewVersion, ResearchInterviewVersions, ResearchQuestion, ResearchScenario,
+  InterviewStatus, ResearchCategory, ResearchConfig, ResearchExpandedModule, ResearchInterview, ResearchInterviewVersion, ResearchInterviewVersions, ResearchQuestion, ResearchScenario,
   ResearchRespondent, flushPendingAnswers, researchApi, scrollResearchToTop,
 } from "@/lib/research";
 import { formatAgeLabel, formatAgeRange } from "./age-range";
@@ -26,7 +26,7 @@ const answerNames: Record<string, string> = {
   time_cost: "Нехватка времени", budget: "Планирование бюджета", documents_language: "Документы или язык", none: "Ничего не вызывает трудностей",
   "0": "Ни одного", "1": "Одно", "2": "Два", "3_plus": "Три и больше",
 };
-const sectionNames: Record<string, string> = { G: "Общие вопросы", T: "TC Trips", D: "Travel Design", R: "Travel Ready", B: "Бренд Travel Club", X: "Проверка предложений" };
+const sectionNames: Record<string, string> = { G: "Общие вопросы", T: "TC Trips", D: "Travel Design", R: "Travel Ready", B: "Бренд Travel Club", N: "Расширенный банк CustDev", X: "Проверка предложений" };
 const dateLabel = (value?: string | null) => value ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 const sortedInterviews = (respondent: ResearchRespondent) => [...respondent.interviews].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
@@ -53,6 +53,7 @@ export function RespondentDetailPage() {
   const [screeningSaved, setScreeningSaved] = useState(false);
   const [draftCategory, setDraftCategory] = useState<ResearchCategory | "">("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedModuleCode, setSelectedModuleCode] = useState("all");
   const [questionSearch, setQuestionSearch] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [confirmComplete, setConfirmComplete] = useState(false);
@@ -195,6 +196,30 @@ export function RespondentDetailPage() {
   ) : [];
   const hasScenarioOptions = scenarioOptions.length > 0;
   const configIsValid = Array.isArray(config?.validation_issues) && config.validation_issues.length === 0;
+  const expandedModules = configIsValid && Array.isArray(config?.scenarios?.expanded_modules)
+    ? config.scenarios.expanded_modules.filter((module): module is ResearchExpandedModule =>
+      !!module
+      && typeof module === "object"
+      && typeof module.code === "string"
+      && module.code.trim() !== ""
+      && typeof module.label === "string"
+      && module.label.trim() !== ""
+      && Array.isArray(module.question_codes)
+      && module.question_codes.length > 0
+      && module.question_codes.every((code) => typeof code === "string" && code.startsWith("N") && bankQuestionCodes.has(code))
+      && Array.isArray(module.hypothesis_ids)
+      && module.hypothesis_ids.every((code) => typeof code === "string" && code.trim() !== "")
+      && Array.isArray(module.scenario_codes)
+      && module.scenario_codes.length > 0
+      && module.scenario_codes.every((code) => Object.keys(categoryNames).includes(code))
+    )
+    : [];
+  const currentScenarioCode = interview?.scenario_code;
+  const categoryModules = currentScenarioCode
+    ? expandedModules.filter((module) => module.scenario_codes.includes(currentScenarioCode))
+    : [];
+  const selectedModule = categoryModules.find((module) => module.code === selectedModuleCode);
+  const moduleQuestionCodes = selectedModule ? new Set(selectedModule.question_codes) : null;
   const canStartInterview = configIsValid && scenarioOptions.some((scenario) => scenario.code === draftCategory);
   const screeningConfigAvailable = Array.isArray(config?.screening?.fields) && config.screening.fields.length > 0;
   const bankQuestionsAvailable = Array.isArray(config?.bank?.questions);
@@ -421,7 +446,8 @@ export function RespondentDetailPage() {
 
   const allQuestions = bankQuestionsAvailable ? config.bank.questions : [];
   const included = new Set(questions.map((question) => question.code));
-  const availableQuestions = allQuestions.filter((question) => !included.has(question.code) && (config?.offers_enabled || !question.code.startsWith("X"))
+  const availableQuestions = allQuestions.filter((question) => (!moduleQuestionCodes || moduleQuestionCodes.has(question.code))
+    && !included.has(question.code) && (config?.offers_enabled || !question.code.startsWith("X"))
     && (`${question.code} ${question.text}`.toLocaleLowerCase("ru").includes(questionSearch.toLocaleLowerCase("ru"))));
 
   if (!respondent || !interview || loadedRespondentId !== id) return <div className={styles.page}>
@@ -521,6 +547,14 @@ export function RespondentDetailPage() {
           {!canAppendQuestions && <p className={styles.muted} role="status">{configLoading ? "Ожидаем актуальные данные вопросника. Добавление временно отключено." : !bankQuestionsAvailable ? "Актуальный банк вопросов недоступен. Добавление вопросов временно отключено." : "Актуальный список сценариев недоступен. Добавление вопросов временно отключено."}</p>}
           <div className={styles.questionPicker}><button className={styles.secondaryButton} type="button" onClick={() => setPickerOpen((open) => bankQuestionsAvailable && !open)} disabled={!bankQuestionsAvailable}><Plus size={16} aria-hidden />{pickerOpen ? "Скрыть список вопросов" : "Выбрать вопросы"}</button>
             {pickerOpen && <>
+              <label className={styles.label} htmlFor="question-module"><span>Тематический модуль</span>
+                <select id="question-module" className={styles.select} value={selectedModule ? selectedModule.code : "all"} onChange={(event) => setSelectedModuleCode(event.target.value)}>
+                  <option value="all">Весь банк</option>
+                  {categoryModules.map((module) => <option key={module.code} value={module.code}>{module.label}</option>)}
+                </select>
+              </label>
+              {!configIsValid && <p className={styles.muted} role="status">Тематические модули временно недоступны: конфигурация вопросника содержит ошибки.</p>}
+              {configIsValid && categoryModules.length === 0 && <p className={styles.muted} role="status">Для этой категории нет тематических модулей. Переключитесь на «Весь банк», чтобы искать среди всех вопросов.</p>}
               <label className={styles.srOnly} htmlFor="question-search">Поиск вопроса</label><input id="question-search" className={styles.input} value={questionSearch} onChange={(event) => setQuestionSearch(event.target.value)} placeholder="Найти по коду или тексту" />
               <div className={styles.pickerOptions}>{availableQuestions.map((question) => <label className={styles.pickerOption} key={question.code}><input type="checkbox" checked={selectedCodes.includes(question.code)} onChange={(event) => setSelectedCodes((current) => event.target.checked ? [...current, question.code] : current.filter((code) => code !== question.code))} /><span><strong>{question.code}</strong> · {question.text}</span></label>)}
                 {!availableQuestions.length && <p className={styles.muted}>Подходящих вопросов не найдено.</p>}</div>

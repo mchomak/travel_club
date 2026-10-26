@@ -11,10 +11,13 @@ export interface ResearchQuestion {
   follow_ups?: string[]; hypothesis_ids?: string[]; interpretation?: string;
   answer_guidance?: string; bank_version?: string;
 }
+export interface ResearchExpandedModule {
+  code: string; label: string; question_codes: string[]; hypothesis_ids: string[]; scenario_codes: ResearchCategory[];
+}
 export interface ResearchScenario { code: ResearchCategory; label: string; question_codes: string[] }
 export interface ResearchConfig {
   bank: { bank_version: string; questions: ResearchQuestion[]; hypotheses: { code: string; text?: string; description?: string }[] };
-  scenarios: { version: string; scenarios: ResearchScenario[]; optional_modules?: { brand?: { question_codes?: string[] }; offers?: { enabled: boolean; question_codes?: string[] } } };
+  scenarios: { version: string; scenarios: ResearchScenario[]; expanded_modules: ResearchExpandedModule[]; optional_modules?: { brand?: { question_codes?: string[] }; offers?: { enabled: boolean; question_codes?: string[] } } };
   screening: { fields: ScreeningField[]; additional_fields?: ScreeningField[] };
   classification: { categories?: { code: ResearchCategory; label?: string }[] };
   validation_issues: string[];
