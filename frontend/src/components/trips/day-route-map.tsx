@@ -17,8 +17,9 @@ const localModes=['drive','walk'] as const;
 export interface DayRouteMapProps {
  trip:TripInput;dayId:string;onChange:(patch:Partial<TripInput>)=>void;
  onAddTransfer?:(item:ItemInput)=>void;onOpenItem?:(itemId:string)=>void;
+ hideBoundaries?:boolean;selectedItemId?:string|null;onSelectItem?:(itemId:string)=>void;
 }
-export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem}:DayRouteMapProps){
+export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem,hideBoundaries=false,selectedItemId,onSelectItem}:DayRouteMapProps){
  const latest=useRef({trip,onChange,onAddTransfer});
  useLayoutEffect(()=>{latest.current={trip,onChange,onAddTransfer};},[trip,onChange,onAddTransfer]);
  const plan=useMemo(()=>buildDayRoute(trip,dayId),[trip,dayId]);
@@ -47,19 +48,18 @@ export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem}:DayRo
  const applyTransfer=(item:ItemInput)=>{const current=latest.current;return current.onAddTransfer?current.onAddTransfer(item):current.onChange({items:current.trip.items.some(value=>value.id===item.id)?current.trip.items.map(value=>value.id===item.id?item:value):[...current.trip.items,item]});};
  const untimed=trip.items.filter(item=>item.day_id===dayId&&!item.start_time&&item.type!=='hotel').sort((a,b)=>a.position-b.position||a.id.localeCompare(b.id));
  function move(index:number,direction:number){const ordered=[...untimed];[ordered[index],ordered[index+direction]]=[ordered[index+direction],ordered[index]];const positions=new Map(ordered.map((item,index)=>[item.id,index]));onChange({items:trip.items.map(item=>positions.has(item.id)?{...item,position:positions.get(item.id)!}:item)});}
- const options=getTripPlaceOptions(trip,dayId);
  const savedTransfers=trip.items.filter(item=>item.auto_transfer&&item.day_id===dayId);
  return <section className={styles.section} aria-label="Маршрут дня"><div className={styles.heading}><h2>Маршрут дня</h2><time dateTime={day.date}>{formatDate(day.date)}</time></div>
-  <div className={styles.boundaries}>{(['start','end']as const).map(side=><Boundary key={`${dayId}:${side}`} side={side} resolution={plan[side]} value={day[side==='start'?'map_start':'map_end']??null} options={options} onChange={(place,source)=>onChange({days:trip.days.map(value=>value.id===dayId?{...value,[side==='start'?'map_start':'map_end']:place}:value),...(source?.itemId&&place?{items:trip.items.map(item=>item.id===source.itemId?{...item,[source.endpoint==='end'?'map_end_place':'map_place']:place}:item)}:{})})}/>)}</div>
+  {!hideBoundaries&&<DayRouteBoundaries trip={trip} dayId={dayId} onChange={onChange}/>}
   {plan.warnings.map((warning,index)=><p key={index} role="status" className={styles.warning}>{warning}</p>)}
   {savedTransfers.map(item=>{const status=autoTransferStatus(trip,item);return status.stale?<div key={item.id} className={styles.notice} role="status"><strong>{item.title}</strong><p>{status.state==='source_missing'?'Исходное место удалено или не указано. Переезд сохранён: уточните его вручную.':'Исходные места или расписание изменились. Сохранённое время переезда осталось прежним.'}</p>{onOpenItem&&<button type="button" className="text-link" onClick={()=>onOpenItem(item.id)}>Редактировать {item.title}</button>}</div>:null;})}
   {!config&&!error&&<p role="status">Загружаем настройки карты…</p>}
   {!!error&&<p role="status" className={styles.notice}>{mapsErrorMessage(error)} <button type="button" className="text-link" onClick={retryConfig}>Повторить</button></p>}
   {config&&!config.maps_key&&<p className={styles.notice}>Карта ещё не настроена. Добавьте браузерный ключ Geoapify по инструкции настройки. Места и текстовый план можно сохранять сейчас.</p>}
   {config&&!config.routing_enabled&&<p>Расчёт расстояний пока не настроен. Нужен серверный ключ Geoapify.</p>}
-  {config?.maps_key&&<MapCanvas label="Карта выбранного дня" mapsKey={config.maps_key} nodes={plan.nodes} geometries={geometries}/>}
+  {config?.maps_key&&<MapCanvas label="Карта выбранного дня" mapsKey={config.maps_key} nodes={plan.nodes} geometries={geometries} selectedItemId={selectedItemId} onSelectItem={onSelectItem}/>}
   {!plan.nodes.some(node=>node.place)&&<p className={styles.notice}>Добавьте место к событию, чтобы увидеть маршрут выбранного дня.</p>}
-  <ol className={styles.stops}>{plan.nodes.map((node,index)=><li key={`${node.key}:${index}`}>{node.label}{node.place?<small>{[node.place.name,node.place.address].filter(Boolean).join(' · ')}</small>:<small>Место не указано — уточните его в событии или выберите границу дня.</small>}</li>)}</ol>
+  <ol className={styles.stops}>{plan.nodes.map((node,index)=><li key={`${node.key}:${index}`} aria-current={node.itemId&&selectedItemId===node.itemId?"true":undefined}>{onSelectItem&&node.itemId?<button type="button" className="text-link" aria-label={`Выбрать ${node.label}`} onClick={()=>onSelectItem(node.itemId!)}>{node.label}</button>:node.label}{node.place?<small>{[node.place.name,node.place.address].filter(Boolean).join(' · ')}</small>:<small>Место не указано — уточните его в событии или выберите границу дня.</small>}</li>)}</ol>
   <div aria-label="Участки маршрута">{plan.legs.map((leg,index)=>leg.kind==='scheduled'?<div className={styles.leg} key={`${leg.key}:${index}`}><h3>{leg.from.label} → {leg.to.label}</h3><p>Запланированный переезд · {leg.departureDate} {leg.departureTime?.slice(0,5)??'время не указано'} → {leg.arrivalDate} {leg.arrivalTime?.slice(0,5)??'время не указано'}. Местные часы, без пересчёта часовых поясов. В сумму местных участков не входит.</p></div>:<div role="group" aria-label={`${leg.from.label} → ${leg.to.label}`} className={styles.leg} key={`${leg.key}:${index}`}><h3>{leg.from.label} → {leg.to.label}</h3>
    {!leg.from.place||!leg.to.place?<p>Укажите оба места. Участок не рассчитан.</p>:<><div className={styles.modes}>{(leg.itemId?[leg.mode]:localModes).map(mode=>{const from=leg.from.place!,to=leg.to.place!,same=from.latitude===to.latitude&&from.longitude===to.longitude,result=results[routeCacheKey(from,to,mode)];return <button type="button" key={mode} aria-pressed={leg.mode===mode} className={styles.mode} disabled={!!leg.itemId} onClick={()=>updateDay({map_leg_modes:setMapLegMode(day.map_leg_modes??[],leg.from.key,leg.to.key,mode)})}>{travelModeLabels[mode]}<span>{same?'На месте':result&&'status'in result&&result.status==='ok'?`${formatRouteDistance(result.distance_m)} · ${formatRouteDuration(result.duration_s)}`:result&&'error'in result?result.error:result&&'status'in result?result.message||'Нет данных':config?.routing_enabled?'Рассчитываем…':'Нет данных'}</span></button>;})}</div>
    {config?.routing_enabled&&localModes.some(mode=>{const result=results[routeCacheKey(leg.from.place!,leg.to.place!,mode)];return result&&('error'in result||result.status==='unavailable');})&&<button type="button" className="text-link" onClick={()=>{localModes.forEach(mode=>mapsClient.retry(leg.from.place!,leg.to.place!,mode));setAttempt(value=>value+1);}}>Повторить расчёт участка</button>}
@@ -68,6 +68,16 @@ export function DayRouteMap({trip,dayId,onChange,onAddTransfer,onOpenItem}:DayRo
   <div className={styles.summary} role="status">Местные участки: {formatRouteDistance(summary.distance_m)} · {formatRouteDuration(summary.duration_s)}{!summary.complete&&<p>Неполный итог · рассчитано {summary.resolved_legs} из {summary.total_legs} участков. Неизвестные места и переезды по расписанию не подменяются дорожным маршрутом.</p>}</div>
   {untimed.length>0&&<details><summary>Порядок событий без времени</summary><p>События со временем следуют расписанию. Порядок остальных можно изменить.</p>{untimed.map((item,index)=><div className={styles.actions} key={item.id}><span>{item.title}</span><button type="button" className="secondary-button" aria-label={`Переместить ${item.title} вверх`} disabled={index===0} onClick={()=>move(index,-1)}>↑</button><button type="button" className="secondary-button" aria-label={`Переместить ${item.title} вниз`} disabled={index===untimed.length-1} onClick={()=>move(index,1)}>↓</button></div>)}</details>}
  </section>;
+}
+
+export type DayRouteBoundariesProps=Pick<DayRouteMapProps,'trip'|'dayId'|'onChange'>;
+/** Boundary controls have no map/provider state and derive from the same aggregate. */
+export function DayRouteBoundaries({trip,dayId,onChange}:DayRouteBoundariesProps){
+ const plan=useMemo(()=>buildDayRoute(trip,dayId),[trip,dayId]);
+ const day=trip.days.find(value=>value.id===dayId);
+ const options=getTripPlaceOptions(trip,dayId);
+ if(!day)return null;
+ return <div className={styles.boundaries}>{(['start','end']as const).map(side=><Boundary key={`${dayId}:${side}`} side={side} resolution={plan[side]} value={day[side==='start'?'map_start':'map_end']??null} options={options} onChange={(place,source)=>onChange({days:trip.days.map(value=>value.id===dayId?{...value,[side==='start'?'map_start':'map_end']:place}:value),...(source?.itemId&&place?{items:trip.items.map(item=>item.id===source.itemId?{...item,[source.endpoint==='end'?'map_end_place':'map_place']:place}:item)}:{})})}/>)}</div>;
 }
 
 function samePlace(a:MapPlace|null,b:MapPlace|null){return !!a&&!!b&&a.latitude===b.latitude&&a.longitude===b.longitude;}

@@ -16,6 +16,17 @@ const trip = (items: ItemInput[], patch: Partial<TripInput> = {}): TripInput => 
   ...newTrip(), start_date: days[0].date, end_date: days[2].date, days, items, rates: [], ...patch,
 });
 
+test("intermediate transit days never return to hotels or invent a local road leg; manual boundaries win", () => {
+  const bus = event("long-bus", { type: "train_bus", day_id: days[0].id, end_day_id: days[2].id, start_time: "20:00", end_time: "08:00", map_end_place: place("Destination") });
+  const input = trip([bus, hotel("unused-stay", days[0].date, "2026-10-04")]);
+  const middle = buildDayRoute(input, days[1].id);
+  expect(middle.start.source).toBe("transit"); expect(middle.end.source).toBe("transit");
+  expect(middle.start.place).toBeNull(); expect(middle.end.place).toBeNull();
+  expect(middle.legs.map(leg => leg.kind)).toEqual(["scheduled"]);
+  const manual = buildDayRoute({ ...input, days: input.days.map(day => day.id === days[1].id ? { ...day, map_start: place("Meeting") } : day) }, days[1].id);
+  expect(manual.start).toMatchObject({ source: "manual", place: { name: "Meeting" } });
+});
+
 test("hotel night predicates select the previous and next stay without extra hotel visits", () => {
   const input = trip([hotel("old", "2026-09-30", days[1].date), hotel("new", days[1].date, "2026-10-04")]);
   const route = buildDayRoute(input, days[1].id);
@@ -87,8 +98,8 @@ test("legacy, explicit midnight, untimed transport, and unknown arrivals preserv
   const explicit = event("long", { type: "flight", day_id: days[0].id, end_day_id: days[2].id, start_time: "20:00", end_time: "21:00", map_end_place: place("far") });
   expect(buildDayRoute(trip([explicit]), days[2].id).start.source).toBe("overnight");
   const middle = buildDayRoute(trip([explicit]), days[1].id);
-  expect(middle.start.source).toBe("none");
-  expect(middle.nodes.some(n => n.itemId === "long")).toBe(false);
+  expect(middle.start.source).toBe("transit");
+  expect(middle.nodes.filter(n => n.itemId === "long")).toHaveLength(1);
   expect(middle.legs.filter(l => l.kind === "scheduled")).toHaveLength(1);
   const untimed = buildDayRoute(trip([event("bus", { type: "transfer", map_end_place: place("station") })]), days[1].id);
   expect(untimed.legs.filter(l => l.kind === "scheduled")).toMatchObject([{ departureTime: null, arrivalTime: null }]);

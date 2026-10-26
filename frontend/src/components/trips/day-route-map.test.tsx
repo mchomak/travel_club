@@ -1,7 +1,7 @@
 import {afterEach,expect,test,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen,within,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {DayRouteMap} from './day-route-map';
+import {DayRouteMap,DayRouteBoundaries} from './day-route-map';
 import {emptyDay,newTrip,newItem} from '@/lib/trip-ui';
 import {mapsClient} from '@/lib/maps-client';
 import type {MapPlace,TripInput} from '@/lib/contracts';
@@ -12,6 +12,26 @@ const configState=vi.hoisted(()=>({config:{maps_key:null as string|null,search_e
 vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({...configState,error:null,retry:vi.fn()})}));
 vi.mock('./map-canvas',()=>({MapCanvas:({nodes,geometries,label}:{nodes:unknown[];geometries:unknown[];label:string})=><div aria-label={label} data-nodes={JSON.stringify(nodes)} data-lines={JSON.stringify(geometries)}/> }));
 afterEach(()=>{cleanup();vi.restoreAllMocks();configState.config.routing_enabled=false;configState.config.maps_key=null;});
+
+test('separate boundaries and right map share aggregate updates and selection without duplicate provider requests',async()=>{
+ configState.config.routing_enabled=true;
+ const day=emptyDay('2026-10-01'),p:MapPlace={name:'Hotel',address:'Street',latitude:1,longitude:2,provider:'manual'};
+ const hotel={...newItem('hotel',day,'RUB',day.date),id:'stay',title:'Hotel',check_in:'2026-09-30',check_out:'2026-10-02',map_place:p};
+ const event={...newItem('activity',day,'RUB',day.date),id:'visit',title:'Visit',map_place:{...p,name:'Visit',latitude:3}};
+ const route=vi.spyOn(mapsClient,'route').mockResolvedValue({status:'ok',distance_m:100,duration_s:60,geometry:null,approximate:false,message:''});
+ const select=vi.fn();
+ function Combined(){const [trip,setTrip]=useState<TripInput>({...newTrip(),days:[day],items:[hotel,event],rates:[]});const change=(patch:Partial<TripInput>)=>setTrip(value=>({...value,...patch}));return <><DayRouteBoundaries trip={trip} dayId={day.id} onChange={change}/><DayRouteMap trip={trip} dayId={day.id} onChange={change} hideBoundaries selectedItemId="visit" onSelectItem={select}/></>;}
+ render(<Combined/>);
+ expect(screen.getAllByRole('combobox',{name:'Начало дня'})).toHaveLength(1);
+ expect(screen.getAllByRole('combobox',{name:'Конец дня'})).toHaveLength(1);
+ await waitFor(()=>expect(route).toHaveBeenCalledTimes(4));
+ const stop=screen.getByRole('button',{name:'Выбрать Visit'});expect(stop.closest('li')).toHaveAttribute('aria-current','true');
+ fireEvent.click(stop);expect(select).toHaveBeenCalledWith('visit');
+ await userEvent.setup().click(screen.getByRole('combobox',{name:'Начало дня'}));
+ await userEvent.setup().click(screen.getByRole('option',{name:/^Visit/}));
+ expect(document.querySelector('ol li')).toHaveTextContent('Visit');
+ expect(screen.getByRole('combobox',{name:'Начало дня'})).toHaveValue('Visit');
+});
 test('unconfigured plan exposes controls and saves boundary, mode and untimed order through aggregate change',async()=>{
  vi.spyOn(mapsClient,'config').mockResolvedValue({maps_key:null,search_enabled:false,routing_enabled:false});
  const day=emptyDay('2026-10-01');const p:MapPlace={name:'Парк',address:'',latitude:1,longitude:2,provider:'manual'};

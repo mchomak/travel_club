@@ -3,8 +3,46 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DayInput, ItemInput } from "@/lib/contracts";
 import { TripCalendar } from "./trip-calendar";
+import { calculateTrip } from "@/lib/pricing";
+import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 
 afterEach(cleanup);
+
+test("calendar day prices use allocation for stays, multi-day items and general costs", () => {
+  const days = ["2026-10-01", "2026-10-02", "2026-10-03"].map(emptyDay);
+  const hotel = { ...newItem("hotel", days[0], "RUB", days[0].date), check_in: days[0].date, check_out: days[2].date, unit_price: "100", rooms_override: 1 };
+  const rental = { ...newItem("rental", days[0], "RUB", days[0].date), calculation_mode: "per_day" as const, duration_days: 3, unit_price: "10" };
+  const general = { ...newItem("other", null, "RUB", days[0].date), unit_price: "7", calculation_mode: "fixed" as const, day_id: null };
+  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[2].date, days, items: [hotel, rental, general], rates: [] };
+  const calculation = calculateTrip(trip);
+  expect(calculation.days.map(day => day.total)).toEqual(["110.00", "110.00", "10.00"]);
+  expect(calculation.general_total).toBe("7.00"); expect(calculation.cost_total).toBe("237.00");
+  render(<TripCalendar days={days} items={trip.items} calculation={calculation} baseCurrency="RUB" onOpenItem={vi.fn()} />);
+  expect(screen.getAllByText("110,00 RUB")).toHaveLength(2);
+  expect(screen.getByText("10,00 RUB")).toBeVisible();
+});
+
+test("single-day viewport keeps overnight source days for editing, selection, creation and dragging", () => {
+  const days = ["2026-10-01", "2026-10-02", "2026-10-03"].map((date, index) => ({ id: `day-${index}`, date })) as DayInput[];
+  const flight = { id: "night", day_id: "day-0", end_day_id: "day-1", type: "flight", title: "Ночной рейс", start_time: "22:00", end_time: "02:00" } as ItemInput;
+  const open = vi.fn(), select = vi.fn(), move = vi.fn(), create = vi.fn();
+  render(<TripCalendar days={days} items={[flight]} visibleDayId="day-1" title="Календарь дня" accessibleLabel="Расписание выбранного дня" selectedItemId="night" onSelectItem={select} onOpenItem={open} onMoveItem={move} onCreateRange={create} />);
+  expect(screen.getByRole("region", { name: "Расписание выбранного дня" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Календарь дня" })).toBeVisible();
+  expect(document.querySelectorAll(".trip-calendar-day")).toHaveLength(1);
+  const arrival = screen.getByRole("button", { name: /Открыть перелёт Ночной рейс.*2026-10-02.*00:00 — 02:00/ });
+  expect(arrival).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(arrival);
+  expect(open).toHaveBeenCalledWith("night"); expect(select).toHaveBeenCalledWith("night");
+  positionDays();
+  fireEvent.pointerDown(arrival, { pointerId: 70, pointerType: "mouse", button: 0, clientX: 100, clientY: 108 });
+  fireEvent.pointerUp(arrival, { pointerId: 70, pointerType: "mouse", clientX: 100, clientY: 164 });
+  expect(move).toHaveBeenCalledWith("night", "day-0", "23:00", "03:00", "day-1");
+  const cell = document.querySelector<HTMLElement>(".trip-calendar-day")!;
+  fireEvent.pointerDown(cell, { pointerId: 71, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 12 * 56 });
+  fireEvent.pointerUp(cell, { pointerId: 71, pointerType: "mouse", clientX: 100, clientY: 100 + 12 * 56 });
+  expect(create).toHaveBeenCalledWith("day-1", "12:00", "13:00");
+});
 
 test("westbound endpoint markers state departure and arrival without inventing a short flight duration", () => {
   const day = { id: "day-0", date: "2026-10-01" } as DayInput;
@@ -143,10 +181,10 @@ test("day heading totals unique visible event prices, including excluded and ove
   const days = ["2026-10-01", "2026-10-02"].map((date, index) => ({ id: `day-${index}`, date })) as DayInput[];
   const flight = { id: "flight", day_id: "day-0", end_day_id: "day-1", type: "flight", title: "Рейс", start_time: "22:00", end_time: "01:00", included: false } as ItemInput;
   const hotel = { id: "hotel", type: "hotel", title: "Отель", check_in: days[0].date, check_out: "2026-10-03" } as ItemInput;
-  const calculation = { items: [{ id: "flight", normalized_amount: "120.00" }, { id: "hotel", normalized_amount: "80.00" }] } as import("@/lib/contracts").Calculation;
+  const calculation = { items: [{ id: "flight", normalized_amount: "120.00" }, { id: "hotel", normalized_amount: "80.00" }], days: days.map(day => ({ day_id: day.id, total: "40.00" })) } as import("@/lib/contracts").Calculation;
   render(<TripCalendar days={days} items={[flight, hotel]} calculation={calculation} baseCurrency="RUB" onOpenItem={vi.fn()} />);
   expect(screen.getAllByText("2 события")).toHaveLength(2);
-  expect(screen.getAllByText(/200,00/)).toHaveLength(2);
+  expect(screen.getAllByText(/40,00/)).toHaveLength(2);
   expect(screen.getAllByText("Стоимость событий")).toHaveLength(2);
   expect(screen.queryAllByLabelText("Как считается стоимость событий")).toHaveLength(0);
   expect(screen.queryByText(/Многодневное событие видно/)).toBeNull();
@@ -156,10 +194,11 @@ test("airport blocks open their own settings without adding events or price", as
   const days = ["2026-10-01", "2026-10-02"].map((date, index) => ({ id: `day-${index}`, date })) as DayInput[];
   const flight = { id: "flight", day_id: days[0].id, end_day_id: days[1].id, type: "flight", title: "Рейс", start_time: "22:00", end_time: "01:00" } as ItemInput;
   const openItem = vi.fn(), openAirport = vi.fn();
-  const calculation = { items: [{ id: "flight", normalized_amount: "120.00" }] } as import("@/lib/contracts").Calculation;
+  const calculation = { items: [{ id: "flight", normalized_amount: "120.00" }], days: days.map((day, index) => ({ day_id: day.id, total: index === 0 ? "120.00" : "0.00" })) } as import("@/lib/contracts").Calculation;
   render(<TripCalendar days={days} items={[flight]} calculation={calculation} baseCurrency="RUB" onOpenItem={openItem} onOpenAirport={openAirport} />);
   expect(screen.getAllByText("1 событие")).toHaveLength(2);
-  expect(screen.getAllByText(/120,00/)).toHaveLength(2);
+  expect(screen.getAllByText(/120,00/)).toHaveLength(1);
+  expect(screen.getByText("0,00 RUB")).toBeVisible();
   await userEvent.setup().click(screen.getByRole("button", { name: /Настроить приезд в аэропорт/ }));
   expect(openAirport).toHaveBeenCalledWith("flight", "before");
   expect(openItem).not.toHaveBeenCalled();
@@ -201,7 +240,7 @@ test("day heading does not present a false zero when an event price is unavailab
   render(<TripCalendar days={days} items={[event]} calculation={null} baseCurrency="RUB" onOpenItem={vi.fn()} />);
   const headings = document.querySelectorAll(".trip-calendar-dates > div");
   expect(headings[0]).toHaveTextContent("1 событиеСтоимость событий—");
-  expect(headings[1]).toHaveTextContent("0 событийСтоимость событий0,00 RUB");
+  expect(headings[1]).toHaveTextContent("0 событийСтоимость событий—");
 });
 
 test("day heading is only actionable when date selection is available", async () => {

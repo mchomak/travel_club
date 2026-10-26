@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
-import Decimal from "decimal.js";
 import { Pencil } from "lucide-react";
 import type { Calculation, DayInput, ItemInput, ItemType } from "@/lib/contracts";
 import { buildCalendarEntries, type AirportKind } from "@/lib/calendar";
@@ -41,6 +40,11 @@ export interface TripCalendarProps {
   onEditDay?: (dayId: string) => void;
   onSelectDate?: (dayId: string) => void;
   selectedDayId?: string | null;
+  visibleDayId?: string | null;
+  title?: string;
+  accessibleLabel?: string;
+  selectedItemId?: string | null;
+  onSelectItem?: (itemId: string) => void;
 }
 
 type Gesture = { kind: "create" | "event" | "hotel"; pointerId: number; pointerType: string; startX: number; startY: number; dayId: string; anchorMinute: number; currentMinute: number; targetDayId: string; dragged: boolean; itemId?: string; segmentDate?: string; anchorDayIndex?: number };
@@ -48,7 +52,7 @@ type Gesture = { kind: "create" | "event" | "hotel"; pointerId: number; pointerT
 function eventCount(count: number): string { return `${count} ${count % 10 === 1 && count % 100 !== 11 ? "событие" : [2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100) ? "события" : "событий"}`; }
 
 /** Responsive calendar with local wall-clock positioning and date-only hotel spans. */
-export function TripCalendar({ days, items, calculation, baseCurrency, onOpenItem, onOpenAirport, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onSelectDate, selectedDayId }: TripCalendarProps) {
+export function TripCalendar({ days, items, calculation, baseCurrency, onOpenItem, onOpenAirport, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onSelectDate, selectedDayId, visibleDayId, title, accessibleLabel = "Календарь поездки", selectedItemId, onSelectItem }: TripCalendarProps) {
   const orderedDays = useMemo(() => [...days].sort((a, b) => a.date.localeCompare(b.date)), [days]);
   const [pageSize, setPageSize] = useState(7);
   const [pageStart, setPageStart] = useState(0);
@@ -64,21 +68,17 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
     return () => window.removeEventListener("resize", resize);
   }, []);
   const safeStart = Math.min(pageStart, Math.max(0, Math.floor((orderedDays.length - 1) / pageSize) * pageSize));
-  const visibleDays = orderedDays.slice(safeStart, safeStart + pageSize);
+  const visibleDays = visibleDayId ? orderedDays.filter(day => day.id === visibleDayId) : orderedDays.slice(safeStart, safeStart + pageSize);
   const entries = useMemo(() => buildCalendarEntries(orderedDays, items, visibleDays.map(day => day.date)), [orderedDays, items, visibleDays]);
   const gridStyle: CSSProperties = { display: "grid", gridTemplateColumns: `48px repeat(${visibleDays.length}, minmax(128px, 1fr))` };
   const itemById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
-  const prices = useMemo(() => new Map(calculation?.items.map(item => [item.id, item.normalized_amount]) ?? []), [calculation]);
   const summaries = useMemo(() => visibleDays.map(day => {
     const ids = new Set([...entries.events.filter(event => event.date === day.date).map(event => event.itemId),
       ...entries.hotelBars.filter(bar => day.date >= bar.startDate && day.date < bar.endDate).map(bar => bar.itemId),
       ...entries.markers.filter(marker => marker.date === day.date).map(marker => marker.itemId)]);
-    const amounts = [...ids].map(id => prices.get(id));
-    const total = amounts.some(amount => amount === undefined)
-      ? null
-      : amounts.reduce((sum, amount) => sum.plus(amount!), new Decimal(0)).toFixed(2);
+    const total = calculation?.days?.find(value => value.day_id === day.id)?.total ?? null;
     return { dayId: day.id, count: ids.size, total };
-  }), [visibleDays, entries, prices]);
+  }), [visibleDays, entries, calculation]);
   const money = (value: string) => {
     const [whole, fraction = "00"] = value.split(".");
     return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0")},${fraction.padEnd(2, "0")} ${baseCurrency ?? ""}`.trim();
@@ -153,6 +153,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
   };
   const open = (itemId: string) => {
     if (suppressClick.current === itemId) { suppressClick.current = null; return; }
+    onSelectItem?.(itemId);
     onOpenItem(itemId);
   };
   const movingItem = gesture?.dragged && gesture.itemId ? itemById.get(gesture.itemId) : undefined;
@@ -174,13 +175,14 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
     return shifted ? moveHotel(movingItem, orderedDays, shifted.id) : null;
   })() : null;
 
-  if (!orderedDays.length) return <section className="trip-calendar trip-calendar-empty" aria-label="Календарь поездки"><p>Добавьте даты поездки, чтобы увидеть календарь.</p></section>;
+  if (!visibleDays.length) return <section className="trip-calendar trip-calendar-empty" aria-label={accessibleLabel}><p>Добавьте даты поездки, чтобы увидеть календарь.</p></section>;
 
-  return <section className="trip-calendar" aria-label="Календарь поездки" style={{ color: "#edf4f8", background: "#142333", borderRadius: 16, padding: 16 }}>
+  return <section className="trip-calendar" aria-label={accessibleLabel} style={{ color: "#edf4f8", background: "#142333", borderRadius: 16, padding: 16 }}>
+    {title && <h2>{title}</h2>}
     <div className="trip-calendar-navigation" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16 }}>
-      <button type="button" className="trip-calendar-prev" disabled={safeStart === 0} onClick={() => setPageStart(Math.max(0, safeStart - pageSize))} aria-label="Предыдущие дни">← Назад</button>
+      <button type="button" className="trip-calendar-prev" disabled={!!visibleDayId || safeStart === 0} onClick={() => setPageStart(Math.max(0, safeStart - pageSize))} aria-label="Предыдущие дни">← Назад</button>
       <strong>{dateLabel(visibleDays[0].date)} — {dateLabel(visibleDays[visibleDays.length - 1].date)}</strong>
-      <button type="button" className="trip-calendar-next" disabled={safeStart + pageSize >= orderedDays.length} onClick={() => setPageStart(safeStart + pageSize)} aria-label="Следующие дни">Вперёд →</button>
+      <button type="button" className="trip-calendar-next" disabled={!!visibleDayId || safeStart + pageSize >= orderedDays.length} onClick={() => setPageStart(safeStart + pageSize)} aria-label="Следующие дни">Вперёд →</button>
       {(onCreateRange || onMoveItem || onMoveHotel) && <button type="button" aria-pressed={touchSelect} onClick={() => setTouchSelect(value => !value)}>{touchSelect ? "Редактирование касанием включено" : "Выбирать и переносить касанием"}</button>}
     </div>
     <div className="trip-calendar-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "90vh", minHeight: 740 }}>
@@ -207,7 +209,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
           {entries.hotelBars.map(bar => <div key={bar.itemId} style={{ ...gridStyle, minHeight: 36 }}><button type="button" className="trip-calendar-hotel-bar" onPointerDown={event => {
             const day = dayAt(event.clientX) ?? visibleDays[bar.startIndex];
             begin(event, { kind: "hotel", dayId: day.id, anchorMinute: 0, itemId: bar.itemId, anchorDayIndex: orderedDays.findIndex(value => value.id === day.id) });
-          }} onClick={() => open(bar.itemId)} aria-label={`Открыть отель ${bar.title}, ${bar.startDate} — ${bar.endDate}`} style={{ gridColumn: `${bar.startIndex + 2} / ${bar.endIndex + 2}`, margin: "3px 2px", border: "1px solid #80d9c6", borderRadius: 7, background: "#255d58", color: "#fff", textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "hotel" && gesture.itemId === bar.itemId && gesture.dragged ? .55 : 1 }}>
+          }} aria-pressed={selectedItemId == null ? undefined : selectedItemId === bar.itemId} onClick={() => open(bar.itemId)} aria-label={`Открыть отель ${bar.title}, ${bar.startDate} — ${bar.endDate}`} style={{ gridColumn: `${bar.startIndex + 2} / ${bar.endIndex + 2}`, margin: "3px 2px", border: "1px solid #80d9c6", borderRadius: 7, background: "#255d58", color: "#fff", textAlign: "left", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "hotel" && gesture.itemId === bar.itemId && gesture.dragged ? .55 : 1 }}>
             {bar.clippedStart ? "← " : ""}{bar.title} · {bar.startDate} — {bar.endDate}{bar.clippedEnd ? " →" : ""}
           </button>{hotelPreview && gesture?.itemId === bar.itemId && (() => {
             const occupied = visibleDays.map((day, index) => day.date >= hotelPreview.checkIn && day.date < hotelPreview.checkOut ? index : -1).filter(index => index >= 0);
@@ -238,17 +240,17 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
               return <button type="button" key={`${event.itemId}-${event.date}-${event.endpoint ?? "interval"}`} className={`trip-calendar-event trip-calendar-${event.itemType}`} onPointerDown={pointer => {
                 pointer.stopPropagation();
                 begin(pointer, { kind: "event", dayId: day.id, anchorMinute: minuteAt(day.id, pointer.clientY), itemId: event.itemId, segmentDate: event.date });
-              }} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: event.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (event.endMinute - event.startMinute) / 60 * HOUR_HEIGHT), left: `${event.lane / event.laneCount * 100}%`, width: `${100 / event.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
+              }} aria-pressed={selectedItemId == null ? undefined : selectedItemId === event.itemId} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: event.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (event.endMinute - event.startMinute) / 60 * HOUR_HEIGHT), left: `${event.lane / event.laneCount * 100}%`, width: `${100 / event.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, outline: selectedItemId === event.itemId ? "2px solid #f7d179" : undefined, outlineOffset: -2, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
                 <strong>{event.title}</strong><span style={{ display: "block" }}>{displayTime} · {labels[event.itemType]}</span>
               </button>;
             })}
             {entries.airportBlocks.filter(block => block.date === day.date).map(block => {
               const name = block.airportKind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта";
-              return <button type="button" key={`${block.itemId}-${block.airportKind}-${block.date}`} className="trip-calendar-airport" onPointerDown={pointer => pointer.stopPropagation()} onClick={() => onOpenAirport?.(block.itemId, block.airportKind)} aria-label={`Настроить ${name.toLowerCase()}: ${block.title}, ${block.date}, ${timeOf(block.startMinute)} — ${timeOf(block.endMinute)}`} style={{ position: "absolute", top: block.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (block.endMinute - block.startMinute) / 60 * HOUR_HEIGHT), left: `${block.lane / block.laneCount * 100}%`, width: `${100 / block.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#e6f3ff", background: "#24405b", border: "1px dashed #8bb9dc", borderRadius: 5, fontSize: 11 }}>
+              return <button type="button" key={`${block.itemId}-${block.airportKind}-${block.date}`} className="trip-calendar-airport" onPointerDown={pointer => pointer.stopPropagation()} onClick={() => { onSelectItem?.(block.itemId); onOpenAirport?.(block.itemId, block.airportKind); }} aria-label={`Настроить ${name.toLowerCase()}: ${block.title}, ${block.date}, ${timeOf(block.startMinute)} — ${timeOf(block.endMinute)}`} style={{ position: "absolute", top: block.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (block.endMinute - block.startMinute) / 60 * HOUR_HEIGHT), left: `${block.lane / block.laneCount * 100}%`, width: `${100 / block.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#e6f3ff", background: "#24405b", border: "1px dashed #8bb9dc", borderRadius: 5, fontSize: 11 }}>
                 <strong>{name}</strong><span style={{ display: "block" }}>{timeOf(block.startMinute)}–{timeOf(block.endMinute)} · {block.title}</span>
               </button>;
             })}
-            {entries.markers.filter(marker => marker.date === day.date).map(marker => <button type="button" key={`${marker.itemId}-${marker.kind}`} className={`trip-calendar-marker trip-calendar-${marker.kind}`} onClick={() => open(marker.itemId)} aria-label={`Открыть отель ${marker.title}: ${marker.kind === "check-in" ? "заезд" : "выезд"} в ${timeOf(marker.minute)}`} style={{ position: "absolute", top: marker.minute / 60 * HOUR_HEIGHT, right: 2, zIndex: 2, maxWidth: "95%", padding: "2px 5px", border: "1px solid #80d9c6", borderRadius: 4, background: "#255d58", color: "#fff", fontSize: 11 }}>
+            {entries.markers.filter(marker => marker.date === day.date).map(marker => <button type="button" key={`${marker.itemId}-${marker.kind}`} className={`trip-calendar-marker trip-calendar-${marker.kind}`} aria-pressed={selectedItemId == null ? undefined : selectedItemId === marker.itemId} onClick={() => open(marker.itemId)} aria-label={`Открыть отель ${marker.title}: ${marker.kind === "check-in" ? "заезд" : "выезд"} в ${timeOf(marker.minute)}`} style={{ position: "absolute", top: marker.minute / 60 * HOUR_HEIGHT, right: 2, zIndex: 2, maxWidth: "95%", padding: "2px 5px", border: "1px solid #80d9c6", borderRadius: 4, background: "#255d58", color: "#fff", fontSize: 11 }}>
               {marker.kind === "check-in" ? "Заезд" : "Выезд"} {timeOf(marker.minute)} · {marker.title}
             </button>)}
           </div>)}

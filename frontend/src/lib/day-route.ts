@@ -17,7 +17,7 @@ export interface RouteLeg {
   sourceFromKey?: string; sourceToKey?: string;
 }
 export interface BoundaryResolution {
-  source: "manual" | "hotel" | "overnight" | "ambiguous" | "none";
+  source: "manual" | "hotel" | "overnight" | "transit" | "ambiguous" | "none";
   explanation: string;
   candidates: { key: string; label: string; place: MapPlace | null }[];
   place: MapPlace | null;
@@ -65,6 +65,8 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
   const hotels = trip.items.filter(item => item.type === "hotel" && item.check_in && item.check_out && item.check_out > item.check_in);
   const scheduledItems = trip.items.filter(isRouteEvent).map(item => ({ item, schedule: scheduleOf(trip, item) }));
   const resolveBoundary = (side: "start" | "end"): BoundaryResolution => {
+    const transit = scheduledItems.filter(({ item, schedule }) => isTransport(item) && schedule?.overnight && schedule.startDate < day.date && day.date < schedule.endDate)
+      .sort((a, b) => itemOrder(a.item, b.item)).map(({ item }) => ({ key: `item:${item.id}:transit`, itemId: item.id, label: `В пути · ${item.title}`, place: null }));
     const overnight = scheduledItems.filter(({ schedule }) => schedule?.overnight && (side === "start" ? schedule.endDate === day.date : schedule.startDate === day.date))
       .sort((a, b) => itemOrder(a.item, b.item)).map(({ item, schedule }) => ({ ...itemNode(item, side === "start" ? "end" : "start", side === "start" ? "arrival" : "departure"),
         date: day.date, time: side === "start" ? schedule!.endTime : schedule!.startTime }));
@@ -72,20 +74,21 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
       ? item.check_in! < day.date && day.date <= item.check_out!
       : item.check_in! <= day.date && day.date < item.check_out!)
       .sort(itemOrder).map(item => itemNode(item, "start", "event"));
-    const candidates = overnight.length ? overnight : hotelCandidates;
+    const candidates = transit.length ? transit : overnight.length ? overnight : hotelCandidates;
     const manual = side === "start" ? day.map_start : day.map_end;
     if (manual) return { source: "manual", explanation: "Место выбрано вручную", candidates, place: manual };
     if (!candidates.length) return missingBoundary();
     if (candidates.length > 1) return { source: "ambiguous", explanation: "Подходят несколько мест — выберите место вручную", candidates, place: null };
+    if (transit.length) return { source: "transit", explanation: "День в пути — ночёвку заменяет многодневный переезд", candidates, place: null };
     return { source: overnight.length ? "overnight" : "hotel", explanation: overnight.length
       ? side === "start" ? "Место прибытия после ночного события" : "Место отправления ночного события"
       : side === "start" ? "Отель предыдущей ночи" : "Отель следующей ночи", candidates, place: candidates[0].place };
   };
   const start = resolveBoundary("start"), end = resolveBoundary("end");
   const boundaryNode = (resolution: BoundaryResolution, side: "start" | "end"): RouteNode => ({
-    ...((resolution.source === "hotel" || resolution.source === "overnight") ? resolution.candidates[0] : {}),
-    key: resolution.source === "hotel" || resolution.source === "overnight" ? resolution.candidates[0].key : `day:${side}`,
-    label: resolution.place?.name ?? (side === "start" ? "Начало дня" : "Конец дня"),
+    ...((resolution.source === "hotel" || resolution.source === "overnight" || resolution.source === "transit") ? resolution.candidates[0] : {}),
+    key: resolution.source === "hotel" || resolution.source === "overnight" || resolution.source === "transit" ? resolution.candidates[0].key : `day:${side}`,
+    label: resolution.place?.name ?? (resolution.source === "transit" ? resolution.candidates[0].label : side === "start" ? "Начало дня" : "Конец дня"),
     place: resolution.place, kind: side, date: day.date,
   });
   const scheduledLegs: RouteLeg[] = [];

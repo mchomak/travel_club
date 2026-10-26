@@ -35,3 +35,13 @@
 - Новые поля проходят ItemForm→tripInput→save/get/duplicate/preview. Финансовые формулы и allocation не менялись.
 - Повторяемые проверки: acceptance-01.md. Отдельная БД `travel_club_timezone_test` уже upgraded; backend runtime через `docker compose run --rm --no-deps -e POSTGRES_DB=travel_club_timezone_test -v "${PWD}/backend:/app" backend sh -c "pytest -q && ruff check ."` из корня. Production ещё старый до финального rebuild.
 
+## Из таска 02 — дневные проекции
+
+- TripCalendar optional `visibleDayId`, `title`, `accessibleLabel`, `selectedItemId`, `onSelectItem`; по-прежнему передавать полные days/items. День ограничивается только видимостью; day total строго calculation.days, отсутствующая allocation означает unknown.
+- `DayRouteBoundaries(props: Pick<DayRouteMapProps,'trip'|'dayId'|'onChange'>)` — центральные existing controls. Справа `DayRouteMap` с `hideBoundaries`, `selectedItemId`, `onSelectItem`; единственный map/provider/request state у правого компонента. Чистый buildDayRoute общий.
+- `buildDayRoute`: source transit для intermediate multi-day dates; manual boundary приоритет. Не создавать фиктивные local legs через транзит.
+- `getDayProgram(trip:TripInput,dayId:string):DayProgram {day:DayInput|null,entries:DayProgramEntry[],route:DayRoutePlan}`. Entry содержит item (ID через item.id), segments:CalendarEvent[], startDate/endDate:string|null, startTime/endTime:string|null, durationMinutes:number|null, address:string, arrival/overnight:boolean. Hotel checkout включён, ID dedup, UTC duration из общего helper.
+- `reviewTrip(trip):TripReviewWarning[] {code,dayId:string|null,itemIds:string[],message}` — advisory, ссылки на day/items для T03. Точные типы в новом day-program модуле; предупреждения не блокируют draft.
+- MapCanvas/TripCalendar поддерживают optional linked selection. Старые default props сохраняют прежний редактор.
+- Проверки/композиция: acceptance-02.md. Full frontend226/48files, lint/typecheck/build passed; backend не менялся.
+

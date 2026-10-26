@@ -3,14 +3,14 @@ import type {MapPlace} from '@/lib/contracts';
 import {useEffect,useRef,useState} from 'react';
 import 'leaflet/dist/leaflet.css';
 import styles from './day-route-map.module.css';
-export interface MapCanvasProps {mapsKey:string;nodes:{key:string;label:string;place:MapPlace|null}[];geometries?:{type:'LineString';coordinates:number[][]}[];onPick?:(latitude:number,longitude:number)=>void;label?:string}
-type LayerData=Pick<MapCanvasProps,'nodes'|'geometries'>;
-export function MapCanvas({mapsKey,nodes,geometries=[],onPick,label='Карта маршрута'}:MapCanvasProps){
- const host=useRef<HTMLDivElement>(null),pick=useRef(onPick);
- const latest=useRef<LayerData>({nodes,geometries}),runtime=useRef<{update:(data:LayerData)=>void;retry:()=>void}|null>(null);
+export interface MapCanvasProps {mapsKey:string;nodes:{key:string;label:string;place:MapPlace|null;itemId?:string}[];selectedItemId?:string|null;onSelectItem?:(itemId:string)=>void;geometries?:{type:'LineString';coordinates:number[][]}[];onPick?:(latitude:number,longitude:number)=>void;label?:string}
+type LayerData=Pick<MapCanvasProps,'nodes'|'geometries'|'selectedItemId'>;
+export function MapCanvas({mapsKey,nodes,geometries=[],onPick,selectedItemId,onSelectItem,label='Карта маршрута'}:MapCanvasProps){
+ const host=useRef<HTMLDivElement>(null),pick=useRef(onPick),select=useRef(onSelectItem);
+ const latest=useRef<LayerData>({nodes,geometries,selectedItemId}),runtime=useRef<{update:(data:LayerData)=>void;retry:()=>void}|null>(null);
  const [error,setError]=useState<string|null>(null),[attempt,setAttempt]=useState(0);
- const data=JSON.stringify({nodes,geometries});
- useEffect(()=>{pick.current=onPick;},[onPick]);
+ const data=JSON.stringify({nodes,geometries,selectedItemId});
+ useEffect(()=>{pick.current=onPick;select.current=onSelectItem;},[onPick,onSelectItem]);
  useEffect(()=>{latest.current=JSON.parse(data) as LayerData;runtime.current?.update(latest.current);},[data]);
  useEffect(()=>{
   let cancelled=false,dispose:(()=>void)|undefined;
@@ -26,14 +26,16 @@ export function MapCanvas({mapsKey,nodes,geometries=[],onPick,label='Карта 
    const layers=L.layerGroup().addTo(map);
    let points:import('leaflet').LatLngExpression[]=[],boundsSignature='';
    const fit=()=>{if(points.length)map.fitBounds(L.latLngBounds(points),{padding:[28,28],maxZoom:15,animate:false});};
-   function update({nodes,geometries}:LayerData){
+   function update({nodes,geometries,selectedItemId}:LayerData){
     layers.clearLayers();points=[];
     nodes.forEach((node,index)=>{
      if(!node.place)return;
      const point:import('leaflet').LatLngExpression=[node.place.latitude,node.place.longitude];points.push(point);
      const iconText=document.createElement('span');iconText.textContent=String(index+1);
      const popup=document.createElement('span');popup.textContent=`${index+1}. ${node.label}`;
-     const marker=L.marker(point,{title:node.label,draggable:!!pick.current,icon:L.divIcon({html:iconText,className:styles.pin,iconSize:[30,30],iconAnchor:[15,15]})}).bindPopup(popup).addTo(layers);
+     const marker=L.marker(point,{title:node.label,draggable:!!pick.current,icon:L.divIcon({html:iconText,className:`${styles.pin}${node.itemId&&node.itemId===selectedItemId?` ${styles.selectedPin}`:""}`,iconSize:[30,30],iconAnchor:[15,15]})}).bindPopup(popup).addTo(layers);
+     if(node.itemId&&selectedItemId!=null)marker.getElement()?.setAttribute('aria-pressed',String(node.itemId===selectedItemId));
+     marker.on('click',()=>{if(node.itemId)select.current?.(node.itemId);});
      marker.on('dragend',()=>{const p=marker.getLatLng();pick.current?.(p.lat,p.lng);});
     });
     geometries?.forEach(geometry=>{const line=geometry.coordinates.map(([lng,lat])=>[lat,lng] as [number,number]);L.polyline(line,{color:'#225740',weight:4}).addTo(layers);points.push(...line);});

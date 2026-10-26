@@ -2,6 +2,17 @@ import { act,cleanup,fireEvent,render,screen,waitFor } from '@testing-library/re
 import {afterEach,expect,test,vi} from 'vitest';
 import { MapCanvas } from './map-canvas';
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
+test('linked item selection highlights numbered markers, calls back and keeps the map camera',async()=>{
+ const L=await import('leaflet'),fit=vi.spyOn(L.Map.prototype,'fitBounds'),select=vi.fn();
+ const nodes=[{key:'a',itemId:'one',label:'First',place:{name:'A',address:'',latitude:1,longitude:2,provider:'manual' as const}},{key:'b',itemId:'two',label:'Second',place:{name:'B',address:'',latitude:3,longitude:4,provider:'manual' as const}}];
+ const {container,rerender}=render(<MapCanvas mapsKey="browser-test" nodes={nodes} selectedItemId="one" onSelectItem={select}/>);
+ await waitFor(()=>expect(container.querySelector('[title="First"]')).toHaveAttribute('aria-pressed','true'));
+ fireEvent.click(container.querySelector('[title="Second"]')!);expect(select).toHaveBeenCalledWith('two');
+ fit.mockClear();
+ rerender(<MapCanvas mapsKey="browser-test" nodes={nodes} selectedItemId="two" onSelectItem={select}/>);
+ await waitFor(()=>expect(container.querySelector('[title="Second"]')).toHaveAttribute('aria-pressed','true'));
+ expect(container.querySelector('[title="First"]')).toHaveAttribute('aria-pressed','false');expect(fit).not.toHaveBeenCalled();
+});
 test('real map tiles carry origin/referrer attributes and labels never become HTML',async()=>{
  const {container}=render(<MapCanvas mapsKey="browser-test" nodes={[{key:'a',label:'<img src=x onerror=alert(1)>',place:{name:'A',address:'',latitude:1,longitude:2,provider:'manual'}}]}/>);
  await waitFor(()=>expect(container.querySelector('img.leaflet-tile')).not.toBeNull());
