@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg">
+<title>Travel Club · Design System / Test 13 · v2</title>
+<meta name="description" content="Дизайн-система Travel Club test_13 с локальными шрифтами, настоящими логотипами и авторскими SVG-символами проекта.">
+<style>
+@font-face{font-family:"TC Golos";src:url("frontend/public/test/fonts/golos-text-latin.woff2") format("woff2");font-style:normal;font-weight:400 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"TC Golos";src:url("frontend/public/test/fonts/golos-text-cyrillic.woff2") format("woff2");font-style:normal;font-weight:400 700;font-display:swap;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"TC Lora";src:url("frontend/public/test/fonts/lora-regular-latin.woff2") format("woff2");font-style:normal;font-weight:400 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"TC Lora";src:url("frontend/public/test/fonts/lora-regular-cyrillic.woff2") format("woff2");font-style:normal;font-weight:400 700;font-display:swap;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"TC Lora";src:url("frontend/public/test/fonts/lora-italic-latin.woff2") format("woff2");font-style:italic;font-weight:400 700;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"TC Lora";src:url("frontend/public/test/fonts/lora-italic-cyrillic.woff2") format("woff2");font-style:italic;font-weight:400 700;font-display:swap;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+</style>
+<style>
+:root {
+  --navy:#12335D; --paper:#EEEEE7; --ink:#172F50; --cream:#F5F0DC;
+  --rust:#CE3C28; --green:#123D30; --slate:#26343E; --gold:#BD934D;
+  --shell-1:#77414D; --shell-2:#58303D; --shell-3:#351D2B;
+  --shell-text:#F1DFD1; --sheet:#F1EDDF; --cover:#C3A15E;
+  --focus:#EAD8A7; --line:#D6D2C8; --muted:#7A786F;
+  --golos:"TC Golos",Arial,sans-serif;
+  --lora:"TC Lora",Georgia,serif;
+  --radius:2px; --space:clamp(16px,2.5vw,30px);
+  --preview-width:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#e8e5dc;color:#22251f;font-family:var(--golos);font-size:15px;line-height:1.55}
+button,select{font:inherit}
+button,a,select{outline-offset:4px}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--focus)}
+a{color:inherit}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:17px clamp(18px,4vw,56px);background:var(--paper);border-bottom:1px solid #d4d0c6;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.topbar .brandline{font-weight:700;color:var(--navy)}
+.topbar .meta{color:#76746d;text-align:right}
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);max-width:1600px;margin:0 auto;min-height:100vh}
+.sidebar{padding:28px 20px 36px 28px;border-right:1px solid #d6d2c8;background:#f0eee7;position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto}
+.side-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8b877c;margin:0 0 14px}
+.sidebar a{display:block;padding:8px 0;text-decoration:none;font-size:12px;color:#4d4b45;border-bottom:1px solid #e1ded5}
+.sidebar a:hover{color:var(--navy)}
+.side-note{margin-top:28px;font-size:11px;line-height:1.5;color:#77736a}
+main{min-width:0;padding:0 clamp(18px,3.4vw,52px) 70px}
+.hero{padding:clamp(30px,5vw,68px) 0 34px;border-bottom:1px solid #c9c5bb}
+.eyebrow{font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#77746b;margin:0 0 18px}
+.hero h1{font:400 clamp(42px,6vw,78px)/.98 var(--lora);letter-spacing:-.055em;color:var(--navy);margin:0;max-width:850px}
+.hero h1 em{font-weight:400;color:#6b747a}
+.hero-copy{max-width:760px;font-size:15px;line-height:1.65;margin:23px 0 0;color:#55534d}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid #d4d0c6;border-radius:30px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#67645d;background:#f4f2eb}
+.pill strong{color:var(--navy)}
+.notice{margin:22px 0 0;padding:13px 15px;border-left:2px solid var(--gold);background:#f6f2e7;color:#6d5d3d;font-size:12px;line-height:1.55}
+.section{padding:clamp(30px,4vw,54px) 0;border-bottom:1px solid #c9c5bb;scroll-margin-top:18px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:24px}
+.section-number{font-size:11px;letter-spacing:.16em;color:#a49b8c;margin-bottom:8px}
+h2{font:400 clamp(30px,3.6vw,46px)/1.05 var(--lora);letter-spacing:-.04em;color:var(--navy);margin:0}
+h3{font:500 18px/1.2 var(--lora);color:var(--navy);margin:0 0 14px}
+h4{font-size:12px;letter-spacing:.11em;text-transform:uppercase;font-weight:600;color:#777268;margin:0 0 12px}
+.section-intro{max-width:620px;color:#716d64;font-size:13px;line-height:1.6;margin:10px 0 0}
+.small-label{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#8c877b}
+.card{background:#f6f4ed;border:1px solid #d7d3c8;padding:18px;min-width:0}
+.card + .card{margin-top:12px}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.family-card{min-height:180px;display:flex;flex-direction:column;justify-content:space-between}
+.family-sample{font-size:clamp(34px,4vw,56px);line-height:1;color:var(--navy);letter-spacing:-.06em}
+.family-sample.serif{font-family:var(--lora);letter-spacing:-.05em}
+.family-meta{border-top:1px solid #ddd8ce;padding-top:12px;font-size:11px;color:#77736a;display:flex;justify-content:space-between;gap:10px}
+.family-meta strong{color:#35362f;font-weight:600}
+.type-specimens{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.type-sample{background:#f6f4ed;border:1px solid #d7d3c8;padding:16px;min-width:0}
+.type-sample .sample-top{display:flex;justify-content:space-between;gap:8px;color:#888276;font-size:10px;text-transform:uppercase;letter-spacing:.09em;margin-bottom:15px}
+.sample-word{font-size:clamp(19px,2vw,28px);line-height:1.25;overflow-wrap:anywhere;color:#272a26}
+.sample-word.serif{font-family:var(--lora)}
+.sample-word.italic{font-style:italic}
+.sample-word.bold{font-weight:700}
+.sample-word.upper{text-transform:uppercase;letter-spacing:.02em}
+.sample-note{font-size:10px;color:#898479;margin-top:12px}
+.table-wrap{overflow-x:auto;margin-top:18px;container-type:inline-size}
+table{border-collapse:collapse;width:100%;min-width:560px;background:#f6f4ed;font-size:12px}
+th{background:var(--navy);color:#f7f3e9;font-weight:500;text-align:left}
+th,td{padding:11px 12px;border:1px solid #d6d2c8;vertical-align:top}
+td{color:#4e4b44}
+td strong{color:#252923}
+.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#4d4b45}
+.scale-table{min-width:1040px;table-layout:fixed}
+.scale-table th:first-child,.scale-table td:first-child{width:18%}
+.scale-table th:nth-child(2),.scale-table td:nth-child(2){width:25%}
+.scale-table th:nth-child(n+3),.scale-table td:nth-child(n+3){width:19%}
+.scale-table td:first-child{font-weight:600;color:var(--navy);white-space:normal;overflow-wrap:anywhere}
+.scale-sample{display:block;white-space:normal;overflow:visible;text-overflow:clip;color:var(--navy);font-family:var(--lora);line-height:1.12}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;color:#777268;font-size:11px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%}
+.device-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.segmented{display:inline-flex;gap:4px;padding:4px;background:#e7e3d9;border:1px solid #d3cfc4}
+.segmented button{border:0;background:transparent;color:#6d695f;padding:8px 13px;font-size:11px;cursor:pointer}
+.segmented button[aria-pressed="true"]{background:var(--navy);color:#f8f4e9}
+.device-stage{padding:18px;background:#dfdcd3;border:1px solid #d1cdc2;overflow:auto}
+.site-preview{width:var(--preview-width);max-width:100%;margin:0 auto;background:var(--preview-paper,var(--paper));color:var(--preview-ink,var(--navy));container-type:inline-size;transition:width .25s ease;box-shadow:0 12px 30px #302c2714}
+.preview-inner{padding:clamp(16px,4cqw,42px)}
+.preview-head{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid currentColor;padding-bottom:14px;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.preview-head .preview-logo{display:block;width:54px;height:auto;flex:0 0 auto}
+.preview-hero{display:grid;grid-template-columns:1.3fr .7fr;gap:5cqw;padding:5cqw 0 4cqw;align-items:end}
+.preview-hero h3{font:400 8cqw/.94 var(--lora);letter-spacing:-.06em;color:inherit;margin:0}
+.preview-hero p{font-size:1.5cqw;line-height:1.55;max-width:34ch;margin:0}
+.preview-cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px}
+.preview-link{font-size:1.3cqw;text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:3px}
+.preview-mark{font:italic 18cqw/.8 var(--lora);color:var(--preview-accent,var(--cover));text-align:right;opacity:.85}
+.preview-footer{border-top:1px solid currentColor;padding-top:12px;display:flex;justify-content:space-between;gap:12px;font-size:1cqw;letter-spacing:.06em;text-transform:uppercase}
+.site-preview[data-viewport="tablet"] .preview-hero{grid-template-columns:1fr .5fr;gap:3cqw}
+.site-preview[data-viewport="tablet"] .preview-hero h3{font-size:8.5cqw}
+.site-preview[data-viewport="tablet"] .preview-hero p{font-size:1.8cqw}
+.site-preview[data-viewport="tablet"] .preview-mark{font-size:16cqw}
+.site-preview[data-viewport="mobile"] .preview-inner{padding:22px}
+.site-preview[data-viewport="mobile"] .preview-head{font-size:9px}
+.site-preview[data-viewport="mobile"] .preview-head .preview-logo{width:48px}
+.site-preview[data-viewport="mobile"] .preview-head{gap:10px}
+.site-preview[data-viewport="mobile"] .preview-hero{grid-template-columns:1fr;gap:20px;padding:36px 0 28px}
+.site-preview[data-viewport="mobile"] .preview-hero h3{font-size:clamp(40px,12cqw,48px);line-height:1.02;letter-spacing:-.045em;text-wrap:balance}
+.site-preview[data-viewport="mobile"] .preview-hero p{font-size:13px;max-width:38ch}
+.site-preview[data-viewport="mobile"] .preview-mark{display:none}
+.site-preview[data-viewport="mobile"] .preview-link{font-size:12px}
+.site-preview[data-viewport="mobile"] .preview-footer{font-size:9px}
+.device-caption{display:flex;justify-content:space-between;gap:12px;margin-top:10px;color:#77736a;font-size:11px}
+.palette-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+select{border:1px solid #d1ccc1;background:#f7f5ee;padding:9px 12px;color:#33352f;border-radius:0;max-width:100%}
+.swatch-group{margin-top:26px}
+.swatch-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.swatch{min-width:0;background:#f6f4ed;border:1px solid #d7d3c8}
+.swatch-color{height:78px;position:relative;border-bottom:1px solid #d7d3c8}
+.swatch-color::after{content:"";position:absolute;inset:0;border:1px solid #00000008;pointer-events:none}
+.swatch-body{padding:10px}
+.swatch-name{font-size:11px;font-weight:600;color:#383a34;line-height:1.35}
+.swatch-hex{font:10px ui-monospace,SFMono-Regular,Consolas,monospace;color:#817c70;margin-top:5px}
+.swatch-use{font-size:10px;color:#817c70;line-height:1.4;margin-top:7px}
+.copy-hex{display:block;margin-top:9px;border:1px solid #d4d0c5;background:transparent;color:#656157;padding:5px 7px;font-size:10px;cursor:pointer}
+.copy-hex:hover{background:#e8e3d8}
+.pair-preview{display:grid;grid-template-columns:1fr 1fr;min-height:140px;border:1px solid #d7d3c8;margin-top:16px}
+.pair-block{padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+.pair-block .pair-title{font:400 clamp(21px,3vw,34px)/1 var(--lora);letter-spacing:-.04em}
+.pair-block small{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.logo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.logo-card{min-height:190px;display:flex;flex-direction:column;justify-content:space-between;padding:18px;border:1px solid #d7d3c8}
+.logo-stage{display:flex;align-items:center;justify-content:center;min-height:120px}
+.logo-art{display:block;width:min(100%,250px);height:auto;max-height:100px;object-fit:contain}
+.logo-caption{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #ffffff38;padding-top:10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.logo-card.logo-on-paper{background:#F2F0EA;color:#0C1924}
+.logo-card.logo-on-navy{background:#12335D;color:#F2F0EA}
+.asset-note{font-size:11px;color:#817c70;line-height:1.55;margin-top:14px}
+.icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.icon-card{padding:15px;background:#f6f4ed;border:1px solid #d7d3c8;min-height:126px;display:flex;flex-direction:column;justify-content:space-between}
+.icon-stage{display:flex;align-items:center;justify-content:center;min-height:56px;color:var(--navy)}
+.icon-stage svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+.icon-name{font-size:11px;font-weight:600;color:#45443e}
+.icon-meta{font-size:10px;color:#8a8579;margin-top:3px}
+.icon-usage{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;padding:14px;background:#eae6dc;border:1px solid #d7d3c8}
+.icon-usage .icon-stage svg{width:24px;height:24px}
+.component-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.component-card{padding:18px;background:#f6f4ed;border:1px solid #d7d3c8;min-width:0}
+.component-stage{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:90px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:12px 16px;border:1px solid var(--navy);font-size:12px;line-height:1.1;text-decoration:none;cursor:pointer;transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--navy);color:#f5f0dc}
+.btn-primary:hover{background:#1b4778}
+.btn-outline{background:transparent;color:var(--navy)}
+.btn-text{padding:8px 0;min-height:44px;border:0;border-bottom:1px solid var(--navy);background:transparent;color:var(--navy)}
+.btn-text span{transition:transform .18s ease}
+.btn-text:hover span{transform:translateX(3px)}
+.btn-dark{background:#172F50;border-color:#172F50;color:#F2F0EA}
+.btn-rust{background:#CE3C28;border-color:#CE3C28;color:#FFFDF2}
+.btn-circle{width:62px;height:62px;min-height:62px;padding:0;border-radius:50%;font-size:24px;background:transparent;color:var(--navy)}
+.btn-circle:hover{transform:scale(1.06)}
+.btn-circle:active{transform:scale(.96)}
+.btn-label{font-size:10px;color:#8a8579;letter-spacing:.1em;text-transform:uppercase;margin-top:8px}
+.control-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.chapter-nav{display:flex;gap:0;flex-wrap:wrap}
+.chapter-nav button{min-height:50px;min-width:50px;padding:10px 14px;background:transparent;border:0;border-bottom:2px solid transparent;color:#716d64;font-size:12px;cursor:pointer}
+.chapter-nav button.active{border-bottom-color:var(--navy);color:var(--navy);font-weight:600}
+.state-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}
+.state-chip{padding:8px 11px;border:1px solid #d4d0c5;font-size:11px;color:#5d594f;background:#efede6}
+.state-chip.focus-demo{outline:2px solid var(--focus);outline-offset:2px}
+.motion-demo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.motion-box{width:44px;height:44px;background:var(--navy);animation:drift 3s cubic-bezier(.35,.05,.3,1) infinite alternate}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(18px)}}
+.footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:25px 0 0;color:#8a857a;font-size:10px;letter-spacing:.05em}
+@container (max-width:700px){
+  .preview-hero{grid-template-columns:1fr;gap:18px;padding:30px 0 24px}
+  .preview-hero h3{font-size:12cqw}
+  .preview-hero p{font-size:2.4cqw}
+  .preview-mark{display:none}
+  .preview-link{font-size:2.2cqw}
+  .preview-footer{font-size:1.8cqw}
+}
+@media(max-width:1050px){
+  .layout{grid-template-columns:165px minmax(0,1fr)}
+  .sidebar{padding:24px 14px 30px 20px}
+  .grid-4,.swatch-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .icon-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .topbar{padding:14px 16px}
+  .topbar .meta{max-width:42%;line-height:1.4}
+  .layout{display:block}
+  .sidebar{position:relative;top:auto;max-height:none;border-right:0;border-bottom:1px solid #d6d2c8;padding:12px 16px;display:flex;gap:7px;overflow-x:auto;white-space:nowrap}
+  .sidebar .side-label,.side-note{display:none}
+  .sidebar a{border:1px solid #d8d3c8;padding:7px 10px;flex:0 0 auto;font-size:10px}
+  main{padding:0 16px 40px}
+  .hero{padding:34px 0 25px}
+  .hero h1{font-size:clamp(42px,12vw,64px)}
+  .section-head{display:block}
+  .grid-2,.grid-3,.type-specimens,.component-grid{grid-template-columns:1fr}
+  .grid-4,.swatch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .logo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .icon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .device-stage{padding:8px}
+  .device-caption{font-size:10px}
+  .pair-preview{grid-template-columns:1fr}
+  .pair-block{min-height:115px}
+  .table-wrap table{font-size:11px}
+  .scale-table{display:block;width:100%;min-width:0;table-layout:auto;position:relative;background:transparent}
+  .scale-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+  .scale-table tbody{display:grid;gap:10px}
+  .scale-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #d6d2c8;background:#f6f4ed}
+  .scale-table td{display:block;width:auto!important;min-width:0;padding:10px 12px;border:0;overflow-wrap:anywhere}
+  .scale-table td:first-child{grid-column:1/-1;background:var(--navy);color:#f7f3e9;padding:10px 12px}
+  .scale-table td:nth-child(2){grid-column:1/-1;border-bottom:1px solid #d6d2c8}
+  .scale-table td:nth-child(n+3)::before{content:attr(data-label);display:block;margin-bottom:5px;color:#77736a;font:600 9px/1.2 var(--golos);letter-spacing:.06em;text-transform:uppercase}
+  .scale-table tr:nth-child(3) td:nth-child(n+3) .scale-sample{font-size:clamp(20px,6cqw,24px)!important;white-space:nowrap}
+  .scale-table td:nth-child(5){grid-column:1/-1;border-top:1px solid #e0ddd5}
+
+}
+@media(max-width:420px){
+  .logo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .swatch-color{height:60px}
+  .card,.component-card{padding:14px}
+  .section{padding:30px 0}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brandline">TRAVEL CLUB <span style="color:#a79b84">/</span> DESIGN SYSTEM <span style="color:#a79b84">/</span> TEST_13</div>
+  <div class="meta">Редакция 1.0 · 23.10.2026<br>Рабочий справочник</div>
+</header>
+<div class="layout">
+  <nav class="sidebar" aria-label="Навигация по дизайн-системе">
+    <p class="side-label">Содержание</p>
+    <a href="#type">01 Типографика</a>
+    <a href="#responsive">02 Адаптация</a>
+    <a href="#colors">03 Цветовая система</a>
+    <a href="#logos">04 Логотип</a>
+    <a href="#symbols">05 Символы SVG</a>
+    <a href="#components">06 Компоненты</a>
+    <a href="#motion">07 Motion & states</a>
+    <p class="side-note">Базовые токены проекта показаны отдельно от локальных ролей test_13. Примеры адаптации помогают сравнить размеры, но не меняют CSS исходной страницы.</p>
+  </nav>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Рабочий справочник / публичный эксперимент</p>
+      <h1>Дизайн-система<br><em>/test_13</em></h1>
+      <p class="hero-copy">Справочник test_13 на материалах Travel Club: локальных шрифтах, исходных SVG-логотипах и семи авторских символах. Цвета проекта отделены от палитр отдельных разворотов.</p>
+      <div class="hero-meta">
+        <span class="pill"><strong>02.0</strong> Reference</span>
+        <span class="pill">TC Golos × TC Lora</span>
+        <span class="pill">Editorial Club</span>
+        <span class="pill">HTML · local assets</span>
+      </div>
+      <div class="notice"><strong>Источники проекта.</strong> TC Golos и TC Lora загружаются из <span class="code">frontend/public/test/fonts/</span>. Логотипы: исходные SVG из <span class="code">frontend/public/test_9/</span>; контуры символов повторяют <span class="code">editorial-symbol.tsx</span>.</div>
+    </section>
+
+    <section class="section" id="type">
+      <div class="section-head">
+        <div><div class="section-number">01 / TYPE</div><h2>Типографика</h2><p class="section-intro">Редакционный контраст строится на выразительной TC Lora и функциональной TC Golos. Это локальные WOFF2-файлы проекта, те же начертания используются в публичной части сайта.</p></div>
+      </div>
+      <div class="grid-2">
+        <div class="card family-card">
+          <div><div class="small-label">Interface / Body</div><div class="family-sample">Gg Аа 123</div></div>
+          <div class="family-meta"><span><strong>TC Golos</strong><br>Основной текст · UI</span><span>400–700<br>sans-serif</span></div>
+        </div>
+        <div class="card family-card">
+          <div><div class="small-label">Editorial / Display</div><div class="family-sample serif">Gg Аа 123</div></div>
+          <div class="family-meta"><span><strong>TC Lora</strong><br>Редакционные заголовки</span><span>400 / Italic<br>serif</span></div>
+        </div>
+      </div>
+      <div class="type-specimens">
+        <div class="type-sample"><div class="sample-top"><span>Regular / 400</span><span>TC Golos</span></div><div class="sample-word">Куда — важно. С кем — важнее.</div><div class="sample-note">Обычное начертание · интерфейс, описания, пояснения</div></div>
+        <div class="type-sample"><div class="sample-top"><span>Italic / 400</span><span>TC Lora</span></div><div class="sample-word serif italic">The art of going together</div><div class="sample-note">Курсив · редакционный акцент и короткая фраза</div></div>
+        <div class="type-sample"><div class="sample-top"><span>Bold / 700</span><span>TC Golos</span></div><div class="sample-word bold">PLACE × PEOPLE × MEMORY</div><div class="sample-note">Жирное начертание · короткие акценты, метки, UI</div></div>
+        <div class="type-sample"><div class="sample-top"><span>Uppercase / Caps</span><span>TC Golos 600</span></div><div class="sample-word upper">TRAVEL CLUB / NEXT ISSUE</div><div class="sample-note">Прописные · running head, навигация, метаданные</div></div>
+      </div>
+      <div class="table-wrap">
+        <table class="scale-table">
+          <thead><tr><th scope="col">Роль</th><th scope="col">Значение в test_13</th><th scope="col">Desktop</th><th scope="col">Tablet*</th><th scope="col">Mobile*</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Роль">Текст страницы</td><td data-label="Значение в test_13" class="code">clamp(14px, 2.5cqw, 17px)</td><td data-label="Desktop"><span class="scale-sample" style="font:17px/1.45 var(--golos)">Текст страницы</span>17 px</td><td data-label="Tablet"><span class="scale-sample" style="font:15px/1.45 var(--golos)">Текст страницы</span>15 px</td><td data-label="Mobile"><span class="scale-sample" style="font:15px/1.45 var(--golos)">Текст страницы</span>15 px</td></tr>
+            <tr><td data-label="Роль">Основная проза</td><td data-label="Значение в test_13" class="code">min 13–14 · fluid 2.3–2.65cqw · max 16–18</td><td data-label="Desktop">15–17 px</td><td data-label="Tablet">14–15 px</td><td data-label="Mobile">14–15 px</td></tr>
+            <tr><td data-label="Роль">Редакционный заголовок</td><td data-label="Значение в test_13" class="code">7.4–12.7cqw · Lora 400</td><td data-label="Desktop"><span class="scale-sample" style="font:48px/.98 var(--lora)">Editorial</span>32–72 px</td><td data-label="Tablet"><span class="scale-sample" style="font:38px/.98 var(--lora)">Editorial</span>28–54 px</td><td data-label="Mobile"><span class="scale-sample" style="font:34px/.98 var(--lora)">Editorial</span>28–42 px</td></tr>
+            <tr><td data-label="Роль">Подзаголовок</td><td data-label="Значение в test_13" class="code">4–5.3cqw · Golos 400–500</td><td data-label="Desktop">24–32 px</td><td data-label="Tablet">20–26 px</td><td data-label="Mobile">18–22 px</td></tr>
+            <tr><td data-label="Роль">Постерное слово</td><td data-label="Значение в test_13" class="code">15.5–30.8cqw · Golos 600–700</td><td data-label="Desktop">90–180 px</td><td data-label="Tablet">68–130 px</td><td data-label="Mobile">44–82 px</td></tr>
+            <tr><td data-label="Роль">Колонтитул / фолио</td><td data-label="Значение в test_13" class="code">clamp(11px, 1.93cqw, 12.5px)</td><td data-label="Desktop">12–13 px</td><td data-label="Tablet">11–12 px</td><td data-label="Mobile">11 px</td></tr>
+            <tr><td data-label="Роль">Подпись / credit</td><td data-label="Значение в test_13" class="code">clamp(11px, 1.9cqw, 12px)</td><td data-label="Desktop">12 px</td><td data-label="Tablet">11–12 px</td><td data-label="Mobile">11 px</td></tr>
+            <tr><td data-label="Роль">Навигация / CTA</td><td data-label="Значение в test_13" class="code">13px / 14–18px</td><td data-label="Desktop">13–18 px</td><td data-label="Tablet">13–16 px</td><td data-label="Mobile">12–14 px</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="asset-note">* Tablet/Mobile: адаптивные демонстрационные ориентиры для просмотра системы. Исходный test_13 рассчитан на полный журнальный опыт от 1100 × 700 px; ниже показывается fallback, а не мобильный разворот. Не считайте новые значения утверждёнными токенами без отдельного согласования.</div>
+    </section>
+
+    <section class="section" id="responsive">
+      <div class="section-head">
+        <div><div class="section-number">02 / RESPONSIVE</div><h2>Просмотр на устройствах</h2><p class="section-intro">Переключайте ширину живого образца. Внутренняя композиция меняется: заголовок, описание, CTA и метаданные перестраиваются под доступное пространство.</p></div>
+      </div>
+      <div class="device-toolbar">
+        <div class="segmented" role="group" aria-label="Выбрать размер устройства">
+          <button type="button" data-device="desktop" aria-pressed="true">Desktop · 1120</button>
+          <button type="button" data-device="tablet" aria-pressed="false">Tablet · 768</button>
+          <button type="button" data-device="mobile" aria-pressed="false">Mobile · 375</button>
+        </div>
+        <span class="small-label" id="device-size">1120 px · широкая композиция</span>
+      </div>
+      <div class="device-stage">
+        <div class="site-preview" id="site-preview" data-viewport="desktop" style="--preview-width:1120px;--preview-paper:#EEEEE7;--preview-ink:#12335D;--preview-accent:#C3A15E">
+          <div class="preview-inner">
+            <div class="preview-head"><img class="preview-logo" id="preview-logo" src="frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg" alt="Travel Club"><span>Field notes / 2026</span><span>Issue 01 ↗</span></div>
+            <div class="preview-hero">
+              <div><h3>Куда —<br>важно.</h3><div class="preview-cta"><a class="preview-link" href="#components">Исследовать форматы ↗</a><a class="preview-link" href="#colors">Палитра</a></div></div>
+              <div><p>Путешествия начинаются с направления. Но остаются с нами благодаря людям, деталям и историям.</p><div class="preview-mark">TC</div></div>
+            </div>
+            <div class="preview-footer"><span>Place × People × Memory</span><span>Travel Club · 01 / 07</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="device-caption"><span id="device-caption-left">Широкая композиция · две колонки</span><span>Container-based preview</span></div>
+    </section>
+
+    <section class="section" id="colors">
+      <div class="section-head">
+        <div><div class="section-number">03 / COLOR</div><h2>Цветовая система</h2><p class="section-intro">Постоянные цвета взяты из <span class="code">BASE_TOKENS</span>. Ниже они отделены от палитр test_13: цвета разворотов, локальные решения страниц, а не новые глобальные токены.</p></div>
+      </div>
+      <div class="palette-controls">
+        <label for="chapter-select" class="small-label">Посмотреть пару разворота</label>
+        <select id="chapter-select">
+          <option value="formats">Форматы</option><option value="about">О клубе</option><option value="next">Next issue</option><option value="thailand">Thailand</option><option value="china">China</option><option value="archive">Archive</option><option value="pov">POV</option><option value="start">Start</option>
+        </select>
+      </div>
+      <div class="pair-preview" id="pair-preview">
+        <div class="pair-block" id="pair-paper" style="background:#EEEEE7;color:#12335D"><small>Paper / Background · #EEEEE7</small><div class="pair-title">Планируем всё.</div><span>Фон страницы</span></div>
+        <div class="pair-block" id="pair-ink" style="background:#12335D;color:#EEEEE7"><small>Ink / Text · #12335D</small><div class="pair-title">Кроме лучших моментов.</div><span>Основной текст</span></div>
+      </div>
+      <div id="palette-groups"></div>
+      <div class="swatch-group">
+        <h3>Состояния UI и служебные оттенки</h3>
+        <div class="swatch-grid" id="state-swatches"></div>
+      </div>
+    </section>
+
+    <section class="section" id="logos">
+      <div class="section-head">
+        <div><div class="section-number">04 / WORDMARK</div><h2>Логотип и инверсии</h2><p class="section-intro">Показаны оригинальные SVG Editorial Signature и Signature V2. В проекте есть версии Navy и Cream; каждый знак показан на подходящем фоне без перекраски.</p></div>
+      </div>
+      <div class="logo-grid">
+        <div class="logo-card logo-on-paper"><div class="logo-stage"><img class="logo-art" src="frontend/public/test_9/TC_Logo_Editorial_Signature_Navy.svg" alt="Travel Club Editorial Signature, Navy" loading="lazy"></div><div class="logo-caption"><span>Editorial Signature · Navy</span><span>#0C1924</span></div></div>
+        <div class="logo-card logo-on-paper"><div class="logo-stage"><img class="logo-art" src="frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg" alt="Travel Club Editorial Signature V2, Navy" loading="lazy"></div><div class="logo-caption"><span>Signature V2 · Navy</span><span>#0C1924</span></div></div>
+        <div class="logo-card logo-on-navy"><div class="logo-stage"><img class="logo-art" src="frontend/public/test_9/TC_Logo_Editorial_Signature_Cream.svg" alt="Travel Club Editorial Signature, Cream" loading="lazy"></div><div class="logo-caption"><span>Editorial Signature · Cream</span><span>#F2F0EA</span></div></div>
+        <div class="logo-card logo-on-navy"><div class="logo-stage"><img class="logo-art" src="frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg" alt="Travel Club Editorial Signature V2, Cream" loading="lazy"></div><div class="logo-caption"><span>Signature V2 · Cream</span><span>#F2F0EA</span></div></div>
+      </div>
+      <p class="asset-note">Оригиналы остаются в <span class="code">frontend/public/test_9/</span>. Цвет знака зашит в исходном SVG и не меняется от темы страницы.</p>
+    </section>
+
+    <section class="section" id="symbols">
+      <div class="section-head">
+        <div><div class="section-number">05 / EDITORIAL SIGNS</div><h2>Редакционные символы</h2><p class="section-intro">Семь авторских геометрий из <span class="code">frontend/src/components/test_13/editorial-symbol.tsx</span>. Сетка 24 × 24, штрих 1.35 px, цвет наследуется от текста.</p></div>
+      </div>
+      <div class="icon-grid">
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 18 9 7h10M9 7l7 11"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="16" cy="18" r="1" fill="currentColor" stroke="none"/></svg></div><div><div class="icon-name">Route</div><div class="icon-meta">Маршрут и связи</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h8V4h8v12h-8v4H4V8Zm8 0v8M7 12h2m6 0h2"/><circle cx="7" cy="16" r="1" fill="currentColor" stroke="none"/></svg></div><div><div class="icon-name">Ready</div><div class="icon-meta">Подготовка поездки</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 8 6 10 6-10M8 6h8"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="19" r="2"/></svg></div><div><div class="icon-name">Companions</div><div class="icon-meta">Люди в общей поездке</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20 18 6m-9 0h9v9M4 10V4h6"/><circle cx="5" cy="19" r="2"/><circle cx="20" cy="20" r="1" fill="currentColor" stroke="none"/></svg></div><div><div class="icon-name">Direction</div><div class="icon-meta">Направление и выбор пути</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3 7 9-7 9-7-9 7-9ZM1 12h4m14 0h4"/><circle cx="12" cy="12" r="2"/></svg></div><div><div class="icon-name">Waypoint</div><div class="icon-meta">Место на маршруте</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 4H4v16h16v-4M8 9h8m-8 4h5m3-9h4v4"/><circle cx="17" cy="13" r="1" fill="currentColor" stroke="none"/></svg></div><div><div class="icon-name">Note</div><div class="icon-meta">Запись и подпись</div></div></div>
+        <div class="icon-card"><div class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 19 20 4M10 4h10v10"/><circle cx="5" cy="19" r="2"/></svg></div><div><div class="icon-name">Onward</div><div class="icon-meta">Продолжение пути</div></div></div>
+      </div>
+      <div class="icon-usage">
+        <span class="small-label">CurrentColor</span>
+        <span class="icon-stage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 18 9 7h10M9 7l7 11"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="16" cy="18" r="1" fill="currentColor" stroke="none"/></svg></span>
+        <span class="icon-stage" style="color:#CE3C28"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 18 9 7h10M9 7l7 11"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="16" cy="18" r="1" fill="currentColor" stroke="none"/></svg></span>
+        <span class="icon-stage" style="color:#123D30"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 18 9 7h10M9 7l7 11"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><circle cx="16" cy="18" r="1" fill="currentColor" stroke="none"/></svg></span>
+        <span class="asset-note" style="margin:0">Одна геометрия · цвет наследуется от текста · исходный размер 24 × 24 px</span>
+      </div>
+    </section>
+
+    <section class="section" id="components">
+      <div class="section-head">
+        <div><div class="section-number">06 / COMPONENTS</div><h2>Компоненты и CTA</h2><p class="section-intro">Редакционные ссылки вместо тяжёлых прямоугольных кнопок; компактные controls и сдержанная навигация. Hit area интерактивных элементов не меньше 44 px.</p></div>
+      </div>
+      <div class="component-grid">
+        <div class="component-card"><h3>Primary / Filled</h3><div class="component-stage"><button class="btn btn-primary">Открыть журнал ↗</button></div><div class="btn-label">Main action · Navy / Cream</div></div>
+        <div class="component-card"><h3>Secondary / Outline</h3><div class="component-stage"><button class="btn btn-outline">Посмотреть форматы</button></div><div class="btn-label">Secondary action · border</div></div>
+        <div class="component-card"><h3>Editorial text CTA</h3><div class="component-stage"><a href="#responsive" class="btn btn-text">Изучить направление <span>↗</span></a></div><div class="btn-label">Text link · underline motion</div></div>
+        <div class="component-card"><h3>Dark / Rust variants</h3><div class="component-stage"><button class="btn btn-dark">Подробнее о клубе</button><button class="btn btn-rust">Next issue ↗</button></div><div class="btn-label">Use only with matching chapter palette</div></div>
+        <div class="component-card"><h3>Edge controls</h3><div class="component-stage"><button class="btn btn-circle" aria-label="Предыдущий разворот">←</button><button class="btn btn-circle" aria-label="Следующий разворот">→</button></div><div class="btn-label">62 × 62 px · symbol 30 px</div></div>
+        <div class="component-card"><h3>Chapter navigation</h3><div class="component-stage"><div class="chapter-nav"><button type="button">01</button><button type="button" class="active">02</button><button type="button">03</button><button type="button">04</button></div></div><div class="btn-label">50 px min height · active rule 2 px</div></div>
+      </div>
+      <div class="state-line">
+        <span class="small-label">States</span><span class="state-chip">Default</span><span class="state-chip" style="background:#7B3B4A;color:#FFF5E9;border-color:#7B3B4A">Hover edge</span><span class="state-chip focus-demo">Keyboard focus</span><span class="state-chip" style="background:#FFF5E9;color:#12335D;border-color:#FFF5E9">Active chapter</span>
+      </div>
+    </section>
+
+    <section class="section" id="motion">
+      <div class="section-head">
+        <div><div class="section-number">07 / MOTION</div><h2>Движение и состояния</h2><p class="section-intro">Исходные временные параметры сохранены как справочные. В интерфейсах обязательно оставлять понятное статичное состояние для пользователей с reduced motion.</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Элемент</th><th>Параметр из test_13</th><th>Назначение</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Листание</strong></td><td class="code">1000ms · cubic-bezier(.35,.05,.3,1)</td><td>Плавное движение страницы / разворота.</td></tr>
+            <tr><td><strong>Заголовки</strong></td><td class="code">1000ms · multiline 1200ms</td><td>Появление редакционных заголовков.</td></tr>
+            <tr><td><strong>Каскад контента</strong></td><td class="code">650ms · translateY(8px) · step 160ms</td><td>Последовательное раскрытие контента.</td></tr>
+            <tr><td><strong>Разделители</strong></td><td class="code">450ms / 650ms</td><td>Тонкие линии и редакционные границы.</td></tr>
+            <tr><td><strong>Ссылки / стрелки</strong></td><td class="code">180–190ms · shift 2px</td><td>Короткая реакция без избыточной анимации.</td></tr>
+            <tr><td><strong>Reduced motion</strong></td><td class="code">prefers-reduced-motion</td><td>Отключить анимации и оставить статичный результат.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="motion-demo"><span class="small-label">Motion sample</span><div class="motion-box" aria-hidden="true"></div><span class="asset-note" style="margin:0">Демонстрация движения; в production соблюдать исходную easing-кривую и reduced-motion.</span></div>
+      </div>
+      <div class="footer"><span>TRAVEL CLUB · DESIGN SYSTEM / TEST_13</span><span>Локальные assets · версия 2 · 26.10.2026</span></div>
+    </section>
+  </main>
+</div>
+<script>
+const deviceButtons = [...document.querySelectorAll('[data-device]')];
+const preview = document.getElementById('site-preview');
+const deviceSize = document.getElementById('device-size');
+const deviceCaption = document.getElementById('device-caption-left');
+const deviceSettings = {
+  desktop:{width:'1120px',label:'1120 px · широкая композиция',caption:'Широкая композиция · две колонки'},
+  tablet:{width:'768px',label:'768 px · компактная композиция',caption:'Компактная композиция · сжатые интервалы'},
+  mobile:{width:'375px',label:'375 px · вертикальная композиция',caption:'Вертикальная композиция · один столбец'}
+};
+deviceButtons.forEach(button=>{
+  button.addEventListener('click',()=>{
+    const key=button.dataset.device;
+    preview.dataset.viewport=key;
+    preview.style.setProperty('--preview-width',deviceSettings[key].width);
+    deviceSize.textContent=deviceSettings[key].label;
+    deviceCaption.textContent=deviceSettings[key].caption;
+    deviceButtons.forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+  });
+});
+const chapterPalettes = {
+  formats:{name:'Форматы',paper:'#EEEEE7',ink:'#12335D',accents:['#476744','#9B402E','#6B4E85']},
+  about:{name:'О клубе',paper:'#F2F0EA',ink:'#172F50',accents:['#DFE5E7','#304864']},
+  next:{name:'Next issue',paper:'#CE3C28',ink:'#FFFDF2',accents:['#F5E2A0','#F0E9DB','#9B402E','#93402F']},
+  thailand:{name:'Thailand',paper:'#123D30',ink:'#ECE9CA',accents:['#E9ECDF','#D6CB8D']},
+  china:{name:'China',paper:'#26343E',ink:'#DCE8E9',accents:['#DCE5E8','#6F828C']},
+  archive:{name:'Archive',paper:'#BD934D',ink:'#252C2E',accents:['#E5D7B8','#E9E3D5','#34312A','#7A715F']},
+  pov:{name:'POV',paper:'#5B233E',ink:'#F2DEDA',accents:['#F2BFAA','#BC849D']},
+  start:{name:'Start',paper:'#ECD8D6',ink:'#5B233E',accents:['#A26C82']}
+};
+const paletteGroups = [
+  {title:'Постоянные токены проекта · BASE_TOKENS',items:[
+    ['Cloud','#F2F0EA','Основная светлая поверхность'],['Ink','#171717','Базовый текст'],['China','#163A5F','Цвет направления China'],['Thailand','#27493B','Цвет направления Thailand'],['Ocean','#627F92','Вторичный синий'],['Madagascar','#7D3027','Цвет направления Madagascar'],['Tobacco','#7C5A3B','Тёплый коричневый'],['Editorial paper','#F3F2EE','Редакционная бумага'],['Editorial ink','#20211F','Редакционный текст'],['Brand blue','#172F50','Основной синий Travel Club'],['Muted','#595B57','Вторичный текст'],['Line','#C2C4BD','Разделители']
+  ]},
+  {title:'Оболочка журнала',items:[
+    ['Scene / gradient start','#77414D','Бордовая сцена'],['Scene / middle','#58303D','Градиент сцены'],['Scene / deep','#351D2B','Градиент сцены'],['Shell text','#F1DFD1','Подписи рядом с книгой'],['Sheet','#F1EDDF','Бумажный лист'],['Cover','#C3A15E','Тёплая обложка'],['Hero blue','#153A6B','Hero фон'],['Hero cream','#F5F0DC','Hero текст'],['Art insert','#D9E4E8','Холодная арт-плоскость']
+  ]},
+  {title:'Пары разворотов и редакционные акценты',items:[
+    ['Formats · paper','#EEEEE7','Фон / Formats'],['Formats · ink','#12335D','Текст / Formats'],['About · paper','#F2F0EA','Фон / О клубе'],['About · ink','#172F50','Текст / О клубе'],['Placeholder','#DFE5E7','Placeholder / About'],['Placeholder ink','#304864','Текст placeholder'],['Next Issue · red','#CE3C28','Фон / Next Issue'],['Next Issue · white','#FFFDF2','Текст / Next Issue'],['Display accent','#F5E2A0','Дисплей / Next Issue'],['Story accent','#F0E9DB','Story / Next Issue'],['Rust accent','#9B402E','Редакционный акцент'],['Rust alt','#93402F','Дополнительный rust'],['Thailand · green','#123D30','Фон / Thailand'],['Thailand · paper','#ECE9CA','Текст / Thailand'],['Thailand story','#E9ECDF','Story / Thailand'],['Thailand gold','#D6CB8D','Акцент / Thailand'],['China · slate','#26343E','Фон / China'],['China · paper','#DCE8E9','Текст / China'],['China story','#DCE5E8','Story / China'],['China line','#6F828C','Линия / China'],['Archive · gold','#BD934D','Фон / Archive'],['Archive · ink','#252C2E','Текст / Archive'],['Photo mat','#E5D7B8','Фото-мат'],['Index paper','#E9E3D5','Index фон'],['Index ink','#34312A','Index текст'],['Archive line','#7A715F','Линия / Archive'],['POV · wine','#5B233E','Фон / POV'],['POV · paper','#F2DEDA','Текст / POV'],['POV accent','#F2BFAA','Акцент / POV'],['POV line','#BC849D','Линия / POV'],['Start · paper','#ECD8D6','Фон / Start'],['Start line','#A26C82','Линия / Start']
+  ]}
+];
+const stateColors=[
+  ['Edge hover','#7B3B4A','Подсветка кромки книги'],
+  ['Active / indicator','#FFF5E9','Активный текст и индикатор'],
+  ['Keyboard focus','#EAD8A7','Контур клавиатурного фокуса'],
+  ['Chapter number','#CBB4A7','Вторичная подпись навигации'],
+  ['Scrollbar','#BC998B','Тёплый нейтральный ползунок']
+];
+function contrast(hex){
+  const c=hex.replace('#','');
+  const rgb=[parseInt(c.slice(0,2),16),parseInt(c.slice(2,4),16),parseInt(c.slice(4,6),16)].map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+  const lum=.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];
+  return lum>.42?'#172F50':'#F5F0DC';
+}
+function swatchCard(item){
+  const [name,hex,use]=item;
+  return `<article class="swatch"><div class="swatch-color" style="background:${hex}"></div><div class="swatch-body"><div class="swatch-name">${name}</div><div class="swatch-hex">${hex}</div><div class="swatch-use">${use}</div><button class="copy-hex" type="button" data-copy="${hex}">Copy HEX</button></div></article>`;
+}
+document.getElementById('palette-groups').innerHTML=paletteGroups.map(group=>`<div class="swatch-group"><h3>${group.title}</h3><div class="swatch-grid">${group.items.map(swatchCard).join('')}</div></div>`).join('');
+document.getElementById('state-swatches').innerHTML=stateColors.map(swatchCard).join('');
+function updatePair(key){
+  const p=chapterPalettes[key];
+  const paper=document.getElementById('pair-paper'),ink=document.getElementById('pair-ink');
+  paper.style.background=p.paper; paper.style.color=contrast(p.paper);
+  paper.innerHTML=`<small>Paper / Background · ${p.paper}</small><div class="pair-title">${p.name}</div><span>Фон разворота</span>`;
+  ink.style.background=p.ink; ink.style.color=contrast(p.ink);
+  ink.innerHTML=`<small>Ink / Text · ${p.ink}</small><div class="pair-title">PLACE × PEOPLE × MEMORY</div><span>Основной текст / акценты: ${p.accents.join(' · ')}</span>`;
+  preview.style.setProperty('--preview-paper',p.paper);
+  preview.style.setProperty('--preview-ink',p.ink);
+  preview.style.setProperty('--preview-accent',p.accents[0]);
+  const previewLogo=document.getElementById('preview-logo');
+  previewLogo.src=contrast(p.paper)==='#172F50'
+    ? 'frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Navy.svg'
+    : 'frontend/public/test_9/TC_Logo_Editorial_Signature_V2_Cream.svg';
+}
+document.getElementById('chapter-select').addEventListener('change',e=>updatePair(e.target.value));
+document.addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-copy]');
+  if(!btn)return;
+  try{
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const old=btn.textContent;btn.textContent='Copied';
+    setTimeout(()=>btn.textContent=old,900);
+  }catch{
+    const field=document.createElement('textarea');field.value=btn.dataset.copy;document.body.appendChild(field);field.select();document.execCommand('copy');field.remove();
+    const old=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=old,900);
+  }
+});
+document.querySelectorAll('.chapter-nav button').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelectorAll('.chapter-nav button').forEach(b=>b.classList.toggle('active',b===button));
+}));
+</script>
+</body>
+</html>
