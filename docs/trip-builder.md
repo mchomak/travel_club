@@ -35,4 +35,4 @@ The backend remains authoritative for money and uses Decimal values. The trip ba
 
 ## Local verification
 
-From `frontend/`, run `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, and `npm.cmd run build`. With the local Compose services and Chromium available, run `npm.cmd exec playwright test e2e/constructor.spec.ts e2e/trip-map.spec.ts e2e/trip-builder.spec.ts -- --workers=3` from `frontend/`. The T04 run and its exact results are recorded in `.autopilot/2026-10-26-trip-wizard--wip/acceptance-04.md`.
+From `frontend/`, run `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, and `npm.cmd run build`. With the local Compose services and Chromium available, run `npm.cmd exec playwright test e2e/constructor.spec.ts e2e/trip-map.spec.ts e2e/trip-builder.spec.ts -- --workers=3` from `frontend/`. The T04 run and its exact results are recorded in `.autopilot/2026-10-26-trip-wizard/acceptance-04.md`.
