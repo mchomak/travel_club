@@ -75,6 +75,25 @@ test('keyboard selection on a map marker keeps the marker focused and its popup 
   await expect(marker).toBeFocused();
   await expect(marker).toHaveAttribute('aria-pressed', 'true');
 });
+test('Space activates a map marker without scrolling the document', async ({ page }) => {
+  await provider(page);
+  const trip = await fixture(page, input => {
+    input.items = [event(input, 0, 'Музей на карте', a)];
+  });
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto(`/admin/trips/${trip.id}/builder?step=4&day=${trip.days[0].id}`);
+  const marker = map(page).locator('.leaflet-marker-icon[title="Музей на карте"]');
+  await expect(marker).toBeVisible();
+  await marker.focus();
+  await expect(marker).toBeFocused();
+  const scroll = await page.evaluate(() => ({ y: window.scrollY, max: document.documentElement.scrollHeight - window.innerHeight }));
+  expect(scroll.max).toBeGreaterThan(scroll.y);
+  await marker.press('Space');
+  await expect(map(page).locator('.leaflet-popup-content')).toContainText('Музей на карте');
+  await expect(marker).toBeFocused();
+  await expect(marker).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scroll.y);
+});
 async function saved(page: Page) { await expect(page.locator('.save-status')).toHaveText('Сохранено', { timeout: 15000 }); }
 const section = (page: Page) => page.getByRole('region', { name: 'Маршрут дня', exact: true, includeHidden: true });
 const map = (page: Page) => section(page).getByLabel('Карта выбранного дня', { exact: true });
