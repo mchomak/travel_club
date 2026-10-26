@@ -555,3 +555,11 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - Завершённые интервью хранят неизменяемые версии в `research_interview_versions`: миграция `a2f7c91b4d60` backfill-ит version 1, завершение создаёт начальный снимок, явное сохранение — следующий. Снимки включают профиль, screening, вопросы и ответы; изменения screening/category и новые снимки сохраняются атомарно. Старые версии доступны только для чтения, autosave завершённого интервью не меняет историю.
 - Безопасная цель после входа реализована в `frontend/src/lib/return-target.ts`; proxy сохраняет относительный путь и query protected-страницы, а прямой вход ведёт на защищённый `/home` с каталогом страниц.
 - Проверено 22 октября 2026: frontend Vitest — 161 passed / 38 файлов; lint, typecheck, production build (38 маршрутов) прошли. Изолированный Compose: backend pytest — 156 passed, Ruff и единственная Alembic head `a2f7c91b4d60` прошли; `research.spec.ts` — 3 passed, фильтры — 1 passed. Alembic сообщает один deprecation warning об отсутствующем `path_separator`.
+
+### Концепт `/test_20` — 26 октября 2026
+
+- `/test_20` — noindex-маршрут `frontend/src/app/test_20/page.tsx`; разметка, тексты и данные четырёх форматов живут в `frontend/src/components/test_20/concept-home.tsx`, стили страницы — `concept.module.css`. «Гид по Москве» ведёт на отдельный раздел `/formats#moscow-title`. Настройки находятся в `design-settings.tsx`/`design-tokens.ts`, применяются только к корню `data-editorial-home="test-20"` и хранят draft в `localStorage` под `travel-club-test-20-design-v1`; общие токены и страницы не менять ради этого playground.
+- Редактор фото и CSS, стабильные слоты и browser storage изолированы в `frontend/src/components/test_20/` (`image-editor.tsx`, `image-editor.module.css`, `photo-slots.ts`, `photo-store.ts`; IndexedDB `travel-club-test-20-photos`). Проверки страницы: `frontend/e2e/test-20-home.spec.ts` и `test-20-settings.spec.ts`.
+- Проверено 26 октября 2026: frontend lint/typecheck и Docker production build прошли; Vitest — 210/210; Playwright для test-20 home/settings вместе с publication-pages — 64/64.
+
+<!-- autopilot:end -->

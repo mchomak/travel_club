@@ -164,7 +164,7 @@ test("homepage routes lead to the publication while genuine content anchors stay
   await expect(page).toHaveURL(/\/start$/);
 });
 
-test("formats offer three distinct ways to travel with contextual links", async ({ page }) => {
+test("formats describe three core ways and the separate Moscow guide", async ({ page }) => {
   const response = await page.goto("/formats");
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Три способа путешествовать.");
@@ -174,6 +174,10 @@ test("formats offer three distinct ways to travel with contextual links", async 
   await expect(page.getByText(/Вы самостоятельно бронируете и оплачиваете поставщиков\./)).toBeVisible();
   await expect(page.getByText("6–9 человек", { exact: false })).toBeVisible();
   await expect(page.getByRole("list", { name: "От разговора до дороги" }).getByRole("listitem")).toHaveCount(4);
+  await expect(page.locator("#moscow-title")).toHaveText("Гид по Москве");
+  await expect(page.locator("#moscow-title").locator("xpath=ancestor::section")).toContainText("Программа и состав услуги пока уточняются.");
+  await page.goto("/formats#moscow-title");
+  await expect(page.locator("#moscow-title")).toBeInViewport();
 });
 
 test("archive distinguishes friends' field notes from future official issues", async ({ page }) => {

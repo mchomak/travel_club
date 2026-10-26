@@ -44,6 +44,16 @@ export function Formats() {
       </div>
     </section>
 
+    <section className={`${e.formatSpread} ${e.moscow}`} aria-labelledby="moscow-title">
+      <div className={e.productTitle}><EditorialLabel>ДОПОЛНИТЕЛЬНЫЙ ФОРМАТ / MOSCOW GUIDE</EditorialLabel><h2 id="moscow-title" className={s.h2}>Гид по Москве</h2><p className={s.lead}>Знакомство с городом.<br />Отдельный формат TC.</p><span className={`${s.displayL} ${e.productNumber}`} aria-hidden="true">04</span></div>
+      <div className={e.productCopy}>
+        <h3 className={s.h3}>Расскажите, что вам интересно.</h3>
+        <p className={s.body}>Обсудим возможный формат знакомства с Москвой и подберём его под ваши интересы.</p>
+        <div className={e.productNote}><EditorialLabel>СОСТАВ УСЛУГИ</EditorialLabel><p className={s.small}>Программа и состав услуги пока уточняются. Детали и условия согласуем до начала работы.</p></div>
+        <CTA href="/start">Обсудить формат</CTA>
+      </div>
+    </section>
+
     <section className={`${s.section} ${e.process}`} aria-labelledby="process-title">
       <div className={e.processHeading}><EditorialLabel>ПРАКТИЧЕСКИЕ СТРАНИЦЫ / 01 → 04</EditorialLabel><h2 id="process-title" className={s.h2}>От разговора<br />до дороги.</h2></div>
       <ol className={e.steps} aria-label="От разговора до дороги">

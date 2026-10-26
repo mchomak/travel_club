@@ -19,6 +19,8 @@
 .group .productCopy > h3 { grid-column: 1; }
 .group .productCopy > p { grid-column: 2; grid-row: 1; }
 .group .productCopy > a { grid-column: 1 / -1; justify-self: start; }
+.moscow .productTitle { grid-column: 1 / 4; }
+.moscow .productCopy { grid-column: 5 / -1; max-width: 70ch; }
 .process { display: grid; gap: var(--pub-space-2xl); }
 .processHeading { display: flex; justify-content: space-between; align-items: start; gap: var(--pub-space-xl); color: var(--pub-accent); }
 .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--pub-layout-column-gutter); list-style: none; margin: 0; padding: 0; }
@@ -61,6 +63,8 @@
   .group .productTitle { grid-column: 1 / 5; }
   .group .productImage, .group .productCopy { grid-column: 5 / -1; }
   .group .productCopy { display: flex; }
+  .moscow .productTitle { grid-column: 1 / 4; }
+  .moscow .productCopy { grid-column: 5 / -1; }
   .yearIndex { grid-column: 1 / 3; }
   .yearStories, .pastStories { grid-column: 3 / -1; }
   .pastStories { grid-template-columns: 1fr 1fr; }
