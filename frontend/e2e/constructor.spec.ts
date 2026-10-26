@@ -13,7 +13,7 @@ const project = path.resolve(import.meta.dirname, "../..");
 const apiHeaders = { "X-Requested-With": "TravelClub" };
 let authCookies: Awaited<ReturnType<APIRequestContext["storageState"]>>["cookies"] = [];
 function database(code: string, input: object) {
-  return execFileSync("docker", ["compose", "exec", "-T", "backend", "python", "-c", code], { cwd: project, input: JSON.stringify(input), encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  return execFileSync("docker", process.env.PLAYWRIGHT_BACKEND_CONTAINER ? ["exec", "-i", process.env.PLAYWRIGHT_BACKEND_CONTAINER, "python", "-c", code] : ["compose", "exec", "-T", "backend", "python", "-c", code], { cwd: project, input: JSON.stringify(input), encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
 }
 test.beforeAll(async ({ playwright }) => {
   database("import json,sys; from app.db import SessionLocal; from app.bootstrap import create_admin; p=json.load(sys.stdin); db=SessionLocal(); create_admin(db,p['login'],p['password']); db.close()", { login, password });
@@ -486,10 +486,10 @@ test("copy is independent; archive, delete, and logout protect own trips", async
   await page.getByRole("dialog", { name: "Удалить поездку?" }).getByRole("button", { name: "Удалить поездку" }).click();
   await expect(copyRow).toHaveCount(0);
   await page.getByRole("button", { name: "Выйти" }).click();
-  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page).toHaveURL(/\/admin\/login(?:\?next=.+)?$/);
   expect((await page.request.get("/api/trips")).status()).toBe(401);
   await page.goto(`/admin/trips/${copyId}`);
-  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page).toHaveURL(/\/admin\/login(?:\?next=.+)?$/);
   const afterLogout = await fixtureTrip(page);
   expect((await page.request.get(`/api/trips/${afterLogout.id}`)).ok()).toBe(true);
 });
@@ -543,7 +543,8 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.getByLabel("Логин", { exact: true }).fill(login);
   await page.getByLabel("Пароль", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Войти в кабинет" }).click();
-  await expect(page).toHaveURL(/\/admin\/trips$/);
+  await expect(page).toHaveURL(/\/home$/);
+  await page.goto("/admin/trips");
   await page.getByRole("link", { name: "Создать поездку", exact: true }).click();
   await page.getByLabel("Название поездки", { exact: true }).fill("Проверка маршрута в Японии");
   await page.getByLabel("Название для клиента", { exact: false }).fill("Пять дней в Японии");
@@ -615,7 +616,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await page.screenshot({ path: "test-results/constructor-desktop.png", fullPage: true });
   await page.reload();
   await expect(page.locator(".finance-total")).toHaveText("335 174,00 RUB");
-  await expect(page.getByRole("button", { name: /Открыть перелёт Перелёт, 2026-10-01, 23:00 — 24:00/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Открыть перелёт Перелёт 1, 2026-10-01, 23:00 — 24:00/ })).toBeVisible();
   await expect(page.locator(".trip-calendar-day-heading").first()).toContainText("Токио");
   await expect(page.locator(".trip-calendar-day-heading").nth(2)).toContainText("Рим");
   const tripId = url.split("/").at(-1)!;
