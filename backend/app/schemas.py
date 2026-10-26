@@ -264,6 +264,8 @@ class ItemInput(DTO):
     map_end_place: MapPlace | None = None
     start_time: time | None = None
     end_time: time | None = None
+    departure_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
+    arrival_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
     external_url: str | None = Field(default=None, max_length=2048)
     internal_note: Note = ""
     client_note: Note = ""
@@ -279,6 +281,24 @@ class ItemInput(DTO):
     check_out: date | None = None
     check_in_time: time | None = None
     check_out_time: time | None = None
+
+    @field_validator("start_time", "end_time", "check_in_time", "check_out_time")
+    @classmethod
+    def local_clock_without_timezone(cls, value: time | None) -> time | None:
+        if value is not None and value.tzinfo is not None:
+            raise ValueError(
+                "Укажите местное время без часового пояса; смещение задаётся в отдельных полях UTC"
+            )
+        return value
+
+    @model_validator(mode="after")
+    def valid_transport_offsets(self):
+        departure, arrival = self.departure_utc_offset_minutes, self.arrival_utc_offset_minutes
+        if (departure is None) != (arrival is None):
+            raise ValueError("Укажите оба смещения UTC на даты отправления и прибытия")
+        if departure is not None and self.type not in {"flight", "train_bus", "transfer"}:
+            raise ValueError("Смещения UTC доступны только для переездов")
+        return self
 
     @model_validator(mode="after")
     def valid_subtype(self):
@@ -438,6 +458,8 @@ class PreviewItem(DTO):
     location: str
     start_time: time | None
     end_time: time | None
+    departure_utc_offset_minutes: int | None = None
+    arrival_utc_offset_minutes: int | None = None
     client_note: str
 
 

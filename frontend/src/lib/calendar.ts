@@ -1,4 +1,5 @@
 import type { DayInput, ItemInput, ItemType } from "./contracts";
+import { hasUtcOffsets, itemEndDate, resolveItemSchedule } from "./transport-schedule";
 
 export interface CalendarEvent {
   kind: "event";
@@ -12,6 +13,7 @@ export interface CalendarEvent {
   laneCount: number;
   continuesBefore: boolean;
   continuesAfter: boolean;
+  endpoint?: "departure" | "arrival";
 }
 
 export type AirportKind = "before" | "after";
@@ -112,8 +114,9 @@ export function airportBlockInterval(item: ItemInput, days: DayInput[], kind: Ai
   const departure = minuteOf(item.start_time), arrival = minuteOf(item.end_time);
   const explicitEndDate = item.end_day_id ? datesById.get(item.end_day_id) : undefined;
   if (item.end_day_id && !explicitEndDate) return null;
-  const arrivalDate = explicitEndDate ?? (departure !== null && arrival !== null && arrival < departure ? nextDate(startDate) : startDate);
-  if (departure !== null && arrival !== null && absoluteMinute(arrivalDate, arrival) <= absoluteMinute(startDate, departure)) return null;
+  const arrivalDate = itemEndDate(days, item);
+  if (!arrivalDate) return null;
+  if (departure !== null && arrival !== null && !resolveItemSchedule(days, item)) return null;
   const duration = kind === "before" ? item.airport_before_minutes ?? 180 : item.airport_after_minutes ?? 60;
   if (!Number.isInteger(duration) || duration <= 0 || duration > DAY) return null;
   if (kind === "before") {
@@ -167,8 +170,19 @@ export function buildCalendarEntries(days: DayInput[], items: ItemInput[], visib
     if (!startDate || startMinute === null || endMinute === null) continue;
     const explicitEndDate = item.end_day_id ? datesById.get(item.end_day_id) : undefined;
     if (item.end_day_id && !explicitEndDate) continue;
-    const endDate = explicitEndDate ?? (endMinute < startMinute ? nextDate(startDate) : startDate);
-    if (endDate < startDate || (endDate === startDate && endMinute <= startMinute)) continue;
+    const endDate = explicitEndDate ?? (hasUtcOffsets(item) ? startDate : endMinute < startMinute ? nextDate(startDate) : startDate);
+    const schedule = resolveItemSchedule(days, item);
+    if (!schedule) continue;
+    if (schedule.localReversed) {
+      // A westbound flight cannot be represented as a continuous local interval.
+      for (const [endpoint, date, minute] of [["departure", startDate, startMinute], ["arrival", endDate, endMinute]] as const) {
+        if (!visibleSet.has(date)) continue;
+        events.push({ kind: "event", itemId: item.id, title: item.title, itemType: item.type, date,
+          startMinute: minute, endMinute: Math.min(DAY, minute + 15), endpoint,
+          lane: 0, laneCount: 1, continuesBefore: false, continuesAfter: false });
+      }
+      continue;
+    }
     for (const date of visible) {
       if (date < startDate || date > endDate) continue;
       const segmentStart = date === startDate ? startMinute : 0;

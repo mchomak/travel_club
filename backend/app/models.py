@@ -147,6 +147,8 @@ class TripItem(Base):
     map_end_place: Mapped[dict | None] = mapped_column(JSONB)
     start_time: Mapped[time | None]
     end_time: Mapped[time | None]
+    departure_utc_offset_minutes: Mapped[int | None]
+    arrival_utc_offset_minutes: Mapped[int | None]
     external_url: Mapped[str | None] = mapped_column(String(2048))
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")
@@ -188,6 +190,14 @@ class TripItem(Base):
         ),
         CheckConstraint("position >= 0", name="item_position"),
         CheckConstraint("NOT (price_pending AND included)", name="item_pending_price_excluded"),
+        CheckConstraint(
+            "(departure_utc_offset_minutes IS NULL AND arrival_utc_offset_minutes IS NULL) OR "
+            "(departure_utc_offset_minutes IS NOT NULL AND arrival_utc_offset_minutes IS NOT NULL "
+            "AND departure_utc_offset_minutes BETWEEN -840 AND 840 "
+            "AND arrival_utc_offset_minutes BETWEEN -840 AND 840 "
+            "AND type IN ('flight','train_bus','transfer'))",
+            name="item_transport_utc_offsets",
+        ),
         CheckConstraint(
             "type IN ('flight','train_bus','transfer','hotel','excursion',"
             "'activity','rental','insurance','meal','other')",

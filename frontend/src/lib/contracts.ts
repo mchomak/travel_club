@@ -32,6 +32,7 @@ export interface ItemInput {
   departure_label?: string; arrival_label?: string;
   price_pending?: boolean; auto_transfer?: AutoTransfer | null;
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
+  departure_utc_offset_minutes?: number | null; arrival_utc_offset_minutes?: number | null;
   map_place?: MapPlace | null; map_end_place?: MapPlace | null;
   external_url: string | null; internal_note: string; client_note: string; included: boolean; currency: string;
   unit_price: DecimalString; quantity: DecimalString; participants_override: number | null;
@@ -67,6 +68,7 @@ export interface PreviewItem {
   id: UUID; type: ItemType; title: string; description: string; location: string;
   subtype: ItemSubtype | null;
   start_time: string | null; end_time: string | null; client_note: string;
+  departure_utc_offset_minutes?: number | null; arrival_utc_offset_minutes?: number | null;
 }
 export interface PreviewDay {
   id: UUID; date: string; country: string; city: string; place: string; title: string;

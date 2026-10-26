@@ -25,6 +25,14 @@ test("hotel night predicates select the previous and next stay without extra hot
   expect(buildDayRoute(input, days[2].id).end.place?.name).toBe("new");
 });
 
+test("a date-line flight keeps its earlier local arrival day and later departure day in the route", () => {
+  const flight=event('date-line',{type:'flight',day_id:days[1].id,end_day_id:days[0].id,start_time:'01:00',end_time:'23:00',departure_utc_offset_minutes:840,arrival_utc_offset_minutes:-600,map_place:place('Origin'),map_end_place:place('Destination')});
+  const input=trip([flight]);
+  expect(buildDayRoute(input,days[0].id).legs.filter(leg=>leg.kind==='scheduled')).toMatchObject([{departureDate:days[1].date,arrivalDate:days[0].date}]);
+  expect(buildDayRoute(input,days[0].id).nodes.some(node=>node.itemId===flight.id&&node.place?.name==='Destination')).toBe(true);
+  expect(buildDayRoute(input,days[1].id).nodes.some(node=>node.itemId===flight.id&&node.place?.name==='Origin')).toBe(true);
+});
+
 test("overlapping hotels stay ambiguous including unknown places; manual overrides resolve either boundary", () => {
   const input = trip([hotel("a", days[0].date, "2026-10-04", null), hotel("b", days[0].date, "2026-10-04")]);
   const route = buildDayRoute(input, days[1].id);

@@ -98,6 +98,25 @@ def calendar(payload: TripInput) -> TripInput:
 def validate_schedule(payload: TripInput) -> None:
     days = {day.id: day.date for day in payload.days}
     for item in payload.items:
+        if item.departure_utc_offset_minutes is not None:
+            if item.day_id not in days or (item.end_day_id and item.end_day_id not in days):
+                raise PricingError(f"«{item.title}»: выберите дни отправления и прибытия")
+            start_date = days[item.day_id]
+            end_date = days[item.end_day_id] if item.end_day_id else start_date
+            if not payload.start_date <= end_date <= payload.end_date:
+                raise PricingError(f"«{item.title}»: день окончания вне дат поездки")
+            if item.start_time is not None and item.end_time is not None:
+                departure = datetime.combine(start_date, item.start_time) - timedelta(
+                    minutes=item.departure_utc_offset_minutes
+                )
+                arrival = datetime.combine(end_date, item.end_time) - timedelta(
+                    minutes=item.arrival_utc_offset_minutes
+                )
+                if arrival <= departure:
+                    raise PricingError(
+                        f"«{item.title}»: прибытие по UTC должно быть позже отправления"
+                    )
+            continue
         if item.end_day_id is None:
             continue
         if item.day_id is None or item.end_day_id not in days or item.day_id not in days:

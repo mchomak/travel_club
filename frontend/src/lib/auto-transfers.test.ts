@@ -16,6 +16,21 @@ function leg(input: TripInput, mode: "drive" | "walk" = "drive"): RouteLeg {
 }
 const eta = { status: "ok" as const, duration_s: 540, distance_m: 900 };
 
+test("westbound arrival marker does not occupy transfer time while the real airport buffer does", () => {
+  const flight = { ...origin, type: "flight" as const, start_time: "12:00", end_time: "10:00",
+    departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: -240,
+    airport_before_minutes: 0, airport_after_minutes: 0, map_end_place: place("Arrival", 35.5) };
+  const next = { ...target, start_time: "10:10", end_time: "11:00" };
+  const input = trip([flight, next]);
+  const connection = leg(input);
+  connection.from = { key: `item:${flight.id}:end`, kind: "arrival", itemId: flight.id,
+    label: flight.title, place: flight.map_end_place, date: days[1].date, time: "10:00" };
+  const result = { status: "ok" as const, duration_s: 600, distance_m: 900 };
+  expect(planAutoTransfer(input, connection, result)).toMatchObject({ ok: true, conflicts: [], item: { start_time: "10:00", end_time: "10:10" } });
+  const buffered = trip([{ ...flight, airport_after_minutes: 60 }, next]);
+  expect(planAutoTransfer(buffered, connection, result)).toMatchObject({ ok: false, reason: "conflict", conflicts: [{ itemId: flight.id }] });
+});
+
 test("provider ETA becomes a numbered calendar snapshot with explicit pending taxi price", () => {
   const input = trip();
   const planned = planAutoTransfer(input, leg(input), eta);

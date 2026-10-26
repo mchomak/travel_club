@@ -10,6 +10,20 @@ import {calculateTrip} from '@/lib/pricing';
 
 afterEach(cleanup);
 
+test('a westbound flight keeps both UTC offsets and same-day arrival through submit and reopening',async()=>{
+ const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
+ const item={...newItem('flight',day,'RUB',day.date),start_time:'12:00',end_time:'10:00',departure_utc_offset_minutes:180,arrival_utc_offset_minutes:-240};
+ const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[],rates:[]};
+ render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ expect(screen.getByLabelText('UTC при отправлении')).toHaveValue('180');
+ expect(screen.getByLabelText('UTC при прибытии')).toHaveValue('-240');
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({end_day_id:null,start_time:'12:00',end_time:'10:00',departure_utc_offset_minutes:180,arrival_utc_offset_minutes:-240}),undefined);
+ const saved=onSubmit.mock.calls[0][0],calculation=calculateTrip({...trip,items:[saved]});
+ const doc={...trip,id:crypto.randomUUID(),version:1,created_by:crypto.randomUUID(),created_at:'2026-10-01T00:00:00Z',updated_at:'2026-10-01T00:00:00Z',items:[{...saved,...calculation.items[0]}],calculation} as TripDocument;
+ expect(tripInput(doc).items[0]).toMatchObject({departure_utc_offset_minutes:180,arrival_utc_offset_minutes:-240});
+});
+
 test('untouched new names are numbered and a pending taxi requires an explicit price including zero',async()=>{
  const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
  const old={...newItem('transfer',day,'RUB',day.date),subtype:'taxi' as const,title:'Такси 4'};

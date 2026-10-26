@@ -234,11 +234,12 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
             })()}
             {entries.events.filter(event => event.date === day.date).map(event => {
               const color = colors[event.itemType];
-              return <button type="button" key={`${event.itemId}-${event.date}`} className={`trip-calendar-event trip-calendar-${event.itemType}`} onPointerDown={pointer => {
+              const displayTime = event.endpoint ? `${event.endpoint === "departure" ? "Отправление" : "Прибытие"} ${timeOf(event.startMinute)}` : `${timeOf(event.startMinute)} — ${timeOf(event.endMinute)}`;
+              return <button type="button" key={`${event.itemId}-${event.date}-${event.endpoint ?? "interval"}`} className={`trip-calendar-event trip-calendar-${event.itemType}`} onPointerDown={pointer => {
                 pointer.stopPropagation();
                 begin(pointer, { kind: "event", dayId: day.id, anchorMinute: minuteAt(day.id, pointer.clientY), itemId: event.itemId, segmentDate: event.date });
-              }} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${timeOf(event.startMinute)} — ${timeOf(event.endMinute)}`} style={{ position: "absolute", top: event.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (event.endMinute - event.startMinute) / 60 * HOUR_HEIGHT), left: `${event.lane / event.laneCount * 100}%`, width: `${100 / event.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
-                <strong>{event.title}</strong><span style={{ display: "block" }}>{timeOf(event.startMinute)}–{timeOf(event.endMinute)} · {labels[event.itemType]}</span>
+              }} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: event.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (event.endMinute - event.startMinute) / 60 * HOUR_HEIGHT), left: `${event.lane / event.laneCount * 100}%`, width: `${100 / event.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
+                <strong>{event.title}</strong><span style={{ display: "block" }}>{displayTime} · {labels[event.itemType]}</span>
               </button>;
             })}
             {entries.airportBlocks.filter(block => block.date === day.date).map(block => {

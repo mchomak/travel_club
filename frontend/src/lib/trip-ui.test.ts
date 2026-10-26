@@ -1,5 +1,10 @@
 import { expect, test } from "vitest";
-import { emptyDay, itemDisplayLabel, newCategoryItem, newItem, newTrip, nextItemTitle } from "./trip-ui";
+import { emptyDay, itemDisplayLabel, newCategoryItem, newItem, newTrip, nextItemTitle, timeLabel } from "./trip-ui";
+
+test("time labels distinguish westbound local clocks from legacy next-day inference", () => {
+  expect(timeLabel({ start_time: "12:00", end_time: "10:00", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: -240 })).toBe("12:00 UTC+03:00 – 10:00 UTC−04:00");
+  expect(timeLabel({ start_time: "23:00", end_time: "01:00" })).toBe("23:00 – 01:00 на следующий день");
+});
 
 test("event titles advance by display label after the maximum and preserve custom names", () => {
   const day = emptyDay("2026-10-01");

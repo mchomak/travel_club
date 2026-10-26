@@ -1,6 +1,7 @@
 import type { TripInput, MapPlace, TravelMode, ItemInput, MapLegMode } from "./contracts";
 import { buildCalendarEntries } from "./calendar";
 import { nextDate } from "./pricing";
+import { itemEndDate } from "./transport-schedule";
 
 export interface RouteNode {
   key: string; label: string; place: MapPlace | null; itemId?: string;
@@ -100,7 +101,7 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
       ...(schedule.endDate === day.date && (isTransport(item) || schedule.overnight || item.map_end_place) ? [arrival] : []),
     ];
     if (localNodes.length) eventGroups.push({ item, time: localNodes[0].time, nodes: localNodes });
-    if (isTransport(item) && schedule.startDate <= day.date && schedule.endDate >= day.date && (!item.auto_transfer || schedule.startDate === day.date)) scheduledLegs.push({
+    if (isTransport(item) && (schedule.startDate <= schedule.endDate ? schedule.startDate <= day.date && schedule.endDate >= day.date : schedule.endDate <= day.date && schedule.startDate >= day.date) && (!item.auto_transfer || schedule.startDate === day.date)) scheduledLegs.push({
       key: `${departure.key}>${arrival.key}`, from: departure, to: arrival, mode: item.auto_transfer?.mode ?? "transit", kind: item.auto_transfer ? "connection" : "scheduled", itemId: item.id,
       ...(item.auto_transfer ? { sourceFromKey: item.auto_transfer.from_key, sourceToKey: item.auto_transfer.to_key } : {}),
       departureDate: schedule.startDate, arrivalDate: schedule.endDate, departureTime: schedule.startTime, arrivalTime: schedule.endTime,
@@ -122,6 +123,7 @@ export function buildDayRoute(trip: TripInput, dayId: string): DayRoutePlan {
     if (!leg.departureTime || !leg.arrivalTime) continue;
     const departure = `${leg.departureDate}T${leg.departureTime.slice(0, 5)}`;
     const arrival = `${leg.arrivalDate}T${leg.arrivalTime.slice(0, 5)}`;
+    if (arrival <= departure) continue;
     for (const group of eventGroups) {
       if (group.item.id === leg.itemId || !group.time) continue;
       const eventStart = `${day.date}T${group.time.slice(0, 5)}`;
@@ -154,7 +156,7 @@ function scheduleOf(trip: TripInput, item: ItemInput): { startDate: string; endD
   // Use the calendar's validation and legacy next-day rules for complete intervals.
   const calendar = buildCalendarEntries(trip.days, [item], [startDate]);
   const valid = calendar.events.length > 0;
-  const endDate = explicitEnd ?? (valid && calendar.events[0].continuesAfter ? nextDate(startDate) : startDate);
+  const endDate = itemEndDate(trip.days, item) ?? explicitEnd ?? (valid && calendar.events[0].continuesAfter ? nextDate(startDate) : startDate);
   return { startDate, endDate, startTime: item.start_time, endTime: item.end_time,
-    overnight: endDate > startDate && (valid || !!explicitEnd) };
+    overnight: endDate !== startDate && (valid || !!explicitEnd) };
 }

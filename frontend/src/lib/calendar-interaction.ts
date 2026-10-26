@@ -1,4 +1,5 @@
 import type { DayInput, ItemInput } from "./contracts";
+import { resolveItemSchedule } from "./transport-schedule";
 
 const DAY = 24 * 60;
 const QUARTER = 15;
@@ -32,24 +33,21 @@ export function selectionRange(anchor: number, current: number, dragged: boolean
   return { start: timeOfMinute(start), end: timeOfMinute(end) };
 }
 
-export function moveEvent(item: Pick<ItemInput, "day_id" | "end_day_id" | "start_time" | "end_time">, days: Pick<DayInput, "id" | "date">[], targetDayId: string, targetMinute: number): { dayId: string; endDayId: string | null; start: string; end: string } | null {
+export function moveEvent(item: Pick<ItemInput, "day_id" | "end_day_id" | "start_time" | "end_time" | "departure_utc_offset_minutes" | "arrival_utc_offset_minutes">, days: Pick<DayInput, "id" | "date">[], targetDayId: string, targetMinute: number): { dayId: string; endDayId: string | null; start: string; end: string } | null {
   if (!Number.isFinite(targetMinute) || targetMinute < 0 || targetMinute >= DAY) return null;
   const byId = new Map(days.map(day => [day.id, day]));
   const source = item.day_id ? byId.get(item.day_id) : undefined;
   const target = byId.get(targetDayId);
   const startMinute = minuteOfTime(item.start_time), endMinute = minuteOfTime(item.end_time);
   if (!source || !target || startMinute === null || endMinute === null) return null;
-  const sourceNumber = dateNumber(source.date);
-  const sourceEnd = item.end_day_id ? byId.get(item.end_day_id) : undefined;
-  if (item.end_day_id && !sourceEnd) return null;
-  const endNumber = sourceEnd ? dateNumber(sourceEnd.date) : sourceNumber + (endMinute < startMinute ? 1 : 0);
-  const duration = (endNumber - sourceNumber) * DAY + endMinute - startMinute;
-  if (duration <= 0) return null;
-  const begin = snapMinute(targetMinute), absoluteEnd = begin + duration;
+  const schedule = resolveItemSchedule(days, item);
+  if (!schedule) return null;
+  const begin = snapMinute(targetMinute), absoluteEnd = begin + schedule.durationMinutes
+    + (schedule.hasOffsets ? item.arrival_utc_offset_minutes! - item.departure_utc_offset_minutes! : 0);
   const endDate = dateFromNumber(dateNumber(target.date) + Math.floor(absoluteEnd / DAY));
   const finalDay = days.find(day => day.date === endDate);
   if (!finalDay) return null;
-  return { dayId: targetDayId, endDayId: finalDay.id === targetDayId ? null : finalDay.id, start: timeOfMinute(begin), end: timeOfMinute(absoluteEnd % DAY) };
+  return { dayId: targetDayId, endDayId: finalDay.id === targetDayId ? null : finalDay.id, start: timeOfMinute(begin), end: timeOfMinute(((absoluteEnd % DAY) + DAY) % DAY) };
 }
 
 export function moveHotel(item: Pick<ItemInput, "check_in" | "check_out">, days: Pick<DayInput, "id" | "date">[], targetDayId: string): { dayId: string; checkIn: string; checkOut: string } | null {

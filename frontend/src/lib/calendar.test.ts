@@ -18,6 +18,17 @@ test("overnight flight covers local clock hours on both calendar dates", () => {
   ]);
 });
 
+test("westbound flight shows separate local endpoints and arrival airport block on the same date", () => {
+  const flight = item({ end_day_id: null, start_time: "12:00", end_time: "10:00",
+    departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: -240 });
+  const result = buildCalendarEntries(days, [flight], dates);
+  expect(result.events.map(event => [event.date, event.startMinute, event.endMinute])).toEqual([
+    [dates[0], 600, 615], [dates[0], 720, 735],
+  ]);
+  expect(result.airportBlocks.find(block => block.airportKind === "after")).toMatchObject({ date: dates[0], startMinute: 600, endMinute: 660 });
+  expect(result.events.some(event => event.date === dates[1])).toBe(false);
+});
+
 test("legacy overnight interval and a clipped visible slice retain the arrival segment", () => {
   const legacy = item({ end_day_id: null });
   const result = buildCalendarEntries(days, [legacy], [dates[1]]);

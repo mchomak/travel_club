@@ -8,6 +8,7 @@ import { ErrorNotice, Field } from "./ui";
 import { LocationPicker } from './location-picker';
 import { CountryCity } from './country-city';
 import { TransportEndpoints } from './transport-endpoints';
+import { hasUtcOffsets, offsetLabel, resolveItemSchedule } from '@/lib/transport-schedule';
 
 const nullableInteger = (v: string | number | null | undefined) => v === "" || v === null || v === undefined ? null : Number(v);
 const scheduleError = "Окончание должно быть позже начала";
@@ -25,7 +26,7 @@ function validUrl(value: string | null) {
 export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, requireTypeChoice = false }: { initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void; requireTypeChoice?: boolean }) {
   const isNew = !trip.items.some(existing => existing.id === initial.id);
   const initialStartDate = trip.days.find(day => day.id === initial.day_id)?.date;
-  const inferredEnd = initialStartDate && !initial.end_day_id && initial.start_time && initial.end_time && initial.end_time < initial.start_time
+  const inferredEnd = initialStartDate && !hasUtcOffsets(initial) && !initial.end_day_id && initial.start_time && initial.end_time && initial.end_time < initial.start_time
     ? trip.days.find(day => day.date === nextDate(initialStartDate))?.id ?? null : null;
   const defaults = {
     ...initial,
@@ -34,6 +35,8 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     arrival_country_code: initial.arrival_country_code ?? null,
     departure_city: initial.departure_city ?? '', arrival_city: initial.arrival_city ?? '',
     departure_label: initial.departure_label ?? '', arrival_label: initial.arrival_label ?? '',
+    departure_utc_offset_minutes: initial.departure_utc_offset_minutes ?? null,
+    arrival_utc_offset_minutes: initial.arrival_utc_offset_minutes ?? null,
     unit_price: initial.price_pending ? '' : initial.unit_price,
     airport_before_minutes: initial.airport_before_minutes ?? 180,
     airport_after_minutes: initial.airport_after_minutes ?? 60,
@@ -43,6 +46,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   };
   const { register, handleSubmit, setValue, setError: setFieldError, clearErrors, control, formState: { errors, isDirty } } = useForm<ItemInput>({ defaultValues: defaults });
   const item = useWatch({ control }) as ItemInput;
+  const usesUtcOffsets = hasUtcOffsets(item);
   const manualTitle = useRef(!isAutomaticItemTitle(initial.title));
   const titleField = register("title", { required: "Укажите название", maxLength: 200 });
   const priceField = register("unit_price", { required: !item.price_pending });
@@ -65,12 +69,12 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     if (!isNew || chosenEndDay.current || !startDate || !item.start_time || !item.end_time) return;
     const followingDate = nextDate(startDate);
     const nextDay = followingDate <= trip.end_date ? trip.days.find(day => day.date === followingDate) : undefined;
-    const suggested = item.end_time < item.start_time ? nextDay?.id ?? null : null;
+    const suggested = !usesUtcOffsets && item.end_time < item.start_time ? nextDay?.id ?? null : null;
     if (item.end_day_id === suggestedEndDay.current && item.end_day_id !== suggested) {
       suggestedEndDay.current = suggested;
       setValue("end_day_id", suggested, { shouldDirty: true });
     }
-  }, [isNew, startDate, item.start_time, item.end_time, item.end_day_id, trip.days, trip.end_date, setValue]);
+  }, [isNew, startDate, item.start_time, item.end_time, item.end_day_id, usesUtcOffsets, trip.days, trip.end_date, setValue]);
   useEffect(() => {
     if (!restoreTimedSchedule.current || item.type === "hotel") return;
     restoreTimedSchedule.current = false;
@@ -78,7 +82,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     setValue("end_time", timedSchedule.current.end, { shouldDirty: true });
     setValue("end_day_id", timedSchedule.current.endDayId, { shouldDirty: true });
   }, [item.type, setValue]);
-  const overnightOutsideTrip = selectedDay && !item.end_day_id && item.start_time && item.end_time && item.end_time < item.start_time && nextDate(selectedDay.date) > trip.end_date;
+  const overnightOutsideTrip = selectedDay && !hasUtcOffsets(item) && !item.end_day_id && item.start_time && item.end_time && item.end_time < item.start_time && nextDate(selectedDay.date) > trip.end_date;
   const availableDays = selectedDay ? trip.days.filter(day => day.date >= selectedDay.date && day.date <= trip.end_date).length : 3660;
   const foreign = item.currency !== trip.base_currency;
   const rates = foreign && rate ? [...trip.rates.filter(r => r.currency !== item.currency), { currency: item.currency, rate }] : trip.rates;
@@ -89,6 +93,10 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     const subtype = ({ transfer: "bus", meal: "restaurant", activity: "activity", other: "other" } as Partial<Record<ItemType, ItemInput["subtype"]>>)[type] ?? null;
     if (!manualTitle.current) setValue("title", nextItemTitle({items:trip.items.filter(existing=>existing.id!==item.id)}, {...item,type,subtype}), { shouldDirty: true });
     setValue("type", type, { shouldDirty: true });
+    if (!["flight", "train_bus", "transfer"].includes(type)) {
+      setValue("departure_utc_offset_minutes", null, { shouldDirty: true });
+      setValue("arrival_utc_offset_minutes", null, { shouldDirty: true });
+    }
     setValue("subtype", subtype, { shouldDirty: true });
     setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
     if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
@@ -119,7 +127,18 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   function save(values: ItemInput) {
     if (!typeChosen) return;
     setError(null);
-    clearErrors(["end_day_id", "end_time", "check_out", "external_url", "airport_before_minutes", "airport_after_minutes"]);
+    clearErrors(["end_day_id", "end_time", "check_out", "external_url", "airport_before_minutes", "airport_after_minutes", "departure_utc_offset_minutes", "arrival_utc_offset_minutes"]);
+    const departureOffset = values.departure_utc_offset_minutes, arrivalOffset = values.arrival_utc_offset_minutes;
+    if ((departureOffset == null) !== (arrivalOffset == null)) {
+      setFieldError("arrival_utc_offset_minutes", { message: "Укажите оба смещения UTC на даты отправления и прибытия" });
+      return;
+    }
+    for (const field of ["departure_utc_offset_minutes", "arrival_utc_offset_minutes"] as const) {
+      if (values[field] != null && (!Number.isInteger(values[field]) || values[field]! < -840 || values[field]! > 840)) {
+        setFieldError(field, { message: "Смещение UTC должно быть от −14:00 до +14:00" });
+        return;
+      }
+    }
     if (values.type === "flight") {
       for (const field of ["airport_before_minutes", "airport_after_minutes"] as const) {
         const value = values[field];
@@ -135,7 +154,11 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     }
     const startDate = trip.days.find(day => day.id === values.day_id)?.date;
     const endDate = trip.days.find(day => day.id === values.end_day_id)?.date;
-    if (values.type !== "hotel" && values.end_day_id && (!startDate || !endDate || endDate < startDate || (endDate === startDate && values.start_time && values.end_time && values.end_time <= values.start_time))) {
+    if (hasUtcOffsets(values) && (!startDate || (values.end_day_id && !endDate) || (values.start_time && values.end_time && !resolveItemSchedule(trip.days, values)))) {
+      setFieldError("end_time", { message: "Прибытие по UTC должно быть позже отправления. Проверьте даты и смещения." });
+      return;
+    }
+    if (!hasUtcOffsets(values) && values.type !== "hotel" && values.end_day_id && (!startDate || !endDate || endDate < startDate || (endDate === startDate && values.start_time && values.end_time && values.end_time <= values.start_time))) {
       setFieldError("end_day_id", { message: scheduleError });
       return;
     }
@@ -144,7 +167,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       && values.day_id === initial.day_id && !values.end_day_id
       && values.start_time?.slice(0, 5) === initial.start_time.slice(0, 5)
       && values.end_time?.slice(0, 5) === initial.end_time.slice(0, 5);
-    if (values.type !== "hotel" && startDate && !values.end_day_id && values.start_time && values.end_time && values.end_time <= values.start_time && !unchangedLegacyOvernight) {
+    if (!hasUtcOffsets(values) && values.type !== "hotel" && startDate && !values.end_day_id && values.start_time && values.end_time && values.end_time <= values.start_time && !unchangedLegacyOvernight) {
       setFieldError("end_time", { message: "Выберите дату окончания после даты начала" });
       return;
     }
@@ -194,6 +217,14 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       {item.type === "hotel" ? <><Field label="Заезд — дата"><input type="date" min={trip.start_date} max={trip.end_date} {...checkInField} onChange={event => { void checkInField.onChange(event); setValue("day_id", trip.days.find(day => day.date === event.target.value)?.id ?? null, { shouldDirty: true }); }} /></Field><Field label="Время заселения" hint={!item.check_in_time ? "Не указано. Рекомендуем 15:00" : undefined}><input type="time" {...register("check_in_time", { setValueAs: v => v || null })} /></Field><Field label="Выезд — дата" error={errors.check_out?.message} hint="День выезда не оплачивается"><input type="date" min={trip.start_date} max={nextDate(trip.end_date)} {...register("check_out", { setValueAs: v => v || null })} /></Field><Field label="Время выселения" hint={!item.check_out_time ? "Не указано. Рекомендуем 11:00" : undefined}><input type="time" {...register("check_out_time", { setValueAs: v => v || null })} /></Field>{(!item.check_in_time || !item.check_out_time) && <button type="button" className="secondary-button field-wide" onClick={() => { if (!item.check_in_time) setValue("check_in_time", "15:00", { shouldDirty: true }); if (!item.check_out_time) setValue("check_out_time", "11:00", { shouldDirty: true }); }}>Подставить рекомендуемые часы</button>}</> : <>
         <Field label="День маршрута" hint="Дата начала события"><select {...register("day_id", { setValueAs: v => v || null })}><option value="">Общие расходы</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field>
         <Field label={`${labels.start} по местному времени`}><input type="time" {...register("start_time", { setValueAs: v => v || null })} /></Field><Field label="Дата окончания" error={errors.end_day_id?.message} hint="Для ночного события предложим следующий день тура"><select {...endDayField} onChange={event => { chosenEndDay.current = true; void endDayField.onChange(event); }}><option value="">В день начала</option>{trip.days.filter(d => d.date >= trip.start_date && d.date <= trip.end_date).map(d => <option key={d.id} value={d.id}>{formatDate(d.date)}{d.city ? ` · ${d.city}` : ""}</option>)}</select></Field><Field label={`${labels.end} по местному времени`} error={errors.end_time?.message} hint="Часы показываются без пересчёта часовых поясов"><input type="time" {...register("end_time", { setValueAs: v => v || null })} /></Field>
+        {["flight", "train_bus", "transfer"].includes(item.type) && <>
+          {(["departure", "arrival"] as const).map(endpoint => {
+            const field = `${endpoint}_utc_offset_minutes` as const, value = item[field];
+            const options = [...new Set([...Array.from({ length: 113 }, (_, index) => index * 15 - 840), ...(value != null ? [value] : [])])].sort((a,b) => a-b);
+            return <Field key={endpoint} label={endpoint === "departure" ? "UTC при отправлении" : "UTC при прибытии"} error={errors[field]?.message}><select {...register(field, { setValueAs: nullableInteger })}><option value="">Не указано</option>{options.map(offset => <option key={offset} value={offset}>{offsetLabel(offset)}</option>)}</select></Field>;
+          })}
+          <p className="field-hint field-wide">Выберите оба смещения UTC на даты переезда с учётом летнего времени. Часы в календаре остаются местными; смещения проверяют фактическую длительность. Для старого расписания можно оставить оба поля пустыми.</p>
+        </>}
         {overnightOutsideTrip && <p className="field-hint field-wide">Продолжение {formatDate(nextDate(selectedDay.date))} — за пределами поездки. Чтобы изменить расписание, продлите даты поездки.</p>}
         {item.type === "flight" && <><Field label="До вылета в аэропорту, минут" error={errors.airport_before_minutes?.message} hint="По умолчанию 180. Ноль скрывает блок."><input type="number" min="0" max="1440" step="1" {...register("airport_before_minutes", { valueAsNumber: true })} /></Field><Field label="После прилёта в аэропорту, минут" error={errors.airport_after_minutes?.message} hint="По умолчанию 60. Ноль скрывает блок."><input type="number" min="0" max="1440" step="1" {...register("airport_after_minutes", { valueAsNumber: true })} /></Field></>}
       </>}

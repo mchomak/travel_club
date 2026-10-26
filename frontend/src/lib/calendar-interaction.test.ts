@@ -19,6 +19,13 @@ test("moving an overnight event preserves duration and rejects a trip overrun", 
   expect(moveEvent(item, days, "day-0", 1440)).toBeNull();
 });
 
+test("moving a westbound flight preserves its five real hours and local arrival offset", () => {
+  const item = { day_id: "day-0", end_day_id: null, start_time: "12:00", end_time: "10:00",
+    departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: -240 };
+  expect(moveEvent(item, days, "day-1", 23 * 60)).toEqual({ dayId: "day-1", endDayId: null, start: "23:00", end: "21:00" });
+  expect(moveEvent(item, days, "day-1", 60)).toEqual({ dayId: "day-1", endDayId: "day-0", start: "01:00", end: "23:00" });
+});
+
 test("moving a saved event accepts the backend time format with seconds", () => {
   const item = { day_id: "day-0", end_day_id: null, start_time: "01:00:00", end_time: "02:00:00" };
   expect(moveEvent(item, days, "day-0", 3 * 60)).toEqual({ dayId: "day-0", endDayId: null, start: "03:00", end: "04:00" });

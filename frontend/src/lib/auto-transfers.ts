@@ -2,7 +2,7 @@ import type { ItemInput, MapPlace, TripInput } from "./contracts";
 import type { RouteLeg, RouteMeasurement, RouteNode } from "./day-route";
 import { airportBlockInterval, buildCalendarEntries } from "./calendar";
 import { newCategoryItem, nextItemTitle } from "./trip-ui";
-import { nextDate } from "./pricing";
+import { hasUtcOffsets, itemEndDate } from "./transport-schedule";
 
 export interface AutoTransferOptions {
   arrivalDate?: string; arrivalTime?: string; allowConflict?: boolean;
@@ -47,9 +47,7 @@ function fail(reason: AutoTransferFailureReason, message: string, extra: Partial
   return { ok: false, reason, message, requiresArrivalTime: reason === "arrival_required", conflicts: [], ...extra };
 }
 function endDate(trip: TripInput, item: ItemInput, date: string): string | null {
-  if (item.end_day_id) return trip.days.find(day => day.id === item.end_day_id)?.date ?? null;
-  const start = minute(item.start_time), end = minute(item.end_time);
-  return start !== null && end !== null && end < start ? nextDate(date) : date;
+  return itemEndDate(trip.days, item) ?? (item.end_day_id ? null : date);
 }
 function resolveSource(trip: TripInput, node: RouteNode, side: "from" | "to"): Source | null {
   const match = /^item:(.+):(start|end)$/.exec(node.key);
@@ -91,7 +89,8 @@ function snapshot(source: Source): SourceSnapshot {
   return { date: source.date, time: source.time, available: source.available,
     point: source.node.place ? [source.node.place.latitude, source.node.place.longitude] : null,
     schedule: item ? [item.type, item.start_time, item.end_time, item.check_in, item.check_out, item.check_in_time, item.check_out_time,
-      item.airport_before_minutes ?? 180, item.airport_after_minutes ?? 60] : [] };
+      item.airport_before_minutes ?? 180, item.airport_after_minutes ?? 60,
+      ...(hasUtcOffsets(item) ? [item.departure_utc_offset_minutes, item.arrival_utc_offset_minutes] : [])] : [] };
 }
 function signature(trip: TripInput, mode: "drive" | "walk", from: Source, to: Source): string {
   return JSON.stringify({ v: 1, mode, bounds: [trip.start_date, trip.end_date], from: snapshot(from), to: snapshot(to) } satisfies Signature);
@@ -141,6 +140,7 @@ function findConflicts(trip: TripInput, from: Source, departure: number, arrival
   if (from.item && from.available !== null && departure < from.available) add(from.item.id, "Не хватает времени после предыдущего события, выезда из отеля или выхода из аэропорта.");
   const calendar = buildCalendarEntries(trip.days, trip.items, trip.days.map(day => day.date));
   for (const event of [...calendar.events, ...calendar.airportBlocks]) {
+    if (event.kind === "event" && event.endpoint) continue;
     const dayStart = Date.parse(`${event.date}T00:00:00Z`) / 60000;
     if (dayStart + event.startMinute < arrival && dayStart + event.endMinute > departure) add(event.itemId, "Переезд пересекается с событием или временем в аэропорту.");
   }

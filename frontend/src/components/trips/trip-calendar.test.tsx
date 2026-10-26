@@ -6,6 +6,14 @@ import { TripCalendar } from "./trip-calendar";
 
 afterEach(cleanup);
 
+test("westbound endpoint markers state departure and arrival without inventing a short flight duration", () => {
+  const day = { id: "day-0", date: "2026-10-01" } as DayInput;
+  const item = { id: "west", day_id: day.id, end_day_id: null, type: "flight", title: "На запад", start_time: "12:00", end_time: "10:00", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: -240 } as ItemInput;
+  render(<TripCalendar days={[day]} items={[item]} onOpenItem={vi.fn()} />);
+  expect(screen.getByRole("button", { name: /На запад.*Отправление 12:00/ })).toBeVisible();
+  expect(screen.getByRole("button", { name: /На запад.*Прибытие 10:00/ })).toBeVisible();
+});
+
 function positionDays() {
   document.querySelectorAll<HTMLElement>(".trip-calendar-day").forEach((day, index) => {
     vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ left: 48 + index * 200, right: 248 + index * 200, top: 100, bottom: 1444, width: 200, height: 1344 } as DOMRect);
