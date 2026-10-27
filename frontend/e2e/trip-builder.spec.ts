@@ -76,18 +76,19 @@ function fixtureItem(type: ItemInput["type"], day: TripInput["days"][number] | n
 async function addBuilderFlight(page: Page, trip: TripDocument, item: {
   title: string; price: string; dayId: string; endDayId: string; start: string; end: string; departureOffset: number; arrivalOffset: number;
 }) {
-  await page.getByRole("region", { name: "Дальние переезды", exact: true }).getByRole("button", { name: "Добавить перелёт", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Название элемента", { exact: true }).fill(item.title);
-  await dialog.getByLabel("День маршрута", { exact: true }).selectOption(item.dayId);
-  await dialog.getByLabel("Вылет по местному времени", { exact: true }).fill(item.start);
-  await dialog.getByLabel("Дата окончания", { exact: true }).selectOption(item.endDayId);
-  await dialog.getByLabel("Прилёт по местному времени", { exact: true }).fill(item.end);
-  await dialog.getByLabel("UTC при отправлении", { exact: true }).selectOption(String(item.departureOffset));
-  await dialog.getByLabel("UTC при прибытии", { exact: true }).selectOption(String(item.arrivalOffset));
-  await dialog.getByLabel("Цена билета", { exact: true }).fill(item.price);
-  await dialog.getByRole("button", { name: "Сохранить элемент", exact: true }).click();
-  await expect(dialog).not.toBeVisible({ timeout: 10000 });
+  const section = page.getByRole("region", { name: "Дальние переезды", exact: true });
+  await section.getByRole("button", { name: "Добавить перелёт", exact: true }).click();
+  const form = section.locator("form");
+  await form.getByLabel("Название элемента", { exact: true }).fill(item.title);
+  await form.getByLabel("День маршрута", { exact: true }).selectOption(item.dayId);
+  await form.getByLabel("Вылет по местному времени", { exact: true }).fill(item.start);
+  await form.getByLabel("Дата окончания", { exact: true }).selectOption(item.endDayId);
+  await form.getByLabel("Прилёт по местному времени", { exact: true }).fill(item.end);
+  await form.getByLabel("UTC при отправлении", { exact: true }).selectOption(String(item.departureOffset));
+  await form.getByLabel("UTC при прибытии", { exact: true }).selectOption(String(item.arrivalOffset));
+  await form.getByLabel("Цена билета", { exact: true }).fill(item.price);
+  await form.getByRole("button", { name: "Сохранить элемент", exact: true }).click();
+  await expect(form).not.toBeVisible({ timeout: 10000 });
   await saved(page);
   const response = await page.request.get("/api/trips/" + trip.id);
   expect(response.ok()).toBe(true);
@@ -95,14 +96,15 @@ async function addBuilderFlight(page: Page, trip: TripDocument, item: {
 }
 
 async function addBuilderHotel(page: Page, trip: TripDocument, item: { title: string; checkIn: string; checkOut: string; price: string }) {
-  await page.getByRole("region", { name: "Отели поездки", exact: true }).getByRole("button", { name: "Добавить отель", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Название элемента", { exact: true }).fill(item.title);
-  await dialog.getByLabel("Заезд — дата", { exact: true }).fill(item.checkIn);
-  await dialog.getByLabel("Выезд — дата", { exact: true }).fill(item.checkOut);
-  await dialog.getByLabel("Цена номера за ночь", { exact: true }).fill(item.price);
-  await dialog.getByRole("button", { name: "Сохранить элемент", exact: true }).click();
-  await expect(dialog).not.toBeVisible({ timeout: 10000 });
+  const section = page.getByRole("region", { name: "Отели поездки", exact: true });
+  await section.getByRole("button", { name: "Добавить отель", exact: true }).click();
+  const form = section.locator("form");
+  await form.getByLabel("Название элемента", { exact: true }).fill(item.title);
+  await form.getByLabel("Заезд — дата", { exact: true }).fill(item.checkIn);
+  await form.getByLabel("Выезд — дата", { exact: true }).fill(item.checkOut);
+  await form.getByLabel("Цена номера за ночь", { exact: true }).fill(item.price);
+  await form.getByRole("button", { name: "Сохранить элемент", exact: true }).click();
+  await expect(form).not.toBeVisible({ timeout: 10000 });
   await saved(page);
   const response = await page.request.get("/api/trips/" + trip.id);
   expect(response.ok()).toBe(true);
@@ -286,9 +288,17 @@ test("builder round-trips an eight-day itinerary through UI, API and PostgreSQL"
   await page.getByRole("button", { name: "Завершить и открыть полный редактор", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/trips/${created.id}$`));
   await expect(page.getByRole("heading", { name: "Сквозная приёмка — Япония", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Пошаговый конструктор", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/admin/trips/${created.id}/builder\\?step=4`));
-  await page.goto(`/admin/trips/${created.id}/builder?step=4&day=${seeded.days[3].id}`);
+  await page.getByLabel("Наценка, %", { exact: true }).fill("12");
+  const fullCalendar = page.getByRole("region", { name: "Календарь поездки", exact: true });
+  await fullCalendar.getByRole("button", { name: /^Изменить день/ }).nth(3).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/trips/${created.id}/builder\\?step=4&day=${seeded.days[3].id}$`));
+  const savedAfterDayTransition = await (await page.request.get(`/api/trips/${created.id}`)).json() as TripDocument;
+  expect(savedAfterDayTransition.pricing_percent).toBe("12.0000");
+  await expect(page.getByRole("region", { name: "Календарь поездки", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Календарь выбранного дня", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Программа дня", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Маршрут дня", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Стоимость дня", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Дни поездки" }).getByRole("button", { name: /День 4/ })).toHaveAttribute("aria-current", "date");
   await expect(page.getByRole("region", { name: "Программа дня" }).getByRole("heading", { name: "День 4", exact: true })).toBeVisible();
 });

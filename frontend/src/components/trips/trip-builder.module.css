@@ -21,6 +21,7 @@
 .itemMain { width: 100%; text-align: left; display: grid; gap: .35rem; padding: .35rem; }
 .itemMain small, .itemMain span { font-size: .8rem; color: #51616e; }
 .itemActions { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .8rem; margin-top: .65rem; }
+.inlineForm { margin-top: 1rem; padding: 1rem; border: 1px solid #dbe2e8; border-radius: 10px; background: #f8faf9; }
 .daily { margin-top: 1rem; background: #fff; border: 1px solid #dbe2e8; border-radius: 12px; padding: 1rem; }
 .daily strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
 .daily p, .empty { margin: 1rem 0; color: #51616e; font-size: .875rem; }

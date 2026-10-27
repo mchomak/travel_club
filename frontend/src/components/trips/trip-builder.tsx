@@ -7,9 +7,9 @@ import { DayRouteBoundaries } from "./day-route-map";
 import styles from "./trip-builder.module.css";
 
 export const builderSteps = ["Основные параметры", "Перелёты и переезды", "Проживание", "Программа по дням", "Расходы и стоимость", "Проверка"];
-export function TripBuilder({ trip, days, dayId, step, selectedItemId, calculation, calendar, map, finances, expenses, busy, onStep, onDay, onSelectItem, onOpenItem, onDelete, onAdd, onSettings, onDayDetails, onChange, onFinish }: {
+export function TripBuilder({ trip, days, dayId, step, selectedItemId, activeItem, calculation, calendar, renderItemForm, map, finances, expenses, busy, onStep, onDay, onSelectItem, onOpenItem, onDelete, onAdd, onSettings, onDayDetails, onChange, onFinish }: {
   trip: TripInput; days: DayInput[]; dayId: string | null; step: number; selectedItemId: string | null; calculation: Calculation | null;
-  calendar: (dayId?: string) => ReactNode; map: ReactNode; finances: ReactNode; expenses: ReactNode; busy: boolean;
+  activeItem: ItemInput | null; calendar: (dayId?: string) => ReactNode; renderItemForm: (itemId: string) => ReactNode; map: ReactNode; finances: ReactNode; expenses: ReactNode; busy: boolean;
   onStep: (step: number) => void; onDay: (id: string) => void; onSelectItem: (id: string) => void; onOpenItem: (id: string) => void;
   onDelete: (item: ItemInput) => void; onAdd: (type: ItemType) => void; onSettings: () => void; onDayDetails: () => void;
   onChange: (patch: Partial<TripInput>) => void; onFinish: () => void;
@@ -27,9 +27,13 @@ export function TripBuilder({ trip, days, dayId, step, selectedItemId, calculati
           {entry?.durationMinutes != null && <span>Продолжительность: {entry.durationMinutes} мин.</span>}
         </button>
         <div className={styles.itemActions}><button className="text-link" aria-label={`Редактировать ${item.title}`} onClick={() => onOpenItem(item.id)}>Редактировать / перенести</button><button className="text-link text-danger" aria-label={`Удалить ${item.title}`} onClick={() => onDelete(item)}>Удалить</button></div>
+        {activeItem?.id === item.id && <div className={styles.inlineForm}>{renderItemForm(item.id)}</div>}
       </li>;
     })}</ul> : <p className={styles.empty}>Пока ничего не добавлено. Выберите событие ниже.</p>;
   }
+  const stageItems = trip.items.filter(item => step === 3 ? item.type === "hotel" : item.type === "flight" || item.type === "train_bus" || (item.type === "transfer" && item.subtype !== "taxi" && item.subtype !== "walk"));
+  const activeStageItem = activeItem && (step === 2 ? activeItem.type === "flight" : step === 3 && activeItem.type === "hotel") ? activeItem : null;
+  const visibleStageItems = activeStageItem && !stageItems.some(item => item.id === activeStageItem.id) ? [...stageItems, activeStageItem] : stageItems;
   const stageNavigation = <nav className={styles.steps} aria-label="Этапы поездки">{builderSteps.map((label, i) => <button key={label} onClick={() => onStep(i + 1)} aria-current={step === i + 1 ? "step" : undefined}><span>{i + 1}.</span> {label}</button>)}</nav>;
   return <div className={styles.builder}>
     {step !== 4 && stageNavigation}
@@ -39,7 +43,7 @@ export function TripBuilder({ trip, days, dayId, step, selectedItemId, calculati
       <section className="paper-panel" aria-label={step === 2 ? "Дальние переезды" : "Отели поездки"}>
         <p>{step === 2 ? "Добавьте перелёты и переезды между городами. Городской транспорт доступен в программе дня." : "Добавьте все отели. Даты проживания сразу появятся в календаре и программе дней."}</p>
         <div className="item-type-buttons">{step === 2 ? <><button onClick={() => onAdd("flight")}>Добавить перелёт</button><button onClick={() => onAdd("transfer")}>Добавить дальний переезд</button></> : <button onClick={() => onAdd("hotel")}>Добавить отель</button>}</div>
-        {itemList(trip.items.filter(item => step === 3 ? item.type === "hotel" : item.type === "flight" || item.type === "train_bus" || (item.type === "transfer" && item.subtype !== "taxi" && item.subtype !== "walk")))}
+        {itemList(visibleStageItems)}
       </section>{calendar()}
     </>}
     {step === 4 && <>

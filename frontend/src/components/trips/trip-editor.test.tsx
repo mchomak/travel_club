@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TripEditor } from "./trip-editor";
 import { TripProvider } from "./ui";
@@ -11,10 +11,11 @@ import { emptyDay, newItem } from "@/lib/trip-ui";
 import { buildCalendarEntries } from "@/lib/calendar";
 import { mapsClient } from '@/lib/maps-client';
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
 const mapsConfig=vi.hoisted(()=>({routing_enabled:false}));
 vi.mock('@/lib/use-maps-config',()=>({useMapsConfig:()=>({config:{maps_key:null,search_enabled:false,routing_enabled:mapsConfig.routing_enabled},error:null,retry:vi.fn()})}));
-afterEach(() => { cleanup(); vi.restoreAllMocks(); mapsConfig.routing_enabled=false; });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); mapsConfig.routing_enabled=false; navigation.push.mockReset(); navigation.replace.mockReset(); history.replaceState(null, "", "/"); });
 vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, baseCurrency, onCreateRange, onMoveItem, onMoveHotel, onEditDay, onOpenAirport, onOpenItem, onSelectDate }: {
   days: TripInput["days"]; items: TripInput["items"]; calculation: TripDocument["calculation"] | null; baseCurrency: string;
   onCreateRange: (dayId: string, start: string, end: string) => void;
@@ -45,6 +46,44 @@ test('day map immediately follows the calendar and changes date with its selecti
  expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-01');
  await userEvent.click(screen.getByRole('button',{name:'Выбрать второй день'}));
  expect(map.querySelector('time')).toHaveAttribute('datetime','2026-10-02');
+});
+
+test("editing a day from the full editor saves the draft before opening that day in the builder", async () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];
+  input.start_date = input.days[0].date; input.end_date = input.days[1].date; input.items = [];
+  const document = { ...input, id: "day-save-trip", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const save = vi.spyOn(tripApi, "save").mockImplementation(async (_id, update) => ({ ...document, ...update, version: update.version + 1, calculation: calculateTrip(update) }) as TripDocument);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id="day-save-trip" initialStep={5} /></TripProvider>);
+  fireEvent.change(await screen.findByLabelText("Наценка, %"), { target: { value: "15" } });
+  await user.click(screen.getByRole("button", { name: "Изменить день в календаре" }));
+  await waitFor(() => expect(save).toHaveBeenCalledOnce());
+  await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(`/admin/trips/day-save-trip/builder?step=4&day=${input.days[1].id}`));
+  expect(save.mock.calls[0][1]).toMatchObject({ pricing_percent: "15" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("failed day transition keeps the draft in the full editor and can be retried", async () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];
+  input.start_date = input.days[0].date; input.end_date = input.days[1].date; input.items = [];
+  const document = { ...input, id: "day-retry-trip", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const save = vi.spyOn(tripApi, "save").mockRejectedValueOnce(new Error("Сохранение дня не удалось"))
+    .mockImplementation(async (_id, update) => ({ ...document, ...update, version: update.version + 1, calculation: calculateTrip(update) }) as TripDocument);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id="day-retry-trip" initialStep={5} /></TripProvider>);
+  fireEvent.change(await screen.findByLabelText("Наценка, %"), { target: { value: "19" } });
+  await user.click(screen.getByRole("button", { name: "Изменить день в календаре" }));
+  expect(await screen.findByText("Сохранение дня не удалось")).toBeVisible();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("Наценка, %")).toHaveValue("19");
+  await user.click(screen.getByRole("button", { name: "Изменить день в календаре" }));
+  await waitFor(() => expect(navigation.push).toHaveBeenCalledWith(`/admin/trips/day-retry-trip/builder?step=4&day=${input.days[1].id}`));
+  expect(save).toHaveBeenCalledTimes(2);
+  expect(save.mock.calls[1][1]).toMatchObject({ pricing_percent: "19" });
 });
 
 test('map creation persists a calendar taxi and its pending price opens the standard editor',async()=>{

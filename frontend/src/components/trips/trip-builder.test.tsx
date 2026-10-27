@@ -163,15 +163,111 @@ test("transport stage excludes local travel, lodging stays map-free, and day tra
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: "3. Проживание" }));
   await user.click(screen.getByRole("button", { name: "Добавить отель" }));
-  panel = within(screen.getByRole("dialog"));
-  expect(panel.getAllByLabelText("Ссылка Google Maps").length).toBeGreaterThan(0);
+  const lodging = within(screen.getByRole("region", { name: "Отели поездки" }));
+  expect(lodging.getAllByLabelText("Ссылка Google Maps").length).toBeGreaterThan(0);
   expect(screen.queryByRole("region", { name: "Маршрут дня" })).not.toBeInTheDocument();
-  expect(screen.getByRole("dialog").querySelector("canvas")).toBeNull();
-  await user.click(panel.getByRole("button", { name: "Отмена" }));
-  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(lodging.getByLabelText("Название элемента").closest("form")?.querySelector("canvas")).toBeNull();
+  await user.click(lodging.getByRole("button", { name: "Отмена" }));
+  await waitFor(() => expect(lodging.queryByLabelText("Название элемента")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: "4. Программа по дням" }));
   await user.click(within(screen.getByLabelText("Добавить событие дня")).getByRole("button", { name: "Транспорт" }));
   panel = within(screen.getByRole("dialog"));
   expect(within(panel.getByLabelText("Подвид")).getByRole("option", { name: "Такси" })).toBeInTheDocument();
   expect(within(panel.getByLabelText("Подвид")).getByRole("option", { name: "Пеший переход" })).toBeInTheDocument();
+});
+
+test("adding a flight opens its form inline beneath the stage row", async () => {
+  const document = fixture(); history.replaceState(null, "", "/admin/trips/builder/builder?step=2");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const flights = await screen.findByRole("region", { name: "Дальние переезды" });
+  await user.click(within(flights).getByRole("button", { name: "Добавить перелёт" }));
+  expect(within(flights).getByLabelText("Название элемента")).toBeVisible();
+  expect(within(flights).queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("adding a hotel opens its form inline beneath the lodging row", async () => {
+  const document = fixture(); history.replaceState(null, "", "/admin/trips/builder/builder?step=3");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const hotels = await screen.findByRole("region", { name: "Отели поездки" });
+  await user.click(within(hotels).getByRole("button", { name: "Добавить отель" }));
+  expect(within(hotels).getByLabelText("Название элемента")).toBeVisible();
+  expect(within(hotels).queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("saving flights keeps each item in the rows and shared calendar for the next addition", async () => {
+  const document = fixture(); history.replaceState(null, "", "/admin/trips/builder/builder?step=2");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const flightRegion = await screen.findByRole("region", { name: "Дальние переезды" });
+  const flights = within(flightRegion);
+  const calendar = screen.getByRole("region", { name: "Календарь поездки" });
+  for (const title of ["Первый перелёт", "Второй перелёт"]) {
+    await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
+    const form = flights.getByLabelText("Название элемента").closest("form")!;
+    await user.clear(within(form).getByLabelText("Название элемента"));
+    await user.type(within(form).getByLabelText("Название элемента"), title);
+    await user.type(within(form).getByLabelText("Вылет по местному времени"), "09:00");
+    await user.type(within(form).getByLabelText("Прилёт по местному времени"), "11:00");
+    await user.clear(within(form).getByLabelText("Цена билета"));
+    await user.type(within(form).getByLabelText("Цена билета"), "500");
+    await user.click(within(form).getByRole("button", { name: "Сохранить элемент" }));
+    await waitFor(() => expect(flights.queryByLabelText("Название элемента")).not.toBeInTheDocument());
+    expect(flights.getByText(title)).toBeVisible();
+    expect(calendar).toHaveTextContent(title);
+  }
+});
+
+test("cancelling a new flight keeps saved rows and discards only the unsaved form", async () => {
+  const initial = fixture();
+  const savedFlight = { ...newItem("flight", initial.days[0], initial.base_currency, initial.start_date), title: "Сохранённый рейс", start_time: "09:00", end_time: "11:00" };
+  const document = { ...initial, items: [...initial.items, savedFlight] } as TripDocument;
+  document.calculation = calculateTrip(document);
+  history.replaceState(null, "", "/admin/trips/builder/builder?step=2");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  vi.spyOn(tripApi, "save").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const flightRegion = await screen.findByRole("region", { name: "Дальние переезды" });
+  const flights = within(flightRegion);
+  const calendar = screen.getByRole("region", { name: "Календарь поездки" });
+  await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
+  const form = flights.getByLabelText("Название элемента").closest("form")!;
+  await user.clear(within(form).getByLabelText("Название элемента"));
+  await user.type(within(form).getByLabelText("Название элемента"), "Черновик перелёта");
+  await user.click(within(form).getByRole("button", { name: "Отмена" }));
+  await waitFor(() => expect(flights.queryByLabelText("Название элемента")).not.toBeInTheDocument());
+  expect(flightRegion).toHaveTextContent("Сохранённый рейс");
+  expect(flightRegion).not.toHaveTextContent("Черновик перелёта");
+  expect(calendar).toHaveTextContent("Сохранённый рейс");
+  expect(calendar).not.toHaveTextContent("Черновик перелёта");
+});
+
+test("inline flight forms receive unique places from saved flights", async () => {
+  const initial = fixture();
+  const savedFlight = { ...newItem("flight", initial.days[0], initial.base_currency, initial.start_date), title: "Рейс в Токио", departure_country_code: "JP", departure_city: "Токио", arrival_country_code: "JP", arrival_city: "Токио" };
+  const document = { ...initial, items: [...initial.items, savedFlight] } as TripDocument;
+  document.calculation = calculateTrip(document);
+  history.replaceState(null, "", "/admin/trips/builder/builder?step=2");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const flights = within(await screen.findByRole("region", { name: "Дальние переезды" }));
+  await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
+  const form = flights.getByLabelText("Название элемента").closest("form")!;
+  await user.click(within(form).getByRole("combobox", { name: "Вылет — город" }));
+  expect(screen.getAllByRole("option", { name: /Токио/ })).toHaveLength(1);
+});
+
+test("adding another flight does not replace an open inline form", async () => {
+  const document = fixture(); history.replaceState(null, "", "/admin/trips/builder/builder?step=2");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const flights = within(await screen.findByRole("region", { name: "Дальние переезды" }));
+  await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
+  const firstTitle = flights.getByLabelText("Название элемента");
+  await user.clear(firstTitle); await user.type(firstTitle, "Черновик первого рейса");
+  await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
+  expect(flights.getAllByLabelText("Название элемента")).toHaveLength(1);
+  expect(flights.getByLabelText("Название элемента")).toHaveValue("Черновик первого рейса");
+  expect(screen.getByText("Сначала сохраните или отмените открытую форму.")).toBeVisible();
 });

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js";
 import { ArrowLeft, ChevronRight, Eye, Plus, Save, Settings2, Trash2 } from "lucide-react";
-import type { Calculation, ItemInput, ItemSubtype, ItemType, TripDocument, TripInput } from "@/lib/contracts";
+import type { Calculation, CurrencyRateInput, ItemInput, ItemSubtype, ItemType, TripDocument, TripInput } from "@/lib/contracts";
 import { ApiError } from "@/lib/api";
 import { DraftSession } from "@/lib/draft-session";
 import { calculateTrip, dateList } from "@/lib/pricing";
@@ -31,10 +31,25 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
   const [session] = useState(() => new DraftSession(document, tripApi.save));
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const trip = state.draft, router = useRouter();
+  const flightHistory = useMemo(() => {
+    const places: { countryCode: string; city: string }[] = [], seen = new Set<string>();
+    for (const item of trip.items) {
+      if (item.type !== "flight") continue;
+      for (const [country, rawCity] of [[item.departure_country_code, item.departure_city], [item.arrival_country_code, item.arrival_city]] as const) {
+        const countryCode = country?.trim().toUpperCase(), city = rawCity?.trim().slice(0, 120);
+        if (!countryCode || !city) continue;
+        const key = `${countryCode}\u0000${city.toLocaleLowerCase("ru")}`;
+        if (seen.has(key)) continue;
+        seen.add(key); places.push({ countryCode, city });
+      }
+    }
+    return places;
+  }, [trip.items]);
   const [selected, setSelected] = useState<string | null>(() => mode === "builder" ? initialDay ?? document.days[0]?.id ?? null : document.days[0]?.id ?? null);
   const [step, setStep] = useState(initialStep);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<"settings" | "day" | "rates" | null>(null), [editing, setEditing] = useState<ItemInput | null>(null), [deleting, setDeleting] = useState<ItemInput | null>(null);
+  const [inlineEditing, setInlineEditing] = useState<ItemInput | null>(null);
   const [itemPanelOpen, setItemPanelOpen] = useState(false), [requireTypeChoice, setRequireTypeChoice] = useState(false);
   const [airportEditing, setAirportEditing] = useState<{ itemId: string; kind: AirportKind } | null>(null), [airportPanelOpen, setAirportPanelOpen] = useState(false);
   const [reloadConfirm, setReloadConfirm] = useState(false), [dismissedDateError, setDismissedDateError] = useState<Error | null>(null), [previewBusy, setPreviewBusy] = useState(false);
@@ -114,13 +129,18 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
   function restoreDates() { setDismissedDateError(error); change({ start_date: state.document.start_date, end_date: state.document.end_date }); }
   async function save(confirm = false) { try { await session.save(confirm); } catch { /* Error is presented alongside the retained draft. */ } }
   async function leave(path: string) {
-    if (formDirty || dialog || itemPanelOpen || airportPanelOpen) { setNavigationNotice("Сначала примените или отмените изменения в открытой форме."); return; }
+    if (formDirty || dialog || itemPanelOpen || airportPanelOpen || inlineEditing) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; }
     setPreviewBusy(true);
     try { await session.save(); if (!formDirtyRef.current) router.push(path); else setNavigationNotice("Сначала примените или отмените изменения в открытой форме."); } catch { /* Stay with the retained draft and error. */ } finally { setPreviewBusy(false); }
   }
+  function editDay(dayId: string) {
+    if (mode === "editor") { void leave(`/admin/trips/${document.id}/builder?step=4&day=${encodeURIComponent(dayId)}`); return; }
+    if (inlineEditing) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; }
+    setSelected(dayId); setDialog("day");
+  }
   function preview() { return leave(`/admin/trips/${document.id}/preview`); }
-  function changeStep(value: number) { if (dialog || itemPanelOpen || airportPanelOpen) return; setStep(value); }
-  function selectDay(value: string) { if (dialog || itemPanelOpen || airportPanelOpen) return; setSelected(value); }
+  function changeStep(value: number) { if (dialog || itemPanelOpen || airportPanelOpen) return; if (inlineEditing) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; } setStep(value); }
+  function selectDay(value: string) { if (dialog || itemPanelOpen || airportPanelOpen) return; if (inlineEditing) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; } setSelected(value); }
   useEffect(() => {
     if (mode !== "builder") return;
     const url = new URL(window.location.href); url.searchParams.set("step", String(step));
@@ -129,11 +149,28 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
     builderEntry.current = { url: url.href, state: window.history.state };
   }, [mode, step, dayId]);
   function nextPosition(targetDayId: string | null) { return Math.max(-1, ...trip.items.filter(item => item.day_id === targetDayId).map(item => item.position)) + 1; }
-  function openEditor(item: ItemInput, chooseType = false) { setSelectedItemId(item.id); setNavigationNotice(""); setRequireTypeChoice(chooseType); setEditing(item); setItemPanelOpen(true); }
+  function openEditor(item: ItemInput, chooseType = false) {
+    if (inlineEditing) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; }
+    setSelectedItemId(item.id); setNavigationNotice(""); setRequireTypeChoice(chooseType); setEditing(item); setItemPanelOpen(true);
+  }
+  function openInlineEditor(item: ItemInput) {
+    if (inlineEditing?.id === item.id) return;
+    if (inlineEditing || dialog || itemPanelOpen || airportPanelOpen) { setNavigationNotice("Сначала сохраните или отмените открытую форму."); return; }
+    setSelectedItemId(item.id); setNavigationNotice(""); setInlineEditing(item);
+  }
+  function closeInlineEditor() { setInlineEditing(null); updateFormDirty(false); }
+  function submitInline(item: ItemInput, rate?: CurrencyRateInput) {
+    if (!inlineEditing) return;
+    const moved = item.day_id !== inlineEditing.day_id ? { ...item, position: nextPosition(item.day_id) } : item;
+    change({ items: trip.items.some(existing => existing.id === moved.id) ? trip.items.map(existing => existing.id === moved.id ? moved : existing) : [...trip.items, moved], rates: rate ? [...trip.rates.filter(existing => existing.currency !== rate.currency), rate] : trip.rates });
+    closeInlineEditor();
+  }
   function closeEditor() { updateFormDirty(false); setItemPanelOpen(false); }
   function add(type: ItemType) {
     const subtype = ({ transfer: "bus", meal: "restaurant", activity: "activity" } as Partial<Record<ItemType, ItemSubtype>>)[type] ?? null;
-    openEditor({ ...newCategoryItem(type, subtype, day ?? null, trip.base_currency, trip.start_date), position: nextPosition(dayId) });
+    const item = { ...newCategoryItem(type, subtype, day ?? null, trip.base_currency, trip.start_date), position: nextPosition(dayId) };
+    if (mode === "builder" && ((step === 2 && type === "flight") || (step === 3 && type === "hotel"))) { openInlineEditor(item); return; }
+    openEditor(item);
   }
   function addExpense(subtype: ItemSubtype) {
     if (mode === "editor") setSelected(null);
@@ -161,7 +198,12 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
     change({ items: trip.items.map(value => value.id === itemId ? { ...value, day_id: targetDayId, check_in: checkIn, check_out: checkOut, position } : value) });
     setSelected(targetDayId);
   }
-  function openItem(itemId: string) { const item = trip.items.find(candidate => candidate.id === itemId); if (item) openEditor(item); }
+  function openItem(itemId: string) {
+    const item = trip.items.find(candidate => candidate.id === itemId);
+    if (!item) return;
+    if (mode === "builder" && ((step === 2 && item.type === "flight") || (step === 3 && item.type === "hotel"))) { openInlineEditor(item); return; }
+    openEditor(item);
+  }
   function applyTransfer(item: ItemInput) {
     const current = session.draft;
     change({ items: current.items.some(value => value.id === item.id) ? current.items.map(value => value.id === item.id ? item : value) : [...current.items, item] });
@@ -182,7 +224,7 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
           baseCurrency={trip.base_currency}
           selectedDayId={dayId}
           onSelectDate={selectDay}
-          onEditDay={targetDayId => { setSelected(targetDayId); setDialog("day"); }}
+          onEditDay={editDay}
           onOpenItem={openItem}
           onOpenAirport={openAirport}
           onCreateRange={createRange}
@@ -200,7 +242,8 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
     {trip.items.some(item => item.price_pending) && <p className="finance-warning" role="status">Смета неполная: стоимость некоторых переездов не указана. Добавьте цены в финансовой сводке.</p>}
     {error && <ErrorNotice error={error} retry={() => { void save(); }} />}{error instanceof ApiError && error.code === "VERSION_CONFLICT" && <button className="secondary-button mt-3" onClick={() => setReloadConfirm(true)}>Перечитать с сервера</button>}{!parity && <div className="error-notice" role="alert">Предварительный расчёт отличается от сервера. {state.dirty ? "До сохранения показан предварительный расчёт." : "Показана сохранённая серверная смета."} Проверьте условия расчёта.</div>}
     {datesChanged && error instanceof ApiError && error.status === 422 && <div className="mt-3 mb-6" role="status"><p className="text-muted mb-3">Новые даты ещё не сохранены. Исправьте условия элементов или верните диапазон {formatDate(state.document.start_date)} — {formatDate(state.document.end_date)}. Остальные изменения останутся в черновике.</p><button className="secondary-button" onClick={restoreDates}>Вернуть прежние даты</button></div>}
-    {mode === "builder" ? <TripBuilder trip={trip} days={days} dayId={dayId} step={step} selectedItemId={selectedItemId} calculation={calculation}
+    {mode === "builder" ? <TripBuilder trip={trip} days={days} dayId={dayId} step={step} selectedItemId={selectedItemId} activeItem={inlineEditing} calculation={calculation}
+      renderItemForm={itemId => inlineEditing?.id === itemId ? <ItemForm key={inlineEditing.id} context={step === 2 ? "long-haul" : "default"} initial={inlineEditing} trip={trip} flightHistory={flightHistory} onDirtyChange={updateFormDirty} onCancel={closeInlineEditor} onSubmit={submitInline} /> : null}
       calendar={renderCalendar} map={dayId && <DayRouteMap trip={trip} dayId={dayId} onChange={change} onAddTransfer={applyTransfer} onOpenItem={openItem} hideBoundaries selectedItemId={selectedItemId} onSelectItem={setSelectedItemId} />}
       finances={financePanel} expenses={expensePanel} busy={previewBusy || formDirty} onStep={changeStep} onDay={selectDay} onSelectItem={setSelectedItemId} onOpenItem={openItem} onDelete={setDeleting} onAdd={add}
       onSettings={() => setDialog("settings")} onDayDetails={() => setDialog("day")} onChange={change} onFinish={() => { void leave(`/admin/trips/${document.id}`); }} /> : <div className="editor-layout">
@@ -222,9 +265,9 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
     {dialog === "settings" && <Modal title="Параметры поездки" onClose={() => { updateFormDirty(false); setDialog(null); }}><TripForm initial={trip} action="Применить изменения" onDirtyChange={updateFormDirty} onCancel={() => { updateFormDirty(false); setDialog(null); }} onSubmit={values => { const range = dateList(values.start_date, values.end_date); const added = range.filter(date => !trip.days.some(d => d.date === date)).map(emptyDay); change({ ...values, days: [...trip.days, ...added], rates: values.base_currency !== trip.base_currency ? [] : trip.rates }); updateFormDirty(false); setDialog(null); }} /></Modal>}
     {dialog === "day" && day && <Modal title="Детали дня" onClose={() => { updateFormDirty(false); setDialog(null); }}><DayForm day={day} onDirtyChange={updateFormDirty} onCancel={() => { updateFormDirty(false); setDialog(null); }} onSave={updated => { change({ days: trip.days.map(d => d.id === updated.id ? updated : d) }); updateFormDirty(false); setDialog(null); }} /></Modal>}
     {dialog === "rates" && <Modal title="Валюты и курсы" onClose={() => { updateFormDirty(false); setDialog(null); }}><RatesForm trip={trip} onDirtyChange={updateFormDirty} onCancel={() => { updateFormDirty(false); setDialog(null); }} onSave={rates => { change({ rates }); updateFormDirty(false); setDialog(null); }} /></Modal>}
-    {editing && <Modal variant="panel" open={itemPanelOpen} title={trip.items.some(i => i.id === editing.id) ? "Редактирование элемента" : "Новый элемент"} onClose={() => { updateFormDirty(false); setEditing(null); if (deleteAfterClose.current) { setDeleting(deleteAfterClose.current); deleteAfterClose.current = null; } }}><ItemForm context={mode === "builder" && step === 2 ? "long-haul" : "default"} initial={editing} trip={trip} requireTypeChoice={requireTypeChoice} onDirtyChange={updateFormDirty} onCancel={closeEditor} onSubmit={(item, rate) => { const moved = item.day_id !== editing.day_id ? { ...item, position: nextPosition(item.day_id) } : item; change({ items: trip.items.some(i => i.id === moved.id) ? trip.items.map(i => i.id === moved.id ? moved : i) : [...trip.items, moved], rates: rate ? [...trip.rates.filter(r => r.currency !== rate.currency), rate] : trip.rates }); closeEditor(); }} />{trip.items.some(i => i.id === editing.id) && <button className="item-panel-delete" onClick={() => { deleteAfterClose.current = editing; closeEditor(); }}><Trash2 size={16} aria-hidden />Удалить элемент</button>}</Modal>}
+    {editing && <Modal variant="panel" open={itemPanelOpen} title={trip.items.some(i => i.id === editing.id) ? "Редактирование элемента" : "Новый элемент"} onClose={() => { updateFormDirty(false); setEditing(null); if (deleteAfterClose.current) { setDeleting(deleteAfterClose.current); deleteAfterClose.current = null; } }}><ItemForm context={mode === "builder" && step === 2 ? "long-haul" : "default"} initial={editing} trip={trip} flightHistory={flightHistory} requireTypeChoice={requireTypeChoice} onDirtyChange={updateFormDirty} onCancel={closeEditor} onSubmit={(item, rate) => { const moved = item.day_id !== editing.day_id ? { ...item, position: nextPosition(item.day_id) } : item; change({ items: trip.items.some(i => i.id === moved.id) ? trip.items.map(i => i.id === moved.id ? moved : i) : [...trip.items, moved], rates: rate ? [...trip.rates.filter(r => r.currency !== rate.currency), rate] : trip.rates }); closeEditor(); }} />{trip.items.some(i => i.id === editing.id) && <button className="item-panel-delete" onClick={() => { deleteAfterClose.current = editing; closeEditor(); }}><Trash2 size={16} aria-hidden />Удалить элемент</button>}</Modal>}
     {airportEditing && airportFlight && <Modal variant="panel" open={airportPanelOpen} title={airportEditing.kind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта"} onClose={() => { updateFormDirty(false); setAirportEditing(null); }}><AirportBlockForm flight={airportFlight} days={days} kind={airportEditing.kind} onDirtyChange={updateFormDirty} onCancel={() => { updateFormDirty(false); setAirportPanelOpen(false); }} onSave={duration => { const field = airportEditing.kind === "before" ? "airport_before_minutes" : "airport_after_minutes"; change({ items: trip.items.map(item => item.id === airportFlight.id ? { ...item, [field]: duration } : item) }); updateFormDirty(false); setAirportPanelOpen(false); }} /></Modal>}
-    {deleting && <Confirm title="Удалить элемент?" action="Удалить элемент" onClose={() => setDeleting(null)} onConfirm={() => { change({ items: trip.items.filter(i => i.id !== deleting.id) }); setDeleting(null); }}>«{deleting.title}» будет удалён из маршрута и сметы.</Confirm>}
+    {deleting && <Confirm title="Удалить элемент?" action="Удалить элемент" onClose={() => setDeleting(null)} onConfirm={() => { change({ items: trip.items.filter(i => i.id !== deleting.id) }); if (inlineEditing?.id === deleting.id) closeInlineEditor(); setDeleting(null); }}>«{deleting.title}» будет удалён из маршрута и сметы.</Confirm>}
     {dateRemoval && <Confirm title="Сократить поездку?" action="Удалить дни и сохранить" onClose={restoreDates} onConfirm={() => { setDismissedDateError(error); void save(true); }}><p>Заполненные дни, которые будут удалены:</p><ul className="my-3 list-disc pl-5">{removedDates.map(date => <li key={date}><time dateTime={date}>{formatDate(date)}</time></li>)}</ul><p>Их элементы и заметки будут удалены. Отмена вернёт прежний диапазон поездки и сохранит содержимое дней.</p></Confirm>}
     {reloadConfirm && <Confirm title="Открыть последнюю версию?" action="Перечитать с сервера" onClose={() => setReloadConfirm(false)} onConfirm={() => { confirmedReload.current = true; window.location.reload(); }}>Поездка изменена в другой вкладке. При перезагрузке ваши несохранённые изменения будут потеряны. Текущий черновик остаётся доступным до подтверждения.</Confirm>}
   </>;
