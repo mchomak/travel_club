@@ -4,22 +4,41 @@ import {useState} from 'react';
 import {mapsClient} from '@/lib/maps-client';
 import {CountryCity} from './country-city';
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.useRealTimers();});
-const place={name:'Москва',address:'Россия',latitude:55,longitude:37,provider:'geoapify' as const};
+const place={name:'Москва',address:'Россия',country_code:'RU',latitude:55,longitude:37,provider:'geoapify' as const};
 test('country selection filters remote city search; confirmed selection and country change are explicit',async()=>{
  const search=vi.spyOn(mapsClient,'searchCities').mockResolvedValue({places:[place]});
  const changed=vi.fn();
- function Harness(){const [value,setValue]=useState<{country:string|null;city:string}>({country:null,city:''});return <CountryCity label="Вылет" {...value} onChange={(country,city)=>{changed(country,city);setValue({country,city});}}/>;}
- render(<Harness/>);
- fireEvent.change(screen.getByRole('combobox',{name:'Вылет — страна'}),{target:{value:'Россия'}});
- fireEvent.click(screen.getByRole('option',{name:/Россия.*RU/}));
+ render(<CountryCity label="Вылет" country={null} city="" onChange={changed}/>);
  fireEvent.change(screen.getByRole('combobox',{name:'Вылет — город'}),{target:{value:'Моск'}});
  fireEvent.click(await screen.findByRole('option',{name:/Москва.*Россия/}));
- expect(search).toHaveBeenCalledWith('Моск','RU',expect.any(AbortSignal));
+ expect(search).toHaveBeenCalledWith('Моск',null,expect.any(AbortSignal));
  expect(changed).toHaveBeenLastCalledWith('RU','Москва');
+});
+
+test('country change clears the currently selected city',async()=>{
+ const changed=vi.fn();
+ function Harness(){const [value,setValue]=useState({country:'RU' as string|null,city:'Москва'});return <CountryCity label="Вылет" {...value} onChange={(country,city)=>{changed(country,city);setValue({country,city});}}/>;}
+ render(<Harness/>);
  fireEvent.change(screen.getByRole('combobox',{name:'Вылет — страна'}),{target:{value:'Япония'}});
  fireEvent.click(screen.getByRole('option',{name:/Япония.*JP/}));
  expect(changed).toHaveBeenLastCalledWith('JP','');
  expect(screen.getByRole('combobox',{name:'Вылет — город'})).toHaveValue('');
+});
+
+test('previous flight places are grouped, deduplicated, and select their country with the city',()=>{
+ const changed=vi.fn();
+ render(<CountryCity label="Вылет" country={null} city="" history={[
+  {countryCode:'RU',city:'Москва'},
+  {countryCode:'RU',city:'Москва'},
+  {countryCode:'JP',city:'Токио'},
+ ]} onChange={changed}/>);
+ fireEvent.click(screen.getByRole('combobox',{name:'Вылет — страна'}));
+ expect(screen.getByRole('option',{name:/Россия.*RU.*Из этой поездки/})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('combobox',{name:'Вылет — город'}));
+ const moscow=screen.getByRole('option',{name:/Москва.*Из других перелётов/});
+ expect(screen.getAllByRole('option',{name:/Москва/})).toHaveLength(1);
+ fireEvent.click(moscow);
+ expect(changed).toHaveBeenCalledWith('RU','Москва');
 });
 
 test('a failed city search keeps text available for explicit custom confirmation',async()=>{
@@ -32,6 +51,22 @@ test('a failed city search keeps text available for explicit custom confirmation
  expect(changed).not.toHaveBeenCalled();
  fireEvent.click(screen.getByRole('option',{name:/Использовать «Мой город»/}));
  expect(changed).toHaveBeenCalledWith('JP','Мой город');
+});
+
+test('free city stays unconfirmed until the user selects its country',()=>{
+ const changed=vi.fn();
+ function Harness(){const [value,setValue]=useState<{country:string|null;city:string}>({country:null,city:''});return <CountryCity label="Вылет" {...value} onChange={(country,city)=>{changed(country,city);setValue({country,city});}}/>;}
+ render(<Harness/>);
+ fireEvent.change(screen.getByRole('combobox',{name:'Вылет — город'}),{target:{value:'Мой город'}});
+ fireEvent.click(screen.getByRole('option',{name:/Использовать «Мой город»/}));
+ expect(changed).not.toHaveBeenCalled();
+ expect(screen.getByText(/Выберите страну.*сохранить свободный город/)).toBeVisible();
+ fireEvent.change(screen.getByRole('combobox',{name:'Вылет — страна'}),{target:{value:'Россия'}});
+ fireEvent.click(screen.getByRole('option',{name:/Россия.*RU/}));
+ expect(screen.getByRole('combobox',{name:'Вылет — город'})).toHaveValue('Мой город');
+ fireEvent.click(screen.getByRole('combobox',{name:'Вылет — город'}));
+ fireEvent.click(screen.getByRole('option',{name:/Использовать «Мой город»/}));
+ expect(changed).toHaveBeenLastCalledWith('RU','Мой город');
 });
 
 test('country change cancels pending city suggestions and ignores a late response',async()=>{

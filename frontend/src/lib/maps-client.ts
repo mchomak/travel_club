@@ -1,5 +1,6 @@
 import type { MapPlace, TravelMode } from './contracts';
 import { apiRequest, ApiError } from './api';
+export interface MapCity extends MapPlace { country_code:string }
 export interface MapsConfig { maps_key:string|null; search_enabled:boolean; routing_enabled:boolean }
 export interface MapRouteResult { status:'ok'|'unavailable'; distance_m:number|null; duration_s:number|null; geometry:{type:'LineString';coordinates:number[][]}|null; approximate:boolean; message:string|null }
 export const travelModes:TravelMode[]=['drive','walk','transit'];
@@ -23,7 +24,7 @@ export function createMapsClient() {
   return {
     config:()=>apiRequest<MapsConfig>('/maps/config'),
     search:(query:string,signal?:AbortSignal)=>apiRequest<{places:MapPlace[]}>(`/maps/search?q=${encodeURIComponent(query)}`,{signal}),
-    searchCities:(query:string,countryCode:string|null,signal?:AbortSignal)=>apiRequest<{places:MapPlace[]}>(`/maps/search?q=${encodeURIComponent(query)}&kind=city${countryCode?`&country_code=${encodeURIComponent(countryCode)}`:''}`,{signal}),
+    searchCities:(query:string,countryCode:string|null,signal?:AbortSignal)=>apiRequest<{places:MapCity[]}>(`/maps/search?q=${encodeURIComponent(query)}&kind=city${countryCode?`&country_code=${encodeURIComponent(countryCode)}`:''}`,{signal}),
     reverse:(latitude:number,longitude:number,signal?:AbortSignal)=>apiRequest<{place:MapPlace}>(`/maps/reverse?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}`,{signal}),
     resolveLink:(url:string)=>apiRequest<{place:MapPlace|null;query:string|null}>('/maps/resolve-link',{method:'POST',body:JSON.stringify({url})}),
     route(from:MapPlace,to:MapPlace,mode:TravelMode):Promise<MapRouteResult> {

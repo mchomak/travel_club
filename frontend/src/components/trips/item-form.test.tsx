@@ -64,6 +64,21 @@ test('flight country and custom city choices survive submit and editable documen
  expect(screen.getByRole('combobox',{name:'Прилёт — страна'})).toHaveValue('Япония');
 });
 
+test('flight history fills the structured place fields while the legacy route stays hidden and preserved',async()=>{
+ const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
+ const item={...newItem('flight',day,'RUB',day.date),location:'Старый маршрут'};
+ const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[],rates:[]};
+ const flightHistory=[{countryCode:'RU',city:'Москва'}];
+ render(<ItemForm initial={item} trip={trip} flightHistory={flightHistory} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ expect(screen.queryByLabelText('Маршрут / аэропорты')).not.toBeInTheDocument();
+ fireEvent.click(screen.getByRole('combobox',{name:'Вылет — город'}));
+ fireEvent.click(screen.getByRole('option',{name:/Москва.*Из других перелётов/}));
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+  departure_country_code:'RU',departure_city:'Москва',location:'Старый маршрут',
+ }),undefined);
+});
+
 test('custom transport endpoints and manually typed names survive subtype changes and submission',async()=>{
  const day=emptyDay('2026-10-01'),onSubmit=vi.fn(),user=userEvent.setup();
  const item=newItem('transfer',day,'RUB',day.date),trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[],rates:[]};

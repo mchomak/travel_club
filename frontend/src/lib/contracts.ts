@@ -11,6 +11,7 @@ export interface UserInfo { id: UUID; login: string }
 export type TravelMode = "drive" | "walk" | "transit";
 export interface MapPlace {
   name: string; address: string; latitude: number; longitude: number;
+  country_code?: string | null;
   provider: "geoapify" | "manual" | "google_link";
   provider_place_id?: string | null; source_url?: string | null;
 }

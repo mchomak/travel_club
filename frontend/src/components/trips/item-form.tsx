@@ -6,7 +6,7 @@ import { calculateTrip, nextDate } from "@/lib/pricing";
 import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, isAutomaticItemTitle, itemLabels, modeLabels, nextItemTitle, subtypeOptions, timeLabel } from "@/lib/trip-ui";
 import { ErrorNotice, Field } from "./ui";
 import { LocationPicker } from './location-picker';
-import { CountryCity } from './country-city';
+import { CountryCity, type PreviousFlightPlace } from './country-city';
 import { TransportEndpoints } from './transport-endpoints';
 import { hasUtcOffsets, offsetLabel, resolveItemSchedule } from '@/lib/transport-schedule';
 
@@ -23,7 +23,7 @@ function validUrl(value: string | null) {
   } catch { return urlError; }
 }
 
-export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, requireTypeChoice = false, context = "default" }: { context?: "default" | "long-haul"; initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void; requireTypeChoice?: boolean }) {
+export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, requireTypeChoice = false, context = "default", flightHistory = [] }: { context?: "default" | "long-haul"; flightHistory?: PreviousFlightPlace[]; initial: ItemInput; trip: TripInput; onSubmit: (item: ItemInput, rate?: CurrencyRateInput) => void; onCancel: () => void; onDirtyChange?: (dirty: boolean) => void; requireTypeChoice?: boolean }) {
   const isNew = !trip.items.some(existing => existing.id === initial.id);
   const initialStartDate = trip.days.find(day => day.id === initial.day_id)?.date;
   const inferredEnd = initialStartDate && !hasUtcOffsets(initial) && !initial.end_day_id && initial.start_time && initial.end_time && initial.end_time < initial.start_time
@@ -206,8 +206,8 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
       <Field label="Название элемента" error={errors.title?.message} wide><input autoFocus={!requireTypeChoice} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...titleField} onChange={event=>{manualTitle.current=true;void titleField.onChange(event);}} /></Field>
-      {item.type==='flight'&&<><CountryCity label="Вылет" country={item.departure_country_code??null} city={item.departure_city??''} onChange={(country,city)=>{setValue('departure_country_code',country,{shouldDirty:true});setValue('departure_city',city,{shouldDirty:true});}}/><CountryCity label="Прилёт" country={item.arrival_country_code??null} city={item.arrival_city??''} onChange={(country,city)=>{setValue('arrival_country_code',country,{shouldDirty:true});setValue('arrival_city',city,{shouldDirty:true});}}/></>}
-      <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>
+      {item.type==='flight'&&<><CountryCity label="Вылет" country={item.departure_country_code??null} city={item.departure_city??''} history={flightHistory} onChange={(country,city)=>{setValue('departure_country_code',country,{shouldDirty:true});setValue('departure_city',city,{shouldDirty:true});}}/><CountryCity label="Прилёт" country={item.arrival_country_code??null} city={item.arrival_city??''} history={flightHistory} onChange={(country,city)=>{setValue('arrival_country_code',country,{shouldDirty:true});setValue('arrival_city',city,{shouldDirty:true});}}/></>}
+      {item.type !== "flight" && <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>}
       {category==='transfer'?<TransportEndpoints item={item} trip={trip} isNew={isNew} onChange={patch=>{for(const field of Object.keys(patch) as (keyof ItemInput)[])setValue(field,patch[field],{shouldDirty:true});}}/>:<div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||item.type==='flight'||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>}
       <Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
       <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>

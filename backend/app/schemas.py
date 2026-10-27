@@ -141,6 +141,7 @@ TravelMode = Literal["drive", "walk", "transit"]
 class MapPlace(DTO):
     name: str = Field(min_length=1, max_length=200)
     address: str = Field(max_length=500)
+    country_code: CountryCode | None = Field(default=None, exclude_if=lambda value: value is None)
     latitude: float = Field(ge=-90, le=90, allow_inf_nan=False, strict=True)
     longitude: float = Field(ge=-180, le=180, allow_inf_nan=False, strict=True)
     provider: Literal["geoapify", "manual", "google_link"]

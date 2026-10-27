@@ -135,25 +135,41 @@ def provider_json(path: str, params: dict):
         raise provider_error() from None
 
 
-def geocoded_places(result: dict, limit: int) -> list[MapPlace]:
+def geocoded_places(
+    result: dict, limit: int, *, require_country_code: bool = False
+) -> list[MapPlace]:
     try:
         rows = result["results"]
         if not isinstance(rows, list):
             raise ValueError()
         places = []
-        for row in rows[:limit]:
+        for row in rows:
             if not isinstance(row, dict):
                 raise ValueError()
+            country_code = row.get("country_code")
+            if not isinstance(country_code, str):
+                if require_country_code:
+                    continue
+                if country_code is not None:
+                    raise ValueError()
+                country_code = None
+            elif country_code:
+                country_code = country_code.upper()
+            elif require_country_code:
+                continue
             places.append(
                 MapPlace(
                     name=(row.get("name") or row.get("address_line1") or row["formatted"])[:200],
                     address=row.get("formatted", "")[:500],
+                    country_code=country_code,
                     latitude=row["lat"],
                     longitude=row["lon"],
                     provider="geoapify",
                     provider_place_id=row.get("place_id"),
                 )
             )
+            if len(places) == limit:
+                break
         return places
     except (KeyError, TypeError, ValueError, ValidationError):
         raise provider_error() from None
@@ -181,6 +197,7 @@ def search(
                 params,
             ),
             5,
+            require_country_code=kind == "city",
         )
     }
 

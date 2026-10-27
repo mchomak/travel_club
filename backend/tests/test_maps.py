@@ -49,11 +49,21 @@ def test_city_search_filters_provider_and_validates_country(client, admin, monke
 
     def provider(route, params):
         requests.append((route, params))
-        return {"results": [{"name": "Paris", "formatted": "Paris, France",
-                             "lat": 48.85, "lon": 2.35}]}
+        return {"results": [
+            {"name": "Paris", "formatted": "Paris, France", "country_code": "fr",
+             "lat": 48.85, "lon": 2.35},
+            {"name": "Unknown city", "formatted": "Unknown city",
+             "lat": 48.85, "lon": 2.35},
+        ]}
 
     monkeypatch.setattr("app.maps.provider_json", provider)
-    assert client.get(path).status_code == 200
+    response = client.get(path)
+    assert response.status_code == 200
+    assert response.json()["places"] == [{
+        "name": "Paris", "address": "Paris, France", "country_code": "FR",
+        "latitude": 48.85, "longitude": 2.35, "provider": "geoapify",
+        "provider_place_id": None, "source_url": None,
+    }]
     assert requests == [("geocode/search", {
         "text": "Paris", "format": "json", "limit": 5,
         "type": "city", "filter": "countrycode:fr",
