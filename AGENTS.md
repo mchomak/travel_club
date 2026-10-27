@@ -565,11 +565,40 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - Редактор фото и CSS, стабильные слоты и browser storage изолированы в `frontend/src/components/test_20/` (`image-editor.tsx`, `image-editor.module.css`, `photo-slots.ts`, `photo-store.ts`; IndexedDB `travel-club-test-20-photos`). Проверки страницы: `frontend/e2e/test-20-home.spec.ts` и `test-20-settings.spec.ts`.
 - Проверено 26 октября 2026: frontend lint/typecheck и Docker production build прошли; Vitest — 210/210; Playwright для test-20 home/settings вместе с publication-pages — 64/64.
 
-### Конструктор поездки — 26 октября 2026
+### Конструктор поездки — 27 октября 2026
 
-- `/admin/trips/new` создаёт черновик и открывает `/admin/trips/{id}/builder?step=2`; полный редактор остаётся на `/admin/trips/{id}`, предпросмотр — `/admin/trips/{id}/preview`. В builder шесть этапов (`step=1..6`, пропуск/ошибка открывает 2); `day={UUID}` восстанавливает выбранный день. Страницы: `frontend/src/app/admin/(private)/trips/`.
-- `TripEditor` собирает editor и builder вокруг одной `DraftSession` и тех же trip/day/item ID; этап и день меняют URL без повторной загрузки. `DraftSession` последовательно сохраняет актуальные ревизии через существующий `tripApi`/`/api/trips`; ошибка или конфликт сохраняют локальный черновик, уход в editor/preview ждёт подтверждения сохранения. Не создавать копии агрегата поездки для этапов. Карта реализации: `frontend/src/components/trips/`, `frontend/src/lib/{draft-session.ts,trips.ts,transport-schedule.ts,calendar.ts,calendar-interaction.ts}`, `backend/app/trips.py`; подробности — `docs/trip-builder.md`.
-- Расписание может хранить пару `departure_utc_offset_minutes` / `arrival_utc_offset_minutes`: оба значения null либо целые минуты от −840 до +840; применимо к flight/train_bus/transfer. Смещения задаются вручную для события; нет IANA-зон и автоматического DST. Календарь сохраняет местные дату/время, а длительность проверяется по UTC. Миграция `backend/migrations/versions/e82b73ac51d9_transport_utc_offsets.py` добавляет nullable-поля без backfill; старые null сохраняют legacy local-clock и inference перехода на следующий день. Не угадывать зону при редактировании старых элементов.
-- Из `frontend/`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, `npm.cmd run build`; точечный календарный тест — `npm.cmd test -- src/lib/calendar.test.ts`. Playwright: `npm.cmd exec playwright test e2e/constructor.spec.ts e2e/trip-map.spec.ts e2e/trip-builder.spec.ts -- --workers=3`; нужен запущенный сайт, Compose backend/PostgreSQL и Chromium. Сценарии используют реальные auth/API/сохранение в PostgreSQL; заглушаются только map-provider ответы для повторяемости.
+- `/admin/trips/new` создаёт черновик и открывает `/admin/trips/{id}/builder?step=2`. Конструктор имеет шесть этапов: параметры; перелёты и дальние переезды; проживание; программа по дням; расходы и стоимость; проверка. `step` принимает значения 1–6, при отсутствующем или некорректном значении открывается этап 2; `day` восстанавливает выбранный день. Завершение этапа 6 сохраняет поездку и открывает полный редактор `/admin/trips/{id}`.
+- `TripEditor` используется для полного редактора и пошагового конструктора и владеет одной `DraftSession`. Валидный предварительный расчёт автоматически сохраняется с задержкой 800 мс; переходы по ссылкам, клиентский вид и переход к дню через редактор ждут сохранения. Ошибка оставляет черновик на месте с возможностью повтора. Browser Back в builder сохраняет перед возвратом; в полном редакторе Back спрашивает подтверждение, но не вызывает DraftSession.save. Из полного редактора команда «Изменить день» сохраняет поездку и открывает этап 4 с `day={id}`; внутри конструктора этап и день отражаются в URL через `history.replaceState`.
+- На этапе 2 список содержит перелёты и дальние переезды, на этапе 3 — отели. Inline `ItemForm` используется только для перелёта на этапе 2 и отеля на этапе 3; прочие типы открываются в панели редактора. Одновременно активна одна inline-форма, пока её не применят или не отменят, переключение этапа/дня заблокировано. Этап 4 показывает календарь поездки, программу и заметки выбранного дня, карту и стоимость дня.
+- Поля перелёта `CountryCity` сохраняют страну и город вместе. Варианты поиска города требуют `country_code`, совпадающий с известным кодом страны. `TripEditor` передаёт в `ItemForm.flightHistory` уникальные пары страна/город из отправления и прибытия перелётов текущего черновика; их можно выбрать повторно.
+- Время транспорта хранится как местные часы; для flight/train_bus/transfer можно указать оба UTC-смещения в минутах (от −840 до +840). Они проверяют длительность по UTC, а календарь сохраняет местные дату/время. Смещения не являются часовыми зонами и не рассчитывают DST; старые записи без смещений сохраняют прежнюю интерпретацию местных часов.
+- Сокращение диапазона с заполненными днями требует явного подтверждения `DATE_REMOVAL_REQUIRED`; проверяй перечисленные даты перед удалением.
 
-<!-- autopilot:end -->
+### Ключевые файлы конструктора
+
+- Маршруты: `frontend/src/app/admin/(private)/trips/new/page.tsx`, `frontend/src/app/admin/(private)/trips/[id]/builder/page.tsx`, `frontend/src/app/admin/(private)/trips/[id]/page.tsx`.
+- UI: `frontend/src/components/trips/new-trip.tsx`, `frontend/src/components/trips/trip-editor.tsx`, `frontend/src/components/trips/trip-builder.tsx`, `frontend/src/components/trips/trip-builder.module.css`, `frontend/src/components/trips/trip-calendar.tsx`, `frontend/src/components/trips/item-form.tsx`, `frontend/src/components/trips/country-city.tsx`, `frontend/src/components/trips/place-combobox.tsx`.
+- Черновик, расписание и API: `frontend/src/lib/draft-session.ts`, `frontend/src/lib/trips.ts`, `frontend/src/lib/transport-schedule.ts`, `frontend/src/lib/contracts.ts`, `frontend/src/lib/maps-client.ts`.
+- Поиск мест и проверка поездки: `backend/app/maps.py`, `backend/app/schemas.py`, `backend/app/trips.py`, `backend/tests/test_maps.py`, `backend/migrations/versions/e82b73ac51d9_transport_utc_offsets.py`.
+
+### Проверки конструктора — 27 октября 2026
+
+Из корня репозитория:
+
+```powershell
+docker compose exec -T backend pytest -q
+docker compose exec -T backend ruff check .
+```
+
+Из корня репозитория для frontend:
+
+```powershell
+cd frontend
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test -- --run --testTimeout=15000
+npm.cmd run build
+npm.cmd exec playwright test e2e/trip-builder.spec.ts -- --workers=1
+```
+
+Результаты этой итерации: backend — 177 passed, Ruff — All checks passed; frontend — 256 passed в 50 файлах, lint/typecheck/build прошли; Playwright `trip-builder.spec.ts` — 5 passed. Для Playwright нужны запущенный сайт и Chromium.\r\n\r\n<!-- autopilot:end -->
