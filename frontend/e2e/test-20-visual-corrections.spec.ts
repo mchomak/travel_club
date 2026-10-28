@@ -1,25 +1,30 @@
 import { expect, test } from "@playwright/test";
 
-test("service number and English name sit on a backing separate from the details link", async ({ page }) => {
+test("service number and name have a visible backing", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_20");
 
   const card = page.locator('[data-format="route"]');
   const identity = card.locator("[data-format-identity]");
-  await expect(identity).toHaveCount(1);
   await expect(identity.locator("[data-format-number]")).toHaveText("01");
   await expect(identity.getByRole("heading", { level: 3 })).toHaveText("Travel Design");
-  await expect(card.getByRole("link", { name: /Подробнее/ })).toBeVisible();
+  await expect(card.locator('[class*="detailsLink"]')).toBeVisible();
   await expect(identity.locator("a")).toHaveCount(0);
 
   const surfaces = await identity.evaluate(element => ({
     panel: getComputedStyle(element).backgroundColor,
     section: getComputedStyle(element.closest("#formats")!).backgroundColor,
   }));
-  expect(surfaces.panel).not.toBe(surfaces.section);
+  const channels = (value: string) => {
+    const numbers = value.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+    return numbers.map(channel => (channel <= 1 ? channel * 255 : channel));
+  };
+  const panel = channels(surfaces.panel);
+  const section = channels(surfaces.section);
+  expect(Math.hypot(...panel.map((channel, index) => channel - section[index]))).toBeGreaterThanOrEqual(14);
 });
 
-test("NEXT ISSUE note matches the original test_13 editorial treatment", async ({ page }) => {
+test("NEXT ISSUE note keeps its copy and original compact sans-serif treatment", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/test_20");
 
@@ -33,63 +38,72 @@ test("NEXT ISSUE note matches the original test_13 editorial treatment", async (
     const style = getComputedStyle(element);
     return {
       fontFamily: style.fontFamily,
+      fontSize: Number.parseFloat(style.fontSize),
       textAlign: style.textAlign,
       leftGap: Math.abs(bounds.left - art.left),
       bottomGap: art.bottom - bounds.bottom,
       expectedBottomGap: art.height * 0.25,
     };
   });
-  expect(treatment.fontFamily).toContain("TC Lora");
+  expect(treatment.fontFamily).toContain("TC Golos");
+  expect(treatment.fontSize).toBeLessThanOrEqual(15);
   expect(treatment.textAlign).toBe("left");
   expect(treatment.leftGap).toBeLessThanOrEqual(1);
   expect(Math.abs(treatment.bottomGap - treatment.expectedBottomGap)).toBeLessThanOrEqual(1);
 });
 
-test("FIELD NOTES icon uses the warm red from the reference", async ({ page }) => {
+test("FIELD NOTES icon matches its heading color", async ({ page }) => {
   await page.goto("/test_20");
 
   const icon = page.locator('[class*="fieldNotesGrid"] h2 svg');
   await expect(icon).toHaveCount(1);
-  await expect(icon).toHaveCSS("color", "rgb(206, 60, 40)");
+  const colors = await icon.evaluate(element => ({
+    icon: getComputedStyle(element).color,
+    heading: getComputedStyle(element.closest("h2")!).color,
+  }));
+  expect(colors.icon).toBe(colors.heading);
+  expect(colors.icon).not.toBe("rgb(206, 60, 40)");
 });
 
-test("Thailand year sits above and to the right of the country title", async ({ page }) => {
-  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+test("Thailand year sits clear of the title on desktop and above it on mobile", async ({ page }) => {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 1024 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await page.goto("/test_20");
 
+    const opening = page.locator('[class*="thailandOpening"]');
     const art = page.locator('[class*="thaiArt"]');
-    const year = art.locator("[data-thai-year]");
-    const location = art.locator("[data-thai-location]");
-    await expect(year).toHaveText("’26");
-    await expect(location).toContainText("Таиланд");
+    const year = opening.locator("[data-thai-year]");
+    const title = art.locator("#thailand-title");
+    await expect(year).toHaveText("\u201926");
+    await expect(art.locator("[data-thai-location]")).toContainText("\u0422\u0430\u0438\u043b\u0430\u043d\u0434");
 
-    const positions = await Promise.all([year, location].map(element => element.boundingBox()));
-    const frame = await art.boundingBox();
-    expect(frame).not.toBeNull();
-    expect(positions[0]).not.toBeNull();
-    expect(positions[1]).not.toBeNull();
-    expect(Math.abs(positions[0]!.y - frame!.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(positions[0]!.x + positions[0]!.width - frame!.x - frame!.width)).toBeLessThanOrEqual(1);
-    expect(Math.abs(positions[1]!.x - frame!.x)).toBeLessThanOrEqual(1);
-    expect(Math.abs(positions[1]!.y + positions[1]!.height - frame!.y - frame!.height)).toBeLessThanOrEqual(1);
+    const [yearBounds, titleBounds, artBounds] = await Promise.all([year, title, art].map(element => element.boundingBox()));
+    expect(yearBounds).not.toBeNull();
+    expect(titleBounds).not.toBeNull();
+    expect(artBounds).not.toBeNull();
+    if (viewport.width > 820) {
+      expect(yearBounds!.x).toBeGreaterThanOrEqual(titleBounds!.x + titleBounds!.width - 1);
+    } else {
+      expect(yearBounds!.y + yearBounds!.height).toBeLessThanOrEqual(artBounds!.y + 1);
+    }
   }
 });
 
-test("China background has a subtle local ornamental pattern below its content", async ({ page }) => {
+test("China background uses a compact local ornamental pattern", async ({ page }) => {
   await page.goto("/test_20");
 
-  const china = page.locator("#field-note-china");
-  const pattern = await china.evaluate(element => {
+  const pattern = await page.locator("#field-note-china").evaluate(element => {
     const style = getComputedStyle(element, "::before");
     return {
       image: style.backgroundImage,
+      size: style.backgroundSize,
       opacity: Number(style.opacity),
       pointerEvents: style.pointerEvents,
     };
   });
   expect(pattern.image).toContain("/test_20/china-pattern.svg");
+  expect(pattern.size).toBe("120px 120px");
   expect(pattern.opacity).toBeGreaterThan(0);
-  expect(pattern.opacity).toBeLessThanOrEqual(0.16);
+  expect(pattern.opacity).toBeLessThanOrEqual(0.12);
   expect(pattern.pointerEvents).toBe("none");
 });
