@@ -28,7 +28,8 @@
 .hero { --section-bg:var(--tc-hero-bg); --section-heading:var(--tc-hero-heading); --section-text:var(--tc-hero-text); --section-accent:var(--tc-hero-accent); --section-line:var(--tc-hero-line); --section-button:var(--tc-hero-button); --section-link:var(--tc-hero-link); }
 .formats { --section-bg:var(--tc-formats-bg); --section-heading:var(--tc-formats-heading); --section-text:var(--tc-formats-text); --section-accent:var(--tc-formats-accent); --section-line:var(--tc-formats-line); --section-button:var(--tc-formats-button); --section-link:var(--tc-formats-link); }
 .next { --section-bg:var(--tc-next-bg); --section-heading:var(--tc-next-heading); --section-text:var(--tc-next-text); --section-accent:var(--tc-next-accent); --section-line:var(--tc-next-line); --section-button:var(--tc-next-button); --section-link:var(--tc-next-link); }
-.china { --section-bg:var(--tc-china-bg); --section-heading:var(--tc-china-heading); --section-text:var(--tc-china-text); --section-accent:var(--tc-china-accent); --section-line:var(--tc-china-line); --section-button:var(--tc-china-button); --section-link:var(--tc-china-link); }
+.china { --section-bg:var(--tc-china-bg); --section-heading:var(--tc-china-heading); --section-text:var(--tc-china-text); --section-accent:var(--tc-china-accent); --section-line:var(--tc-china-line); --section-button:var(--tc-china-button); --section-link:var(--tc-china-link); position: relative; isolation: isolate; }
+.china::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("/test_20/china-pattern.svg") repeat; background-size: 180px 180px; opacity: .13; pointer-events: none; }
 .madagascar { --section-bg:var(--tc-madagascar-bg); --section-heading:var(--tc-madagascar-heading); --section-text:var(--tc-madagascar-text); --section-accent:var(--tc-madagascar-accent); --section-line:var(--tc-madagascar-line); --section-button:var(--tc-madagascar-button); --section-link:var(--tc-madagascar-link); }
 .thailand { --section-bg:var(--tc-thailand-bg); --section-heading:var(--tc-thailand-heading); --section-text:var(--tc-thailand-text); --section-accent:var(--tc-thailand-accent); --section-line:var(--tc-thailand-line); --section-button:var(--tc-thailand-button); --section-link:var(--tc-thailand-link); }
 .approach { --section-bg:var(--tc-approach-bg); --section-heading:var(--tc-approach-heading); --section-text:var(--tc-approach-text); --section-accent:var(--tc-approach-accent); --section-line:var(--tc-approach-line); --section-button:var(--tc-approach-button); --section-link:var(--tc-approach-link); }
@@ -71,7 +72,8 @@
 .serifLead { font: 400 var(--tc-size-h3)/1.25 var(--tc-font-h3); color: var(--section-heading); }
 .formatGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 40px 48px; }
 .formatCard { min-width: 0; display: flex; flex-direction: column; padding-top: 16px; border-top: 1px solid var(--section-line); }
-.formatHeader { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 14px 20px; width: 100%; min-height: 100px; padding: 18px; background: var(--section-bg); color: var(--section-heading); }
+.formatHeader { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 14px 20px; width: 100%; min-height: 100px; color: var(--section-heading); }
+.formatIdentity { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 14px 20px; justify-self: start; width: fit-content; max-width: 100%; padding: 18px; background: color-mix(in srgb,var(--section-bg) 82%,#fff); }
 .formatNumber { font: 400 min(var(--tc-size-display),5vw)/1 var(--tc-font-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .formatName { display: flex; flex-direction: column; min-width: 0; }
 .formatHeading { font: 600 var(--tc-size-h3)/1.15 var(--tc-font-h3); letter-spacing: -.025em; overflow-wrap: anywhere; }
@@ -103,7 +105,7 @@
 .nextDisplay > span:last-child { align-self: flex-end; font-size: min(28.5cqw,calc(var(--tc-size-display)*1.84)); text-align: right; }
 .nextMark { position: absolute; top: 21%; right: 1%; width: 30px; height: 30px; color: #F5E2A0; }
 .next .sectionBar > span:first-child,.next .status,.next .status > svg { color: #F5E2A0; }
-.nextArtNote { position: absolute; bottom: 25%; left: 0; max-width: 17ch; font: 400 var(--tc-size-caption)/1.4 var(--tc-font-caption); }
+.nextArtNote { position: absolute; bottom: 25%; left: 0; max-width: 13ch; font-family: "TC Lora", Georgia, serif; font-size: clamp(14px,3cqw,18px); line-height: 1.2; text-align: left; }
 .nextCopy { align-self: center; padding-bottom: 12px; }
 .status { display: flex; align-items: center; gap: 12px; margin-bottom: 28px !important; text-transform: uppercase; font: 500 var(--tc-size-metadata)/1.5 var(--tc-font-metadata); letter-spacing: .05em; }
 .nextCopy h2 { text-transform: uppercase; }
@@ -131,7 +133,7 @@
 .fieldNotesIntro { --section-heading: var(--tc-blue); --section-text: var(--tc-ink); --section-line: color-mix(in srgb,var(--tc-blue) 42%,transparent); padding-block: clamp(32px,5vw,68px) 24px; background: var(--tc-paper); color: var(--tc-ink); }
 .fieldNotesGrid { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 7%; align-items: start; padding-block: 28px 38px; }
 .fieldNotesGrid h2 { color: var(--section-heading); font: 500 clamp(42px,6vw,84px)/.92 var(--tc-font-display); letter-spacing: -.045em; }
-.fieldNotesGrid h2 svg { display: block; width: 30px; height: 30px; margin-bottom: 18px; color: var(--tc-red); }
+.fieldNotesGrid h2 svg { display: block; width: 30px; height: 30px; margin-bottom: 18px; color: #ce3c28; }
 .fieldNotesGrid > div { max-width: 680px; }
 .fieldNotesGrid .serifLead { margin-bottom: 18px; }
 .fieldNotesFooter { display: flex; justify-content: space-between; gap: 20px; padding-block: 16px 10px; border-top: 1px solid var(--section-line); color: var(--section-text); font: 400 var(--tc-size-metadata)/1.5 var(--tc-font-metadata); text-transform: uppercase; letter-spacing: .05em; }
@@ -156,8 +158,8 @@
 .thaiWord,.landWord { height: 47.5%; width: 100%; display: block; background: url('/test_11/thailand-bright.webp') 50% 48% / cover; mask-size: 100% 100%; mask-repeat: no-repeat; }
 .thaiWord { mask-image: url('/test_19/thai-mask.png'); }
 .landWord { mask-image: url('/test_19/land-mask.png'); background-position: 50% 70%; }
-.thaiYear { position: absolute; bottom: 0; left: 0; display: flex; align-items: center; gap: 36px; font: 400 min(calc(var(--tc-size-display)*1.1),10vw)/1 var(--tc-font-display); letter-spacing: -.04em; }
-.thaiYear span { font: 400 var(--tc-size-body)/1.5 var(--tc-font-body); letter-spacing: 0; }
+.thaiYear { position: absolute; top: 0; right: 0; font: 400 min(calc(var(--tc-size-display)*1.1),10vw)/1 var(--tc-font-display); letter-spacing: -.04em; }
+.thaiLocation { position: absolute; bottom: 0; left: 0; font: 400 var(--tc-size-body)/1.5 var(--tc-font-body); }
 .thaiOpeningNote { border-top: 1px solid var(--section-line); padding-top: 24px; }
 .thaiOpeningNote > svg { width: 32px; height: 32px; color: var(--section-accent); margin-bottom: 20px; }
 .thaiOpeningNote p { font: 400 var(--tc-size-h3)/1.2 var(--tc-font-h3); color: var(--section-heading); }
@@ -207,7 +209,8 @@
   .heroSummary > p { font-size: var(--tc-size-subheading); }
   .heroSummary .actions { margin-top: 22px; }
   .sectionIntro { gap: 32px; }
-  .formatHeader { padding: 14px !important; gap: 12px !important; }
+  .formatHeader { gap: 12px; }
+  .formatIdentity { gap: 12px; padding: 14px; }
   .fieldNotesGrid { gap: 32px; }
   .formatsBottom { grid-template-columns: 1fr; }
   .formatsBottom .actions { justify-content: start; }
@@ -259,9 +262,10 @@
   .formats,.approach,.conversation { padding-top: 56px; }
   .sectionIntro { grid-template-columns: 1fr; gap: 26px; margin-bottom: 32px; }
   .formatGrid { grid-template-columns: 1fr; gap: 30px; }
-  .formatHeader { grid-template-columns: 65px minmax(0,1fr); align-items: start; padding: 18px !important; gap: 12px !important; }
+  .formatHeader { grid-template-columns: minmax(0,1fr); align-items: start; gap: 8px; }
+  .formatIdentity { grid-template-columns: 54px minmax(0,1fr); gap: 12px; padding: 15px; }
   .formatNumber { font-size: min(var(--tc-size-display),15vw); }
-  .detailsLink { grid-column: 2; justify-self: start; }
+  .detailsLink { grid-column: 1; justify-self: start; }
   .formatRussian { font-size: var(--tc-size-caption); }
   .formatsBottom { padding-bottom: 42px; margin-top: 32px; }
   .formatsBottom .actions { align-items: start; flex-direction: column; }
@@ -275,7 +279,6 @@
   .nextFacts > div { padding: 20px 10px; }
   .nextFacts dd { font-size: var(--tc-size-body); }
   .nextFacts small { font-size: var(--tc-size-caption); }
-  .nextArtNote { max-width: 13ch; }
   .nextMark { width: 24px; height: 24px; }
   .countryTitle { padding-block: 20px 28px; }
   .countryTitle h2 { font-size: min(calc(var(--tc-size-display)*1.35),20vw); }
@@ -295,8 +298,8 @@
   .madagascarCopy h3 { margin-top: 30px; }
   .madagascarGrid figure > div { aspect-ratio: 1.1 !important; }
   .thailandOpening { padding-block: 24px 32px; }
-  .thaiYear { gap: 22px; font-size: min(var(--tc-size-display),16vw); }
-  .thaiYear span { font-size: var(--tc-size-caption); }
+  .thaiYear { font-size: min(var(--tc-size-display),16vw); }
+  .thaiLocation { font-size: var(--tc-size-caption); }
   .thaiOpeningNote { gap: 12px; grid-template-columns: 30px minmax(0,1fr); }
   .thaiOpeningNote > svg { width: 26px; height: 26px; }
   .thailandBottom { grid-template-columns: 1fr; margin-top: 28px; }
@@ -320,7 +323,7 @@
   .hero { min-height: 850px; }
   .heroReading { padding-top: 150px; }
   .navLinks { font-size: .8125rem; }
-  .formatHeader { grid-template-columns: 54px minmax(0,1fr); padding: 15px !important; }
+  .formatIdentity { grid-template-columns: 48px minmax(0,1fr); padding: 14px; }
   .nextFacts { grid-template-columns: 1fr; }
   .nextFacts > div { padding: 18px 0; border-left: 0; border-top: 1px solid var(--section-line); }
   .nextFacts > div:first-child { border-top: 0; }

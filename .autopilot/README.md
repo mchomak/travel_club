@@ -56,7 +56,7 @@
 
 | 2026-10-25 | `2026-10-25-map-workflow` | ???? | Map workflow: 7/7 features, 204 frontend unit tests, 36 browser scenarios; production server unchanged. |
 
-| 2026-10-26 | `2026-10-26-test-20-annotated-updates--wip` | в работе | Правки /test_20 по 12 комментариям |
+| 2026-10-26 | `2026-10-26-test-20-annotated-updates` | сдан | /test_20: пять визуальных правок; 30 e2e и 256 unit passed; lint, typecheck и build прошли; push в origin/master |
 | 2026-10-26 | `2026-10-26-trip-wizard` | сдан | Пошаговый конструктор маршрутов: общий календарь, редактор дня и синхронизация с PostgreSQL |
 | 2026-10-26 | `2026-10-26-research-interview-questions` | сдан | Обновлён Research: 140 вопросов, 28 гипотез и 10 модулей для четырёх категорий; локальный сайт перезапущен. |
 
