@@ -1,4 +1,5 @@
 @import "../public-site/fonts.css";
+@import "./font-faces.css";
 
 .root { background: var(--tc-paper); color: var(--tc-ink); font: 400 var(--tc-size-body)/1.6 var(--tc-font-body); -webkit-font-smoothing: antialiased; accent-color: var(--tc-blue); caret-color: var(--tc-blue); }
 .root *, .root *::before, .root *::after { box-sizing: border-box; }

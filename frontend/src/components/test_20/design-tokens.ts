@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { BASE_TOKENS } from "../design-system/tokens";
 
 export const DESIGN_STORAGE_KEY = "travel-club-test-20-design-v1";
-export const FONT_FAMILIES = ["TC Golos", "TC Lora"] as const;
+export const FONT_FAMILIES = ["TC Golos", "TC Lora", "Montserrat", "Red Hat Display", "Lato", "Nunito Sans"] as const;
 export type DesignFont = typeof FONT_FAMILIES[number];
 export const TYPE_LABELS = {
   display: "Display", h1: "H1", h2: "H2", h3: "H3", subheading: "Подзаголовки",
@@ -65,6 +65,15 @@ export const PALETTE_PRESETS: { name: string; note: string; colors: DesignSettin
 
 export const normalizeHex = (value: string): string | null => /^#[\da-f]{6}$/i.test(value) ? value.toUpperCase() : null;
 
+const fontStacks: Record<DesignFont, string> = {
+  "TC Golos": '"TC Golos", "Segoe UI", sans-serif',
+  "TC Lora": '"TC Lora", Georgia, serif',
+  Montserrat: '"Montserrat", "TC Golos", "Segoe UI", sans-serif',
+  "Red Hat Display": '"Red Hat Display", "TC Golos", "Segoe UI", sans-serif',
+  Lato: '"Lato", "TC Golos", "Segoe UI", sans-serif',
+  "Nunito Sans": '"Nunito Sans", "TC Golos", "Segoe UI", sans-serif',
+};
+
 /** Every section inherits the shared palette until its own override is chosen. */
 const sectionPalette: Record<DesignSection, { bg: DesignColor; heading: DesignColor; text: DesignColor; accent: DesignColor; button: DesignColor }> = {
   nav: { bg: "blue", heading: "paper", text: "paper", accent: "paper", button: "paper" },
@@ -100,7 +109,7 @@ export function createDesignVariables(settings: DesignSettingsValue = DEFAULT_DE
   for (const color of Object.keys(COLOR_LABELS) as DesignColor[]) vars[`--tc-${color}`] = settings.colors[color];
   for (const role of Object.keys(TYPE_LABELS) as DesignRole[]) {
     const token = settings.typography[role];
-    vars[`--tc-font-${role}`] = token.family === "TC Lora" ? '"TC Lora", Georgia, serif' : '"TC Golos", "Segoe UI", sans-serif';
+    vars[`--tc-font-${role}`] = fontStacks[token.family];
     vars[`--tc-size-${role}`] = responsiveSize(token.desktop, token.mobile);
   }
   for (const section of Object.keys(SECTION_LABELS) as DesignSection[]) {

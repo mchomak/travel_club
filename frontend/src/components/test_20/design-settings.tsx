@@ -95,7 +95,7 @@ export function DesignSettings() {
             </section>
             <details className={s.group} open>
               <summary>Шрифты и размеры</summary>
-              <p className={s.help}>Размер плавно меняется между mobile и desktop. Используются уже загруженные шрифты сайта.</p>
+              <p className={s.help}>Размер плавно меняется между mobile и desktop.</p>
               <p className={s.help}>Display задаёт масштаб редакционной графики; крупные надписи ограничены шириной композиции.</p>
               <p className={s.help}>На маленьких экранах навигация сохраняет компактный размер.</p>
               {(Object.keys(TYPE_LABELS) as DesignRole[]).map(role => <fieldset key={role} className={s.typeRole}>
@@ -104,6 +104,8 @@ export function DesignSettings() {
                   onChange={event => changeType(role, { family: event.target.value as RoleSettings["family"] })}>
                   {FONT_FAMILIES.map(font => <option key={font}>{font}</option>)}
                 </select></label>
+                {(settings.typography[role].family === "Red Hat Display" || settings.typography[role].family === "Lato")
+                  && <p className={s.fontHint}>Кириллица будет отображаться шрифтом Golos Text.</p>}
                 <div className={s.sizes}>
                   <SizeField label={`Размер на desktop: ${TYPE_LABELS[role]}`} value={settings.typography[role].desktop} max={200} onChange={desktop => changeType(role, { desktop })} />
                   <SizeField label={`Размер на mobile: ${TYPE_LABELS[role]}`} value={settings.typography[role].mobile} max={120} onChange={mobile => changeType(role, { mobile })} />
