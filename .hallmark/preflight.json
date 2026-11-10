@@ -1,0 +1,18 @@
+﻿{
+    "scanned":  "2026-10-30",
+    "findings":  {
+                     "fonts":  "Global Segoe UI baseline in frontend/src/app/globals.css:10; /test_20 uses TC Golos and TC Lora plus local Montserrat, Red Hat Display, Lato and Nunito Sans via frontend/src/components/test_20/design-tokens.ts:3,29-42 and font-faces.css:1-55.",
+                     "palette":  "Global palette in frontend/src/app/globals.css:3-10; /test_20 has section and type roles in frontend/src/components/test_20/design-tokens.ts:29-48, applied by concept-home.tsx:31.",
+                     "motion":  "CSS-only interaction; no motion dependency in frontend/package.json:15-29. Photo editor fade respects reduced motion in frontend/src/components/test_20/image-editor.module.css:3-4,34.",
+                     "spacing":  "No shared spacing tokens in the /test_20 styles; its CSS modules use custom px and clamp values, including concept.module.css:22,42,60,70.",
+                     "framework":  "Next.js 16.3.6 App Router, frontend/package.json:22 and frontend/src/app/test_20/page.tsx:1-12."
+                 },
+    "preserve":  [
+                     "Travel Club wordmark and page palette",
+                     "Existing copy, routes, anchors, photo editing and design-settings behavior",
+                     "Current editorial section order and travel stories"
+                 ],
+    "introduce":  [
+
+                  ]
+}
