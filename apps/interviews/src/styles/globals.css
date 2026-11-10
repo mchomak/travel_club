@@ -1,0 +1,15 @@
+:root {
+  color-scheme: light;
+  --interviews-bg: #f5f7fb;
+  --interviews-surface: #fff;
+  --interviews-text: #17253b;
+  --interviews-muted: #5d6b80;
+  --interviews-line: #dce3ed;
+  --interviews-blue: #173f7a;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body { background: var(--interviews-bg); color: var(--interviews-text); font-family: system-ui, "Segoe UI", Aptos, Arial, sans-serif; }
+button, input, select, textarea { font: inherit; }
+a { color: inherit; }
