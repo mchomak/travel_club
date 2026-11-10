@@ -3,6 +3,24 @@ import { expect, test, type Page } from "@playwright/test";
 const design20 = (page: Page) => page.locator('[data-editorial-home="test-20"]');
 const design21 = (page: Page) => page.locator('[data-editorial-home="test-21"]');
 const viewportWidths = [375, 768, 1280, 1440];
+type LinkSignature = { href: string | null; label: string; region: "header" | "footer" | "content" };
+
+function normalizeApprovedNavigationLinks(links: LinkSignature[]) {
+  const approvedChanges = new Map([
+    ["Travel Club, наверх", { hrefs: ["#top", "/"], href: "/", label: "Travel Club home" }],
+    ["Travel Club — главная", { hrefs: ["#top", "/"], href: "/", label: "Travel Club home" }],
+    ["Услуги", { hrefs: ["#formats", "/formats"], href: "/formats", label: "Услуги" }],
+    ["О нас", { hrefs: ["#point-of-view", "/#point-of-view"], href: "/#point-of-view", label: "О нас" }],
+    ["Начать поездку", { hrefs: ["#final-cta", "/start"], href: "/start", label: "Начать поездку" }],
+  ]);
+
+  return links.map(link => {
+    if (link.region === "content") return link;
+    const approved = approvedChanges.get(link.label);
+    if (!approved || !approved.hrefs.includes(link.href ?? "")) return link;
+    return { ...link, href: approved.href, label: approved.label };
+  });
+}
 
 async function signature(page: Page, selector: string) {
   const root = page.locator(selector);
@@ -13,7 +31,14 @@ async function signature(page: Page, selector: string) {
       sections: sections.map(section => ({ name: section.dataset.designSection, background: getComputedStyle(section).backgroundColor })),
       roles: typeRoles.map(role => ({ name: role.dataset.typeRole, size: Number.parseFloat(getComputedStyle(role).fontSize) })),
       photoSlots: [...element.querySelectorAll<HTMLElement>("[data-photo-slot]")].map(slot => slot.dataset.photoSlot),
-      links: [...element.querySelectorAll<HTMLAnchorElement>("a")].map(link => link.getAttribute("href")),
+      links: [...element.querySelectorAll<HTMLAnchorElement>("a")].map(link => {
+        const region: LinkSignature["region"] = link.closest("header") ? "header" : link.closest("footer") ? "footer" : "content";
+        return {
+          href: link.getAttribute("href"),
+          label: link.getAttribute("aria-label") ?? link.textContent?.trim() ?? "",
+          region,
+        };
+      }),
       logos: [...element.querySelectorAll<HTMLImageElement>('img[alt="Travel Club"]')].map(image => image.getAttribute("src")),
       overflow: element.scrollWidth > document.documentElement.clientWidth,
     };
@@ -35,7 +60,11 @@ test("/test_21 uses the centralized defaults and retains /test_20 composition", 
     await page.evaluate(() => document.fonts.ready);
     await expect(design21(page)).toBeVisible();
     const actual = await signature(page, '[data-editorial-home="test-21"]');
-    expect({ ...actual, roles: [] }).toEqual({ ...expected, roles: [] });
+    expect({ ...actual, roles: [], links: normalizeApprovedNavigationLinks(actual.links) }).toEqual({
+      ...expected,
+      roles: [],
+      links: normalizeApprovedNavigationLinks(expected.links),
+    });
     expect(actual.roles.map(role => role.name)).toEqual(expected.roles.map(role => role.name));
     actual.roles.forEach((role, index) => expect(Math.abs(role.size - expected.roles[index].size)).toBeLessThanOrEqual(0.001));
     await expect(page.getByRole("button", { name: "Design Settings" })).toHaveCount(0);

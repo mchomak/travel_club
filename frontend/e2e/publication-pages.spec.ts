@@ -13,7 +13,7 @@ const publicationPages = [
   { path: "/personal-data", title: "Обработка персональных данных", status: 200 },
   { path: "/a-page-outside-the-route", title: /Этой страницы\s*нет в маршруте\./, status: 404 },
 ] as const;
-const headerLinks = ["/formats", "/archive", "/start"];
+const headerLinks = ["/formats", "/#point-of-view", "/archive", "/start"];
 const footerLinks = [...headerLinks, "/legal", "/privacy", "/personal-data", "/thanks"];
 
 async function loadAllImages(page: Page) {
@@ -51,6 +51,7 @@ for (const width of [1440, 1280, 768, 390]) {
       await expect(page.locator("[data-publication-root]")).toHaveCount(1);
       await expect(page.getByRole("main")).toHaveCount(1);
       await expect(page.getByRole("banner")).toHaveCount(1);
+      await expect(page.getByRole("banner")).toHaveAttribute("data-editorial-home", "test-21");
       await expect(page.getByRole("contentinfo")).toHaveCount(1);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(publication.title);
@@ -118,8 +119,8 @@ test("all publication pages support keyboard skip, visible focus and a real retu
     await expect(page.getByRole("main")).toBeFocused();
     await expect(page).toHaveURL(/#publication-main$/);
     await page.getByRole("banner").getByRole("link", { name: "Travel Club — главная" }).click();
-    await expect(page).toHaveURL(/\/test_5$/);
-    await expect(page.getByRole("heading", { name: "TRAVEL CLUB", exact: true })).toBeVisible();
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Куда — важно\.\s*С кем — важнее\./);
   }
 });
 

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { BrandLogo } from "./brand-logo";
 import { EditableImage } from "./editable-image";
 import { EditorialSymbol } from "./editorial-symbol";
+import { PUBLIC_NAVIGATION_LINKS } from "../public-site/public-navigation";
+import { SiteHeader } from "../public-site/site-header";
 import s from "./concept.module.css";
 
 type Format = "route" | "complete" | "group" | "moscow";
@@ -14,33 +16,12 @@ const formats: { id: Format; number: string; name: string; english: string; deta
   { id: "moscow", number: "04", name: "Гид по Москве", english: "Moscow Guide", detailsHref: "/formats#moscow-title", summary: "Знакомство с городом — отдельный формат TC.", work: "Состав услуги уточняется. Расскажите, что вам интересно: обсудим возможный формат.", client: "Детали и условия согласуем до начала работы.", price: "Стоимость уточняется", note: "Программа и состав услуги пока не определены." },
 ];
 
-const languages = [
-  { code: "ru", label: "Русский", lang: "ru" },
-  { code: "en", label: "English", lang: "en" },
-  { code: "zh", label: "简体中文", lang: "zh-Hans" },
-] as const;
-
 function Arrow() { return <EditorialSymbol name="onward" />; }
 
 export function ConceptHome() {
-  const [selectedLanguage, setSelectedLanguage] = useState<(typeof languages)[number]["code"]>("ru");
-  const selectedLanguageLabel = languages.find(language => language.code === selectedLanguage)!.label;
   return <div className={s.root} data-editorial-home="test-21" id="top">
     <a href="#main" className={s.skipLink}>К содержимому</a>
-    <header className={s.navigation} data-design-section="nav">
-      <div className={s.navInner}>
-        <a className={s.navBrand} href="#top" aria-label="Travel Club, наверх"><BrandLogo className={s.navLogo} tone="cream" /></a>
-        <nav aria-label="Основная навигация" className={s.navLinks}>
-          <a href="#formats">Услуги</a><a href="#point-of-view">О нас</a><a href="/archive">Архив</a><a className={s.navCta} href="#final-cta">Начать поездку <Arrow /></a>
-          <details className={s.languageMenu} data-language-picker>
-            <summary className={s.languageToggle} aria-label={`Выбрать язык, сейчас: ${selectedLanguageLabel}`}>{selectedLanguage.toUpperCase()} <span aria-hidden="true">⌄</span></summary>
-            <div className={s.languageOptions} role="group" aria-label="Доступные языки">
-              {languages.map(language => <button key={language.code} type="button" lang={language.lang} aria-current={selectedLanguage === language.code ? "page" : undefined} onClick={() => setSelectedLanguage(language.code)}>{language.label}</button>)}
-            </div>
-          </details>
-        </nav>
-      </div>
-    </header>
+    <SiteHeader />
     <main id="main">
       <section className={s.hero} id="hero" data-design-section="hero" data-page-hero aria-labelledby="hero-title">
         <EditableImage slotId="hero-terrace" className={s.heroPhoto} background preload sizes="(max-width: 1280px) 1280px, 100vw" />
@@ -125,6 +106,6 @@ export function ConceptHome() {
         <article><span><EditorialSymbol name="note" />01 / Ваш запрос</span><h3>Рассказываете.</h3><p>Направление, сроки, состав компании, примерный бюджет и пожелания.</p></article><article><span><EditorialSymbol name="companions" />02 / Наш разговор</span><h3>Обсуждаем.</h3><p>Выбираем формат, уточняем детали и предварительно оцениваем состав услуг.</p></article><article><span><EditorialSymbol name="direction" />03 / Старт работы</span><h3>Договариваемся.</h3><p>Фиксируем условия и дальнейшие шаги. После согласования приступаем к работе.</p></article>
       </div><div className={s.storyFooter}><span>Свой маршрут. Своя компания. Общая история.</span><span>Продолжение следует.</span></div></div></section>
     </main>
-    <footer className={s.footer} id="footer" data-design-section="footer"><div className={s.wrap}><div className={s.footerGrid}><div><a href="#top" aria-label="Travel Club, наверх"><BrandLogo className={s.footerLogo} /></a><p className={s.footerSignature}>Независимая редакция<br />ваших путешествий.</p></div><nav aria-label="Навигация внизу страницы"><h3>Навигация</h3><a href="#formats">Услуги</a><a href="#point-of-view">О нас</a><a href="/archive">Архив</a><a href="/start">Начать поездку <Arrow /></a></nav><nav aria-label="Документы"><h3>Документы</h3><a href="/legal">Правовая информация</a><a href="/privacy">Конфиденциальность</a><a href="/personal-data">Персональные данные</a><p className={s.notice}>Документы и условия работы готовятся к запуску сайта.</p></nav></div><div className={s.storyFooter}><span>© 2026 TRAVEL CLUB</span><span>DESIGN STUDY / 20</span><a href="#top">Наверх <Arrow /></a></div></div></footer>
+    <footer className={s.footer} id="footer" data-design-section="footer"><div className={s.wrap}><div className={s.footerGrid}><div><Link href="/" aria-label="Travel Club — главная"><BrandLogo className={s.footerLogo} /></Link><p className={s.footerSignature}>Независимая редакция<br />ваших путешествий.</p></div><nav aria-label="Навигация внизу страницы"><h3>Навигация</h3>{PUBLIC_NAVIGATION_LINKS.map(link => <Link key={link.href} href={link.href}>{link.label}{link.href === "/start" && <> <Arrow /></>}</Link>)}</nav><nav aria-label="Документы"><h3>Документы</h3><Link href="/legal">Правовая информация</Link><Link href="/privacy">Конфиденциальность</Link><Link href="/personal-data">Персональные данные</Link><p className={s.notice}>Документы и условия работы готовятся к запуску сайта.</p></nav></div><div className={s.storyFooter}><span>© 2026 TRAVEL CLUB</span><span>DESIGN STUDY / 20</span><a href="#top">Наверх <Arrow /></a></div></div></footer>
   </div>;
 }
