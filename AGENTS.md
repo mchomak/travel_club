@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Рабочая карта проекта
 
-Travel Club — закрытый конструктор поездок: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose. Публичная `/` — витрина палитр и шрифтов; `/test` и `/test_2` — редакционные эксперименты, `/test_3` — экспериментальный анонс Shanghai, `/test_4` — FIELD NOTES и локальный фоторедактор, `/test_5` — тот же сайт с приближением из правой страницы журнала. Публичные формы демонстрационные.
+Travel Club — закрытый конструктор поездок: маршрут, календарь, ручные курсы, расчёт, сохранение и клиентский просмотр. Стек: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; Next.js 16, React 19, TypeScript, Tailwind; Docker Compose. Публичная `/` — главная из `/test_21`; `/test_21` и `/test_20` остаются отдельными тестовыми маршрутами. `/test` и `/test_2` — редакционные эксперименты, `/test_3` — экспериментальный анонс Shanghai, `/test_4` — FIELD NOTES и локальный фоторедактор, `/test_5` — тот же сайт с приближением из правой страницы журнала. Публичные формы демонстрационные.
 
 ### Запуск и проверка (PowerShell)
 
@@ -416,7 +416,7 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 Обновлять только текст между маркерами, проверяя команды и пути по репозиторию.
 ### Публичные редакционные страницы — 13 октября 2026
 
-- Маршруты `/formats`, `/archive`, `/start`, `/thanks`, `/legal`, `/privacy`, `/personal-data` лежат в `frontend/src/app/(publication)/`; route group не меняет URL. Общий `layout.tsx` использует `frontend/src/components/public-site/site-shell.tsx` (единственные header/main/footer); неизвестный URL оформляет `frontend/src/app/not-found.tsx`, отдельного `/404` нет. Главная — `/test_5`.
+- Маршруты `/formats`, `/archive`, `/start`, `/thanks`, `/legal`, `/privacy`, `/personal-data` лежат в `frontend/src/app/(publication)/`; route group не меняет URL. Общий `layout.tsx` использует `frontend/src/components/public-site/site-shell.tsx` (единственные header/main/footer); неизвестный URL оформляет `frontend/src/app/not-found.tsx`, отдельного `/404` нет. Главная — `/`; `/test_5` остаётся отдельным тестовым маршрутом.
 - Рабочая карта и API компонентов — `frontend/src/components/public-site/README.md`. В этом каталоге `primitives.tsx` даёт PageIntro/CTA/EditorialImage, `formats.tsx`, `archive.tsx`, `start-form.tsx` — содержимое страниц; фотографии используют существующие assets.
 - Центральная база — `BASE_TOKENS` в `frontend/src/components/design-system/tokens.ts`; `public-site/site-tokens.ts` преобразует её в `--pub-*` только на `[data-publication-root]`. Playground draft не применяется. Изменять primitive цвета/type/spacing/layout/frames в BASE, semantic aliases и overrides — в adapter или `publication.module.css`, не копировать значения по страницам.
 - Общая семья H1/H2/H3 идёт через `--pub-font-editorial` из `BASE_TOKENS.typography.h3.family`; h1/h2 сохраняют свои размеры/вес. Adapter использует desktopSize/mobileSize (fluid 390→1440), не Playground responsiveScale. `public-site/fonts.css` загружает TC Golos/TC Lora из `frontend/public/test/fonts/`.
@@ -564,6 +564,13 @@ Playwright требует работающий сайт и Chromium: `npx.cmd pl
 - `/test_20` — noindex-маршрут `frontend/src/app/test_20/page.tsx`; разметка, тексты и данные четырёх форматов живут в `frontend/src/components/test_20/concept-home.tsx`, стили страницы — `concept.module.css`. «Гид по Москве» ведёт на отдельный раздел `/formats#moscow-title`. Настройки находятся в `design-settings.tsx`/`design-tokens.ts`, применяются только к корню `data-editorial-home="test-20"` и хранят draft в `localStorage` под `travel-club-test-20-design-v1`; общие токены и страницы не менять ради этого playground.
 - Редактор фото и CSS, стабильные слоты и browser storage изолированы в `frontend/src/components/test_20/` (`image-editor.tsx`, `image-editor.module.css`, `photo-slots.ts`, `photo-store.ts`; IndexedDB `travel-club-test-20-photos`). Проверки страницы: `frontend/e2e/test-20-home.spec.ts` и `test-20-settings.spec.ts`.
 - Проверено 26 октября 2026: frontend lint/typecheck и Docker production build прошли; Vitest — 210/210; Playwright для test-20 home/settings вместе с publication-pages — 64/64.
+
+### Главная `/` и общая публичная навигация — 11 ноября 2026
+
+- Корень `frontend/src/app/page.tsx` и `/test_21` используют общий `TestTwentyOneExperience` из `frontend/src/components/test_21/test-twenty-one-experience.tsx`, который соединяет существующие `ConceptHome` и `ImageEditorProvider`. Корень индексируем и каноничен на `/`; `/test_21` сохраняет `noindex, nofollow` без canonical. `/test_20` остаётся отдельным noindex-маршрутом.
+- Единственный `SiteHeader` находится в `frontend/src/components/public-site/site-header.tsx` и используется `ConceptHome` и `SiteShell`. Server-safe `frontend/src/components/public-site/public-navigation.ts` экспортирует `PUBLIC_NAVIGATION_LINKS` для Header и обоих Footer; `SiteShell` продолжает оборачивать редакционные страницы, корень использует страницу напрямую. Адреса меню: `/formats`, `/#point-of-view`, `/archive`, `/start`.
+- Проверено 11 ноября 2026 из `frontend/`: `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000 --maxWorkers=3` (258 passed, 51 файл), `npm.cmd run build`; production Playwright — 58 passed, включая маршруты, переходы и адаптивные ширины 375, 768, 1280 и 1440 px.
+- На этом Windows workspace полный Vitest без ограничения workers запускал 51 worker; два assertion для сценария ошибки сохранения в trip-builder периодически завершались по timeout. Целевой файл прошёл 15/15; полный suite прошёл 258/258 с командой выше.
 
 ### Конструктор поездки — 27 октября 2026
 
