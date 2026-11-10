@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
-  assetPrefix: process.env.NEXT_ASSET_PREFIX || undefined,
+  assetPrefix: process.env.NEXT_ASSET_PREFIX || "/_app/interviews",
   async rewrites() {
     return {
       beforeFiles: [{ source: "/_app/interviews/_next/:path*", destination: "/_next/:path*" }],
