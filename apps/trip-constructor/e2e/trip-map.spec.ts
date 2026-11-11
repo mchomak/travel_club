@@ -1,23 +1,21 @@
 import { expect, test, type APIRequestContext, type Page, type Locator } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import type { TripDocument, TripInput, MapPlace, ItemInput } from '../src/lib/contracts';
 import { newItem, newTrip } from '../src/lib/trip-ui';
 import { tripInput } from '../src/lib/trips';
+import { database } from './test-database';
+import { requirePlaywrightBaseURL } from './isolation-guard';
 
 const login = `m${randomBytes(4).toString('hex')}`;
 const password = randomBytes(32).toString('base64url');
-const project = path.resolve(import.meta.dirname, '../..');
+const project = path.resolve(import.meta.dirname, '../../..');
 const headers = { 'X-Requested-With': 'TravelClub' };
 let cookies: Awaited<ReturnType<APIRequestContext['storageState']>>['cookies'] = [];
 const qa = path.join(project, 'docs/qa/map-workflow');
-function database(code: string, input: object) {
-  return execFileSync('docker', process.env.PLAYWRIGHT_BACKEND_CONTAINER ? ['exec', '-i', process.env.PLAYWRIGHT_BACKEND_CONTAINER, 'python', '-c', code] : ['compose', 'exec', '-T', 'backend', 'python', '-c', code], { cwd: project, input: JSON.stringify(input), encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-}
 test.beforeAll(async ({ playwright }) => {
   database("import json,sys; from app.db import SessionLocal; from app.bootstrap import create_admin; p=json.load(sys.stdin); db=SessionLocal(); create_admin(db,p['login'],p['password']); db.close()", { login, password });
-  const api = await playwright.request.newContext({ baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000' });
+  const api = await playwright.request.newContext({ baseURL: requirePlaywrightBaseURL(process.env.PLAYWRIGHT_BASE_URL) });
   try {
     expect((await api.post('/api/auth/login', { headers, data: { login, password } })).ok()).toBe(true);
     cookies = (await api.storageState()).cookies.filter(cookie => cookie.name === 'travel_session');

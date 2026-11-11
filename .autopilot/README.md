@@ -63,3 +63,5 @@
 | 2026-10-27 | `2026-10-27-trip-wizard-forms` | сдан | Встроенные анкеты перелётов и проживания; редактирование дня сохраняет полный календарь. |
 
 | 2026-11-10 | 2026-11-10-integrate-test-21-homepage | complete | Promote Test21 to /; align public navigation; 76 requirements done |
+
+| 2026-11-11 | `2026-11-11-repository-architecture--wip` | ? ?????? | ? |

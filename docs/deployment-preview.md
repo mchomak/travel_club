@@ -1,33 +1,40 @@
 # Travel Club preview deployment runbook
 
-This runbook describes how to publish the existing site on a VPS at a runtime URL of `https://<public-ip>:<HTTPS_PORT>`. The checked-in Nginx files are templates and commands only; they do not configure a server or mean that deployment is complete. The public IP, selected HTTPS port, resulting link, and certificate paths are set from verified runtime values and are not committed into the templates.
+This runbook describes how to publish the Travel Club Website, Trip Constructor, and Interview Platform through one gateway on a VPS at a runtime URL of `https://<public-ip>:<HTTPS_PORT>`. The checked-in Nginx files are templates and commands only; they do not configure a server or mean that deployment is complete. The public IP, selected HTTPS port, resulting link, and certificate paths are set from verified runtime values and are not committed into the templates.
 
-The workflow keeps host Nginx separate from the `travel_club` Compose project, routes to the frontend on its private Docker bridge address without publishing a frontend host port, leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes; it requires the owner's separate authorization to deploy after the unified commit is pushed. This runbook or a prepared commit alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
+The workflow keeps host Nginx separate from the `travel_club` Compose project and routes to the gateway at its private Docker bridge address without publishing an application host port. The gateway routes requests to the three Next.js applications and the shared backend. It leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes and requires the owner's separate authorization to deploy. A prepared or reviewed change alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
 
-## 1. Confirm the pushed revision
+## 1. Review and select an approved revision
 
-From the repository root on the workstation, stage the entire intended working tree for the single shared commit. Review the staged paths and changes; ensure `.env`, credentials, logs, and generated local state are excluded. Do not proceed if anything unexpected is staged. Do not use a force push.
+From the repository root on the workstation, inspect the current branch and both staged and unstaged changes. Preserve pre-existing changes and staged work; do not use `git add -A`, create an aggregate commit, merge into `main`, or push directly to `main` as part of this runbook. Review the intended revision through the repository's normal branch/PR review process. Continue only when that revision has been approved and is available in the local checkout for building. Deployment still requires the owner's separate authorization.
 
 ```powershell
 git status --short
-git add -A
+git branch --show-current
+git diff --check
+git diff --stat
 git diff --cached --check
 git diff --cached --stat
+git diff --name-only
 git diff --cached --name-only
-$envPaths = git diff --cached --name-only | Where-Object { $_ -match '(^|/)\.env($|\.)' -and $_ -notmatch '(^|/)\.env\.example$' }
-if ($envPaths) { throw 'A local .env file is staged; remove it from the commit before continuing.' }
-# Review locally; do not copy diff output into logs or chats.
-git diff --cached
-git commit -m "Deploy Travel Club preview"
-$dirty = git status --porcelain
-if ($dirty) { throw 'Working tree is not clean after the aggregate commit; stop before push.' }
-$localCommit = git rev-parse HEAD
-git push origin HEAD:main
-$remoteCommit = (git ls-remote origin refs/heads/main | ForEach-Object { $_.Split()[0] })
-if ($localCommit -ne $remoteCommit) { throw 'origin/main does not point to the aggregate commit; stop before SSH.' }
 ```
 
-This creates one aggregate commit for all intended tracked and untracked work-tree changes, then verifies the tree is clean before pushing. If the push is rejected, the clean-tree check fails, or the IDs differ, stop; do not begin SSH changes.
+Review the listed paths and diffs locally. Confirm that local `.env` files, credentials, logs, and generated state are not included in the approved revision. Never print or transfer secrets. Do not continue if the working tree contains changes outside the approved revision or if the selected revision has not passed review.
+
+Build the source-free Linux/amd64 images from the approved revision available in the local checkout. These commands do not use `.env` values. Keep the resulting tar files out of Git and transfer them to the VPS using the approved artifact-transfer path.
+
+```powershell
+docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
+docker save --output travel-club-website-amd64.tar travel-club-website:preview
+docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=trip-constructor --build-arg NEXT_ASSET_PREFIX=/_app/constructor/_next --build-arg NEXT_PUBLIC_INTERVIEWS_URL= --tag travel-club-trip-constructor:preview --load .
+docker save --output travel-club-trip-constructor-amd64.tar travel-club-trip-constructor:preview
+docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=interviews --build-arg NEXT_ASSET_PREFIX=/_app/interviews --build-arg NEXT_PUBLIC_CONSTRUCTOR_URL= --tag travel-club-interviews:preview --load .
+docker save --output travel-club-interviews-amd64.tar travel-club-interviews:preview
+docker buildx build --platform linux/amd64 --file infra/local/gateway.Dockerfile --tag travel-club-gateway:preview --load .
+docker save --output travel-club-gateway-amd64.tar travel-club-gateway:preview
+docker buildx build --platform linux/amd64 --tag travel-club-backend:preview --build-context shared=./shared --load ./backend
+docker save --output travel-club-backend-amd64.tar travel-club-backend:preview
+```
 
 ## 2. Connect and record the baseline
 
@@ -69,14 +76,14 @@ certbot --version
 
 Certbot must be version 5.4 or newer for IP certificates through webroot. If Nginx or a suitable Certbot is unavailable, stop and arrange the approved host package source; do not install anything on the workstation. See [Let’s Encrypt’s Certbot instructions for IP and six-day certificates](https://letsencrypt.org/2026/03/11/shorter-certs-certbot).
 
-Set the values from verified deployment facts. `compose.deploy.yaml` assigns the frontend the private bridge address `172.19.0.4` on subnet `172.19.0.0/16`; it does not publish a host port. Confirm that subnet does not overlap an existing Docker or VPN network before starting Compose. Nginx proxies to `172.19.0.4:3000` from the host over the private bridge. If the subnet must change, update the Compose IPAM subnet, the frontend address, and `FRONTEND_UPSTREAM` together. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the public IP, link, or certificate files.
+Set the values from verified deployment facts. `compose.deploy.yaml` assigns the gateway the private bridge address `172.19.0.4` on subnet `172.19.0.0/16`; it does not publish a host port. Confirm that subnet does not overlap an existing Docker or VPN network before starting Compose. Nginx proxies to `172.19.0.4:3000` from the host over the private bridge. If the subnet must change, update the Compose IPAM subnet, gateway address, and `GATEWAY_UPSTREAM` together. The gateway routes `/admin/**` and `/home` to Constructor, `/research/**` to Interviews, `/api/**` to the single backend, and the distinct `/_app/<application>/_next/**` prefixes to their owning apps. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the public IP, link, or certificate files.
 Keep these values in the same administrative shell session for the remaining Bash commands. The external workstation commands use their own matching values.
 
 ```bash
 PUBLIC_IP='<confirmed-public-ipv4>'
 HTTPS_PORT=8443
 ACME_WEBROOT=/var/www/travel-club-acme
-FRONTEND_UPSTREAM=172.19.0.4:3000
+GATEWAY_UPSTREAM=172.19.0.4:3000
 ACME_EMAIL='<operator-email-for-certificate-notices>'
 TELEGRAM_PORT='<same-observed-telegram-tcp-port>'
 CERT_NAME=travel-club-preview
@@ -234,13 +241,13 @@ After production issuance succeeds, remove the temporary staging lineage created
 sudo certbot delete --cert-name travel-club-preview-staging
 ```
 
-Render TLS using only the certificate paths. The template contains no certificate or key material and proxies only to the configured private IPv4 frontend:
+Render TLS using only the certificate paths. The template contains no certificate or key material and proxies only to the configured private IPv4 gateway. The Nginx renderer retains the `--frontend-upstream` option name for this single public entrypoint:
 
 ```bash
 sudo python3 deploy/nginx/render.py https \
   --public-ip "$PUBLIC_IP" \
   --https-port "$HTTPS_PORT" \
-  --frontend-upstream "$FRONTEND_UPSTREAM" \
+  --frontend-upstream "$GATEWAY_UPSTREAM" \
   --cert-dir "$CERT_DIR" \
   | sudo tee /etc/nginx/conf.d/travel-club-https.conf >/dev/null
 sudo nginx -t
@@ -299,9 +306,14 @@ printf 'Public link: %s\n' "$SITE_URL"
 
 ## 9. Finish the application checks
 
-Start the `travel_club` Compose project only with its source-free deployment file and images already loaded. Wait for PostgreSQL health and successful migrations before creating the initial administrator. Do not use `docker compose down -v`.
+Load all five required images transferred from the reviewed workstation build, then start the `travel_club` Compose project only with its source-free deployment file. Wait for PostgreSQL health and successful migrations before creating the initial administrator. Do not use `docker compose down -v`.
 
 ```bash
+docker load --input travel-club-website-amd64.tar
+docker load --input travel-club-trip-constructor-amd64.tar
+docker load --input travel-club-interviews-amd64.tar
+docker load --input travel-club-gateway-amd64.tar
+docker load --input travel-club-backend-amd64.tar
 docker compose -p travel_club -f compose.deploy.yaml ps
 docker compose -p travel_club -f compose.deploy.yaml exec -T postgres sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "SELECT login FROM users ORDER BY login;"'
 docker compose -p travel_club -f compose.deploy.yaml exec backend python -m app.bootstrap
@@ -327,7 +339,7 @@ sudo ss -ltnp sport = :"$TELEGRAM_PORT"
 
 Compare the TCP/443 owner and Telegram listener port/process/PID with the baseline from step 2; they must be unchanged. If the Telegram listener belongs to a container, that same container must remain up with no new restart. Treat any difference as a failed deployment, stop only the `travel_club` Compose project, and report it without restarting the VPN, Telegram bot, or another service.
 
-The deployment is acceptable only if the three new services are healthy, the existing containers remain up without new restarts, there is no new OOM event, at least 300 MiB memory is available, and at least 3 GiB disk remains free. If any threshold fails, do not create an administrator; stop only the `travel_club` Compose project and report the measurements. Do not stop Nginx, VPN, Telegram, or any other service.
+The deployment is acceptable only if the gateway and three Next.js application services are healthy, the existing containers remain up without new restarts, there is no new OOM event, at least 300 MiB memory is available, and at least 3 GiB disk remains free. If any threshold fails, do not create an administrator; stop only the `travel_club` Compose project and report the measurements. Do not stop Nginx, VPN, Telegram, or any other service.
 
 ## Rollback boundary
 

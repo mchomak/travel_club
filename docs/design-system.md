@@ -1,12 +1,12 @@
-# Travel Club design system
+﻿# Travel Club design systems
 
-The extracted tokens live in [`frontend/src/styles/travel-club-design-system.css`](../frontend/src/styles/travel-club-design-system.css). `/test_21` imports that file through its page stylesheet; its colors, type scale, font weights, line heights, tracking, section themes, container rules and shared frame values come from those tokens. The declarations are scoped to the document only while the `/test_21` root is mounted, so `/test_20` keeps its own settings and runtime behavior.
+Each application owns its visual language. CSS, fonts, theme variables, component styling, and responsive rules must stay inside the owning app; apps must not import visual code from one another or from a shared visual package.
 
-## Source and typography
+## Website
 
-The palette and type sizes were read from `/test_20`'s `DEFAULT_DESIGN` in `frontend/src/components/test_20/design-tokens.ts` and its standard page CSS. The brief explicitly requires Lato for every text role, so `/test_21` uses Lato while retaining `/test_20`'s default role sizes, hierarchy, weights, line heights and tracking. This means its typeface differs from `/test_20`'s actual standard defaults (TC Golos for most roles and TC Lora for H3); that difference follows the explicit Lato requirement.
+The approved Website design system lives at [`apps/website/src/styles/travel-club-design-system.css`](../apps/website/src/styles/travel-club-design-system.css) and is imported by the Website root layout. It provides the approved Lato font faces, typography scale, palette, semantic aliases, spacing, container, divider, and frame values through `--tc-*` tokens. Font assets are local to `apps/website/public/`.
 
-Text sizes preserve the default desktop/mobile pairs and the original 390–1440px interpolation:
+The existing type scale retains its desktop/mobile role sizes and 390–1440px interpolation:
 
 | Role | Desktop | Mobile |
 |---|---:|---:|
@@ -20,27 +20,29 @@ Text sizes preserve the default desktop/mobile pairs and the original 390–1440
 | Metadata | 12px | 12px |
 | CTA | 15px | 15px |
 
-Latin Lato files and their original OFL license are in `frontend/public/design-system/fonts/`. The `/test_20` Lato files cover Latin only, so OFL-licensed Cyrillic Lato regular, medium, semibold and bold files are included there as well. A private CSS family name (`Travel Club Lato`) isolates those added faces from `/test_20`'s selectable Lato setting.
+The existing semantic palette includes `--tc-paper`, `--tc-ink`, `--tc-blue`, `--tc-red`, `--tc-china`, `--tc-madagascar`, `--tc-thailand`, and `--tc-next-decorative`, with section-specific aliases for text, headings, accents, dividers, links, buttons, and photo editor controls. Continue to read exact values from the token stylesheet; do not copy or redefine them in page CSS.
 
-## Palette
+The root layout loads the Website design system for every Website route. At this revision, `(publication)` uses `SiteShell`, while `(public)` keeps its own layout and CSS in `apps/website/src/app/(public)/`; this describes current route composition and does not imply that the wrappers are visually identical.
 
-| Token | Value | Use |
-|---|---|---|
-| `--tc-paper` | `#F5F0DC` | Warm page background |
-| `--tc-ink` | `#20211F` | Editorial body text |
-| `--tc-blue` | `#172F50` | Brand blue, formats and approach |
-| `--tc-red` | `#B93625` | Next Issue section |
-| `--tc-china` | `#253746` | China story |
-| `--tc-madagascar` | `#7D3027` | Madagascar story accents |
-| `--tc-thailand` | `#27493B` | Thailand story |
-| `--tc-next-decorative` | `#F5E2A0` | Next Issue display and marks |
+## Trip Constructor
 
-Section aliases (`--tc-nav-*`, `--tc-hero-*`, `--tc-formats-*`, `--tc-next-*`, `--tc-china-*`, `--tc-madagascar-*`, `--tc-thailand-*`, `--tc-approach-*`, `--tc-conversation-*`, and `--tc-footer-*`) preserve the default heading, text, accent, divider, button and link colors. Field Notes uses its own paper/blue/ink theme. White contrast on Next Issue and colors for the photo-editing controls are tokenized too. The editor color aliases are `--tc-editor-*`.
+The Constructor has its own token source at [`apps/trip-constructor/src/design-system/tokens.css`](../apps/trip-constructor/src/design-system/tokens.css), imported by that app's `src/app/globals.css`. Its theme, component styles, and type choices belong to `apps/trip-constructor/`. Keep imports within the Constructor app. Do not copy Website colors, Lato declarations, or UI components into this app as a convenience.
 
-## Layout and use
+## Interviews
 
-Shared frame tokens include the 1400px maximum content width, page gutters (96px total on wide screens, 64px at 1100px and 36px at 600px), 72px navigation height, square corners and 1px dividers. The 4–64px spacing scale is available as `--tc-space-*`. Section composition and responsive breakpoints remain in `frontend/src/components/test_21/concept.module.css`: native CSS media conditions cannot read custom properties, so their 1600px, 1100px, 820px, 600px and 360px breakpoints, plus a 721–780px layout adjustment are kept in the media rules themselves. Structural color, font, type scale, border, container and main responsive-gutter values reference the central tokens. Photo editor surfaces, typography and colors in `image-editor.module.css` use the same system.
+Interviews styling is local to [`apps/interviews/src/styles/globals.css`](../apps/interviews/src/styles/globals.css) and its own component CSS. There is no separately extracted token file at this revision. If a token source is needed, define it within Interviews and document its ownership; do not import Website or Constructor themes.
 
-The retained logo variants are the existing navy `/test_20/travel-club-navy.svg` and cream `/test_9/TC_Logo_Editorial_Signature_Cream.svg`. They are referenced as-is by `brand-logo.tsx`.
+## Shared technical code
 
-When changing the overall system, edit this token stylesheet and update this document. Keep page-specific layout rules in the section stylesheet; do not add duplicate palette, family or role-size values there.
+There is no `shared-ui`, `shared-design-system`, `global-tokens`, or `shared-theme` package. Shared code is limited to neutral technical infrastructure such as the FastAPI API, backend data rules, gateway, and calculation vectors. A new common package must not contain CSS, fonts, logos, visual components, or responsive design rules.
+
+## Adding or changing styles
+
+1. Identify the owning app before editing styles.
+2. Reuse that app's existing semantic tokens and component rules.
+3. Keep global CSS app-local and avoid generic selectors that could affect another app through shared origins.
+4. Do not add Website values to the Constructor or Interviews system, even when a value looks similar.
+5. Keep composition and responsive rules in the owning page/component styles; add a semantic token only when more than a one-off decorative value needs it.
+6. Recheck only the owning app's build and routes, then run the cross-app build if an import boundary changed.
+
+The Website token system is also summarized in its source file and `apps/website/src/components/public-site/README.md`. The broader ownership and architecture rules are in [REPOSITORY_ARCHITECTURE.md](architecture/REPOSITORY_ARCHITECTURE.md).

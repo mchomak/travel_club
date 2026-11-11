@@ -154,10 +154,14 @@ export function createGateway({ upstreams = {} } = {}) {
   });
 }
 
+export function gatewayPort(environment = process.env) {
+  return Number(environment.PORT?.trim() || environment.GATEWAY_PORT?.trim() || 3000);
+}
+
 const entrypoint = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (entrypoint) {
   const gateway = createGateway();
-  const port = Number(process.env.PORT?.trim() || process.env.GATEWAY_PORT?.trim() || 3300);
+  const port = gatewayPort();
   const hostname = process.env.HOSTNAME?.trim() || "127.0.0.1";
 
   gateway.listen(port, hostname, () => {

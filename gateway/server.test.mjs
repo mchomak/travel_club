@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import http from "node:http";
 import { afterEach, test } from "node:test";
 
-import { createGateway } from "./server.mjs";
+import { createGateway, gatewayPort } from "./server.mjs";
 
 const upstreams = [];
 const gateways = [];
@@ -17,6 +17,8 @@ test("env example explicitly allows the exact local gateway and app origins", as
 
   assert.ok(setting, "ADDITIONAL_ALLOWED_ORIGINS is present in .env.example");
   assert.deepEqual(setting.slice(setting.indexOf("=") + 1).split(","), [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:3300",
     "http://127.0.0.1:3300",
     "http://localhost:3101",
@@ -24,6 +26,7 @@ test("env example explicitly allows the exact local gateway and app origins", as
     "http://localhost:3102",
     "http://127.0.0.1:3102",
   ]);
+  assert.match(template, /^GATEWAY_PORT=3000$/m);
 });
 
 afterEach(async () => {
@@ -110,6 +113,12 @@ function request(origin, path, options = {}) {
 
 test("creates the gateway with default local upstreams", () => {
   assert.ok(createGateway());
+});
+
+test("defaults the gateway to port 3000 and supports an explicit local override", () => {
+  assert.equal(gatewayPort({}), 3000);
+  assert.equal(gatewayPort({ GATEWAY_PORT: "3300" }), 3300);
+  assert.equal(gatewayPort({ PORT: "3000", GATEWAY_PORT: "3300" }), 3000);
 });
 
 test("routes research URLs, including their query string, to Interviews", async () => {

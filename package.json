@@ -8,6 +8,8 @@
     "dev:constructor": "npm --prefix apps/trip-constructor run dev",
     "dev:interviews": "npm --prefix apps/interviews run dev",
     "dev:gateway": "node gateway/server.mjs",
+    "stack:up": "docker compose up --build --wait",
+    "stack:down": "docker compose down",
     "start:website": "npm --prefix apps/website run start",
     "start:constructor": "npm --prefix apps/trip-constructor run start",
     "start:interviews": "npm --prefix apps/interviews run start",

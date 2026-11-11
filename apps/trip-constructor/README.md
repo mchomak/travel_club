@@ -1,4 +1,4 @@
-# Trip Constructor
+﻿# Trip Constructor
 
 Independent Next.js app for private itinerary planning. It owns `/admin/**` and the protected `/home` product launcher, including its visual tokens, styles and route components.
 
@@ -19,3 +19,7 @@ Constructor tokens are in `src/design-system/tokens.css`; global and component s
 ## Backend settings
 
 `BACKEND_URL` is app-server configuration for FastAPI. PostgreSQL credentials and map provider keys belong to the existing backend `.env`, not this frontend. See the repository architecture documentation for shared variables and database ownership.
+
+## Browser E2E isolation
+
+The `test:e2e` script requires `PLAYWRIGHT_BASE_URL` and `PLAYWRIGHT_BACKEND_CONTAINER` (explicit name of the isolated backend container). Use a root URL such as `http://127.0.0.1:3300`; the guard requires exactly IPv4 loopback host `127.0.0.1`, no path/query/hash/credentials, and the port published by the selected gateway. Global setup verifies the backend, exactly one gateway and PostgreSQL service are in the same dedicated Compose project with a `test`, `e2e`, or `check` marker. It checks the backend's actual PostgreSQL server address against that service and requires the project's Compose-managed `postgres_data` volume, not mounted by another container. Missing or mismatched information fails the setup before browser tests run. Create a separate disposable test project first; never run against a developer or preview database.

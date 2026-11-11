@@ -1,29 +1,19 @@
 import { expect, test, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { mkdir } from "node:fs/promises";
 import Decimal from "decimal.js";
 import type { ItemInput, TripDocument, TripInput } from "../src/lib/contracts";
 import { newItem } from "../src/lib/trip-ui";
 import { tripInput } from "../src/lib/trips";
+import { database } from "./test-database";
 
 const login = `t04-${randomBytes(8).toString("hex")}`;
 const password = randomBytes(32).toString("base64url");
-const project = path.resolve(import.meta.dirname, "../..");
+const project = path.resolve(import.meta.dirname, "../../..");
 const headers = { "X-Requested-With": "TravelClub" };
 const ownedTrips: string[] = [];
 const qa = path.join(project, "test-results/trip-builder");
-
-function database(code: string, input: object) {
-  return execFileSync(
-    "docker",
-    process.env.PLAYWRIGHT_BACKEND_CONTAINER
-      ? ["exec", "-i", process.env.PLAYWRIGHT_BACKEND_CONTAINER, "python", "-c", code]
-      : ["compose", "exec", "-T", "backend", "python", "-c", code],
-    { cwd: project, input: JSON.stringify(input), encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] },
-  );
-}
 
 test.beforeAll(() => {
   database(

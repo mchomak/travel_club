@@ -1,6 +1,6 @@
-# Trip builder
+﻿# Trip builder
 
-The private trip builder stores one trip aggregate through the existing authenticated trip API. The full editor remains available at `/admin/trips/{id}`; the staged builder is `/admin/trips/{id}/builder`.
+The private Trip Constructor is an independent Next.js app at `apps/trip-constructor/`. It stores each trip as one aggregate through the authenticated FastAPI API and shared PostgreSQL database. This app owns `/home`, `/admin/**`, its route components, design tokens, and styles.
 
 ## Starting and resuming a trip
 
@@ -21,18 +21,29 @@ The `step` query parameter is an integer from 1 to 6; a missing or invalid value
 
 Scheduled transport can store the nullable pair `departure_utc_offset_minutes` and `arrival_utc_offset_minutes`. Enter both integer offsets, each in the range −840 through +840, or leave both empty. The API rejects partial pairs, invalid ranges, offsets on unsupported item types, and schedules whose resulting UTC duration is not positive.
 
-The calendar keeps the entered local dates and clock times. The elapsed time is calculated as `arrival local datetime − arrival offset − (departure local datetime − departure offset)`. This supports an earlier arrival clock time, overnight travel, and date-line crossings when the elapsed UTC interval is valid. The offsets are manual event values; there is no IANA time-zone database, city-based zone lookup, or automatic daylight-saving adjustment. Confirm each offset for the event's departure or arrival date.
+The calendar keeps the entered local dates and clock times. Elapsed time is calculated as `arrival local datetime − arrival offset − (departure local datetime − departure offset)`. This supports an earlier arrival clock time, overnight travel, and date-line crossings when the elapsed UTC interval is valid. Offsets are manual event values; there is no IANA time-zone database, city-based zone lookup, or automatic daylight-saving adjustment. Confirm each offset for the event's departure or arrival date.
 
-The new columns are nullable so existing items keep their prior local schedule and legacy overnight inference. The additive Alembic migration is `e82b73ac51d9`; it leaves old offset values null. Editing an old item does not assign a guessed time zone.
+The columns are nullable, so existing items keep their prior local schedule and legacy overnight inference. The additive Alembic migration is `e82b73ac51d9`; it leaves old offset values null. Editing an old item does not assign a guessed time zone.
 
 ## Saving, map, and pricing behavior
 
 Authentication, trip reads/writes, optimistic versions, and PostgreSQL persistence remain real. The builder and full editor share the same trip and stable item/day UUIDs. An error or version conflict keeps the local draft available; a save is shown as complete only after the server acknowledges that revision.
 
-The map derives route and stop displays from trip items and day boundaries. Automated browser tests stub map configuration, tiles, or route-provider responses only where the scenario needs a deterministic provider; trip authentication, save requests, and database reads are not stubbed. Manual map points and linked places remain item/day data.
+The map derives route and stop displays from trip items and day boundaries. Automated browser tests stub map configuration, tiles, or route-provider responses only where a deterministic provider is needed; trip authentication, save requests, and database reads are not stubbed. Manual map points and linked places remain item/day data.
 
 The backend remains authoritative for money and uses Decimal values. The trip base currency and per-item conversion rates are manually entered; no external FX feed is used. Day totals allocate multi-day and hotel costs without counting the same item twice in the trip total.
 
-## Local verification
+## Local checks and browser E2E
 
-From `frontend/`, run `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd test -- --run --testTimeout=15000`, and `npm.cmd run build`. With the local Compose services and Chromium available, run `npm.cmd exec playwright test e2e/constructor.spec.ts e2e/trip-map.spec.ts e2e/trip-builder.spec.ts -- --workers=3` from `frontend/`. The T04 run and its exact results are recorded in `.autopilot/2026-10-26-trip-wizard/acceptance-04.md`.
+From the repository root:
+
+```powershell
+npm.cmd run lint:constructor
+npm.cmd run typecheck:constructor
+npm.cmd run test:constructor
+npm.cmd run build:constructor
+```
+
+E2E specs are under `apps/trip-constructor/e2e/`; run them with `npm.cmd --prefix apps/trip-constructor run test:e2e -- --workers=3`. The scenarios create a synthetic admin and trip. Set `PLAYWRIGHT_BASE_URL` to the exact root origin `http://127.0.0.1:3300` (or the test gateway's actual IPv4 loopback port) and set `PLAYWRIGHT_BACKEND_CONTAINER` to the isolated backend container name. The URL must be `http`, use host `127.0.0.1`, have no path/query/hash/credentials, and match the gateway's published loopback port. Backend, gateway, and PostgreSQL must belong to the same dedicated Compose project whose name contains `test`, `e2e`, or `check`; every spec uses the database helper. Before browser actions, global setup checks that the backend's actual PostgreSQL server address belongs to the selected PostgreSQL service and that PostgreSQL uses the project's Compose-managed `postgres_data` volume. Missing or mismatched project, service, network, DB connection, or volume metadata stops the run. There is no E2E Compose manifest in the repository yet, so create a separate disposable test project first. Never use the normal developer database or preview.
+
+The T04 run and its historical acceptance notes are in `.autopilot/2026-10-26-trip-wizard/acceptance-04.md`.

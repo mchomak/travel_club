@@ -1,95 +1,91 @@
-# Travel Club
+﻿# Travel Club
 
-Рабочий первый модуль — закрытый конструктор поездок. Администратор собирает маршрут по дням, вводит цены и ручные курсы, получает смету, сохраняет поездку и показывает клиентский вид без внутренних данных. Публичные /, /tours, /services/route, /services/turnkey и /payment пока обозначают будущие разделы; оплата не работает.
+Travel Club — monorepo из трёх Next.js-приложений и общего backend. Каждый продукт имеет собственные маршруты, исходники, сборку и визуальные стили; API, авторизация и PostgreSQL остаются едиными.
 
-## Запуск на Windows
+## Приложения
 
-Нужны Docker Desktop с Compose и Python 3.11+ для генерации локального .env. В PowerShell из корня проекта:
+| Приложение | Назначение | Локальный dev-порт | Код |
+|---|---|---:|---|
+| Website | Публичные страницы Travel Club | 3100 | `apps/website/` |
+| Trip Constructor | Закрытое планирование поездок и смет | 3101 | `apps/trip-constructor/` |
+| Interviews | Внутренние интервью и исследования | 3102 | `apps/interviews/` |
+
+Локальный gateway принимает общий origin на порту `3000` по умолчанию. В нём `/` и публичные страницы направляются в Website, `/admin/**` и `/home` — в Constructor, `/research/**` — в Interviews, `/api/**` — в backend. Порт gateway можно изменить через `PORT` при локальном запуске или `GATEWAY_PORT` для Compose.
+
+## Быстрый запуск через Docker Compose
+
+Нужны Docker Desktop с Compose и Python для начальной подготовки локального `.env`.
 
 ```powershell
 python scripts/init_env.py
 docker compose config --quiet
-docker compose up -d --build
-docker compose ps
-```
-
-Откройте http://localhost:3000/admin/login. API health: http://localhost:8000/api/health. Сервисы postgres, backend и frontend должны работать; PostgreSQL и backend имеют healthcheck. Миграция Alembic применяется автоматически перед запуском API. Данные хранятся в named volume travel_club_postgres_data. Для обычной остановки используйте `docker compose down`; `down -v` удалит данные.
-
-`scripts/init_env.py` создаёт случайный пароль локальной БД, не печатает его и не перезаписывает существующий .env. Файл .env игнорируется Git. Сохраните его вместе с резервной копией: смена значения в файле сама по себе не сменит пароль уже инициализированной PostgreSQL.
-
-Администратора по умолчанию нет. Создайте его в своём терминале; пароль длиной от 12 символов вводится скрыто и подтверждается:
-
-```powershell
+docker compose up -d --build --wait
 docker compose exec backend python -m app.bootstrap
 ```
 
-Не передавайте пароль в аргументах команды, чате или Git. Скрипт хранит только Argon2id хеш. Публичной регистрации и начальных бизнес-данных нет.
+`app.bootstrap` запускайте один раз для создания первого администратора. Не передавайте пароль аргументом команды. После запуска откройте `http://localhost:3000`; проверка API доступна по `http://localhost:8000/api/health`. Compose запускает gateway, три приложения, FastAPI и PostgreSQL. Обычная остановка: `docker compose down`. Команда `docker compose down -v` удаляет локальные данные PostgreSQL.
 
-## Архитектура и данные
+## Независимый запуск приложений
 
-Это модульный монолит: Next.js App Router и TypeScript отвечают за интерфейс; FastAPI и Pydantic — за HTTP и валидацию; SQLAlchemy и PostgreSQL — за хранение; backend/app/pricing.py — за окончательные расчёты. frontend/src/lib/pricing.ts показывает мгновенную предварительную смету по общим контрольным векторам shared/pricing-vectors.json. После сохранения интерфейс показывает серверную смету. Next проксирует /api в backend с тем же origin.
-
-| Каталог | Назначение |
-|---|---|
-| backend/app/auth.py, bootstrap.py | Сессии, вход, локальное создание администратора |
-| backend/app/trips.py, schemas.py | Поездки, API и строгие DTO |
-| backend/app/pricing.py | Decimal, семь формул, валюты, распределение по дням |
-| backend/app/models.py, migrations/ | Таблицы и Alembic |
-| frontend/src/app/ | Отдельные public и admin маршруты |
-| frontend/src/components/trips/ | Список, формы, таймлайн, сводка, preview |
-| frontend/src/lib/ | Типизированный API, черновик, предварительный расчёт |
-
-Таблицы: users (администраторы), sessions (digest токена и срок), login_attempts (лимиты входа), trips (параметры, статус, версия, итоговые суммы), trip_days (даты и локации), trip_items (универсальные элементы и финансовые snapshots), trip_currency_rates (ручные курсы). Связи и ограничения заданы миграцией; маршрут не хранится одним JSON blob.
-
-Экраны: /admin/login, /admin/trips, /admin/trips/new, /admin/trips/[id], /admin/trips/[id]/preview. Администратор может редактировать дни, порядок, локации и элементы, дублировать, архивировать и удалять поездку с подтверждением. Сокращение заполненных дат требует отдельного подтверждения. Версия защищает от перезаписи изменений из другой вкладки. Сохранение агрегата атомарно.
-
-## Расчёты
-
-Деньги, курсы, количества и проценты идут в JSON строками. Авторитетный расчёт использует Python Decimal и PostgreSQL NUMERIC; деньги округляются до 0,01 методом HALF_UP.
-
-| Правило | Исходная сумма |
-|---|---|
-| За человека | цена × участников элемента × количество |
-| За группу | цена × количество |
-| По вместимости | цена × ceil(участников / вместимость) × количество |
-| Номер за ночь | цена × (число номеров или ceil(гостей / вместимость)) × ночей |
-| За день | цена × дней × количество |
-| За человека в день | цена × участников × дней × количество |
-| Вручную | введённая итоговая сумма |
-
-Подгруппа элемента задаётся отдельно; без неё используется число людей в поездке. Отель считает ночи от заселения до выезда, не включая дату выезда. Его сумма распределяется по ночам. Расходы «за день» и «за человека в день», привязанные к дню маршрута, распределяются по указанному числу последовательных дней начиная с выбранной даты. Если длительность выходит за границы поездки, сохранение отклоняется с подсказкой изменить число дней, дату привязки или диапазон поездки. После округления до копейки остаток относится к последнему дню; при очень малой сумме первые доли могут быть нулевыми. Общая себестоимость всегда считается из первичных статей один раз, без повторного начисления дневных долей. Выключенный из расчёта элемент остаётся в маршруте, но не входит в смету. Элемент без дня учитывается в общих расходах.
-
-Старые сохранённые поездки с многодневной статьёй, выходящей за последнюю дату, остаются доступными для просмотра: до исправления они показывают прежнее распределение всей суммы в выбранном дне. Для следующего сохранения нужно сократить длительность, перенести статью на более ранний день или продлить поездку; данные при ошибке не удаляются.
-
-Ручной курс означает стоимость одной единицы валюты статьи в базовой валюте. Исходная сумма, курс и нормализованная сумма сохраняются у элемента; отсутствие нужного курса блокирует расчёт. При смене базовой валюты курсы вводятся заново. Наценка m: цена = себестоимость × (1 + m); целевая маржинальность r: цена = себестоимость / (1 - r). Режимы имеют разные подписи и суммы.
-
-## Безопасность и эксплуатация
-
-Серверная сессия действует 12 часов; PostgreSQL хранит только SHA-256 digest случайного токена. Cookie HttpOnly и SameSite=Lax; Secure обязателен в production. Приватные страницы проверяются сервером Next, API отдельно требует администратора. Изменяющие запросы требуют X-Requested-With: TravelClub и разрешённый Origin. Вход ограничен по логину и IP. Preview возвращает только клиентские поля, включая клиентские заметки поездки, дня и элемента. Публикуемой ссылки пока нет.
-
-.env.example перечисляет POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_USER, POSTGRES_HOST, APP_ENV, ALLOWED_ORIGIN, COOKIE_SECURE. В Compose backend использует внутренний host postgres; frontend — BACKEND_URL=http://backend:8000. Для production нужны HTTPS reverse proxy, APP_ENV=production, COOKIE_SECURE=true, точный HTTPS ALLOWED_ORIGIN, индивидуальный пароль БД и резервные копии. Приложение отклоняет production с HTTP origin или insecure cookie. Локальный Compose не является внешним deployment.
-
-Для резервной копии используйте pg_dump в custom format (-Fc) от пользователя БД, храните архив и соответствующий .env в защищённом месте. Регулярно проверяйте восстановление через pg_restore на отдельной пустой БД и сверяйте Alembic revision и поездки. Перед восстановлением рабочей БД остановите запись, проверьте целевую БД и подготовьте план отката. Эти операции не выполняются стартовыми командами.
-
-## Проверки
-
-После запуска Compose; для локальных frontend проверок нужен Node.js 24 с npm:
+В каждом приложении есть свой `package-lock.json`. Установите зависимости нужного приложения из корня, затем запустите его root-командой:
 
 ```powershell
-docker compose exec -T backend pytest -q
-docker compose exec -T backend ruff check .
-docker compose exec -T backend alembic current
-docker compose exec -T backend alembic check
-cd frontend
-npm.cmd ci
-npm.cmd test
-npm.cmd run lint
-npm.cmd run typecheck
-npm.cmd run build
-npx.cmd playwright install chromium
-npm.cmd run test:e2e
+npm.cmd ci --prefix apps/website
+npm.cmd run dev:website
 ```
 
-Pytest использует настоящую PostgreSQL: обычные тесты откатывают свои транзакции, а проверки конкурентного доступа выполняют реальные commit в отдельных временных схемах и удаляют эти схемы после проверки. Playwright ожидает production сайт на localhost:3000, создаёт случайного фиктивного администратора и только собственные поездки, затем удаляет их. PLAYWRIGHT_BASE_URL задаёт иной локальный адрес. Матрица 27 критериев и фактический отчёт: docs/acceptance.md. Чистая миграция проверяется на отдельно созданной временной БД, не на пользовательском volume.
+```powershell
+npm.cmd ci --prefix apps/trip-constructor
+npm.cmd run dev:constructor
+```
 
-На этом этапе нет работающей оплаты, бронирования, поставщиков цен и курсов, CRM, налогового учёта, публичной регистрации, сложных ролей, полноценного публичного дизайна, 3D и мобильного приложения. Следующие шаги: развить публичные страницы и публикацию маршрута, затем отдельно определить заявки и операции.
+```powershell
+npm.cmd ci --prefix apps/interviews
+npm.cmd run dev:interviews
+```
+
+Constructor и Interviews используют общий FastAPI backend для авторизации и рабочих данных. Website может работать отдельно для просмотра публичных страниц; его демонстрационная форма не сохраняет ответы. Для общего локального origin запустите нужные app-серверы на их обычных портах и выполните `npm.cmd run dev:gateway`. Gateway по умолчанию слушает `3000`; например, в PowerShell его порт можно задать перед запуском через `$env:PORT = "3300"`. Не запускайте gateway-процесс на порту, уже занятом gateway из Compose.
+
+## Сборка и проверки
+
+Root-команды вызывают скрипты соответствующего приложения:
+
+```powershell
+npm.cmd run build:website
+npm.cmd run build:constructor
+npm.cmd run build:interviews
+npm.cmd run build:all
+npm.cmd run lint:all
+npm.cmd run typecheck:all
+npm.cmd run test:all
+```
+
+Отдельные Vitest-команды: `npm.cmd run test:website`, `npm.cmd run test:constructor`, `npm.cmd run test:interviews`; тесты gateway — `npm.cmd run test:gateway`. Полный перечень скриптов приведён в корневом `package.json` и package-файлах приложений.
+
+Browser E2E Constructor и Interviews запускайте только против отдельного disposable Compose-проекта с тестовой PostgreSQL и gateway. Укажите `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3300` (порт замените на опубликованный loopback-порт тестового gateway) и имя backend-контейнера: `PLAYWRIGHT_TEST_BACKEND_CONTAINER` для Interviews, `PLAYWRIGHT_BACKEND_CONTAINER` для Constructor. Guard проверяет IPv4 loopback origin, контейнеры и Compose labels, наличие ровно одного gateway и PostgreSQL, совпадение проекта, сети и порта, реальный адрес PostgreSQL из backend-запроса `inet_server_addr()`, а также отдельный Compose-managed volume `${project}_postgres_data`, который не должен быть подключён к другим контейнерам. Любая неполная или несогласованная проверка останавливает запуск до сценариев. Compose-проект должен иметь отдельное имя с компонентом `test`, `e2e` или `check`; избегайте `prod`, `production` и `live`. Автоматического E2E Compose manifest пока нет, поэтому disposable-контур подготавливается отдельно. Не запускайте эти тесты против рабочей или preview базы. Подробности — в [архитектурном документе](docs/architecture/REPOSITORY_ARCHITECTURE.md).
+
+## Дизайн-системы
+
+Визуальные стили не разделяются между приложениями:
+
+- Website: `apps/website/src/styles/travel-club-design-system.css` (утверждённые токены и Lato).
+- Constructor: `apps/trip-constructor/src/design-system/tokens.css` и локальные стили.
+- Interviews: `apps/interviews/src/styles/globals.css` и локальные стили.
+
+Не добавляйте общие UI-компоненты, шрифты, токены или CSS-переменные в общий пакет. Нейтральный shared-код ограничен технической логикой; текущий репозиторий включает `gateway/`, единый `backend/`, и `shared/pricing-vectors.json`. Подробнее: [docs/design-system.md](docs/design-system.md).
+
+## Backend, данные и переменные окружения
+
+Единый FastAPI backend находится в `backend/`, PostgreSQL — в Compose. Backend владеет авторизацией и общей cookie-сессией, поездками, картами и исследованиями. Единственный источник миграций — `backend/migrations/`; не создавайте отдельные базы или копии API для приложений. Основные пространства API: `/api/auth`, `/api/trips`, `/api/maps`, `/api/research`. Серверная логика расчёта поездок использует Decimal.
+
+Локальный `.env` создаёт `python scripts/init_env.py` из `.env.example`, не перезаписывая существующий файл. App-level `.env.example` есть у всех трёх приложений: файл Website указывает, что переменные не обязательны, и документирует необязательный `BACKEND_URL` для API rewrite. В документации перечислены только названия переменных; не добавляйте реальные значения или секреты в Git. Корневой пример содержит `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `RESEARCH_ORIGIN`, `ADDITIONAL_ALLOWED_ORIGINS`, `GATEWAY_PORT`, `COOKIE_SECURE`, `GEOAPIFY_API_KEY` и `GEOAPIFY_MAPS_API_KEY`. Для app runtime дополнительно встречаются `BACKEND_URL`, `NEXT_ASSET_PREFIX`, `NEXT_PUBLIC_CONSTRUCTOR_URL` и `NEXT_PUBLIC_INTERVIEWS_URL`.
+
+## Архив экспериментальных страниц
+
+Аннотированный Git-тег `archive/legacy-test-pages-01-19` создан локально до удаления старых тестовых страниц. GitHub Release не публиковался: архивный коммит содержит внутренние материалы, которые нельзя раскрывать. Не отправляйте этот тег на GitHub и не создавайте Release с ним. Список версий и безопасный порядок восстановления описаны в [docs/archive/LEGACY_TEST_PAGES.md](docs/archive/LEGACY_TEST_PAGES.md); причина и статус публикации зафиксированы в [docs/archive/LEGACY_RELEASE.md](docs/archive/LEGACY_RELEASE.md).
+
+Старый root `frontend/` больше не является активным приложением: его tracked исходники удалены из рабочей архитектуры, а локальные ignored/untracked артефакты оставлены нетронутыми вне Git. Исторические маршруты и пути сохранены в локальном archive tag и документах архива. [REPOSITORY_INVENTORY.md](docs/architecture/REPOSITORY_INVENTORY.md) остаётся историческим снимком; актуальные границы описаны в [REPOSITORY_ARCHITECTURE.md](docs/architecture/REPOSITORY_ARCHITECTURE.md).
+
+## Preview
+
+`compose.deploy.yaml` описывает сборку из предварительно подготовленных Linux/amd64 образов. Gateway не публикует host-порт: preview ingress настраивается через host Nginx к gateway по адресу приватной Docker-сети. Порядок подготовки образов и runbook находятся в [docs/deployment-preview.md](docs/deployment-preview.md). Сам runbook не означает, что preview уже развёрнут.

@@ -2,12 +2,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Decimal from "decimal.js";
 import { ArrowLeft, ChevronRight, Eye, Plus, Save, Settings2, Trash2 } from "lucide-react";
 import type { Calculation, CurrencyRateInput, ItemInput, ItemSubtype, ItemType, TripDocument, TripInput } from "@/lib/contracts";
 import { ApiError } from "@/lib/api";
-import { DraftSession } from "@/lib/draft-session";
+import { DraftSession, type SaveTrip } from "@/lib/draft-session";
 import { calculateTrip, dateList } from "@/lib/pricing";
 import { buildCalendarEntries, type AirportKind } from "@/lib/calendar";
 import { tripApi, tripInput } from "@/lib/trips";
@@ -27,8 +27,8 @@ function canonical(value: unknown): unknown {
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)]));
   return value;
 }
-function Editor({ document, mode, initialStep, initialDay }: { document: TripDocument; mode: "editor" | "builder"; initialStep: number; initialDay?: string }) {
-  const [session] = useState(() => new DraftSession(document, tripApi.save));
+function Editor({ document, mode, initialStep, initialDay, persist }: { document: TripDocument; mode: "editor" | "builder"; initialStep: number; initialDay?: string; persist: SaveTrip }) {
+  const [session] = useState(() => new DraftSession(document, persist));
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const trip = state.draft, router = useRouter();
   const flightHistory = useMemo(() => {
@@ -273,12 +273,18 @@ function Editor({ document, mode, initialStep, initialDay }: { document: TripDoc
   </>;
 }
 export function TripEditor({ id, mode = "editor", initialStep, initialDay }: { id: string; mode?: "editor" | "builder"; initialStep?: number; initialDay?: string }) {
+  const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["trip", id], queryFn: () => tripApi.get(id), gcTime: 0 });
+  const persist = useCallback<SaveTrip>(async (tripId, input, confirm) => {
+    const document = await tripApi.save(tripId, input, confirm);
+    queryClient.setQueryData(["trip", tripId], document);
+    return document;
+  }, [queryClient]);
   const url = typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
   const requestedStep = Number(url?.get("step")), urlStep = Number.isInteger(requestedStep) && requestedStep >= 1 && requestedStep <= 6 ? requestedStep : 2;
   const step = initialStep ?? (mode === "builder" ? urlStep : 2);
   const day = initialDay ?? (mode === "builder" ? url?.get("day") ?? undefined : undefined);
   if (query.isPending) return <Loading />;
   if (query.isError) return <ErrorNotice error={query.error} retry={() => { void query.refetch(); }} />;
-  return <Editor key={`${id}:${mode}`} document={query.data} mode={mode} initialStep={step} initialDay={day} />;
+  return <Editor key={`${id}:${mode}`} document={query.data} mode={mode} initialStep={step} initialDay={day} persist={persist} />;
 }
