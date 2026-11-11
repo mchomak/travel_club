@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface: var(--pub-color-cloud);
+  --color-paper: var(--pub-color-editorial-paper);
+  --color-ink: var(--pub-color-ink);
+  --color-muted: var(--pub-color-muted);
+  --color-line: var(--pub-color-line);
+  --color-accent: var(--pub-color-brand-blue);
+  --font-sans: var(--pub-font-sans);
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--pub-color-cloud); color: var(--pub-color-ink); font-family: var(--pub-type-body-family); font-size: var(--pub-type-body-size); font-weight: var(--pub-type-body-weight); letter-spacing: var(--pub-type-body-tracking); line-height: var(--pub-type-body-line-height); }
+button, input, select, textarea { font: inherit; }
+:focus-visible { outline: 3px solid var(--pub-color-brand-blue); outline-offset: var(--pub-space-xs); }
+.text-link { color: var(--pub-color-brand-blue); text-underline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
