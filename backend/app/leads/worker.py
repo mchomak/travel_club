@@ -29,6 +29,17 @@ LEASE_SECONDS = 60
 MAX_ATTEMPTS = 8
 MAX_RETRY_SECONDS = 60 * 60
 
+
+def _parse_chat_ids(value: str) -> tuple[str, ...]:
+    """Parse comma-separated recipients, preserving order and removing duplicates."""
+    chat_ids: list[str] = []
+    for candidate in value.split(","):
+        chat_id = candidate.strip()
+        if chat_id and chat_id not in chat_ids:
+            chat_ids.append(chat_id)
+    return tuple(chat_ids)
+
+
 def cleanup_expired_records(session: Session, *, now: datetime | None = None) -> None:
     """Remove rate-limit hashes and idempotency fingerprints after their TTL."""
     now = now or datetime.now(UTC)
@@ -113,7 +124,8 @@ def process_one(
     now: datetime | None = None,
 ) -> bool:
     """Claim and deliver one notification, returning whether work was claimed."""
-    if not token or not chat_id:
+    chat_ids = _parse_chat_ids(chat_id)
+    if not token or not chat_ids:
         return False
 
     now = now or datetime.now(UTC)
@@ -150,13 +162,27 @@ def process_one(
     lead_number, product_id, notification_id = lead.number, lead.product_id, notification.id
     session.commit()  # lease is durable before making the external request
 
-    outcome, retry_after, error_code = _telegram_result(
-        token=token,
-        chat_id=chat_id,
-        lead_number=lead_number,
-        product_id=product_id,
-        client=client,
-    )
+    results = [
+        _telegram_result(
+            token=token,
+            chat_id=recipient,
+            lead_number=lead_number,
+            product_id=product_id,
+            client=client,
+        )
+        for recipient in chat_ids
+    ]
+    retries = [result for result in results if result[0] == "retry"]
+    dead = [result for result in results if result[0] == "dead"]
+    if retries:
+        outcome = "retry"
+        retry_values = [result[1] for result in retries if result[1] is not None]
+        retry_after = max(retry_values) if retry_values else None
+        error_code = retries[0][2]
+    elif dead:
+        outcome, retry_after, error_code = "dead", None, dead[0][2]
+    else:
+        outcome, retry_after, error_code = "sent", None, None
     current = session.scalar(
         select(LeadNotification)
         .where(LeadNotification.id == notification_id)
@@ -208,7 +234,7 @@ def run_once(settings: Any | None = None) -> bool:
     chat_id = settings.telegram_leads_chat_id.strip()
     with open_website_session() as session:
         cleanup_expired_records(session)
-        if not token or not chat_id:
+        if not token or not _parse_chat_ids(chat_id):
             return False
         return process_one(session, token=token, chat_id=chat_id)
 
@@ -218,7 +244,7 @@ def run_worker(*, poll_seconds: int = POLL_SECONDS) -> None:
     settings = get_lead_settings()
     token = settings.telegram_bot_token.get_secret_value()
     chat_id = settings.telegram_leads_chat_id.strip()
-    if not token or not chat_id:
+    if not token or not _parse_chat_ids(chat_id):
         # Cleanup still runs so expired pseudonymous records are not retained
         # forever. run_once will skip Telegram claims without both credentials.
         logger.warning("lead_notification_worker_disabled reason=missing_configuration")

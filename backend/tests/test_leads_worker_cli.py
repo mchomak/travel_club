@@ -81,6 +81,27 @@ def test_worker_sends_minimal_message_and_marks_outbox_sent(lead_session):
     assert notification.locked_until is None
 
 
+def test_worker_sends_to_each_unique_configured_chat_id(lead_session):
+    add_lead(lead_session)
+    delivered_chat_ids: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        delivered_chat_ids.append(json.loads(request.content)["chat_id"])
+        return httpx.Response(200, json={"ok": True, "result": {"message_id": 1}})
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert process_one(
+            lead_session,
+            token="test-only-token",
+            chat_id="1132147659, 1216001475,1132147659",
+            client=client,
+        )
+
+    assert delivered_chat_ids == ["1132147659", "1216001475"]
+    notification = lead_session.scalar(select(LeadNotification))
+    assert notification.status == "sent"
+
+
 def test_worker_honors_telegram_retry_after(lead_session):
     lead = add_lead(lead_session)
     before = datetime.now(UTC)
@@ -181,6 +202,7 @@ def test_worker_and_cli_resolve_historical_product_labels(monkeypatch, capsys):
 def test_worker_does_not_claim_when_telegram_is_unconfigured(lead_session):
     add_lead(lead_session)
     assert not process_one(lead_session, token="", chat_id="")
+    assert not process_one(lead_session, token="test-only-token", chat_id=" , , ")
     notification = lead_session.scalar(select(LeadNotification))
     assert notification.status == "pending"
     assert notification.attempts == 0
