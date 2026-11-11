@@ -449,7 +449,8 @@ for (const width of [1440, 390, 320]) {
     const searches: URL[] = [];
     await page.route('**/api/maps/search?*', route => {
       const url = new URL(route.request().url()); searches.push(url);
-      return route.fulfill({ json: { places: [place(url.searchParams.get('country_code') === 'JP' ? 'Токио' : 'Москва', 35, 139)] } });
+      const countryCode = url.searchParams.get('country_code');
+      return route.fulfill({ json: { places: [{ ...place(countryCode === 'JP' ? 'Токио' : 'Москва', 35, 139), country_code: countryCode }] } });
     });
     const trip = await fixture(page, input => {
       input.items = [
