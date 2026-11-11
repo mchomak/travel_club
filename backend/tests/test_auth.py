@@ -164,6 +164,74 @@ def test_csrf_rejects_missing_header_and_foreign_origin(client, admin):
     assert client.post("/api/auth/login", json=payload, headers=HEADERS).status_code == 200
 
 
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "https://public.example",
+        "https://research.example",
+        "http://localhost:3300",
+        "http://127.0.0.1:3300",
+        "http://localhost:3101",
+        "http://127.0.0.1:3101",
+        "http://localhost:3102",
+        "http://127.0.0.1:3102",
+    ],
+)
+def test_csrf_accepts_exact_configured_app_origins(client, admin, monkeypatch, origin):
+    settings = Settings(
+        postgres_password="test-only-password",
+        allowed_origin="https://public.example",
+        research_origin="https://research.example",
+        additional_allowed_origins=(
+            "http://localhost:3300,http://127.0.0.1:3300,"
+            "http://localhost:3101,http://127.0.0.1:3101,"
+            "http://localhost:3102,http://127.0.0.1:3102"
+        ),
+    )
+    monkeypatch.setattr("app.main.get_settings", lambda: settings)
+
+    response = client.post(
+        "/api/auth/login",
+        headers={"X-Requested-With": "TravelClub", "Origin": origin},
+        json={"login": admin.login, "password": FIXTURE_PASSWORD},
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://localhost:3301",
+        "https://localhost:3300",
+        "http://localhost.evil.example:3101",
+        "http://localhost:3101.attacker.example",
+        "http://localhost:3103",
+    ],
+)
+def test_csrf_rejects_origins_that_only_look_like_allowed_apps(client, monkeypatch, origin):
+    settings = Settings(
+        postgres_password="test-only-password",
+        allowed_origin="https://public.example",
+        research_origin="https://research.example",
+        additional_allowed_origins=(
+            "http://localhost:3300,http://127.0.0.1:3300,"
+            "http://localhost:3101,http://127.0.0.1:3101,"
+            "http://localhost:3102,http://127.0.0.1:3102"
+        ),
+    )
+    monkeypatch.setattr("app.main.get_settings", lambda: settings)
+
+    response = client.post(
+        "/api/auth/login",
+        headers={"X-Requested-With": "TravelClub", "Origin": origin},
+        json={"login": "untrusted-origin", "password": "fictional-password"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "CSRF_REJECTED"
+
+
 def test_login_attempts_limited_by_login_across_ips(client, admin):
     for attempt in range(5):
         response = client.post(

@@ -1,6 +1,12 @@
-# Run these from the repository root in PowerShell to build and save images locally:
-# docker buildx build --platform linux/amd64 --tag travel-club-frontend:preview --load ./frontend
-# docker save --output travel-club-frontend-amd64.tar travel-club-frontend:preview
+# Build and save all required linux/amd64 images from the repository root:
+# docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
+# docker save --output travel-club-website-amd64.tar travel-club-website:preview
+# docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=trip-constructor --build-arg NEXT_ASSET_PREFIX=/_app/constructor/_next --build-arg NEXT_PUBLIC_INTERVIEWS_URL= --tag travel-club-trip-constructor:preview --load .
+# docker save --output travel-club-trip-constructor-amd64.tar travel-club-trip-constructor:preview
+# docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=interviews --build-arg NEXT_ASSET_PREFIX=/_app/interviews --build-arg NEXT_PUBLIC_CONSTRUCTOR_URL= --tag travel-club-interviews:preview --load .
+# docker save --output travel-club-interviews-amd64.tar travel-club-interviews:preview
+# docker buildx build --platform linux/amd64 --file infra/local/gateway.Dockerfile --tag travel-club-gateway:preview --load .
+# docker save --output travel-club-gateway-amd64.tar travel-club-gateway:preview
 # docker buildx build --platform linux/amd64 --tag travel-club-backend:preview --build-context shared=./shared --load ./backend
 # docker save --output travel-club-backend-amd64.tar travel-club-backend:preview
 
@@ -52,17 +58,95 @@ services:
       retries: 20
     restart: unless-stopped
 
-  frontend:
-    image: travel-club-frontend:preview
+  website:
+    image: travel-club-website:preview
     platform: linux/amd64
     environment:
       BACKEND_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/website/_next
+      PORT: 3100
+    networks:
+      - app
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  trip-constructor:
+    image: travel-club-trip-constructor:preview
+    platform: linux/amd64
+    environment:
+      BACKEND_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/constructor/_next
+      NEXT_PUBLIC_INTERVIEWS_URL: ""
+      PORT: 3101
+    networks:
+      - app
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3101/admin/login').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  interviews:
+    image: travel-club-interviews:preview
+    platform: linux/amd64
+    environment:
+      BACKEND_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/interviews
+      NEXT_PUBLIC_CONSTRUCTOR_URL: ""
+      PORT: 3102
+    networks:
+      - app
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3102/admin/login').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  gateway:
+    image: travel-club-gateway:preview
+    platform: linux/amd64
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      WEBSITE_UPSTREAM: http://website:3100
+      CONSTRUCTOR_UPSTREAM: http://trip-constructor:3101
+      INTERVIEWS_UPSTREAM: http://interviews:3102
+      BACKEND_UPSTREAM: http://backend:8000
     networks:
       app:
         ipv4_address: 172.19.0.4
     depends_on:
+      website:
+        condition: service_healthy
+      trip-constructor:
+        condition: service_healthy
+      interviews:
+        condition: service_healthy
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
 volumes:
@@ -73,6 +157,7 @@ networks:
   # Backend-only outbound API/DNS/TLS access; no published ports.
   maps_egress:
     driver: bridge
+  # Host Nginx can reach gateway at 172.19.0.4; app traffic stays on this private network.
   app:
     internal: true
     ipam:

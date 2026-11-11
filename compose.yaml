@@ -25,6 +25,11 @@ services:
       POSTGRES_HOST: postgres
       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
       GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}
+      ADDITIONAL_ALLOWED_ORIGINS: >-
+        http://localhost:${GATEWAY_PORT:-3000},http://127.0.0.1:${GATEWAY_PORT:-3000},
+        http://localhost:3101,http://127.0.0.1:3101,
+        http://localhost:3102,http://127.0.0.1:3102,
+        ${ADDITIONAL_ALLOWED_ORIGINS:-}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -35,13 +40,104 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-  frontend:
-    build: ./frontend
+  website:
+    build:
+      context: .
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: website
+        BACKEND_URL: http://backend:8000
+        NEXT_ASSET_PREFIX: /_app/website/_next
     environment:
       BACKEND_URL: http://backend:8000
-    ports:
-      - "127.0.0.1:3000:3000"
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/website/_next
+      PORT: 3100
+    expose:
+      - "3100"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3100/').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     depends_on:
+      backend:
+        condition: service_healthy
+  trip-constructor:
+    build:
+      context: .
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: trip-constructor
+        BACKEND_URL: http://backend:8000
+        NEXT_ASSET_PREFIX: /_app/constructor/_next
+        NEXT_PUBLIC_INTERVIEWS_URL: ""
+    environment:
+      BACKEND_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/constructor/_next
+      NEXT_PUBLIC_INTERVIEWS_URL: ""
+      PORT: 3101
+    expose:
+      - "3101"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3101/admin/login').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      backend:
+        condition: service_healthy
+  interviews:
+    build:
+      context: .
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: interviews
+        BACKEND_URL: http://backend:8000
+        NEXT_ASSET_PREFIX: /_app/interviews
+        NEXT_PUBLIC_CONSTRUCTOR_URL: ""
+    environment:
+      BACKEND_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_ASSET_PREFIX: /_app/interviews
+      NEXT_PUBLIC_CONSTRUCTOR_URL: ""
+      PORT: 3102
+    expose:
+      - "3102"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3102/admin/login').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      backend:
+        condition: service_healthy
+  gateway:
+    build:
+      context: .
+      dockerfile: infra/local/gateway.Dockerfile
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      WEBSITE_UPSTREAM: http://website:3100
+      CONSTRUCTOR_UPSTREAM: http://trip-constructor:3101
+      INTERVIEWS_UPSTREAM: http://interviews:3102
+      BACKEND_UPSTREAM: http://backend:8000
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status >= 500 ? 1 : 0)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      website:
+        condition: service_healthy
+      trip-constructor:
+        condition: service_healthy
+      interviews:
+        condition: service_healthy
       backend:
         condition: service_healthy
 volumes:

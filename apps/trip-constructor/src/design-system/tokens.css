@@ -1,0 +1,15 @@
+@theme inline {
+  --color-surface: #f6f5ef;
+  --color-paper: #fffefa;
+  --color-ink: #29352f;
+  --color-muted: #5d6861;
+  --color-line: #dce0d7;
+  --color-accent: #225740;
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --danger: #a3352e;
+  --soft-green: #e9f0e8;
+}
