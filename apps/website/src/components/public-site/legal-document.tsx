@@ -27,7 +27,7 @@ export function LegalDocument({ title, kind }: { title: string; kind: "privacy" 
         <div className={s.legalStatus}><h2 className={s.h3}>Документ находится в подготовке.<br />Не является действующим документом.</h2><p className={s.body}>Ниже — план будущего документа. Утверждённый текст ещё не предоставлен.</p></div>
         <h2 className={s.h2}>План разделов</h2>
         <ol className={`${s.legalOutline} ${s.body}`}>{outlines[kind].map((heading) => <li key={heading}>{heading}</li>)}</ol>
-        <p className={`${s.small} ${s.muted}`}>Демонстрационная форма на сайте не отправляет и не сохраняет введённые данные.</p>
+        <p className={`${s.small} ${s.muted}`}>Тестовая форма сохраняет указанные формат, контакт, имя и комментарий и отправляет их команде Travel Club через Telegram. Документы пока в подготовке. Не отправляйте реальные или чувствительные данные.</p>
       </article>
     </div>
   </div>;

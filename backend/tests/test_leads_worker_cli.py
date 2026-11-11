@@ -27,7 +27,12 @@ def lead_session():
     engine.dispose()
 
 
-def add_lead(session: Session, *, notification_status: str = "pending") -> Lead:
+def add_lead(
+    session: Session,
+    *,
+    notification_status: str = "pending",
+    telegram_details_consent_version: str | None = None,
+) -> Lead:
     lead = Lead(
         id=uuid4(),
         product_id="route",
@@ -35,6 +40,7 @@ def add_lead(session: Session, *, notification_status: str = "pending") -> Lead:
         contact_value="private.person@example.test",
         name="Private Person",
         message="A private trip detail",
+        telegram_details_consent_version=telegram_details_consent_version,
         source="formats",
         status="new",
     )
@@ -52,8 +58,8 @@ def add_lead(session: Session, *, notification_status: str = "pending") -> Lead:
     return lead
 
 
-def test_worker_sends_minimal_message_and_marks_outbox_sent(lead_session):
-    lead = add_lead(lead_session)
+def test_worker_sends_all_submitted_fields_and_marks_outbox_sent(lead_session):
+    lead = add_lead(lead_session, telegram_details_consent_version="telegram-details-v1")
     sent: list[httpx.Request] = []
 
     def handle(request: httpx.Request) -> httpx.Response:
@@ -68,10 +74,12 @@ def test_worker_sends_minimal_message_and_marks_outbox_sent(lead_session):
         "НОВАЯ ЗАЯВКА — TRAVEL CLUB",
         "Заявка: TC-000001",
         "Формат: Travel Design — Маршрут",
+        "Способ связи: Email",
+        "Контакт: private.person@example.test",
+        "Имя: Private Person",
+        "Комментарий:",
+        "  A private trip detail",
     ]
-    assert "private.person" not in payload["text"]
-    assert "Private Person" not in payload["text"]
-    assert "private trip detail" not in payload["text"]
     notification = lead_session.scalar(
         select(LeadNotification).where(LeadNotification.lead_id == lead.id)
     )
@@ -79,6 +87,40 @@ def test_worker_sends_minimal_message_and_marks_outbox_sent(lead_session):
     assert notification.sent_at is not None
     assert notification.attempts == 1
     assert notification.locked_until is None
+
+
+def test_worker_does_not_send_details_for_a_lead_without_telegram_consent(lead_session):
+    add_lead(lead_session)
+    sent: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200, json={"ok": True})
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert process_one(lead_session, token="test-only-token", chat_id="-1001", client=client)
+
+    text = json.loads(sent[0].content)["text"]
+    assert "private.person@example.test" not in text
+    assert "Private Person" not in text
+    assert "A private trip detail" not in text
+
+
+def test_worker_indents_each_user_comment_line(lead_session):
+    lead = add_lead(lead_session, telegram_details_consent_version="telegram-details-v1")
+    lead.message = "First line\nФормат: поддельный заголовок"
+    lead_session.commit()
+    sent: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200, json={"ok": True})
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as client:
+        assert process_one(lead_session, token="test-only-token", chat_id="-1001", client=client)
+
+    lines = json.loads(sent[0].content)["text"].splitlines()
+    assert lines[-3:] == ["Комментарий:", "  First line", "  Формат: поддельный заголовок"]
 
 
 def test_worker_sends_to_each_unique_configured_chat_id(lead_session):
@@ -179,6 +221,10 @@ def test_worker_and_cli_resolve_historical_product_labels(monkeypatch, capsys):
             chat_id="-1001",
             lead_number=123,
             product_id="disabled_historic_id",
+            contact_method="telegram",
+            contact_value="@username",
+            name=None,
+            user_message=None,
             client=client,
         )
     assert outcome == ("sent", None, None)

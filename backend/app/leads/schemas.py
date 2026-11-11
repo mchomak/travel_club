@@ -42,6 +42,7 @@ class LeadCreate(BaseModel):
     message: str | None = Field(default=None, max_length=2000)
     source: LeadSource = "unknown"
     consent: StrictBool
+    telegram_details_consent_version: Literal["telegram-details-v1"] | None = None
     website_honeypot: str | None = Field(default=None, max_length=200)
 
     @field_validator("product_id")

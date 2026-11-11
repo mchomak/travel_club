@@ -100,6 +100,7 @@ export function StartForm({
         message: message.trim() || null,
         source,
         consent: true,
+        telegram_details_consent_version: "telegram-details-v1",
         website_honeypot: honeypot,
       }, key);
       router.push(`/thanks?receipt=${encodeURIComponent(created.receipt_token)}`);
@@ -241,10 +242,10 @@ export function StartForm({
             aria-invalid={Boolean(errors.consent)}
             aria-describedby={errors.consent ? "lead-consent-error" : "lead-consent-note"}
           />
-          <label htmlFor="lead-consent">Согласен(на) на обработку персональных данных, указанных в этой заявке.</label>
+          <label htmlFor="lead-consent">Согласен(на) на обработку данных из заявки и их передачу команде Travel Club через Telegram для ответа на обращение.</label>
         </div>
         {errors.consent && <span id="lead-consent-error" className={shared.fieldError} role="alert">{errors.consent}</span>}
-        <p id="lead-consent-note" className={`${shared.caption} ${shared.muted}`}>Документы: <a href="/personal-data">обработка персональных данных</a> и <a href="/privacy">конфиденциальность</a>. Не отправляйте в форме платёжные данные или документы.</p>
+        <p id="lead-consent-note" className={`${shared.caption} ${shared.muted}`}>Формат поездки, контакт, имя и комментарий из заявки поступят команде Travel Club через Telegram и сохранятся в рабочей базе. Документы по обработке данных пока готовятся. Не указывайте платёжные данные или документы.</p>
       </div>
 
       <label className={s.honeypot} aria-hidden="true" tabIndex={-1}>

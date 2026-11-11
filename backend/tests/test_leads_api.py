@@ -81,9 +81,11 @@ def send(client, body=None, *, key=None, headers=None):
 
 
 def canonical_payload_bytes(body):
-    canonical = LeadCreate.model_validate(body).model_dump(
-        exclude={"website_honeypot"}, mode="json"
-    )
+    parsed = LeadCreate.model_validate(body)
+    excluded = {"website_honeypot"}
+    if parsed.telegram_details_consent_version is None:
+        excluded.add("telegram_details_consent_version")
+    canonical = parsed.model_dump(exclude=excluded, mode="json")
     return json.dumps(
         canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode()
@@ -110,6 +112,16 @@ def test_create_persists_normalized_lead_and_notification_atomically(lead_client
     receipt = client.get("/api/leads/receipt", params={"token": result["receipt_token"]})
     assert receipt.status_code == 200
     assert receipt.json() == {"lead_number": result["lead_number"]}
+
+
+def test_create_persists_explicit_telegram_details_consent_version(lead_client):
+    client, engine = lead_client
+    response = send(client, payload(telegram_details_consent_version="telegram-details-v1"))
+
+    assert response.status_code == 201
+    with Session(engine) as session:
+        lead = session.scalar(select(Lead))
+        assert lead.telegram_details_consent_version == "telegram-details-v1"
 
 
 def test_new_idempotency_fingerprint_is_not_bare_sha256(lead_client):

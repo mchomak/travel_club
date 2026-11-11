@@ -17,6 +17,12 @@ describe("Start form", () => {
     expect(screen.getByRole("option", { name: "Пока не определился" })).toHaveValue("undecided");
   });
 
+  it("discloses that submitted application data is sent to the team through Telegram", () => {
+    render(<StartForm source="home" />);
+    expect(screen.getByRole("checkbox", { name: /передачу.*Telegram/i })).toBeInTheDocument();
+    expect(screen.getByText(/формат поездки, контакт, имя и комментарий.*Telegram/i)).toBeInTheDocument();
+  });
+
   it("keeps validation errors on the form and focuses the product selector first", async () => {
     const user = userEvent.setup();
     render(<StartForm source="home" />);
@@ -71,6 +77,7 @@ describe("Start form", () => {
       message: "<script>alert(1)</script> мечта о Японии",
       source: "formats",
       consent: true,
+      telegram_details_consent_version: "telegram-details-v1",
       website_honeypot: "",
     });
   });

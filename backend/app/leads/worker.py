@@ -1,7 +1,8 @@
 """Reliable Telegram delivery for the Website lead outbox.
 
-Only the worker knows the Telegram token. Notifications deliberately contain no
-contact or free text, and logs contain stable error categories only.
+Only the worker knows the Telegram token. Notifications include the fields the
+visitor submitted so the team can respond; logs contain stable error categories
+only.
 """
 
 from __future__ import annotations
@@ -28,6 +29,12 @@ REQUEST_TIMEOUT_SECONDS = 5.0
 LEASE_SECONDS = 60
 MAX_ATTEMPTS = 8
 MAX_RETRY_SECONDS = 60 * 60
+CONTACT_METHOD_LABELS = {
+    "telegram": "Telegram",
+    "email": "Email",
+    "instagram": "Instagram",
+    "phone": "Телефон",
+}
 
 
 def _parse_chat_ids(value: str) -> tuple[str, ...]:
@@ -69,13 +76,61 @@ def _retry_delay(attempts: int, retry_after: int | None = None) -> int:
     return min(5 * (2 ** max(0, attempts - 1)), MAX_RETRY_SECONDS)
 
 
+def _notification_text(
+    *,
+    lead_number: int,
+    product_id: str,
+    contact_method: str,
+    contact_value: str,
+    name: str | None,
+    user_message: str | None,
+    telegram_details_consent_version: str | None,
+) -> str:
+    """Render submitted lead details as plain text without allowing header spoofing."""
+    lines = [
+        "НОВАЯ ЗАЯВКА — TRAVEL CLUB",
+        f"Заявка: TC-{lead_number:06d}",
+        f"Формат: {get_product_label(product_id)}",
+    ]
+    if telegram_details_consent_version != "telegram-details-v1":
+        return "\n".join(lines)
+    lines.extend(
+        [
+            f"Способ связи: {CONTACT_METHOD_LABELS.get(contact_method, contact_method)}",
+            f"Контакт: {' '.join(contact_value.split())}",
+        ]
+    )
+    if name and name.strip():
+        lines.append(f"Имя: {' '.join(name.split())}")
+    if user_message and user_message.strip():
+        lines.append("Комментарий:")
+        lines.extend(f"  {line}" for line in user_message.splitlines())
+    return "\n".join(lines)
+
+
 def _telegram_result(
-    *, token: str, chat_id: str, lead_number: int, product_id: str, client: Any | None = None
+    *,
+    token: str,
+    chat_id: str,
+    lead_number: int,
+    product_id: str,
+    contact_method: str,
+    contact_value: str,
+    name: str | None,
+    user_message: str | None,
+    telegram_details_consent_version: str | None = None,
+    client: Any | None = None,
 ) -> tuple[str, int | None, str | None]:
     """Return (sent|retry|dead, retry-after seconds, safe error code)."""
-    label = get_product_label(product_id)
-
-    message = f"НОВАЯ ЗАЯВКА — TRAVEL CLUB\nЗаявка: TC-{lead_number:06d}\nФормат: {label}"
+    message = _notification_text(
+        lead_number=lead_number,
+        product_id=product_id,
+        contact_method=contact_method,
+        contact_value=contact_value,
+        name=name,
+        user_message=user_message,
+        telegram_details_consent_version=telegram_details_consent_version,
+    )
     owns_client = client is None
     http_client = client or httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS)
     try:
@@ -159,7 +214,14 @@ def process_one(
     notification.locked_until = lease_until
     notification.attempts += 1
     claimed_attempt = notification.attempts
-    lead_number, product_id, notification_id = lead.number, lead.product_id, notification.id
+    lead_number = lead.number
+    product_id = lead.product_id
+    contact_method = lead.contact_method
+    contact_value = lead.contact_value
+    name = lead.name
+    user_message = lead.message
+    telegram_details_consent_version = lead.telegram_details_consent_version
+    notification_id = notification.id
     session.commit()  # lease is durable before making the external request
 
     results = [
@@ -168,6 +230,11 @@ def process_one(
             chat_id=recipient,
             lead_number=lead_number,
             product_id=product_id,
+            contact_method=contact_method,
+            contact_value=contact_value,
+            name=name,
+            user_message=user_message,
+            telegram_details_consent_version=telegram_details_consent_version,
             client=client,
         )
         for recipient in chat_ids

@@ -35,6 +35,7 @@ class Lead(WebsiteBase):
     contact_value: Mapped[str] = mapped_column(String(254), nullable=False)
     name: Mapped[str | None] = mapped_column(String(120))
     message: Mapped[str | None] = mapped_column(Text)
+    telegram_details_consent_version: Mapped[str | None] = mapped_column(String(40))
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="new")
     consent_accepted_at: Mapped[datetime] = mapped_column(

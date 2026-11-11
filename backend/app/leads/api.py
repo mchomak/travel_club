@@ -248,7 +248,11 @@ async def create_lead(request: Request, session: DB):
             return public_error(429, "RATE_LIMITED", "Слишком много отправок. Попробуйте позже")
         return public_error(422, "VALIDATION_ERROR", "Проверьте поля формы и попробуйте ещё раз")
 
-    canonical_request = payload.model_dump(exclude={"website_honeypot"}, mode="json")
+    fingerprint_excluded = {"website_honeypot"}
+    if payload.telegram_details_consent_version is None:
+        # Preserve the previous canonical form for old clients and retries.
+        fingerprint_excluded.add("telegram_details_consent_version")
+    canonical_request = payload.model_dump(exclude=fingerprint_excluded, mode="json")
     canonical_bytes = json.dumps(
         canonical_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode()
@@ -308,6 +312,7 @@ async def create_lead(request: Request, session: DB):
             contact_value=payload.contact_value,
             name=payload.name,
             message=payload.message,
+            telegram_details_consent_version=payload.telegram_details_consent_version,
             source=payload.source,
             status="new",
         )

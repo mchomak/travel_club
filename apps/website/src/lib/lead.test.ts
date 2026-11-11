@@ -75,6 +75,7 @@ describe("Website lead data", () => {
       message: null,
       source: "home",
       consent: true,
+      telegram_details_consent_version: "telegram-details-v1",
       website_honeypot: "",
     };
     await expect(createLead(submission, "8f65fd78-0638-4087-8fd2-26b47102fdf8"))
@@ -99,6 +100,7 @@ describe("Website lead data", () => {
       message: null,
       source: "home",
       consent: true,
+      telegram_details_consent_version: "telegram-details-v1",
       website_honeypot: "",
     };
     await expect(createLead(submission, "8f65fd78-0638-4087-8fd2-26b47102fdf8"))
@@ -126,6 +128,7 @@ describe("Website lead data", () => {
       message: null,
       source: "home",
       consent: true,
+      telegram_details_consent_version: "telegram-details-v1",
       website_honeypot: "",
     };
     await expect(createLead(submission, "8f65fd78-0638-4087-8fd2-26b47102fdf8"))

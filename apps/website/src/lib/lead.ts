@@ -11,6 +11,7 @@ export type LeadSubmission = {
   message: string | null;
   source: LeadSource;
   consent: true;
+  telegram_details_consent_version: "telegram-details-v1";
   website_honeypot: string;
 };
 
