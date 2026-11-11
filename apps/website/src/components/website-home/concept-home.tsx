@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { BrandLogo } from "./brand-logo";
 import { EditableImage } from "./editable-image";
 import { EditorialSymbol } from "./editorial-symbol";
-import { PUBLIC_NAVIGATION_LINKS } from "../public-site/public-navigation";
-import { SiteHeader } from "../public-site/site-header";
 import s from "./concept.module.css";
 
 type Format = "route" | "complete" | "group" | "moscow";
@@ -19,10 +16,8 @@ const formats: { id: Format; number: string; name: string; english: string; deta
 function Arrow() { return <EditorialSymbol name="onward" />; }
 
 export function ConceptHome() {
-  return <div className={s.root} data-editorial-home="website" id="top">
-    <a href="#main" className={s.skipLink}>К содержимому</a>
-    <SiteHeader />
-    <main id="main">
+  return <div className={s.root} data-editorial-home="website">
+    <div>
       <section className={s.hero} id="hero" data-design-section="hero" data-page-hero aria-labelledby="hero-title">
         <EditableImage slotId="hero-terrace" className={s.heroPhoto} background preload sizes="(max-width: 1280px) 1280px, 100vw" />
         <div className={s.heroShade} aria-hidden="true" />
@@ -56,7 +51,7 @@ export function ConceptHome() {
           <div className={s.nextRail} data-next-issue-rail aria-label="Будущие поездки и события">
             <article className={s.nextSlide} data-next-issue-slide>
               <figure className={s.nextVisual}><div className={s.nextArt}><div className={s.nextCircle}><EditableImage slotId="next-table" sizes="(max-width: 760px) 80vw, 40vw" /></div><div className={s.nextDisplay} aria-label="Next Issue" data-type-role="display"><span>NEXT</span><span>ISSUE</span></div><EditorialSymbol name="direction" className={s.nextMark} /><p className={s.nextArtNote}>Ещё не на карте.<br />Уже в планах.</p></div></figure>
-              <div className={s.nextCopy}><p className={s.status}><EditorialSymbol name="companions" /> Предварительные заявки</p><h2 id="next-title">Первая<br />поездка.</h2><p className={s.serifLead}>Едем вместе.</p><p className={s.lead}>Мы собираем первую небольшую группу Travel Club. Подготовим программу, продумаем организацию и поедем вместе.</p><p>Направление, даты и стоимость пока уточняются. Можно оставить заявку об интересе — расскажем детали, когда программа будет готова.</p><div className={s.actions}><a className={s.primary} href="/start?format=group">Хочу в компанию <Arrow /></a><a className={s.textLink} href="/formats">Как устроены поездки <Arrow /></a></div><p className={s.notice}>Предварительная заявка не является бронированием и не требует оплаты.</p></div>
+              <div className={s.nextCopy}><p className={s.status}><EditorialSymbol name="companions" /> Предварительные заявки</p><h2 id="next-title">Первая<br />поездка.</h2><p className={s.serifLead}>Едем вместе.</p><p className={s.lead}>Мы собираем первую небольшую группу Travel Club. Подготовим программу, продумаем организацию и поедем вместе.</p><p>Направление, даты и стоимость пока уточняются. Можно оставить заявку об интересе — расскажем детали, когда программа будет готова.</p><div className={s.actions}><a className={s.primary} href="/start?format=group&source=home">Хочу в компанию <Arrow /></a><a className={s.textLink} href="/formats">Как устроены поездки <Arrow /></a></div><p className={s.notice}>Предварительная заявка не является бронированием и не требует оплаты.</p></div>
               <dl className={s.nextFacts}><div><dt>Формат</dt><dd>TC Trips<small>Групповая поездка с сопровождением</small></dd></div><div><dt>Компания</dt><dd>6–9 человек<small>Планируемый размер группы</small></dd></div><div><dt>Направление</dt><dd>Скоро объявим<small>Маршрут в разработке</small></dd></div><div><dt>Даты и стоимость</dt><dd>Уточняются<small>До подтверждения участия</small></dd></div></dl>
             </article>
           </div>
@@ -105,7 +100,6 @@ export function ConceptHome() {
       <section className={s.conversation} id="final-cta" data-design-section="conversation" aria-labelledby="conversation-title"><div className={s.wrap}><div className={s.sectionIntro}><h2 id="conversation-title">Начнём<br /><em>с разговора.</em></h2><div><p className={s.lead}>Расскажите, куда хотите поехать, с кем и в каком формате. Мы обсудим ваши пожелания, возможности и подходящий вариант работы.</p><div className={s.actions}><a className={s.primary} href="/start">Обсудить поездку <Arrow /></a><a className={s.textLink} href="#formats">Сначала сравнить форматы <Arrow /></a></div></div></div><div className={s.process}>
         <article><span><EditorialSymbol name="note" />01 / Ваш запрос</span><h3>Рассказываете.</h3><p>Направление, сроки, состав компании, примерный бюджет и пожелания.</p></article><article><span><EditorialSymbol name="companions" />02 / Наш разговор</span><h3>Обсуждаем.</h3><p>Выбираем формат, уточняем детали и предварительно оцениваем состав услуг.</p></article><article><span><EditorialSymbol name="direction" />03 / Старт работы</span><h3>Договариваемся.</h3><p>Фиксируем условия и дальнейшие шаги. После согласования приступаем к работе.</p></article>
       </div><div className={s.storyFooter}><span>Свой маршрут. Своя компания. Общая история.</span><span>Продолжение следует.</span></div></div></section>
-    </main>
-    <footer className={s.footer} id="footer" data-design-section="footer"><div className={s.wrap}><div className={s.footerGrid}><div><Link href="/" aria-label="Travel Club — главная"><BrandLogo className={s.footerLogo} /></Link><p className={s.footerSignature}>Независимая редакция<br />ваших путешествий.</p></div><nav aria-label="Навигация внизу страницы"><h3>Навигация</h3>{PUBLIC_NAVIGATION_LINKS.map(link => <Link key={link.href} href={link.href}>{link.label}{link.href === "/start" && <> <Arrow /></>}</Link>)}</nav><nav aria-label="Документы"><h3>Документы</h3><Link href="/legal">Правовая информация</Link><Link href="/privacy">Конфиденциальность</Link><Link href="/personal-data">Персональные данные</Link><p className={s.notice}>Документы и условия работы готовятся к запуску сайта.</p></nav></div><div className={s.storyFooter}><span>© 2026 TRAVEL CLUB</span><span>DESIGN STUDY / 20</span><a href="#top">Наверх <Arrow /></a></div></div></footer>
+    </div>
   </div>;
 }

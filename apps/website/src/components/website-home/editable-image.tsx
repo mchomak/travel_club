@@ -20,6 +20,7 @@ export function EditableImage({ slotId, className, sizes = "100vw", preload = fa
   const editor = useImageEditor();
   if (!slot) throw new Error(`Unknown photo slot: ${slotId}`);
   const replacement = editor.photos[slotId];
+  // Serve local photo assets directly; Next Image still provides native lazy loading and layout.
   return <div
     className={`${s.frame} ${className ?? ""}`}
     style={background ? undefined : { aspectRatio: slot.aspectRatio, height: "auto" }}
@@ -30,7 +31,7 @@ export function EditableImage({ slotId, className, sizes = "100vw", preload = fa
       editor.openMenu(slotId, event.clientX, event.clientY, event.currentTarget.querySelector("button")!);
     }}
   >
-    <Image key={replacement ?? slot.src} src={replacement ?? slot.src} alt={decorative ? "" : slot.alt} fill sizes={sizes} preload={preload} unoptimized={!!replacement} draggable={false} style={{ objectFit: "cover", objectPosition: replacement ? "center" : slot.position }} />
+    <Image key={replacement ?? slot.src} src={replacement ?? slot.src} alt={decorative ? "" : slot.alt} fill sizes={sizes} preload={preload} unoptimized draggable={false} style={{ objectFit: "cover", objectPosition: replacement ? "center" : slot.position }} />
     <button type="button" className={s.editButton} aria-label={`Редактировать фото: ${slot.alt}`} onClick={event => {
       const box = event.currentTarget.getBoundingClientRect();
       editor.openMenu(slotId, box.right, box.bottom, event.currentTarget);

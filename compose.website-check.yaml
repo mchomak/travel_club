@@ -1,0 +1,60 @@
+# Disposable Website leads database overlay. Always use this file with an
+# explicitly named test/check Compose project, never the developer project.
+services:
+  website-postgres:
+    env_file:
+      - path: .env.website.check
+        required: false
+    environment:
+      WEBSITE_E2E_DATABASE_URL: ""
+  website-migrate:
+    env_file:
+      - path: .env.website.check
+        required: false
+    environment:
+      WEBSITE_E2E_DATABASE_URL: ""
+  website-notification-worker:
+    env_file:
+      - path: .env.website.check
+        required: false
+    environment:
+      WEBSITE_E2E_DATABASE_URL: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+  website-api:
+    env_file:
+      - path: .env.website.check
+        required: false
+    ports: !reset []
+  gateway:
+    ports: !reset []
+  website-leads-check:
+    profiles: ["website-leads-check"]
+    build:
+      context: ./backend
+      additional_contexts:
+        shared: ./shared
+    env_file:
+      - path: .env.website.check
+        required: false
+    environment:
+      POSTGRES_USER: ""
+      POSTGRES_DB: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+      WEBSITE_E2E_COMPOSE_PROJECT: travel-club-leads-check-run2
+      WEBSITE_E2E_POSTGRES_VOLUME: travel-club-leads-check-run2_website_postgres_data
+    entrypoint:
+      - sh
+      - -c
+      - export WEBSITE_E2E_DATABASE_URL="$$WEBSITE_DATABASE_URL"; exec python -m pytest "$$@"
+      - website-leads-check
+    command: ["-q", "tests/test_leads_api.py", "tests/test_leads_postgres_concurrency.py"]
+    depends_on:
+      website-migrate:
+        condition: service_completed_successfully
+    restart: "no"

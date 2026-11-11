@@ -6,7 +6,7 @@ Public Next.js application for the company website. Its source, routes, approved
 
 Current application routes include `/`, `/formats`, `/services/route`, `/services/turnkey`, `/tours`, `/payment`, `/archive`, `/start`, `/thanks`, `/legal`, `/privacy`, and `/personal-data`. There are no `/archive/[slug]` or `/tours/[slug]` detail routes in this app at this revision.
 
-The `(publication)` route group uses the shared `SiteShell`. Routes in `(public)` currently use a separate local layout and CSS in `src/app/(public)/`. Both layouts belong to this app; this documents their current routing structure.
+Every Website route uses the shared `SiteShell`, applied once by `src/app/layout.tsx`. The shell, shared `SiteHeader`, `SiteFooter`, navigation, and their styles are in `src/components/public-site/`; both `(publication)` and `(public)` layouts are transparent route-group layouts. There are no `/about`, `/archive/[slug]`, or `/tours/[slug]` routes at this revision.
 
 ## Run independently
 
@@ -14,11 +14,15 @@ From this directory, run `npm.cmd ci`, then `npm.cmd run dev` (port 3100). For a
 
 From the repository root, the same commands are available through `npm.cmd run dev:website`, `build:website`, `lint:website`, `typecheck:website`, and `test:website`.
 
-The public demo form validates answers in the browser and does not transmit or persist personal information. `BACKEND_URL` is available to configure the existing FastAPI proxy for `/api`; the Website does not own a separate backend or database. For a common local origin, the gateway sends unmatched public routes to this app and serves its Next assets under `/_app/website/`.
+The `/start` form lets a visitor choose one of the configured products and one preferred contact channel. It submits to the shared FastAPI gateway at `POST /api/leads`; the browser never connects to PostgreSQL. A short-lived signed receipt is checked through `GET /api/leads/receipt` before `/thanks` confirms a saved request. Repeated submissions use an idempotency key, and server-side validation remains authoritative. The [lead-system guide](../../docs/website/LEADS_SYSTEM.md) documents database and notification setup.
+
+The privacy and personal-data pages currently contain outlines rather than approved legal text. The form labels its consent checkbox and links to those pages, but the documents remain a blocker for public production launch until the team approves and publishes their contents.
+
+`BACKEND_URL` is available to configure the existing FastAPI proxy for `/api`; the Website does not connect to a database directly. For a common local origin, the gateway sends unmatched public routes to this app and serves its Next assets under `/_app/website/`.
 
 ## Design system
 
-The approved Website design system is in `src/styles/travel-club-design-system.css` and is loaded by the app root layout. Use its Lato family, typography, palette and layout tokens. Keep visual code inside Website; do not import styles from Constructor or Interviews. See [`docs/design-system.md`](../../docs/design-system.md).
+The approved Website design system is in `src/styles/travel-club-design-system.css` and is loaded by the app root layout. Use its Lato family, type roles, palette, spacing, container, border, and focus tokens. `src/components/public-site/site-tokens.ts` only maps existing `--pub-*` names onto approved `--tc-*` values. Keep visual code inside Website; do not import styles from Constructor or Interviews. See [`docs/design-system.md`](../../docs/design-system.md) and [`src/components/public-site/README.md`](src/components/public-site/README.md).
 
 ## Legacy archive
 

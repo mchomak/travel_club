@@ -1,6 +1,8 @@
 .env
 .env.*
 !.env.example
+!.env.website.example
+!.env.website.check.example
 node_modules/
 __pycache__/
 *.pyc

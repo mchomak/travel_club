@@ -342,7 +342,7 @@ When the current task introduces a durable architectural rule that will matter a
 <!-- autopilot:start -->
 ## Текущее устройство репозитория — 11 ноября 2026
 
-Travel Club — monorepo с тремя самостоятельными Next.js-приложениями: `apps/website` (публичный сайт, порт 3100), `apps/trip-constructor` (закрытый планировщик, порт 3101) и `apps/interviews` (внутренние исследования, порт 3102). Общий локальный gateway обслуживает origin на порту 3000: публичные URL идут в Website, `/admin/**` и `/home` — в Constructor, `/research/**` — в Interviews, `/api/**` — в единый FastAPI backend. Backend, PostgreSQL, авторизация и Alembic migrations общие; не создавай отдельную базу или копии API для приложений.
+Travel Club — monorepo с тремя самостоятельными Next.js-приложениями: `apps/website` (публичный сайт, порт 3100), `apps/trip-constructor` (закрытый планировщик, порт 3101) и `apps/interviews` (внутренние исследования, порт 3102). Общий локальный gateway обслуживает origin на порту 3000: публичные URL идут в Website, `/admin/**` и `/home` — в Constructor, `/research/**` — в Interviews. Внутренние API, PostgreSQL, авторизация и миграции общие; `/api/leads/**` направляется в отдельный Website-only FastAPI процесс с изолированной PostgreSQL и собственными миграциями. Не смешивай доступы к базе заявок и внутренним данным.
 
 У приложений отдельные зависимости, настройки, маршруты, ресурсы, компоненты и CSS. Website использует утверждённые централизованные Lato-токены; Constructor и Interviews сохраняют свои стили. Не импортируй между приложениями UI, шрифты, токены или глобальный CSS. Текущая карта границ и URL находится в `docs/architecture/REPOSITORY_ARCHITECTURE.md`; исходная таблица до миграции — `docs/architecture/REPOSITORY_INVENTORY.md` и является исторической.
 
@@ -358,6 +358,8 @@ docker compose exec backend python -m app.bootstrap
 ```
 
 Bootstrap запускается один раз для создания администратора. Compose backend при запуске применяет миграции. Не удаляй том PostgreSQL: `docker compose down -v` удаляет локальные данные.
+
+Для заявок Website после `python scripts/init_env.py` используй `docker compose --profile website-leads up -d --build --wait`; операции, настройки Telegram и ограничения публичного запуска описаны в `docs/website/LEADS_SYSTEM.md`. Продукты и доступность задаёт `shared/website-products.json`; не удаляй исторические ID, отключай их через `available: false`.
 
 Каждое приложение запускается независимо после установки его lockfile: `npm.cmd ci --prefix apps/website`, затем `npm.cmd run dev:website`; аналогично `apps/trip-constructor` / `dev:constructor` и `apps/interviews` / `dev:interviews`. Общий origin локально обслуживает `npm.cmd run dev:gateway`; backend нужен Constructor и Interviews для существующих сценариев.
 

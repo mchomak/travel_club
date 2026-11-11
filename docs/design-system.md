@@ -22,7 +22,9 @@ The existing type scale retains its desktop/mobile role sizes and 390–1440px i
 
 The existing semantic palette includes `--tc-paper`, `--tc-ink`, `--tc-blue`, `--tc-red`, `--tc-china`, `--tc-madagascar`, `--tc-thailand`, and `--tc-next-decorative`, with section-specific aliases for text, headings, accents, dividers, links, buttons, and photo editor controls. Continue to read exact values from the token stylesheet; do not copy or redefine them in page CSS.
 
-The root layout loads the Website design system for every Website route. At this revision, `(publication)` uses `SiteShell`, while `(public)` keeps its own layout and CSS in `apps/website/src/app/(public)/`; this describes current route composition and does not imply that the wrappers are visually identical.
+The Website root layout loads the design system and wraps all Website routes in the shared `SiteShell` at `apps/website/src/components/public-site/site-shell.tsx`. It renders the shared `SiteHeader` and `SiteFooter` once around the route content, including the home page, both route groups, and the not-found page. The `(publication)` and `(public)` layouts are transparent route-group layouts; they do not add another shell. Header and footer styles live in `site-shell.module.css`, and the navigation link list lives in `public-navigation.ts`.
+
+`site-tokens.ts` maps the existing publication-style aliases to approved `--tc-*` tokens. Treat it as a compatibility bridge, not an independent palette or type scale. Reuse the shared shell and public-site primitives when adding routes. Keep editorial composition in page-local modules while using the approved token roles for color, type, spacing, containers, borders, and focus states.
 
 ## Trip Constructor
 

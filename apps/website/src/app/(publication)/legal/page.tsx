@@ -4,7 +4,11 @@ import { LegalNavigation } from "@/components/public-site/legal-document";
 import { PageIntro } from "@/components/public-site/primitives";
 import s from "@/components/public-site/publication.module.css";
 
-export const metadata: Metadata = { title: "Документы — Travel Club" };
+export const metadata: Metadata = {
+  title: "Документы — Travel Club",
+  description: "Раздел документов Travel Club. Политика конфиденциальности и сведения об обработке персональных данных находятся в подготовке.",
+  alternates: { canonical: "/legal" },
+};
 
 export default function LegalPage() {
   return <div className={s.container}>

@@ -2,7 +2,7 @@
 
 This runbook describes how to publish the Travel Club Website, Trip Constructor, and Interview Platform through one gateway on a VPS at a runtime URL of `https://<public-ip>:<HTTPS_PORT>`. The checked-in Nginx files are templates and commands only; they do not configure a server or mean that deployment is complete. The public IP, selected HTTPS port, resulting link, and certificate paths are set from verified runtime values and are not committed into the templates.
 
-The workflow keeps host Nginx separate from the `travel_club` Compose project and routes to the gateway at its private Docker bridge address without publishing an application host port. The gateway routes requests to the three Next.js applications and the shared backend. It leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes and requires the owner's separate authorization to deploy. A prepared or reviewed change alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
+The workflow keeps host Nginx separate from the `travel_club` Compose project and routes to the gateway at its private Docker bridge address without publishing an application host port. The gateway routes requests to the three Next.js applications, the shared internal backend, and (when the `website-leads` profile is enabled) the isolated Website leads API. It leaves TCP/443 and existing services alone, and uses a short-lived Let’s Encrypt IP certificate. Carrying it out makes server and firewall changes and requires the owner's separate authorization to deploy. A prepared or reviewed change alone is not that authorization. Never copy or print `.env`, passwords, private keys, database credentials, or SSH credentials. The project bootstrap prompts for the administrator password without putting it in command arguments.
 
 ## 1. Review and select an approved revision
 
@@ -24,7 +24,7 @@ Review the listed paths and diffs locally. Confirm that local `.env` files, cred
 Build the source-free Linux/amd64 images from the approved revision available in the local checkout. These commands do not use `.env` values. Keep the resulting tar files out of Git and transfer them to the VPS using the approved artifact-transfer path.
 
 ```powershell
-docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
+docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg WEBSITE_LEADS_API_URL=http://website-api:8001 --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
 docker save --output travel-club-website-amd64.tar travel-club-website:preview
 docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=trip-constructor --build-arg NEXT_ASSET_PREFIX=/_app/constructor/_next --build-arg NEXT_PUBLIC_INTERVIEWS_URL= --tag travel-club-trip-constructor:preview --load .
 docker save --output travel-club-trip-constructor-amd64.tar travel-club-trip-constructor:preview
@@ -34,6 +34,8 @@ docker buildx build --platform linux/amd64 --file infra/local/gateway.Dockerfile
 docker save --output travel-club-gateway-amd64.tar travel-club-gateway:preview
 docker buildx build --platform linux/amd64 --tag travel-club-backend:preview --build-context shared=./shared --load ./backend
 docker save --output travel-club-backend-amd64.tar travel-club-backend:preview
+docker buildx build --platform linux/amd64 --file infra/website-db/Dockerfile --tag travel-club-website-postgres:preview --load .
+docker save --output travel-club-website-postgres-amd64.tar travel-club-website-postgres:preview
 ```
 
 ## 2. Connect and record the baseline
@@ -76,7 +78,7 @@ certbot --version
 
 Certbot must be version 5.4 or newer for IP certificates through webroot. If Nginx or a suitable Certbot is unavailable, stop and arrange the approved host package source; do not install anything on the workstation. See [Let’s Encrypt’s Certbot instructions for IP and six-day certificates](https://letsencrypt.org/2026/03/11/shorter-certs-certbot).
 
-Set the values from verified deployment facts. `compose.deploy.yaml` assigns the gateway the private bridge address `172.19.0.4` on subnet `172.19.0.0/16`; it does not publish a host port. Confirm that subnet does not overlap an existing Docker or VPN network before starting Compose. Nginx proxies to `172.19.0.4:3000` from the host over the private bridge. If the subnet must change, update the Compose IPAM subnet, gateway address, and `GATEWAY_UPSTREAM` together. The gateway routes `/admin/**` and `/home` to Constructor, `/research/**` to Interviews, `/api/**` to the single backend, and the distinct `/_app/<application>/_next/**` prefixes to their owning apps. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the public IP, link, or certificate files.
+Set the values from verified deployment facts. `compose.deploy.yaml` assigns the gateway the private bridge address `172.19.0.4` on subnet `172.19.0.0/16`; it does not publish a host port. Confirm that subnet does not overlap an existing Docker or VPN network before starting Compose. Nginx proxies to `172.19.0.4:3000` from the host over the private bridge; the expected Nginx peer as seen by the gateway is the bridge gateway `172.19.0.1`, configured as the exact `GATEWAY_TRUSTED_PROXY_CIDRS` default. The Nginx template appends the socket peer with `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for`; the gateway trusts that chain only from the configured Nginx peer, then replaces it with the rightmost untrusted client address for `/api/leads/**`. The Website API separately trusts only the gateway source `172.19.0.4/32` via `WEBSITE_TRUSTED_PROXY_CIDRS`. Verify both source addresses against the selected Docker network before starting Compose. If the subnet changes, update the Compose IPAM subnet, gateway address, `GATEWAY_TRUSTED_PROXY_CIDRS`, `WEBSITE_TRUSTED_PROXY_CIDRS`, and upstreams together. The gateway routes `/admin/**` and `/home` to Constructor, `/research/**` to Interviews, `/api/leads/**` to the Website-only API when profile `website-leads` is enabled, other `/api/**` paths to the internal backend, and the distinct `/_app/<application>/_next/**` prefixes to their owning apps. The IP and HTTPS port determine the final public link at run time. Set the certificate lineage name/path in the same deployment shell; do not commit the public IP, link, or certificate files.
 Keep these values in the same administrative shell session for the remaining Bash commands. The external workstation commands use their own matching values.
 
 ```bash
@@ -306,7 +308,9 @@ printf 'Public link: %s\n' "$SITE_URL"
 
 ## 9. Finish the application checks
 
-Load all five required images transferred from the reviewed workstation build, then start the `travel_club` Compose project only with its source-free deployment file. Wait for PostgreSQL health and successful migrations before creating the initial administrator. Do not use `docker compose down -v`.
+Load the six required images transferred from the reviewed workstation build, then start the `travel_club` Compose project only with its source-free deployment file. The existing deployment remains available without the optional leads profile. To enable lead intake, provision `.env.website` on the server with independent Website database, application, migration, receipt, and rate-limit secrets. Set `WEBSITE_ALLOWED_ORIGINS` in the server `.env` to the exact public HTTPS origin. Verify the bridge source addresses from the prior step and set `GATEWAY_TRUSTED_PROXY_CIDRS` to the exact Nginx peer and `WEBSITE_TRUSTED_PROXY_CIDRS` to the gateway address; the configured defaults are `172.19.0.1/32` and `172.19.0.4/32`. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_LEADS_CHAT_ID` only when the team has approved Telegram notifications. Never use the committed placeholders. Before enabling public collection, confirm that the privacy and personal-data documents and consent have team-approved wording and that the approved policy covers the current Telegram payload (lead number and product only).
+
+Start the stack with `--profile website-leads` only when that configuration is ready. The profile creates a separate PostgreSQL instance and volume, runs the Website migration job, and starts the leads-only API and notification worker. The Website API gets no internal database credentials; the worker gets only the Website runtime URL and Telegram credentials. The worker remains active without Telegram settings so it can clean up expired anti-abuse rows; it logs missing settings once and skips sends. Its `on-failure` restart policy does not loop on missing Telegram configuration. Wait for both databases and migrations before creating the internal administrator. Do not use `docker compose down -v`.
 
 ```bash
 docker load --input travel-club-website-amd64.tar
@@ -314,12 +318,14 @@ docker load --input travel-club-trip-constructor-amd64.tar
 docker load --input travel-club-interviews-amd64.tar
 docker load --input travel-club-gateway-amd64.tar
 docker load --input travel-club-backend-amd64.tar
+docker load --input travel-club-website-postgres-amd64.tar
+docker compose -p travel_club -f compose.deploy.yaml --profile website-leads up -d
 docker compose -p travel_club -f compose.deploy.yaml ps
 docker compose -p travel_club -f compose.deploy.yaml exec -T postgres sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "SELECT login FROM users ORDER BY login;"'
 docker compose -p travel_club -f compose.deploy.yaml exec backend python -m app.bootstrap
 ```
 
-The read-only query lists logins in the isolated `travel_club` database without exposing password hashes. If the database is not healthy, migrations have not completed, or the query fails, stop before bootstrap. If `traveladmin` is already listed, do not bootstrap with that login: choose a unique unused suffix from the listed names and enter it when prompted. If it is absent, use `traveladmin`. Run bootstrap interactively so the password is entered through `getpass`; never put a password in command arguments, files, shell history, fixtures, or logs.
+The read-only query lists logins in the internal `travel_club` database without exposing password hashes. Confirm that both `postgres` and `website-postgres` are healthy and that the `website-migrate` one-shot completed successfully before expecting lead submissions to work. If the internal database is not healthy, its migrations have not completed, or the query fails, stop before bootstrap. If `traveladmin` is already listed, do not bootstrap with that login: choose a unique unused suffix from the listed names and enter it when prompted. If it is absent, use `traveladmin`. Run bootstrap interactively so the password is entered through `getpass`; never put a password in command arguments, files, shell history, fixtures, or logs.
 
 Repeat the baseline measurements and checks:
 

@@ -2,6 +2,7 @@ FROM node:24-alpine AS builder
 
 ARG APP
 ARG BACKEND_URL=http://backend:8000
+ARG WEBSITE_LEADS_API_URL=http://127.0.0.1:8001
 ARG NEXT_PUBLIC_CONSTRUCTOR_URL=
 ARG NEXT_PUBLIC_INTERVIEWS_URL=
 ARG NEXT_ASSET_PREFIX
@@ -9,6 +10,7 @@ ARG NEXT_ASSET_PREFIX
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BACKEND_URL=${BACKEND_URL}
+ENV WEBSITE_LEADS_API_URL=${WEBSITE_LEADS_API_URL}
 ENV NEXT_PUBLIC_CONSTRUCTOR_URL=${NEXT_PUBLIC_CONSTRUCTOR_URL}
 ENV NEXT_PUBLIC_INTERVIEWS_URL=${NEXT_PUBLIC_INTERVIEWS_URL}
 ENV NEXT_ASSET_PREFIX=${NEXT_ASSET_PREFIX}
@@ -16,6 +18,8 @@ ENV NEXT_ASSET_PREFIX=${NEXT_ASSET_PREFIX}
 COPY apps/${APP}/package.json apps/${APP}/package-lock.json ./
 RUN --mount=type=cache,id=travel_club_app_npm,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund --maxsockets=5
 COPY apps/${APP}/ ./
+COPY shared/website-products.json ./shared/website-products.json
+RUN ln -s /app/shared /shared
 RUN mkdir -p public && npm run build
 
 FROM node:24-alpine AS runner

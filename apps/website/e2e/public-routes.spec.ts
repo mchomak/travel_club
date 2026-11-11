@@ -10,7 +10,10 @@ const placeholderRoutes = ["/payment", "/services/route", "/services/turnkey", "
 test("all active public routes load with the Website font and without legacy test links", async ({ page }) => {
   const failedAssets: string[] = [];
   page.on("response", response => {
-    if (response.url().includes("/_app/website/_next/") && response.status() >= 400) failedAssets.push(response.url());
+    const url = response.url();
+    if ((url.includes("/_app/website/_next/") || url.includes("/website/assets/photos/")) && response.status() >= 400) {
+      failedAssets.push(url);
+    }
   });
   for (const route of publicRoutes) {
     const response = await page.goto(route);
@@ -58,7 +61,7 @@ test("all active public routes load with the Website font and without legacy tes
     expect(websiteFontLoaded, route).toBe(true);
     if (route === "/") {
       const homeHero = page.locator("[data-photo-slot='hero-terrace'] img");
-      await expect(homeHero).toHaveAttribute("src", /\/_app\/website\/_next\/image\?/);
+      await expect(homeHero).toHaveAttribute("src", "/website/assets/photos/vietnam_mu_cang_chai.webp");
       await expect.poll(() => homeHero.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     }
     const legacyLinks = await page.locator("a[href]").evaluateAll(links => links
@@ -78,20 +81,81 @@ test("the former test routes resolve to the branded not-found page", async ({ pa
   }
 });
 
-test("the required contact completes the start-to-thanks flow", async ({ page }) => {
+test("a mocked lead submission verifies before showing the thank-you state", async ({ page }) => {
+  const submissions: Record<string, unknown>[] = [];
+  let receiptChecks = 0;
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.pathname.endsWith("/api/leads") && request.method() === "POST") {
+      submissions.push(JSON.parse(request.postData() ?? "{}") as Record<string, unknown>);
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123", receipt_token: "ui-test-receipt" }) });
+      return;
+    }
+    if (url.pathname.endsWith("/api/leads/receipt") && request.method() === "GET") {
+      receiptChecks += 1;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123" }) });
+      return;
+    }
+    if (request.method() !== "GET") {
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto("/start?format=group&source=formats");
+  const form = page.getByRole("form", { name: "Заявка на поездку", exact: true });
+  const product = form.getByLabel("Что вам интересно?");
+  await expect(product).toHaveValue("group");
+  await product.selectOption("moscow_guide");
+  await form.getByLabel("Предпочтительный способ связи").selectOption("telegram");
+  await form.getByLabel("Контакт").fill("@travel_club");
+  await form.getByRole("checkbox", { name: /Согласен/ }).check();
+
+  await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
+  await expect(page).toHaveURL(/\/thanks\?receipt=ui-test-receipt$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Спасибо");
+  await expect(page.getByText("Заявка сохранена. Команда свяжется с вами выбранным способом.")).toBeVisible();
+  await expect(page.getByText("TC-000123")).toBeVisible();
+  expect(submissions).toHaveLength(1);
+  expect(submissions[0]).toMatchObject({
+    product_id: "moscow_guide",
+    contact_method: "telegram",
+    contact_value: "@travel_club",
+    source: "formats",
+    consent: true,
+  });
+  expect(receiptChecks).toBeGreaterThanOrEqual(1);
+});
+
+test("direct thanks visits stay neutral and failed submissions remain on the form", async ({ page }) => {
+  await page.goto("/thanks");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("проверить заявку");
+  await expect(page.getByText(/Заявка сохранена/)).toHaveCount(0);
+
+  await page.route("**/api/leads", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Database connection failed" }) });
+  });
   await page.goto("/start");
-  await page.getByRole("textbox", { name: "Ваш контакт — обязательно" }).fill("@travel_club");
-  await page.getByRole("button", { name: /Продолжить/ }).click();
-  await expect(page).toHaveURL(/\/thanks$/);
-  await expect(page.getByRole("heading", { name: /Демонстрация завершена/ })).toBeVisible();
-  await expect(page.getByText("Данные не отправлены и не сохранены.")).toBeVisible();
+  const form = page.getByRole("form", { name: "Заявка на поездку", exact: true });
+  await form.getByLabel("Что вам интересно?").selectOption("undecided");
+  await form.getByLabel("Предпочтительный способ связи").selectOption("email");
+  await form.getByLabel("Контакт").fill("private_failure@example.test");
+  await form.getByRole("checkbox", { name: /Согласен/ }).check();
+  await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
+  await expect(page).toHaveURL(/\/start$/);
+  await expect(form.getByRole("alert")).toContainText("Ваши ответы остались в форме");
+  await expect(form.getByLabel("Контакт")).toHaveValue("private_failure@example.test");
+  await expect(page.getByText(/Заявка сохранена/)).toHaveCount(0);
 });
 
 test("the home photo editor saves, reloads, and resets an IndexedDB image", async ({ page }) => {
   await page.goto("/");
   const hero = page.locator('[data-photo-slot="hero-terrace"]');
   const image = hero.locator("img");
-  await expect(image).toHaveAttribute("src", /\/_app\/website\/_next\/image\?/);
+  await expect(image).toHaveAttribute("src", "/website/assets/photos/vietnam_mu_cang_chai.webp");
 
   await hero.getByRole("button", { name: /Редактировать фото/ }).click();
   await page.getByRole("menuitem", { name: "Заменить фото" }).click();
@@ -109,10 +173,10 @@ test("the home photo editor saves, reloads, and resets an IndexedDB image", asyn
   await expect.poll(() => image.getAttribute("src")).toMatch(/^blob:/);
   await hero.getByRole("button", { name: /Редактировать фото/ }).click();
   await page.getByRole("menuitem", { name: "Вернуть исходное фото" }).click();
-  await expect.poll(() => image.getAttribute("src")).toMatch(/\/_app\/website\/_next\/image\?/);
+  await expect.poll(() => image.getAttribute("src")).toBe("/website/assets/photos/vietnam_mu_cang_chai.webp");
 
   await page.reload();
-  await expect(image).toHaveAttribute("src", /\/_app\/website\/_next\/image\?/);
+  await expect(image).toHaveAttribute("src", "/website/assets/photos/vietnam_mu_cang_chai.webp");
 });
 
 test("placeholder pages use Website font, color, type, and spacing tokens", async ({ page }) => {
@@ -120,12 +184,12 @@ test("placeholder pages use Website font, color, type, and spacing tokens", asyn
   for (const route of placeholderRoutes) {
     await page.goto(route);
     const values = await page.evaluate(() => {
-      const layout = document.querySelector("[data-public-layout]");
+      const layout = document.querySelector("[data-public-container=standard]");
       const heading = document.querySelector("main h1");
       const probe = document.createElement("span");
       probe.style.cssText = "position:absolute;visibility:hidden";
       probe.style.fontSize = "var(--pub-type-h1-size)";
-      probe.style.width = "var(--pub-layout-page-padding)";
+      probe.style.width = "calc(var(--tc-container-gutter-wide) / 2)";
       probe.style.color = "var(--pub-color-brand-blue)";
       probe.style.backgroundColor = "var(--pub-color-cloud)";
       document.body.append(probe);
@@ -135,7 +199,7 @@ test("placeholder pages use Website font, color, type, and spacing tokens", asyn
         tokenSize: getComputedStyle(probe).fontSize,
         headingColor: heading ? getComputedStyle(heading).color : "",
         tokenColor: getComputedStyle(probe).color,
-        layoutSpacing: layout ? getComputedStyle(layout).paddingLeft : "",
+        layoutSpacing: layout ? `${Math.round(layout.getBoundingClientRect().left)}px` : "",
         tokenSpacing: getComputedStyle(probe).width,
         background: getComputedStyle(document.body).backgroundColor,
         tokenBackground: getComputedStyle(probe).backgroundColor,

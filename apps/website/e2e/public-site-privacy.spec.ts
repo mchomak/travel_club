@@ -1,14 +1,12 @@
 import { errors, expect, test, type Page } from "@playwright/test";
 
 const personalAnswerMarkers = [
-  "PRIVATE_DESTINATION_7b2",
-  "PRIVATE_DATE_7b2",
-  "PRIVATE_BUDGET_7b2",
-  "PRIVATE_COMMENT_7b2",
   "private_7b2@example.test",
+  "PRIVATE_NAME_7b2",
+  "PRIVATE_COMMENT_7b2",
 ];
 
-const personalFieldNames = new Set(["destination", "when", "participants", "budget", "comment", "contact"]);
+const personalFieldNames = new Set(["contact", "contact_value", "name", "message", "comment"]);
 
 function containsPersonalAnswer(value: string, additionalMarkers: readonly string[] = []) {
   const variants = [value];
@@ -56,10 +54,10 @@ async function readWebStorage(page: Page) {
   });
 }
 
-test("demo answers stay out of requests, URL, browser writes, cookies, and console logs", async ({ browser }, testInfo) => {
+test("lead answers go only to the API and stay out of URL, browser storage, cookies, and console logs", async ({ browser }, testInfo) => {
   expect(containsPersonalAnswer("http://example.test/start?contact=private_7b2%40example.test")).toBe(true);
   expect(containsPersonalAnswer("http://example.test/start?contact=private_7b2%2540example.test")).toBe(true);
-  expect(containsPersonalFieldQuery("http://example.test/start?%70articipants=4")).toBe(true);
+  expect(containsPersonalFieldQuery("http://example.test/start?%63ontact_value=private_7b2%40example.test")).toBe(true);
   const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL as string });
   try {
     const initialCookies = await context.cookies();
@@ -72,7 +70,7 @@ test("demo answers stay out of requests, URL, browser writes, cookies, and conso
 
       const originalSetItem = Storage.prototype.setItem;
       Storage.prototype.setItem = function (key, value) {
-        writes.push(`${key}:${value}`);
+        writes.push(`Storage.setItem:${key}:${value}`);
         return originalSetItem.call(this, key, value);
       };
 
@@ -90,8 +88,9 @@ test("demo answers stay out of requests, URL, browser writes, cookies, and conso
     });
 
     const requests: { method: string; url: string; body: string }[] = [];
+    const submissions: Record<string, unknown>[] = [];
     const consoleOutput: string[] = [];
-    let interceptedSubmissions = 0;
+    let mockedSubmissions = 0;
     page.on("request", (request) => {
       const body = request.postData() ?? "";
       requests.push({ method: request.method(), url: request.url(), body });
@@ -100,60 +99,77 @@ test("demo answers stay out of requests, URL, browser writes, cookies, and conso
     page.on("pageerror", (error) => consoleOutput.push(error.message));
     await page.route("**/*", async (route) => {
       const request = route.request();
-      const payload = `${request.url()} ${request.postData() ?? ""}`;
-      if (request.method() !== "GET" || containsPersonalAnswer(payload) || containsPersonalFieldQuery(request.url())) {
-        interceptedSubmissions += 1;
+      const url = new URL(request.url());
+      if (url.pathname.endsWith("/api/leads") && request.method() === "POST") {
+        mockedSubmissions += 1;
+        submissions.push(JSON.parse(request.postData() ?? "{}") as Record<string, unknown>);
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ lead_number: "TC-000123", receipt_token: "opaque-ui-test-receipt" }),
+        });
+        return;
+      }
+      if (url.pathname.endsWith("/api/leads/receipt") && request.method() === "GET") {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123" }) });
+        return;
+      }
+      if (request.method() !== "GET") {
         await route.abort();
         return;
       }
       await route.continue();
     });
 
-    await page.goto("/start?format=group");
-    const form = page.getByRole("form", { name: "Начать историю", exact: true });
-    const fields = [
-      form.getByRole("textbox", { name: "Куда хотите поехать?", exact: true }),
-      form.getByRole("textbox", { name: "Когда?", exact: true }),
-      form.getByRole("textbox", { name: "Ориентировочный бюджет", exact: true }),
-      form.getByRole("textbox", { name: "Комментарий / пожелания", exact: true }),
-      form.getByRole("textbox", { name: "Ваш контакт — обязательно", exact: true }),
-    ];
-    const participants = form.getByRole("textbox", { name: "Количество человек", exact: true });
-    const writesAtStart = await page.evaluate(() =>
-      (window as unknown as Window & { __travelClubFormWrites: string[] }).__travelClubFormWrites.length,
-    );
+    await page.goto("/start?format=group&source=home");
+    const form = page.getByRole("form", { name: "Заявка на поездку", exact: true });
+    const product = form.getByLabel("Что вам интересно?");
+    const channel = form.getByLabel("Предпочтительный способ связи");
+    const contact = form.getByLabel("Контакт");
+    const name = form.getByLabel("Как к вам обращаться? Необязательно");
+    const message = form.getByLabel("Пара слов о поездке Необязательно");
+    await expect(product).toHaveValue("group");
     const storageAtStart = await readWebStorage(page);
 
-    async function assertNoAnswerPersistence() {
+    async function assertNoBrowserLeak(stage: string, expectedSubmissions = 0) {
       const writes = await page.evaluate(() =>
         (window as unknown as Window & { __travelClubFormWrites: string[] }).__travelClubFormWrites,
       );
-      const requestData = requests.map(({ url, body }) => `${url} ${body}`).join("\n");
+      const nonSubmissionRequests = requests.filter(({ method, url }) => method !== "POST" || !new URL(url).pathname.endsWith("/api/leads"));
       const currentStorage = await readWebStorage(page);
       const cookieStateUnchanged = JSON.stringify(await context.cookies()) === initialCookieSnapshot;
-      expect(writes.length).toBe(writesAtStart);
-      expect(currentStorage).toBe(storageAtStart);
-      expect(containsPersonalAnswer(currentStorage)).toBe(false);
-      expect(containsPersonalAnswer(writes.join("\n"))).toBe(false);
-      expect(containsPersonalAnswer(requestData)).toBe(false);
-      expect(requests.some(({ url }) => containsPersonalFieldQuery(url))).toBe(false);
-      expect(containsPersonalAnswer(page.url())).toBe(false);
-      expect(containsPersonalAnswer(consoleOutput.join("\n"))).toBe(false);
-      expect(requests.some(({ method }) => method !== "GET")).toBe(false);
-      expect(interceptedSubmissions).toBe(0);
-      expect(cookieStateUnchanged).toBe(true);
+      expect(currentStorage, `${stage}: browser storage must remain unchanged`).toBe(storageAtStart);
+      expect(containsPersonalAnswer(currentStorage), `${stage}: storage must not contain answers`).toBe(false);
+      expect(containsPersonalAnswer(writes.join("\n")), `${stage}: write log must not contain answers`).toBe(false);
+      expect(requests.some(({ url }) => containsPersonalFieldQuery(url)), `${stage}: answers must not be query params`).toBe(false);
+      expect(containsPersonalAnswer(page.url()), `${stage}: URL must not contain answers`).toBe(false);
+      expect(containsPersonalAnswer(consoleOutput.join("\n")), `${stage}: console must not contain answers`).toBe(false);
+      expect(containsPersonalAnswer(nonSubmissionRequests.map(({ url, body }) => `${url} ${body}`).join("\n")), `${stage}: answers must not go to unrelated requests`).toBe(false);
+      expect(mockedSubmissions, `${stage}: only explicit submit may create the mocked API request`).toBe(expectedSubmissions);
+      expect(cookieStateUnchanged, `${stage}: cookies must remain unchanged`).toBe(true);
     }
 
-    for (const [index, field] of fields.entries()) {
-      await field.fill(personalAnswerMarkers[index]);
-      await assertNoAnswerPersistence();
-    }
-    await participants.fill("4");
-    await assertNoAnswerPersistence();
+    await channel.selectOption("email");
+    await contact.fill(personalAnswerMarkers[0]);
+    await name.fill(personalAnswerMarkers[1]);
+    await message.fill(personalAnswerMarkers[2]);
+    await form.getByRole("checkbox", { name: /Согласен/ }).check();
+    await assertNoBrowserLeak("before submit");
 
-    await form.getByRole("button", { name: "Продолжить", exact: true }).click();
-    await expect(page).toHaveURL(/\/thanks$/);
-    await assertNoAnswerPersistence();
+    await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
+    await expect(page).toHaveURL(/\/thanks\?receipt=opaque-ui-test-receipt$/);
+    await expect(page.getByText("Заявка сохранена. Команда свяжется с вами выбранным способом.")).toBeVisible();
+    await assertNoBrowserLeak("after submit", 1);
+    expect(mockedSubmissions).toBe(1);
+    expect(submissions[0]).toMatchObject({
+      product_id: "group",
+      contact_method: "email",
+      contact_value: personalAnswerMarkers[0],
+      name: personalAnswerMarkers[1],
+      message: personalAnswerMarkers[2],
+      source: "home",
+      consent: true,
+    });
   } finally {
     await context.close();
   }
@@ -162,8 +178,8 @@ test("demo answers stay out of requests, URL, browser writes, cookies, and conso
 test.describe("without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("click and Enter cannot submit personal answers through the native form", async ({ page }) => {
-    const privateAnswer = "NOJS_PRIVATE_CONTACT_7c3";
+  test("without JavaScript the form sends no request", async ({ page }) => {
+    const privateAnswer = "private_7c3@example.test";
     let interceptedSubmissions = 0;
     const isSubmissionRequest = (request: { url(): string; method(): string; postData(): string | null }) =>
       request.method() !== "GET"
@@ -180,10 +196,12 @@ test.describe("without JavaScript", () => {
 
     for (const action of ["click", "Enter"] as const) {
       await page.goto("/start");
-      const form = page.getByRole("form", { name: "Начать историю", exact: true });
-      const contact = form.getByRole("textbox", { name: "Ваш контакт — обязательно", exact: true });
-      const submit = form.getByRole("button", { name: "Продолжить", exact: true });
-      await contact.fill(privateAnswer);
+      const form = page.getByRole("form", { name: "Заявка на поездку", exact: true });
+      const method = form.getByLabel("Предпочтительный способ связи");
+      const contact = form.getByLabel("Контакт");
+      const submit = form.getByRole("button", { name: "Отправить заявку", exact: true });
+      await expect(contact).toBeDisabled();
+      await expect(method).toHaveValue("");
       const requestObserved = page.waitForRequest(isSubmissionRequest, { timeout: 300 }).then(
         () => true,
         (error: unknown) => {
@@ -193,23 +211,28 @@ test.describe("without JavaScript", () => {
       );
 
       if (action === "click") {
-        await submit.click({ force: true, noWaitAfter: true });
+        await submit.evaluate((button) => (button as HTMLButtonElement).click());
       } else {
-        await contact.press("Enter");
+        await method.press("Enter");
       }
 
       expect(await requestObserved).toBe(false);
       expect(interceptedSubmissions).toBe(0);
       await expect(page).toHaveURL(/\/start$/);
       await expect(submit).toBeDisabled();
-      await expect(page.locator("noscript p")).toHaveText("Чтобы продолжить, включите JavaScript. Эта тестовая форма не отправляет данные.");
+      await expect(page.locator("noscript p")).toHaveText("Чтобы отправить заявку, включите JavaScript. Сейчас данные не будут отправлены.");
       await expect(page.locator("noscript p")).toBeVisible();
     }
   });
 });
 
-const publicationShellPages = [
+const publicPages = [
+  "/",
   "/formats",
+  "/services/route",
+  "/services/turnkey",
+  "/tours",
+  "/payment",
   "/archive",
   "/start",
   "/thanks",
@@ -218,35 +241,33 @@ const publicationShellPages = [
   "/personal-data",
   "/a-page-outside-the-route",
 ];
-const legacyPublicLayoutPages = [
-  "/payment",
-  "/services/route",
-  "/services/turnkey",
-  "/tours",
-];
 const headerLinks = [
   { name: "Услуги", href: "/formats" },
   { name: "О нас", href: "/#point-of-view" },
   { name: "Архив", href: "/archive" },
   { name: "Начать поездку", href: "/start" },
 ];
-const footerLinks = [
-  ...headerLinks,
-  { name: "Документы", href: "/legal" },
-  { name: "Политика конфиденциальности", href: "/privacy" },
-  { name: "Обработка персональных данных", href: "/personal-data" },
+const footerNavigationLinks = headerLinks;
+const documentLinks = [
+  { name: "Правовая информация", href: "/legal" },
+  { name: "Конфиденциальность", href: "/privacy" },
+  { name: "Персональные данные", href: "/personal-data" },
   { name: "О демонстрации", href: "/thanks" },
 ];
 
-test("the publication shell keeps keyboard skip navigation and a working home link on its routes", async ({ page }) => {
-  for (const path of publicationShellPages) {
+test("every public route uses the same accessible shell and landmarks", async ({ page }) => {
+  for (const path of publicPages) {
     const response = await page.goto(path);
-    expect(response?.status(), path).toBe(path === "/a-page-outside-the-route" ? 404 : 200);
-    await expect(page.locator("[data-publication-root]")).toHaveCount(1);
+    const isNotFound = path === "/a-page-outside-the-route";
+    expect(response?.status(), path).toBe(isNotFound ? 404 : 200);
+    await expect(page.locator("[data-public-site-shell]")).toHaveCount(1);
     await expect(page.getByRole("banner")).toHaveCount(1);
     await expect(page.getByRole("main")).toHaveCount(1);
     await expect(page.getByRole("contentinfo")).toHaveCount(1);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "Основная навигация", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "Навигация внизу страницы", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("navigation", { name: "Документы", exact: true })).toHaveCount(1);
 
     await page.keyboard.press("Tab");
     const skipLink = page.getByRole("link", { name: "К содержимому", exact: true });
@@ -255,7 +276,7 @@ test("the publication shell keeps keyboard skip navigation and a working home li
     expect(await skipLink.evaluate((link) => getComputedStyle(link).outlineStyle)).toBe("solid");
     await page.keyboard.press("Enter");
     await expect(page.getByRole("main")).toBeFocused();
-    await expect(page).toHaveURL(/#publication-main$/);
+    await expect(page).toHaveURL(/#main$/);
 
     await page.getByRole("banner").getByRole("link", { name: "Travel Club — главная", exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
@@ -263,21 +284,27 @@ test("the publication shell keeps keyboard skip navigation and a working home li
   }
 });
 
-test("the homepage keeps its editorial shell, landmarks, and keyboard skip link", async ({ page }) => {
-  const response = await page.goto("/");
-  expect(response?.status()).toBe(200);
-  await expect(page.locator('[data-editorial-home="website"]')).toHaveCount(1);
-  await expect(page.getByRole("banner")).toHaveCount(1);
-  await expect(page.locator("main#main")).toHaveCount(1);
-  await expect(page.getByRole("contentinfo")).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+test("the mobile menu opens, follows links, and closes with Escape", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/formats");
+  const toggle = page.getByRole("button", { name: "Открыть меню" });
+  const navigation = page.getByRole("navigation", { name: "Основная навигация", exact: true });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(navigation).not.toBeVisible();
 
-  const skipLink = page.locator('a[href="#main"]').first();
-  await page.keyboard.press("Tab");
-  await expect(skipLink).toBeFocused();
-  await expect(skipLink).toBeVisible();
-  await page.keyboard.press("Enter");
-  await expect(page.locator("main#main")).toBeInViewport();
+  await toggle.click();
+  await expect(page.getByRole("button", { name: "Закрыть меню" })).toHaveAttribute("aria-expanded", "true");
+  await expect(navigation).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Услуги" })).toHaveAttribute("aria-current", "page");
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
+  await expect(navigation).not.toBeVisible();
+
+  await toggle.click();
+  await navigation.getByRole("link", { name: "Архив" }).click();
+  await expect(page).toHaveURL(/\/archive$/);
+  await expect(page.getByRole("button", { name: "Открыть меню" })).toHaveAttribute("aria-expanded", "false");
 });
 
 test("the site metadata favicon resolves to the approved brand asset", async ({ page }) => {
@@ -289,19 +316,6 @@ test("the site metadata favicon resolves to the approved brand asset", async ({ 
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toContain("image/svg+xml");
   expect(await response.text()).toMatch(/<svg\b/);
-});
-
-test("legacy public routes render their existing placeholder layout", async ({ page }) => {
-  for (const path of legacyPublicLayoutPages) {
-    const response = await page.goto(path);
-    expect(response?.status(), path).toBe(200);
-    await expect(page.locator("[data-public-layout]")).toHaveCount(1);
-    await expect(page.locator("[data-public-layout] header")).toHaveCount(1);
-    await expect(page.locator("[data-public-layout] main")).toHaveCount(1);
-    await expect(page.locator("[data-public-layout] footer")).toHaveCount(1);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-    await expect(page.locator("[data-public-layout] header a").first()).toHaveAttribute("href", "/");
-  }
 });
 
 test("shared header and footer links reach every real public destination", async ({ page }) => {
@@ -320,18 +334,23 @@ test("shared header and footer links reach every real public destination", async
     }
   }
 
-  for (const { href, name } of footerLinks) {
-    await page.goto("/formats");
-    const link = page.getByRole("navigation", { name: "Все страницы сайта", exact: true })
-      .getByRole("link", { name, exact: true });
-    await expect(link).toHaveAttribute("href", href);
-    await link.click();
-    if (href === "/#point-of-view") {
-      await expect(page).toHaveURL(/\/#point-of-view$/);
-      await expect(page.locator("#point-of-view")).toBeInViewport();
-    } else {
-      await expect(page).toHaveURL(new RegExp(`${href.replaceAll("/", "\\/")}$`));
-      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  for (const [navigationName, links] of [
+    ["Навигация внизу страницы", footerNavigationLinks],
+    ["Документы", documentLinks],
+  ] as const) {
+    for (const { href, name } of links) {
+      await page.goto("/formats");
+      const link = page.getByRole("navigation", { name: navigationName, exact: true })
+        .getByRole("link", { name, exact: true });
+      await expect(link).toHaveAttribute("href", href);
+      await link.click();
+      if (href === "/#point-of-view") {
+        await expect(page).toHaveURL(/\/#point-of-view$/);
+        await expect(page.locator("#point-of-view")).toBeInViewport();
+      } else {
+        await expect(page).toHaveURL(new RegExp(`${href.replaceAll("/", "\\/")}$`));
+        await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      }
     }
   }
 });

@@ -1,6 +1,6 @@
 ﻿# Travel Club
 
-Travel Club — monorepo из трёх Next.js-приложений и общего backend. Каждый продукт имеет собственные маршруты, исходники, сборку и визуальные стили; API, авторизация и PostgreSQL остаются едиными.
+Travel Club — monorepo из трёх Next.js-приложений и общего backend. Каждый продукт имеет собственные маршруты, исходники, сборку и визуальные стили. Constructor и Interviews используют общий внутренний backend и базу; публичные заявки Website получают отдельный API-процесс, PostgreSQL и миграции.
 
 ## Приложения
 
@@ -10,7 +10,7 @@ Travel Club — monorepo из трёх Next.js-приложений и обще�
 | Trip Constructor | Закрытое планирование поездок и смет | 3101 | `apps/trip-constructor/` |
 | Interviews | Внутренние интервью и исследования | 3102 | `apps/interviews/` |
 
-Локальный gateway принимает общий origin на порту `3000` по умолчанию. В нём `/` и публичные страницы направляются в Website, `/admin/**` и `/home` — в Constructor, `/research/**` — в Interviews, `/api/**` — в backend. Порт gateway можно изменить через `PORT` при локальном запуске или `GATEWAY_PORT` для Compose.
+Локальный gateway принимает общий origin на порту `3000` по умолчанию. В нём `/` и публичные страницы направляются в Website, `/admin/**` и `/home` — в Constructor, `/research/**` — в Interviews, `/api/leads/**` — в изолированный Website leads API, остальные `/api/**` — во внутренний backend. Порт gateway можно изменить через `PORT` при локальном запуске или `GATEWAY_PORT` для Compose.
 
 ## Быстрый запуск через Docker Compose
 
@@ -19,11 +19,11 @@ Travel Club — monorepo из трёх Next.js-приложений и обще�
 ```powershell
 python scripts/init_env.py
 docker compose config --quiet
-docker compose up -d --build --wait
-docker compose exec backend python -m app.bootstrap
+docker compose --profile website-leads up -d --build --wait
+docker compose --profile website-leads exec backend python -m app.bootstrap
 ```
 
-`app.bootstrap` запускайте один раз для создания первого администратора. Не передавайте пароль аргументом команды. После запуска откройте `http://localhost:3000`; проверка API доступна по `http://localhost:8000/api/health`. Compose запускает gateway, три приложения, FastAPI и PostgreSQL. Обычная остановка: `docker compose down`. Команда `docker compose down -v` удаляет локальные данные PostgreSQL.
+`scripts/init_env.py` создаёт `.env` при его отсутствии и отдельный игнорируемый `.env.website` для изолированной базы заявок, сохраняя уже существующие файлы и значения. Профиль `website-leads` включает Website PostgreSQL, миграцию, отдельный leads API и worker уведомлений. `app.bootstrap` запускайте один раз для создания первого администратора. Не передавайте пароль аргументом команды. После запуска откройте `http://localhost:3000`; проверка внутреннего API доступна по `http://localhost:8000/api/health`. Останавливайте полный стек той же командой профиля: `docker compose --profile website-leads down`. Команда `docker compose --profile website-leads down -v` удаляет оба локальных тома PostgreSQL, включая заявки Website.
 
 ## Независимый запуск приложений
 
@@ -44,7 +44,7 @@ npm.cmd ci --prefix apps/interviews
 npm.cmd run dev:interviews
 ```
 
-Constructor и Interviews используют общий FastAPI backend для авторизации и рабочих данных. Website может работать отдельно для просмотра публичных страниц; его демонстрационная форма не сохраняет ответы. Для общего локального origin запустите нужные app-серверы на их обычных портах и выполните `npm.cmd run dev:gateway`. Gateway по умолчанию слушает `3000`; например, в PowerShell его порт можно задать перед запуском через `$env:PORT = "3300"`. Не запускайте gateway-процесс на порту, уже занятом gateway из Compose.
+Constructor и Interviews используют общий FastAPI backend для авторизации и рабочих данных. Если Website запущен через `npm run dev:website`, настройте `WEBSITE_LEADS_API_URL=http://127.0.0.1:8001` в локальном env-файле Website и поднимите API через профиль `website-leads`; его host port доступен только на loopback. Compose Website использует service URL `http://website-api:8001`. Gateway направляет `/api/leads/**` на отдельный Website API и остальные API — в общий backend. Gateway по умолчанию слушает `3000`; например, в PowerShell его порт можно задать перед запуском через `$env:PORT = "3300"`. Не запускайте gateway-процесс на порту, уже занятом gateway из Compose. Публичная форма и настройка её хранилища описаны в [руководстве по системе заявок](docs/website/LEADS_SYSTEM.md).
 
 ## Сборка и проверки
 
@@ -76,9 +76,9 @@ Browser E2E Constructor и Interviews запускайте только прот
 
 ## Backend, данные и переменные окружения
 
-Единый FastAPI backend находится в `backend/`, PostgreSQL — в Compose. Backend владеет авторизацией и общей cookie-сессией, поездками, картами и исследованиями. Единственный источник миграций — `backend/migrations/`; не создавайте отдельные базы или копии API для приложений. Основные пространства API: `/api/auth`, `/api/trips`, `/api/maps`, `/api/research`. Серверная логика расчёта поездок использует Decimal.
+Внутренний FastAPI backend находится в `backend/`, его PostgreSQL и миграции используются Constructor и Interviews. Website leads API собирается из той же кодовой базы, но запускается отдельно как `app.leads.main` без credentials внутренней базы. Его отдельная PostgreSQL и миграции доступны через профиль Compose `website-leads`; эта изоляция относится только к сохранённым заявкам. Основные пространства API: `/api/auth`, `/api/trips`, `/api/maps`, `/api/research`; `/api/leads` направляется в leads-only процесс. Серверная логика расчёта поездок использует Decimal.
 
-Локальный `.env` создаёт `python scripts/init_env.py` из `.env.example`, не перезаписывая существующий файл. App-level `.env.example` есть у всех трёх приложений: файл Website указывает, что переменные не обязательны, и документирует необязательный `BACKEND_URL` для API rewrite. В документации перечислены только названия переменных; не добавляйте реальные значения или секреты в Git. Корневой пример содержит `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `RESEARCH_ORIGIN`, `ADDITIONAL_ALLOWED_ORIGINS`, `GATEWAY_PORT`, `COOKIE_SECURE`, `GEOAPIFY_API_KEY` и `GEOAPIFY_MAPS_API_KEY`. Для app runtime дополнительно встречаются `BACKEND_URL`, `NEXT_ASSET_PREFIX`, `NEXT_PUBLIC_CONSTRUCTOR_URL` и `NEXT_PUBLIC_INTERVIEWS_URL`.
+Локальные `.env` и `.env.website` создаются `python scripts/init_env.py`, который не заменяет существующие значения. Root пример перечисляет `TELEGRAM_BOT_TOKEN`, `TELEGRAM_LEADS_CHAT_ID`, `WEBSITE_ALLOWED_ORIGINS`, `GATEWAY_TRUSTED_PROXY_CIDRS` и `WEBSITE_TRUSTED_PROXY_CIDRS`; `.env.website.example` задаёт шаблон независимых DB credentials и signing secrets. `apps/website/.env.example` документирует необязательный `BACKEND_URL`. В документации перечислены только имена переменных и безопасные шаблоны; не добавляйте реальные значения или секреты в Git. Для полного списка и команд настройки см. [docs/website/LEADS_SYSTEM.md](docs/website/LEADS_SYSTEM.md).
 
 ## Архив экспериментальных страниц
 
@@ -88,4 +88,30 @@ Browser E2E Constructor и Interviews запускайте только прот
 
 ## Preview
 
-`compose.deploy.yaml` описывает сборку из предварительно подготовленных Linux/amd64 образов. Gateway не публикует host-порт: preview ingress настраивается через host Nginx к gateway по адресу приватной Docker-сети. Порядок подготовки образов и runbook находятся в [docs/deployment-preview.md](docs/deployment-preview.md). Сам runbook не означает, что preview уже развёрнут.
+### Развёртывание всех сервисов на сервере
+
+`compose.deploy.yaml` запускает Website, Trip Constructor, Interviews, общий FastAPI backend и PostgreSQL для Constructor/Interviews. С профилем `website-leads` добавляются отдельная PostgreSQL для публичных заявок Website, её миграция, leads-only API и worker уведомлений. Оба хранилища остаются независимыми.
+
+Серверный Compose использует заранее собранные Linux/amd64 образы; `docker compose` сам их не собирает. Общий порядок релиза:
+
+1. Собрать образы и передать их на сервер вместе с `compose.deploy.yaml` по процедуре из [полного runbook](docs/deployment-preview.md).
+2. На сервере подготовить `.env` и `.env.website` с отдельными сильными секретами и паролями. Указать фактический публичный HTTPS origin, разрешённый Website origin и проверенные адреса reverse proxy. Не переносить секреты в Git или параметры команд.
+3. Загрузить шесть переданных образов, проверить конфигурацию и запустить полный стек вместе с Website leads:
+
+   ```bash
+   docker load --input travel-club-website-amd64.tar
+   docker load --input travel-club-trip-constructor-amd64.tar
+   docker load --input travel-club-interviews-amd64.tar
+   docker load --input travel-club-gateway-amd64.tar
+   docker load --input travel-club-backend-amd64.tar
+   docker load --input travel-club-website-postgres-amd64.tar
+   docker compose -p travel_club -f compose.deploy.yaml --profile website-leads config --quiet
+   docker compose -p travel_club -f compose.deploy.yaml --profile website-leads up -d
+   docker compose -p travel_club -f compose.deploy.yaml --profile website-leads ps
+   ```
+
+4. Убедиться, что обе базы здоровы, внутренняя миграция backend завершилась, а `website-migrate` успешно применил миграции. Создать первого администратора командой `docker compose -p travel_club -f compose.deploy.yaml exec backend python -m app.bootstrap` только при первичной настройке.
+5. Настроить TLS reverse proxy по runbook на общий gateway `172.19.0.4:3000`. Gateway не публикует порт на host; внутренние приложения, backend и PostgreSQL также не должны открываться напрямую в интернет. Перед запуском проверить, что Docker subnet `172.19.0.0/16` не пересекается с сетями сервера.
+6. Проверить маршруты `/`, `/admin/`, `/research/`, `/api/health` и `/api/leads/health`, затем настроить отдельные резервные копии двух PostgreSQL. Проверять отправку заявки на production следует только после утверждения формы и по согласованной команде.
+
+Runbook описывает подготовку образов, настройки reverse proxy/TLS, значения origin и proxy CIDR, health checks, bootstrap, резервное копирование и границы отката. Это инструкция для оператора; она сама по себе не подтверждает, что сервер уже развёрнут.

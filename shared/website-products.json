@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "products": [
+    {
+      "id": "route",
+      "label": "Travel Design — Маршрут",
+      "available": true
+    },
+    {
+      "id": "complete",
+      "label": "Travel Ready — Под ключ",
+      "available": true
+    },
+    {
+      "id": "group",
+      "label": "TC Trips — В компании",
+      "available": true
+    },
+    {
+      "id": "moscow_guide",
+      "label": "Moscow Guide — Гид по Москве",
+      "available": true
+    },
+    {
+      "id": "undecided",
+      "label": "Пока не определился",
+      "available": true
+    }
+  ]
+}

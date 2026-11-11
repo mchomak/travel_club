@@ -53,7 +53,7 @@ async function fixture() {
   const received = [];
   const upstreamUrls = {};
 
-  for (const name of ["website", "constructor", "interviews", "backend"]) {
+  for (const name of ["website", "constructor", "interviews", "backend", "website-leads-api"]) {
     const server = http.createServer((req, res) => {
       const chunks = [];
       req.on("data", chunk => chunks.push(chunk));
@@ -87,7 +87,7 @@ async function fixture() {
     upstreamUrls[name] = await listen(server);
   }
 
-  const gateway = createGateway({ upstreams: upstreamUrls });
+  const gateway = createGateway({ upstreams: upstreamUrls, trustedProxyCidrs: "" });
   gateways.push(gateway);
   const gatewayUrl = await listen(gateway);
   return { gatewayUrl, received };
@@ -115,6 +115,24 @@ test("creates the gateway with default local upstreams", () => {
   assert.ok(createGateway());
 });
 
+test("starts and serves the shared API when the optional leads upstream is absent", async () => {
+  const received = [];
+  const backend = http.createServer((req, res) => {
+    received.push(req.url);
+    res.writeHead(200);
+    res.end("ok");
+  });
+  upstreams.push(backend);
+  const gateway = createGateway({ upstreams: { backend: await listen(backend) } });
+  gateways.push(gateway);
+  const gatewayUrl = await listen(gateway);
+
+  const response = await request(gatewayUrl, "/api/trips");
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(received, ["/api/trips"]);
+});
+
 test("defaults the gateway to port 3000 and supports an explicit local override", () => {
   assert.equal(gatewayPort({}), 3000);
   assert.equal(gatewayPort({ GATEWAY_PORT: "3300" }), 3300);
@@ -138,6 +156,9 @@ test("routes product pages, API, and namespaced Next assets to their owners", as
     ["/admin/login?next=%2Fresearch", "constructor"],
     ["/home", "constructor"],
     ["/api/trips?limit=10", "backend"],
+    ["/api/leads", "website-leads-api"],
+    ["/api/leads/receipt?token=opaque", "website-leads-api"],
+    ["/api/leadsmith", "backend"],
     ["/_app/website/_next/image?url=%2Fhero.jpg&w=1920&q=75", "website"],
     ["/_app/website/_next/static/chunks/app.js", "website"],
     ["/_app/constructor/_next/static/chunks/app.js", "constructor"],
@@ -158,6 +179,56 @@ test("routes product pages, API, and namespaced Next assets to their owners", as
   assert.equal(received[3].url, cases[3][0]);
 });
 
+test("leads API ignores forwarding headers from untrusted direct clients", async () => {
+  const { gatewayUrl, received } = await fixture();
+
+  const response = await request(gatewayUrl, "/api/leads", {
+    headers: {
+      "x-forwarded-for": "198.51.100.44",
+      "x-real-ip": "198.51.100.44",
+    },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(received[0].app, "website-leads-api");
+  assert.equal(received[0].headers["x-forwarded-for"], "127.0.0.1");
+  assert.equal(received[0].headers["x-real-ip"], undefined);
+});
+
+test("leads API accepts a forwarding chain only from a configured proxy", async () => {
+  const received = [];
+  const backend = http.createServer((req, res) => {
+    received.push(req.headers);
+    res.writeHead(200);
+    res.end("ok");
+  });
+  upstreams.push(backend);
+  const gateway = createGateway({
+    upstreams: { "website-leads-api": await listen(backend) },
+    trustedProxyCidrs: "127.0.0.1/32, 172.16.0.0/12",
+  });
+  gateways.push(gateway);
+  const gatewayUrl = await listen(gateway);
+
+  const response = await request(gatewayUrl, "/api/leads", {
+    headers: {
+      "x-forwarded-for": "198.51.100.44, 203.0.113.99, 172.16.0.4",
+      "x-real-ip": "198.51.100.44",
+    },
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(received[0]["x-forwarded-for"], "203.0.113.99");
+  assert.equal(received[0]["x-real-ip"], undefined);
+});
+
+test("invalid gateway proxy CIDRs fail configuration", () => {
+  assert.throws(
+    () => createGateway({ trustedProxyCidrs: "not-a-cidr" }),
+    /GATEWAY_TRUSTED_PROXY_CIDRS/,
+  );
+});
+
 test("preserves API method, request metadata, body, redirects, and host-only cookies", async () => {
   const { gatewayUrl, received } = await fixture();
   const response = await request(gatewayUrl, "/api/auth/login?continue=%2Fresearch", {
@@ -167,6 +238,7 @@ test("preserves API method, request metadata, body, redirects, and host-only coo
       origin: "https://travel.example.test:8443",
       cookie: "travel_session=old-token; preference=compact",
       "x-requested-with": "TravelClub",
+      "x-forwarded-for": "192.0.2.9",
       "content-type": "application/json",
     },
     body: '{"login":"fixture","password":"opaque"}',
@@ -186,5 +258,6 @@ test("preserves API method, request metadata, body, redirects, and host-only coo
   assert.equal(received[0].headers.origin, "https://travel.example.test:8443");
   assert.equal(received[0].headers.cookie, "travel_session=old-token; preference=compact");
   assert.equal(received[0].headers["x-requested-with"], "TravelClub");
+  assert.equal(received[0].headers["x-forwarded-for"], "192.0.2.9");
   assert.equal(received[0].body, '{"login":"fixture","password":"opaque"}');
 });

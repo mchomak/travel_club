@@ -24,7 +24,7 @@ export function EditorialImage({ src, alt, caption, ratio = "landscape", priorit
 }) {
   return <figure className={s.figure}>
     <div className={s.imageFrame} style={{ "--pub-image-ratio": `var(--pub-frame-${ratio}-ratio)` } as CSSProperties}>
-      <Image src={src} alt={alt} fill sizes="(max-width: 760px) 92vw, (max-width: 1280px) 70vw, 800px" preload={priority} />
+      <Image data-public-photo data-public-photo-preload={priority ? "true" : undefined} src={src} alt={alt} fill sizes="(max-width: 760px) 92vw, (max-width: 1280px) 70vw, 800px" preload={priority} unoptimized />
     </div>
     {caption && <figcaption className={s.caption}>{caption}</figcaption>}
   </figure>;

@@ -1,6 +1,6 @@
 ﻿# Архитектура репозитория Travel Club
 
-Документ описывает текущую ветку `refactor/repository-architecture`: три независимых Next.js-приложения, единый backend, shared-origin gateway и общую PostgreSQL. Отслеживаемые исходники старого `frontend/` и два скрипта `test9` удалены из активной структуры; больше не являются приложением. Оставшиеся ignored/untracked файлы в локальной папке не входят в архитектуру и были оставлены нетронутыми.
+Документ описывает текущую архитектуру: три независимых Next.js-приложения, общий внутренний backend, отдельный Website leads API, shared-origin gateway и два изолированных PostgreSQL-контура. Constructor и Interviews продолжают использовать общий backend и базу. Исходники старого `frontend/` и два скрипта `test9` удалены из активной структуры.
 
 ## Приложения и владельцы маршрутов
 
@@ -23,7 +23,8 @@
 | `/_app/website/_next/**` | Website |
 | `/_app/constructor/_next/**` | Trip Constructor |
 | `/_app/interviews/_next/**` | Interviews |
-| `/api/**` | FastAPI backend |
+| `/api/leads/**` | Website-only FastAPI `website-api` (Compose profile `website-leads`) |
+| Остальные `/api/**` | внутренний FastAPI backend |
 | `/research/**` | Interviews |
 | `/admin/**`, `/home` | Trip Constructor |
 | Остальные маршруты | Website |
@@ -41,11 +42,11 @@ Backend — единый FastAPI-модуль в `backend/app/`. API namespaces:
 - `/api/maps` — конфигурация карты, поиск мест и маршруты;
 - `/api/research` — респонденты, интервью, ответы и результаты.
 
-Constructor использует auth, trips и maps; Interviews использует auth и research. Website проксирует `/api` через Next при необходимости, но публичная демонстрационная форма не отправляет и не сохраняет ответы.
+Constructor использует auth, trips и maps; Interviews использует auth и research. Website отправляет `/api/leads` на отдельный процесс FastAPI `app.leads.main`, собранный из той же backend кодовой базы. Этот процесс получает только Website DB URL и собственные receipt/rate secrets; у него нет credentials внутренней PostgreSQL. Внутренний backend очищает Website credentials и обрабатывает остальные API namespaces.
 
-Все приложения используют один PostgreSQL и одну модель хранения. Миграции Alembic имеют единственный источник истины в `backend/migrations/`. Данные поездок и исследований разделены доменными моделями в общей базе; отдельные базы для продуктов не создавались. Backend остаётся авторитетным для сессий, валидации и финансовых расчётов. Суммы поездок рассчитываются сервером на `Decimal`; PostgreSQL хранит соответствующие числовые значения.
+Constructor и Interviews используют существующий общий PostgreSQL и миграции `backend/migrations/`. Заявки Website хранятся в отдельном экземпляре PostgreSQL service `website-postgres`, в базе `travel_club_website` и независимом volume `website_postgres_data`. Сервис не публикует порт. Его bootstrap создаёт отдельные cluster-admin, migration и runtime роли; runtime получает минимальные grants на четыре рабочие таблицы и последовательность номера заявки. Для базы используется отдельная цепочка `backend/website_alembic.ini` и `backend/website_migrations/`. Эта изоляция — явное исключение для пользовательских заявок; она не разделяет базы поездок и исследований и не меняет их API. Финансовые расчёты поездок остаются в общем backend и используют `Decimal`.
 
-Нейтральные общие части сейчас ограничены backend/API, `gateway/`, миграциями и `shared/pricing-vectors.json` (контрольные векторы расчётов). Общих пакетов `shared-ui`, `shared-design-system`, шрифтов или CSS-токенов нет.
+Нейтральные общие части сейчас ограничены backend/API, `gateway/`, миграциями, `shared/pricing-vectors.json` (контрольные векторы расчётов) и `shared/website-products.json` (единый каталог Website для формы и API). Идентификаторы каталога нельзя удалять или переименовывать после сохранения заявок; товар снимается с публикации через `available: false` с сохранением ID и подписи. Общих пакетов `shared-ui`, `shared-design-system`, шрифтов или CSS-токенов нет.
 
 ## Структура и команды
 
@@ -83,11 +84,11 @@ npm.cmd run test:all
 
 ## Переменные окружения
 
-Не храните реальные значения в Git и не копируйте секреты между слоями без необходимости. `scripts/init_env.py` создаёт корневой `.env` из `.env.example`, не перезаписывая существующий файл. Root Compose/backend используют следующие имена переменных:
+Не храните реальные значения в Git и не копируйте секреты между слоями без необходимости. `scripts/init_env.py` создаёт корневой `.env` и `.env.website`, сохраняя существующие значения. Только для изолированных PostgreSQL integration checks можно передать `--website-check`, чтобы создать дополнительный `.env.website.check`; обычный запуск не создаёт тестовые секреты. Lead-сервисы Compose активируются профилем `website-leads`; их env-файлы optional, поэтому прежний стек без профиля продолжает запускаться без `.env.website`. Gateway настроен на URL `website-api`; без профиля этот процесс выключен. Для реальной отправки заявок используйте `docker compose --profile website-leads up -d --build --wait`.
 
-`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `RESEARCH_ORIGIN`, `ADDITIONAL_ALLOWED_ORIGINS`, `GATEWAY_PORT`, `COOKIE_SECURE`, `GEOAPIFY_API_KEY`, `GEOAPIFY_MAPS_API_KEY`.
+`POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `APP_ENV`, `ALLOWED_ORIGIN`, `RESEARCH_ORIGIN`, `ADDITIONAL_ALLOWED_ORIGINS`, `GATEWAY_PORT`, `GATEWAY_TRUSTED_PROXY_CIDRS`, `COOKIE_SECURE`, `GEOAPIFY_API_KEY`, `GEOAPIFY_MAPS_API_KEY`. Website leads используют `WEBSITE_DATABASE_URL`, `WEBSITE_MIGRATION_DATABASE_URL`, `WEBSITE_RECEIPT_SECRET`, `WEBSITE_RATE_LIMIT_SECRET`, `WEBSITE_ALLOWED_ORIGINS`, `WEBSITE_TRUSTED_PROXY_CIDRS`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_LEADS_CHAT_ID` и отдельные bootstrap passwords в `.env.website`.
 
-`apps/website/.env.example` states that Website has no required variables and documents optional `BACKEND_URL` for its API rewrite. `apps/trip-constructor/.env.example` lists `BACKEND_URL` and `NEXT_PUBLIC_INTERVIEWS_URL`; `apps/interviews/.env.example` lists `BACKEND_URL`, `NEXT_ASSET_PREFIX`, and `NEXT_PUBLIC_CONSTRUCTOR_URL`. `BACKEND_URL` is server-side app configuration; DB credentials and map provider keys belong only to backend. Gateway accepts `HOSTNAME`, `PORT`/`GATEWAY_PORT`, and upstream variables `WEBSITE_UPSTREAM`, `CONSTRUCTOR_UPSTREAM`, `INTERVIEWS_UPSTREAM`, and `BACKEND_UPSTREAM`. E2E uses `PLAYWRIGHT_BASE_URL`, `PLAYWRIGHT_BACKEND_CONTAINER`, and `PLAYWRIGHT_TEST_BACKEND_CONTAINER`.
+`apps/website/.env.example` documents optional `BACKEND_URL`; `apps/trip-constructor/.env.example` lists `BACKEND_URL` and `NEXT_PUBLIC_INTERVIEWS_URL`; `apps/interviews/.env.example` lists `BACKEND_URL`, `NEXT_ASSET_PREFIX`, and `NEXT_PUBLIC_CONSTRUCTOR_URL`. DB credentials for leads belong only to their isolated API, migration, worker, and PostgreSQL processes. Gateway accepts `HOSTNAME`, `PORT`/`GATEWAY_PORT`, upstream variables `WEBSITE_UPSTREAM`, `CONSTRUCTOR_UPSTREAM`, `INTERVIEWS_UPSTREAM`, `BACKEND_UPSTREAM`, `WEBSITE_LEADS_UPSTREAM`, and `GATEWAY_TRUSTED_PROXY_CIDRS`. For leads only, the gateway replaces client forwarding headers with the socket peer address unless that immediate peer belongs to the configured trusted-proxy CIDRs; it then selects the first untrusted address from the right side of the forwarded chain. E2E uses `PLAYWRIGHT_BASE_URL`, `PLAYWRIGHT_BACKEND_CONTAINER`, and `PLAYWRIGHT_TEST_BACKEND_CONTAINER`.
 
 Не открывайте и не публикуйте локальный `.env`; файлы `.env.example` перечисляют только имена и безопасные шаблонные значения. Политика игнорирования задаётся корневым `.gitignore` и локальными ignore-правилами.
 

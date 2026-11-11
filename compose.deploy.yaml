@@ -1,5 +1,5 @@
 # Build and save all required linux/amd64 images from the repository root:
-# docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
+# docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=website --build-arg WEBSITE_LEADS_API_URL=http://website-api:8001 --build-arg NEXT_ASSET_PREFIX=/_app/website/_next --tag travel-club-website:preview --load .
 # docker save --output travel-club-website-amd64.tar travel-club-website:preview
 # docker buildx build --platform linux/amd64 --file infra/local/next.Dockerfile --build-arg APP=trip-constructor --build-arg NEXT_ASSET_PREFIX=/_app/constructor/_next --build-arg NEXT_PUBLIC_INTERVIEWS_URL= --tag travel-club-trip-constructor:preview --load .
 # docker save --output travel-club-trip-constructor-amd64.tar travel-club-trip-constructor:preview
@@ -9,6 +9,8 @@
 # docker save --output travel-club-gateway-amd64.tar travel-club-gateway:preview
 # docker buildx build --platform linux/amd64 --tag travel-club-backend:preview --build-context shared=./shared --load ./backend
 # docker save --output travel-club-backend-amd64.tar travel-club-backend:preview
+# docker buildx build --platform linux/amd64 --file infra/website-db/Dockerfile --tag travel-club-website-postgres:preview --load .
+# docker save --output travel-club-website-postgres-amd64.tar travel-club-website-postgres:preview
 
 name: travel_club
 
@@ -31,6 +33,29 @@ services:
       retries: 20
     restart: unless-stopped
 
+  website-postgres:
+    profiles: ["website-leads"]
+    image: travel-club-website-postgres:preview
+    platform: linux/amd64
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+    volumes:
+      - website_postgres_data:/var/lib/postgresql
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
   backend:
     image: travel-club-backend:preview
     platform: linux/amd64
@@ -45,6 +70,14 @@ services:
       COOKIE_SECURE: "true"
       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
       GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      WEBSITE_ALLOWED_ORIGINS: ""
+      WEBSITE_TRUSTED_PROXY_CIDRS: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
     networks:
       - app
       - maps_egress
@@ -58,11 +91,97 @@ services:
       retries: 20
     restart: unless-stopped
 
+  website-migrate:
+    profiles: ["website-leads"]
+    image: travel-club-backend:preview
+    platform: linux/amd64
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      POSTGRES_DB: ""
+      POSTGRES_USER: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      WEBSITE_ALLOWED_ORIGINS: ""
+      WEBSITE_TRUSTED_PROXY_CIDRS: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+    command: ["python", "-m", "alembic", "-c", "website_alembic.ini", "upgrade", "head"]
+    networks:
+      - app
+    depends_on:
+      website-postgres:
+        condition: service_healthy
+
+  website-api:
+    profiles: ["website-leads"]
+    image: travel-club-backend:preview
+    platform: linux/amd64
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      POSTGRES_DB: ""
+      POSTGRES_USER: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_E2E_DATABASE_URL: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+      WEBSITE_ALLOWED_ORIGINS: ${WEBSITE_ALLOWED_ORIGINS:-}
+      WEBSITE_TRUSTED_PROXY_CIDRS: ${WEBSITE_TRUSTED_PROXY_CIDRS:-172.19.0.4/32}
+    command: ["uvicorn", "app.leads.main:app", "--host", "0.0.0.0", "--port", "8001", "--no-proxy-headers", "--no-access-log"]
+    expose:
+      - "8001"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/leads/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    restart: unless-stopped
+
+  website-notification-worker:
+    profiles: ["website-leads"]
+    image: travel-club-backend:preview
+    platform: linux/amd64
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      POSTGRES_DB: ""
+      POSTGRES_USER: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_LEADS_CHAT_ID: ${TELEGRAM_LEADS_CHAT_ID:-}
+    command: ["python", "-m", "app.leads.worker"]
+    networks:
+      - app
+      - maps_egress
+    depends_on:
+      website-migrate:
+        condition: service_completed_successfully
+    restart: on-failure
+
   website:
     image: travel-club-website:preview
     platform: linux/amd64
     environment:
       BACKEND_URL: http://backend:8000
+      WEBSITE_LEADS_API_URL: http://website-api:8001
       HOSTNAME: 0.0.0.0
       NEXT_ASSET_PREFIX: /_app/website/_next
       PORT: 3100
@@ -130,6 +249,8 @@ services:
       CONSTRUCTOR_UPSTREAM: http://trip-constructor:3101
       INTERVIEWS_UPSTREAM: http://interviews:3102
       BACKEND_UPSTREAM: http://backend:8000
+      WEBSITE_LEADS_UPSTREAM: http://website-api:8001
+      GATEWAY_TRUSTED_PROXY_CIDRS: ${GATEWAY_TRUSTED_PROXY_CIDRS:-172.19.0.1/32}
     networks:
       app:
         ipv4_address: 172.19.0.4
@@ -152,6 +273,8 @@ services:
 volumes:
   postgres_data:
     name: travel_club_deploy_postgres_data
+  website_postgres_data:
+    name: travel_club_deploy_website_postgres_data
 
 networks:
   # Backend-only outbound API/DNS/TLS access; no published ports.

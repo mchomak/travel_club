@@ -16,7 +16,7 @@ export function Formats() {
         <p className={s.body}>Индивидуальный маршрут: районы и логистика, места и культура, рекомендации и ориентировочный бюджет. Вместо длинного списка — понятная последовательность дней.</p>
         <div className={e.productNote}><EditorialLabel>КАК ЭТО РАБОТАЕТ</EditorialLabel><p className={s.small}>Обсуждаем ваш ритм и интересы, проектируем программу, согласуем детали и передаём план. Вы самостоятельно бронируете и оплачиваете поставщиков.</p></div>
         <div className={e.productNote}><EditorialLabel>КОМУ ПОДХОДИТ</EditorialLabel><p className={s.small}>Тем, кто любит ехать своим ходом, но хочет доверить подготовку маршрута.</p></div>
-        <CTA href="/start?format=route">Хочу свой маршрут</CTA>
+        <CTA href="/start?format=route&source=formats">Хочу свой маршрут</CTA>
       </div>
     </section>
 
@@ -28,7 +28,7 @@ export function Formats() {
         <p className={s.body}>Проектирование, подготовка и координация поездки. Собираем пожелания в программу и помогаем связать её части в одно целое.</p>
         <div className={e.productNote}><EditorialLabel>КАК ЭТО РАБОТАЕТ</EditorialLabel><p className={s.small}>Начинаем с разговора о поездке и бюджете. Согласуем состав услуги, программу и зоны ответственности, затем координируем подготовку.</p></div>
         <div className={e.productNote}><EditorialLabel>КОМУ ПОДХОДИТ</EditorialLabel><p className={s.small}>Тем, кому важна индивидуальная поездка и нужна помощь с её организацией.</p></div>
-        <CTA href="/start?format=complete">Обсудить поездку под ключ</CTA>
+        <CTA href="/start?format=complete&source=formats">Обсудить поездку под ключ</CTA>
       </div>
     </section>
 
@@ -40,7 +40,7 @@ export function Formats() {
         <p className={s.body}>Небольшая группа — ориентир 6–9 человек, общий маршрут и сопровождающий. Места и разговоры становятся частью одной поездки.</p>
         <div className={e.productNote}><EditorialLabel>КАК ЭТО РАБОТАЕТ</EditorialLabel><p className={s.small}>Знакомимся, обсуждаем программу и ожидания. Согласуем условия участия, собираем компанию и отправляемся вместе.</p></div>
         <div className={e.productNote}><EditorialLabel>КОМУ ПОДХОДИТ</EditorialLabel><p className={s.small}>Тем, кто хочет разделить впечатления с небольшой компанией и ехать по общей программе.</p></div>
-        <CTA href="/start?format=group">Хочу в компанию</CTA>
+        <CTA href="/start?format=group&source=formats">Хочу в компанию</CTA>
       </div>
     </section>
 
@@ -50,7 +50,7 @@ export function Formats() {
         <h3 className={s.h3}>Расскажите, что вам интересно.</h3>
         <p className={s.body}>Обсудим возможный формат знакомства с Москвой и подберём его под ваши интересы.</p>
         <div className={e.productNote}><EditorialLabel>СОСТАВ УСЛУГИ</EditorialLabel><p className={s.small}>Программа и состав услуги пока уточняются. Детали и условия согласуем до начала работы.</p></div>
-        <CTA href="/start">Обсудить формат</CTA>
+        <CTA href="/start?format=moscow_guide&source=service">Обсудить формат</CTA>
       </div>
     </section>
 

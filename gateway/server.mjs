@@ -1,5 +1,6 @@
 import http from "node:http";
 import https from "node:https";
+import { BlockList, isIP } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,6 +31,7 @@ export function appForPath(pathname) {
     if (matchesPath(pathname, prefix)) return app;
   }
 
+  if (matchesPath(pathname, "/api/leads")) return "website-leads-api";
   if (matchesPath(pathname, "/api")) return "backend";
   if (matchesPath(pathname, "/research")) return "interviews";
   if (matchesPath(pathname, "/admin") || matchesPath(pathname, "/home")) return "constructor";
@@ -59,6 +61,60 @@ function resolveUpstream(value, name) {
 function configuredUpstream(explicit, environmentName, fallback) {
   const value = explicit ?? process.env[environmentName];
   return value?.trim() || fallback;
+}
+
+function normalizeIpAddress(value) {
+  if (typeof value !== "string") return null;
+  let address = value.trim();
+  if (address.startsWith("[") && address.endsWith("]")) {
+    address = address.slice(1, -1);
+  }
+  const mappedIpv4 = address.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i);
+  if (mappedIpv4) address = mappedIpv4[1];
+  return isIP(address) ? address : null;
+}
+
+function trustedProxyList(value = "") {
+  const list = new BlockList();
+  const entries = value.split(",").map(entry => entry.trim()).filter(Boolean);
+
+  for (const entry of entries) {
+    const separator = entry.lastIndexOf("/");
+    if (separator < 1) throw new TypeError("GATEWAY_TRUSTED_PROXY_CIDRS entries must be CIDRs");
+    const address = normalizeIpAddress(entry.slice(0, separator));
+    const family = isIP(address ?? "");
+    const prefix = Number(entry.slice(separator + 1));
+    const maxPrefix = family === 4 ? 32 : family === 6 ? 128 : -1;
+    if (maxPrefix < 0 || !Number.isInteger(prefix) || prefix < 0 || prefix > maxPrefix) {
+      throw new TypeError("Invalid GATEWAY_TRUSTED_PROXY_CIDRS entry");
+    }
+    list.addSubnet(address, prefix, family === 4 ? "ipv4" : "ipv6");
+  }
+
+  return list;
+}
+
+function isTrustedProxy(blockList, address) {
+  const normalized = normalizeIpAddress(address);
+  if (!normalized) return false;
+  return blockList.check(normalized, isIP(normalized) === 4 ? "ipv4" : "ipv6");
+}
+
+function clientAddressForLeads(request, trustedProxies) {
+  const peerAddress = normalizeIpAddress(request.socket.remoteAddress);
+  if (!peerAddress || !isTrustedProxy(trustedProxies, peerAddress)) return peerAddress;
+
+  const forwardedHeader = request.headers["x-forwarded-for"];
+  const forwardedChain = (Array.isArray(forwardedHeader) ? forwardedHeader.join(",") : forwardedHeader ?? "")
+    .split(",")
+    .map(normalizeIpAddress);
+  if (!forwardedChain.length || forwardedChain.some(address => !address)) return peerAddress;
+
+  for (let index = forwardedChain.length - 1; index >= 0; index -= 1) {
+    const address = forwardedChain[index];
+    if (!isTrustedProxy(trustedProxies, address)) return address;
+  }
+  return peerAddress;
 }
 
 function requestHeaders(headers) {
@@ -99,13 +155,15 @@ function sendUpstreamError(response) {
   response.end(JSON.stringify({ code: "UPSTREAM_UNAVAILABLE" }));
 }
 
-export function createGateway({ upstreams = {} } = {}) {
+export function createGateway({ upstreams = {}, trustedProxyCidrs = process.env.GATEWAY_TRUSTED_PROXY_CIDRS ?? "" } = {}) {
+  const trustedProxies = trustedProxyList(trustedProxyCidrs);
   const configuredUpstreams = {};
   const definitions = [
     ["website", "WEBSITE_UPSTREAM", "http://127.0.0.1:3100"],
     ["constructor", "CONSTRUCTOR_UPSTREAM", "http://127.0.0.1:3101"],
     ["interviews", "INTERVIEWS_UPSTREAM", "http://127.0.0.1:3102"],
     ["backend", "BACKEND_UPSTREAM", "http://127.0.0.1:8000"],
+    ["website-leads-api", "WEBSITE_LEADS_UPSTREAM", "http://127.0.0.1:8001"],
   ];
 
   for (const [name, environmentName, fallback] of definitions) {
@@ -126,15 +184,23 @@ export function createGateway({ upstreams = {} } = {}) {
       return;
     }
 
-    const target = targets[appForPath(new URL(path, "http://gateway.invalid").pathname)];
+    const app = appForPath(new URL(path, "http://gateway.invalid").pathname);
+    const target = targets[app];
     const transport = target.protocol === "https:" ? https : http;
+    const headers = requestHeaders(request.headers);
+    if (app === "website-leads-api") {
+      const clientAddress = clientAddressForLeads(request, trustedProxies);
+      if (clientAddress) headers["x-forwarded-for"] = clientAddress;
+      else delete headers["x-forwarded-for"];
+      delete headers["x-real-ip"];
+    }
     const proxyRequest = transport.request(
       {
         hostname: target.hostname,
         port: target.port || undefined,
         method: request.method,
         path,
-        headers: requestHeaders(request.headers),
+        headers,
       },
       upstreamResponse => {
         response.writeHead(

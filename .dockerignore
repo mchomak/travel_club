@@ -10,7 +10,8 @@
 **/*.tsbuildinfo
 frontend
 backend
-shared
+shared/*
+!shared/website-products.json
 docs
 deploy
 scripts

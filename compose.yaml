@@ -15,6 +15,27 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+  website-postgres:
+    profiles: ["website-leads"]
+    image: travel-club-website-postgres:local
+    build:
+      context: .
+      dockerfile: infra/website-db/Dockerfile
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+    volumes:
+      - website_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
   backend:
     build:
       context: ./backend
@@ -23,6 +44,14 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: postgres
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      WEBSITE_ALLOWED_ORIGINS: ""
+      WEBSITE_TRUSTED_PROXY_CIDRS: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
       GEOAPIFY_API_KEY: ${GEOAPIFY_API_KEY:-}
       GEOAPIFY_MAPS_API_KEY: ${GEOAPIFY_MAPS_API_KEY:-}
       ADDITIONAL_ALLOWED_ORIGINS: >-
@@ -40,6 +69,90 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+  website-migrate:
+    profiles: ["website-leads"]
+    build:
+      context: ./backend
+      additional_contexts:
+        shared: ./shared
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      WEBSITE_DATABASE_URL: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_POSTGRES_ADMIN_PASSWORD: ""
+      POSTGRES_PASSWORD: ""
+      POSTGRES_USER: ""
+      POSTGRES_DB: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      WEBSITE_ALLOWED_ORIGINS: ""
+      WEBSITE_TRUSTED_PROXY_CIDRS: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+    command: ["python", "-m", "alembic", "-c", "website_alembic.ini", "upgrade", "head"]
+    depends_on:
+      website-postgres:
+        condition: service_healthy
+  website-notification-worker:
+    profiles: ["website-leads"]
+    build:
+      context: ./backend
+      additional_contexts:
+        shared: ./shared
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      POSTGRES_USER: ""
+      POSTGRES_DB: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_RECEIPT_SECRET: ""
+      WEBSITE_RATE_LIMIT_SECRET: ""
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_LEADS_CHAT_ID: ${TELEGRAM_LEADS_CHAT_ID:-}
+    command: ["python", "-m", "app.leads.worker"]
+    depends_on:
+      website-migrate:
+        condition: service_completed_successfully
+    restart: on-failure
+  website-api:
+    profiles: ["website-leads"]
+    build:
+      context: ./backend
+      additional_contexts:
+        shared: ./shared
+    env_file:
+      - path: .env.website
+        required: false
+    environment:
+      POSTGRES_USER: ""
+      POSTGRES_DB: ""
+      POSTGRES_PASSWORD: ""
+      WEBSITE_APP_DB_PASSWORD: ""
+      WEBSITE_MIGRATOR_DB_PASSWORD: ""
+      WEBSITE_MIGRATION_DATABASE_URL: ""
+      WEBSITE_E2E_DATABASE_URL: ""
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_LEADS_CHAT_ID: ""
+      WEBSITE_ALLOWED_ORIGINS: ${WEBSITE_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:3300,http://127.0.0.1:3300,http://localhost:3100,http://127.0.0.1:3100}
+      WEBSITE_TRUSTED_PROXY_CIDRS: ${WEBSITE_TRUSTED_PROXY_CIDRS:-}
+    command: ["uvicorn", "app.leads.main:app", "--host", "0.0.0.0", "--port", "8001", "--no-proxy-headers", "--no-access-log"]
+    expose:
+      - "8001"
+    ports:
+      - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/leads/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
   website:
     build:
       context: .
@@ -47,9 +160,11 @@ services:
       args:
         APP: website
         BACKEND_URL: http://backend:8000
+        WEBSITE_LEADS_API_URL: http://website-api:8001
         NEXT_ASSET_PREFIX: /_app/website/_next
     environment:
       BACKEND_URL: http://backend:8000
+      WEBSITE_LEADS_API_URL: http://website-api:8001
       HOSTNAME: 0.0.0.0
       NEXT_ASSET_PREFIX: /_app/website/_next
       PORT: 3100
@@ -124,6 +239,8 @@ services:
       CONSTRUCTOR_UPSTREAM: http://trip-constructor:3101
       INTERVIEWS_UPSTREAM: http://interviews:3102
       BACKEND_UPSTREAM: http://backend:8000
+      WEBSITE_LEADS_UPSTREAM: http://website-api:8001
+      GATEWAY_TRUSTED_PROXY_CIDRS: ${GATEWAY_TRUSTED_PROXY_CIDRS:-}
     ports:
       - "127.0.0.1:${GATEWAY_PORT:-3000}:3000"
     healthcheck:
@@ -142,3 +259,4 @@ services:
         condition: service_healthy
 volumes:
   postgres_data:
+  website_postgres_data:

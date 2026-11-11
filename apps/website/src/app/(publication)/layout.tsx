@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { SiteShell } from "@/components/public-site/site-shell";
 
+/** The shared public shell is applied once by the Website root layout. */
 export default function PublicationLayout({ children }: { children: ReactNode }) {
-  return <SiteShell>{children}</SiteShell>;
+  return children;
 }

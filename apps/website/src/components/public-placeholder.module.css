@@ -1,4 +1,4 @@
-.section { max-width: var(--pub-layout-narrow-text-width); }
+.copy { max-width: var(--pub-layout-narrow-text-width); }
 
 .eyebrow {
   margin: 0 0 var(--pub-space-m);
