@@ -31,9 +31,7 @@ def create_app() -> FastAPI:
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             origin = request.headers.get("origin")
             settings = get_settings()
-            allowed_origins = {settings.allowed_origin}
-            if settings.research_origin:
-                allowed_origins.add(settings.research_origin)
+            allowed_origins = settings.csrf_allowed_origins
             if request.headers.get("x-requested-with") != "TravelClub" or (
                 origin is not None and origin not in allowed_origins
             ):

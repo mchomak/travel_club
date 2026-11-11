@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     postgres_password: SecretStr
     allowed_origin: str = "http://localhost:3000"
     research_origin: str = ""
+    additional_allowed_origins: str = ""
     cookie_secure: bool = False
     session_hours: int = 12
     login_limit_per_login: int = 5
@@ -44,6 +45,18 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             database=self.postgres_db,
         )
+
+    @property
+    def csrf_allowed_origins(self) -> frozenset[str]:
+        origins = {self.allowed_origin}
+        if self.research_origin:
+            origins.add(self.research_origin)
+        origins.update(
+            origin.strip()
+            for origin in self.additional_allowed_origins.split(",")
+            if origin.strip()
+        )
+        return frozenset(origins)
 
 
 @lru_cache
