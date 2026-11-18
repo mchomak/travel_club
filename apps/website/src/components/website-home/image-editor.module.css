@@ -1,7 +1,9 @@
 .frame { position: relative; display: block; overflow: hidden; width: 100%; min-width: 0; }
 .frame > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.editButton { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 10px; align-items: center; min-height: 36px; padding: 7px var(--tc-space-3); border: var(--tc-border-width) solid var(--tc-editor-white-overlay); border-radius: var(--tc-radius); background: var(--tc-editor-brand-overlay); color: var(--tc-white); font: var(--tc-weight-medium) var(--tc-size-editor-caption) var(--tc-font-sans); cursor: pointer; opacity: 0; transition: opacity .15s; }
-.frame:hover .editButton, .frame:focus-within .editButton { opacity: 1; }
+.imageTrigger { position:absolute; z-index:2; inset:0; width:100%; height:100%; padding:0; border:0; background:transparent; cursor:pointer; }
+.imageTrigger:focus-visible { outline:3px solid var(--tc-editor-focus); outline-offset:-5px; }
+.editButton { position: absolute; z-index:3; right: 10px; bottom: 10px; display: flex; gap: 10px; align-items: center; min-height: 36px; padding: 7px var(--tc-space-3); border: var(--tc-border-width) solid var(--tc-editor-white-overlay); border-radius: var(--tc-radius); background: var(--tc-editor-brand-overlay); color: var(--tc-white); font: var(--tc-weight-medium) var(--tc-size-editor-caption) var(--tc-font-sans); cursor: pointer; opacity: 0; visibility:hidden; transition: opacity .15s, visibility .15s; }
+.frame[data-edit-open="true"] .editButton { opacity:1; visibility:visible; }
 .editButton:focus-visible, .menu button:focus-visible, .dialog button:focus-visible, .dialog input:focus-visible { outline: 3px solid var(--tc-editor-focus); outline-offset: 3px; }
 .menu { position: fixed; z-index: 10000; width: 260px; max-width: calc(100vw - 16px); padding: 6px; background: var(--tc-editor-paper); border: var(--tc-border-width) solid var(--tc-editor-border); box-shadow: 0 12px 35px var(--tc-editor-brand-shadow); font-family: var(--tc-font-sans); color: var(--tc-editor-ink); }
 .menu button { display: block; width: 100%; text-align: left; min-height: 44px; padding: 10px var(--tc-space-3); background: transparent; border: 0; color: inherit; font: inherit; font-size: var(--tc-size-editor-body); cursor: pointer; }
@@ -29,6 +31,5 @@
 .error { margin: 13px 0; padding: var(--tc-space-3) 14px; color: var(--tc-editor-error); border: var(--tc-border-width) solid var(--tc-editor-error-border); background: var(--tc-editor-error-paper); font-size: var(--tc-size-editor-body); line-height: var(--tc-leading-standard); }
 .notice { position: fixed; z-index: 10002; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; width: max-content; max-width: calc(100vw - 32px); padding: 14px 18px; border: var(--tc-border-width) solid var(--tc-editor-error-border); background: var(--tc-editor-error-paper); color: var(--tc-editor-error); font: var(--tc-size-editor-body)/var(--tc-leading-standard) var(--tc-font-sans); box-shadow: 0 8px 25px var(--tc-editor-toast-shadow); }
 .notice button { flex-shrink: 0; background: transparent; border: 0; color: inherit; font-size: var(--tc-size-editor-close); cursor: pointer; }
-@media (hover: none) { .editButton { opacity: 1; } }
 @media (max-width: 600px) { .dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); padding: 18px; } .head { gap: 10px; } .head p { font-size: var(--tc-size-editor-caption); } .cropStage { height: 42dvh; } .foot { align-items: stretch; flex-direction: column; gap: 15px; } .actions { justify-content: flex-end; } .zoom { gap: 9px; } .zoom label { min-width: 52px; } }
 @media (prefers-reduced-motion: reduce) { .editButton { transition: none; } }

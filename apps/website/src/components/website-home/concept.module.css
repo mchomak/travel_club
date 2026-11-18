@@ -24,7 +24,7 @@
 .formats { --section-bg:var(--tc-formats-bg); --section-heading:var(--tc-formats-heading); --section-text:var(--tc-formats-text); --section-accent:var(--tc-formats-accent); --section-line:var(--tc-formats-line); --section-button:var(--tc-formats-button); --section-link:var(--tc-formats-link); }
 .next { --section-bg:var(--tc-next-bg); --section-heading:var(--tc-next-heading); --section-text:var(--tc-next-text); --section-accent:var(--tc-next-accent); --section-line:var(--tc-next-line); --section-button:var(--tc-next-button); --section-link:var(--tc-next-link); }
 .china { --section-bg:var(--tc-china-bg); --section-heading:var(--tc-china-heading); --section-text:var(--tc-china-text); --section-accent:var(--tc-china-accent); --section-line:var(--tc-china-line); --section-button:var(--tc-china-button); --section-link:var(--tc-china-link); position: relative; isolation: isolate; }
-.china::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("/website/assets/brand/china-pattern.svg") repeat; background-size: 120px 120px; opacity: .12; pointer-events: none; }
+.china::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("/website/assets/brand/field-notes-lattice.svg") top right / 520px 520px no-repeat; opacity: .07; pointer-events: none; }
 .madagascar { --section-bg:var(--tc-madagascar-bg); --section-heading:var(--tc-madagascar-heading); --section-text:var(--tc-madagascar-text); --section-accent:var(--tc-madagascar-accent); --section-line:var(--tc-madagascar-line); --section-button:var(--tc-madagascar-button); --section-link:var(--tc-madagascar-link); }
 .thailand { --section-bg:var(--tc-thailand-bg); --section-heading:var(--tc-thailand-heading); --section-text:var(--tc-thailand-text); --section-accent:var(--tc-thailand-accent); --section-line:var(--tc-thailand-line); --section-button:var(--tc-thailand-button); --section-link:var(--tc-thailand-link); }
 .approach { --section-bg:var(--tc-approach-bg); --section-heading:var(--tc-approach-heading); --section-text:var(--tc-approach-text); --section-accent:var(--tc-approach-accent); --section-line:var(--tc-approach-line); --section-button:var(--tc-approach-button); --section-link:var(--tc-approach-link); }
@@ -133,11 +133,11 @@
 .thailandOpening { position: relative; display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,.6fr); align-items: center; gap: 7%; padding-block: 42px 52px; }
 .thaiArt { position: relative; aspect-ratio: 1.17; min-width: 0; }
 .thaiStrips { position: absolute; inset: 0 0 15%; display: flex; justify-content: space-around; opacity: .5; pointer-events: none; }
-.thaiStrips i { width: 3%; background: url('/website/assets/photos/thailand-bright.webp') 48% 50% / auto 100%; }
+.thaiStrips i { width: 3%; background: var(--field-note-mask-photo, url('/website/assets/photos/thailand-bright.webp')) 48% 50% / auto 100%; }
 .thaiStrips i:nth-child(2) { transform: translateY(6%); }
 .thaiStrips i:nth-child(3) { transform: translateY(3%); }
 .root .thaiDisplay { position: absolute; inset: 8% 0 23%; display: flex; flex-direction: column; justify-content: space-between; }
-.thaiWord,.landWord { height: 47.5%; width: 100%; display: block; background: url('/website/assets/photos/thailand-bright.webp') 50% 48% / cover; mask-size: 100% 100%; mask-repeat: no-repeat; }
+.thaiWord,.landWord { height: 47.5%; width: 100%; display: block; background: var(--field-note-mask-photo, url('/website/assets/photos/thailand-bright.webp')) var(--field-note-mask-position, center) / cover var(--section-heading); mask-size: 100% 100%; mask-repeat: no-repeat; }
 .thaiWord { mask-image: url('/website/assets/photos/thai-mask.png'); }
 .landWord { mask-image: url('/website/assets/photos/land-mask.png'); background-position: 50% 70%; }
 .thaiYear { position: absolute; top: 0; right: 13%; font: var(--tc-weight-regular) min(calc(var(--tc-size-display)*1.1),10vw)/var(--tc-leading-one) var(--tc-font-display); letter-spacing: var(--tc-tracking-display); }

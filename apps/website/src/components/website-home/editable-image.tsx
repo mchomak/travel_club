@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { EditorialSymbol } from "./editorial-symbol";
 import { useImageEditor } from "./image-editor";
 import { photoSlots } from "./photo-slots";
@@ -16,6 +17,7 @@ type EditableImageProps = {
 };
 
 export function EditableImage({ slotId, className, sizes = "100vw", preload = false, decorative = false, background = false }: EditableImageProps) {
+  const [editShown, setEditShown] = useState(false);
   const slot = photoSlots[slotId];
   const editor = useImageEditor();
   if (!slot) throw new Error(`Unknown photo slot: ${slotId}`);
@@ -23,6 +25,7 @@ export function EditableImage({ slotId, className, sizes = "100vw", preload = fa
   // Serve local photo assets directly; Next Image still provides native lazy loading and layout.
   return <div
     className={`${s.frame} ${className ?? ""}`}
+    data-edit-open={editShown}
     style={background ? undefined : { aspectRatio: slot.aspectRatio, height: "auto" }}
     data-photo-slot={slotId}
     data-photo-ratio={slot.aspectRatio}
@@ -32,6 +35,7 @@ export function EditableImage({ slotId, className, sizes = "100vw", preload = fa
     }}
   >
     <Image key={replacement ?? slot.src} src={replacement ?? slot.src} alt={decorative ? "" : slot.alt} fill sizes={sizes} preload={preload} unoptimized draggable={false} style={{ objectFit: "cover", objectPosition: replacement ? "center" : slot.position }} />
+    <button type="button" className={s.imageTrigger} aria-label={editShown ? `Скрыть кнопку редактирования: ${slot.alt}` : `Показать кнопку редактирования: ${slot.alt}`} aria-pressed={editShown} onClick={() => setEditShown(shown => !shown)} />
     <button type="button" className={s.editButton} aria-label={`Редактировать фото: ${slot.alt}`} onClick={event => {
       const box = event.currentTarget.getBoundingClientRect();
       editor.openMenu(slotId, box.right, box.bottom, event.currentTarget);

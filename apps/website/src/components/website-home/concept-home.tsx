@@ -1,6 +1,7 @@
 "use client";
 
 import { BrandLogo } from "./brand-logo";
+import { TripIndex } from "./trip-stories";
 import { EditableImage } from "./editable-image";
 import { EditorialSymbol } from "./editorial-symbol";
 import s from "./concept.module.css";
@@ -69,25 +70,7 @@ export function ConceptHome() {
         </div>
       </section>
 
-      <section className={s.china} id="field-note-china" data-design-section="china" aria-labelledby="china-title">
-        <div className={s.wrap}><div className={s.sectionBar}><span data-type-role="metadata">FIELD NOTES / CHINA ’25</span><span>Путешествия друзей до запуска TC</span></div><div className={s.countryTitle}><h2 id="china-title">CHINA</h2><span>’25</span></div>
-          <div className={s.chinaGrid}><div className={s.chinaVisual}><figure><EditableImage slotId="archive-china" sizes="(max-width: 760px) 92vw, 60vw" /><figcaption data-type-role="caption">Шанхай</figcaption></figure><div className={s.chinaGallery}><figure><EditableImage slotId="china-beijing" sizes="(max-width: 760px) 44vw, 28vw" /><figcaption>Пекин</figcaption></figure><figure><EditableImage slotId="china-company" sizes="(max-width: 760px) 44vw, 28vw" /><figcaption>За общим столом</figcaption></figure></div></div><div className={s.storyCopy} data-china-copy><h3>Четыре города.<br /><em>Одна компания.</em></h3><p className={s.lead}>Пекин, Шанхай, Сучжоу и Санья. В 2025 году этот маршрут объединил пятерых.</p><p>До Travel Club были поездки с друзьями. Мы строили маршруты, исследовали новые места и учились находить баланс между планом и спонтанностью. Из этого опыта постепенно вырос наш подход.</p><p>Маршрут задаёт направление, но не весь сценарий. Самые важные детали появляются по дороге: в разговорах, совместных решениях и паузах, которые не хочется торопить.</p><p>Такой маршрут оставляет время для прогулок, случайных остановок и решений, которые появляются уже на месте.</p><dl className={s.facts}><div><dt>Маршрут</dt><dd>Пекин → Шанхай → Сучжоу → Санья</dd></div><div><dt>Компания</dt><dd>5 человек</dd></div><div><dt>Год</dt><dd>2025</dd></div><div><dt>Формат</dt><dd>Путешествие друзей</dd></div></dl><a className={s.textLink} href="/archive">В архив путешествий <Arrow /></a></div></div>
-          <div className={s.storyFooter}><span>Пятеро друзей / Китай, 2025</span><span>Следующая страница / Madagascar ’25</span></div>
-        </div>
-      </section>
-
-      <section className={s.madagascar} id="field-note-madagascar" data-design-section="madagascar" aria-labelledby="madagascar-title">
-        <div className={s.wrap}><div className={s.sectionBar}><span>FIELD NOTES / MADAGASCAR ’25</span><span>Двое друзей / большой остров</span></div><div className={s.madagascarGrid}><div className={s.madagascarCopy}><h2 id="madagascar-title">MADAGASCAR<span>’25</span></h2><h3>Двое.<br /><em>Большой остров.</em></h3><p>Мадагаскар, 2025 год. Поездка двух друзей — ещё одна страница нашей истории до появления Travel Club.</p><p>Разные страны и разный масштаб путешествий. Опыт, который мы привезли с собой, остался в основе нашего подхода.</p><a className={s.textLink} href="/archive">В архив путешествий <Arrow /></a></div><figure><EditableImage slotId="archive-madagascar" sizes="(max-width: 760px) 92vw, 55vw" /><figcaption>Мадагаскар / баобабы</figcaption></figure></div><div className={s.storyFooter}><span>Поездки друзей, не коммерческие туры TC</span><span>Далее / Thailand ’26</span></div></div>
-      </section>
-
-      <section className={s.thailand} id="field-note-thailand" data-design-section="thailand" aria-labelledby="thailand-title">
-        <div className={s.wrap}><div className={s.sectionBar}><span>FIELD NOTES / THAILAND ’26</span><span>ISLANDS → BANGKOK / 4 FRIENDS</span></div>
-          <div className={s.thailandOpening}><div className={s.thaiArt}><div className={s.thaiStrips} aria-hidden="true"><i /><i /><i /></div><h2 className={s.thaiDisplay} id="thailand-title" aria-label="THAILAND ’26"><span className={s.thaiWord} aria-hidden="true" /><span className={s.landWord} aria-hidden="true" /></h2><span className={s.thaiLocation} data-thai-location aria-hidden="true">Таиланд<br />в двух ритмах</span></div><span className={s.thaiYear} data-thai-year aria-hidden="true">’26</span><div className={s.thaiOpeningNote}><EditorialSymbol name="waypoint" /><p>От островов<br /><em>до Бангкока.</em></p><span>Четверо друзей. Одна поездка.</span></div></div>
-          <div className={s.thailandMain}><div className={s.storyCopy}><h3>Море. Дорога.<br /><em>Большой город.</em></h3><p className={s.lead}>Четверо друзей отправились от островов к Бангкоку. В одной поездке соединились природа, перемещения между местами и ритм большого города.</p><dl className={s.facts}><div><dt>Маршрут</dt><dd>Острова → Бангкок</dd></div><div><dt>Компания</dt><dd>4 человека</dd></div><div><dt>Год</dt><dd>2026</dd></div><div><dt>Формат</dt><dd>Путешествие друзей</dd></div></dl></div><figure><EditableImage slotId="thailand-islands" sizes="(max-width: 760px) 92vw, 55vw" /><figcaption>Острова / море и горизонт</figcaption></figure></div>
-          <div className={s.thailandBottom}><blockquote>Не только куда.<br /><em>Ещё и с кем.</em></blockquote><figure><EditableImage slotId="thailand-company" sizes="(max-width: 760px) 92vw, 30vw" /><figcaption>За общим столом</figcaption></figure><figure><EditableImage slotId="thailand-boat" sizes="(max-width: 760px) 92vw, 30vw" /><figcaption>Другой берег</figcaption></figure></div><div className={s.storyFooter}><span>THAILAND / 2026 · FIELD NOTE</span><a href="/archive">В архив путешествий <Arrow /></a></div>
-          <p className={s.notice}>Фотографии в Field Notes иллюстрируют направления. Перед публикацией заменим их подтверждёнными кадрами соответствующих поездок.</p>
-        </div>
-      </section>
+      <TripIndex />
 
       <section className={s.approach} id="point-of-view" data-design-section="approach" aria-labelledby="approach-title">
         <div className={s.wrap}><div className={s.sectionIntro}><h2 id="approach-title">Наш<br /><em>подход.</em></h2><div><p className={s.serifLead}>Не только куда.<br />Ещё и как.</p><p data-type-role="body">Сначала мы просто ездили сами. Из маршрутов для друзей, разговоров и общих впечатлений выросли три принципа, по которым мы проектируем путешествия сегодня.</p></div></div><div className={s.approachGrid}><div className={s.values}>

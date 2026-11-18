@@ -59,21 +59,23 @@ export const photoSlots: Record<string, PhotoSlot> = {
   "china-beijing": {
     "src": "/website/assets/photos/beijing-hutong.jpg",
     "alt": "Традиционный переулок Пекина с кирпичными домами",
-    "aspectRatio": 0.75,
+    "aspectRatio": 3 / 2,
     "position": "50% 50%"
   },
   "china-company": {
     "src": "/website/assets/photos/memory-dinner.jpg",
     "alt": "Друзья разговаривают за ужином при свете свечей",
-    "aspectRatio": 1.8,
+    "aspectRatio": 4 / 3,
     "position": "50% 50%"
   },
   "archive-china": {
     "src": "/website/assets/photos/shanghai-street.jpg",
     "alt": "Велосипедисты на перекрёстке Юньнань-роуд в Шанхае",
-    "aspectRatio": 1.4,
+    "aspectRatio": 16 / 9,
     "position": "50% 50%"
   },
+  "china-suzhou": { src: "", alt: "Каналы Сучжоу", aspectRatio: 16 / 9 },
+  "china-sanya": { src: "", alt: "Море в Санье", aspectRatio: 24 / 11 },
   "archive-madagascar": {
     "src": "/website/assets/photos/madagascar-baobabs.jpg",
     "alt": "Баобабы и песчаная дорога на Мадагаскаре",

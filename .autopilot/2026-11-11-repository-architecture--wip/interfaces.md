@@ -26,3 +26,9 @@
 - Порт самостоятельного запуска 3100; все действующие публичные маршруты, `/test` и `/test_1`–`/test_21` отсутствуют.
 - Скрипты и Next image optimizer: `/_app/website/_next/**`; локальные ресурсы: `/website/assets/**`.
 - `createSiteVariables()` связывает семантические `--pub-*` с утверждёнными `--tc-*`; Cloud пока использует paper без фиксации нового Pantone. IndexedDB сохраняет исходное имя, чтобы замены фото не потерялись.
+
+## Website Footer — T0 assignment
+
+- `SiteShell` renders the one shared `SiteFooter` after `<main>` for all public routes; keep the existing component and its Website-owned CSS as the implementation seam.
+- Footer changes stay in `apps/website/`; reuse approved Website tokens and typography, preserve existing link destinations and content, and do not alter Header, page sections, or the other applications.
+- The footer's top boundary must avoid a duplicate adjacent section border; verify the actual preceding section on each representative route before choosing the seam treatment.

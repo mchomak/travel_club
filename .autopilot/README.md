@@ -65,3 +65,5 @@
 | 2026-11-10 | 2026-11-10-integrate-test-21-homepage | complete | Promote Test21 to /; align public navigation; 76 requirements done |
 
 | 2026-11-11 | `2026-11-11-repository-architecture--wip` | ? ?????? | ? |
+
+| 2026-11-11 | `2026-11-11-website-leads--wip` | в работе | Приём заявок Website, отдельная база, уведомления и защищённая обработка. |

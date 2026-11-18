@@ -57,7 +57,7 @@ function SiteHeaderContent({ pathname }: { pathname: string }) {
     return pathname === href;
   };
 
-  return <header className={s.navigation} data-design-section="nav">
+  return <header className={`${s.navigation} ${pathname === "/test_1" ? s.experimentNavigation : ""}`} data-design-section="nav">
     <div className={s.navInner} data-mobile-menu={mobileMenuOpen ? "open" : "closed"}>
       <Link className={s.navBrand} href="/" aria-label="Travel Club — главная"><BrandLogo className={s.navLogo} tone="cream" /></Link>
       <button
