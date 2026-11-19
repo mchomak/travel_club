@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CONTACT_METHODS, createLead, LeadRequestError, normalizeContact, validateLeadSubmission, type ContactMethod, type LeadErrors } from "../../lib/lead";
 import { getAvailableWebsiteProducts, isWebsiteProductId, type LeadSource, type WebsiteProductId } from "../../lib/products";
 import shared from "./publication.module.css";
 import s from "./start-form.module.css";
+import { trackLeadEvent } from "./analytics";
 
 const methods: { id: ContactMethod; label: string; placeholder: string; hint: string; type: "text" | "email" | "tel" }[] = [
   { id: "telegram", label: "Telegram", placeholder: "@username", hint: "Укажите username Telegram без ссылки на произвольный сайт.", type: "text" },
@@ -39,6 +40,8 @@ export function StartForm({
   const [errors, setErrors] = useState<LeadErrors>({});
   const [submissionError, setSubmissionError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => { trackLeadEvent("lead_form_open"); }, []);
 
   function clearSubmissionState() {
     idempotencyKey.current = null;
@@ -103,8 +106,10 @@ export function StartForm({
         telegram_details_consent_version: "telegram-details-v1",
         website_honeypot: honeypot,
       }, key);
-      router.push(`/thanks?receipt=${encodeURIComponent(created.receipt_token)}`);
+      trackLeadEvent("lead_submit_success");
+      router.push(`/thanks?confirmation=${encodeURIComponent(created.confirmation_id)}`);
     } catch (error) {
+      trackLeadEvent("lead_submit_error");
       if (error instanceof LeadRequestError && Object.keys(error.fieldErrors).length > 0) {
         setErrors((previous) => ({ ...previous, ...error.fieldErrors }));
         setSubmissionError("");
@@ -143,7 +148,7 @@ export function StartForm({
       <span className={`${shared.displayL} ${shared.accent} ${s.mark}`} aria-hidden="true">↗</span>
     </aside>
 
-    <form ref={formRef} onSubmit={submit} noValidate aria-label="Заявка на поездку" className={s.form}>
+    <form ref={formRef} onSubmit={submit} noValidate aria-label="Заявка на поездку" className={`${s.form} ym-hide-content ym-disable-keys`}>
       <section className={s.details} aria-labelledby="lead-details-heading">
         <h2 id="lead-details-heading" className={shared.meta}>01 / ФОРМАТ ПОЕЗДКИ</h2>
         <div className={`${shared.field} ${s.wide}`}>

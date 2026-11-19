@@ -126,6 +126,8 @@ services:
       - path: .env.website
         required: false
     environment:
+      WEBSITE_LEAD_FORM_ENABLED: ${WEBSITE_LEAD_FORM_ENABLED:-false}
+      WEBSITE_ADMIN_SECRET: ${WEBSITE_ADMIN_SECRET:-}
       POSTGRES_DB: ""
       POSTGRES_USER: ""
       POSTGRES_PASSWORD: ""
@@ -180,6 +182,7 @@ services:
     image: travel-club-website:preview
     platform: linux/amd64
     environment:
+      WEBSITE_LEAD_FORM_ENABLED: ${WEBSITE_LEAD_FORM_ENABLED:-false}
       BACKEND_URL: http://backend:8000
       WEBSITE_LEADS_API_URL: http://website-api:8001
       HOSTNAME: 0.0.0.0
@@ -201,6 +204,8 @@ services:
     image: travel-club-trip-constructor:preview
     platform: linux/amd64
     environment:
+      WEBSITE_ADMIN_SECRET: ${WEBSITE_ADMIN_SECRET:-}
+      WEBSITE_LEADS_API_URL: http://website-api:8001
       BACKEND_URL: http://backend:8000
       HOSTNAME: 0.0.0.0
       NEXT_ASSET_PREFIX: /_app/constructor/_next

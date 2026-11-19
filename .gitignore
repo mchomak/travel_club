@@ -10,6 +10,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .next/
+apps/website/.next-metrika-test/
 *.tsbuildinfo
 .DS_Store
 .autopilot/serve.*

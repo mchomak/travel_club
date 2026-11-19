@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 140" fill="none">
+  <defs>
+    <pattern id="engraving" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(29)">
+      <path d="M0 0v6" stroke="#d8c29a" stroke-opacity=".28" stroke-width="1.4"/>
+    </pattern>
+  </defs>
+  <circle cx="256" cy="41" r="26" fill="#dfb277"/>
+  <path d="M2 114c23-18 41-19 59-37 19-20 25-43 45-49 17-5 24 15 35 24 15 12 31 13 46 27 13 12 31 16 57 18l42 9 67 17H2Z" fill="#c9d8d4" fill-opacity=".2"/>
+  <path d="M2 114c23-18 41-19 59-37 19-20 25-43 45-49 17-5 24 15 35 24 15 12 31 13 46 27 13 12 31 16 57 18l42 9 67 17H2Z" fill="url(#engraving)"/>
+  <path d="M3 120c18-5 40-4 62-20 24-16 30-22 53-19 23 2 41 23 72 14 18-5 28-23 45-19 19 4 20 18 39 20 23 2 38-9 55 2l25 22Z" fill="#8ba8aa" fill-opacity=".45"/>
+  <path d="M3 120c18-5 40-4 62-20 24-16 30-22 53-19 23 2 41 23 72 14 18-5 28-23 45-19 19 4 20 18 39 20 23 2 38-9 55 2l25 22" stroke="#b4c6bd" stroke-width="1.3"/>
+  <path d="M9 120c44-3 51-22 90-22 33-1 58 12 88 13 30 2 48-7 76-4 31 4 46 12 88 13" stroke="#e8d7b6" stroke-width="1.7"/>
+  <path d="M34 128h62m12 0h22m33 0h117m12 0h27M63 135h103m68 0h42" stroke="#e8d7b6" stroke-opacity=".56"/>
+  <path d="M109 99V79h8v20m33 7V79h8v28m-52-26v-5h55v5m-53-10c12-2 17-7 25-16 8 9 14 14 26 16Zm8-14c8-2 13-6 17-12 4 6 9 10 17 12m-24 48V91h14v15" stroke="#f1dfbc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 65h31c11 0 14-5 13-8-3-7-16-7-17-1m201 8h44m9 0h32m-72-8h45M167 36h41m-21-7h29" stroke="#e8d7b6" stroke-opacity=".76" stroke-linecap="round"/>
+</svg>

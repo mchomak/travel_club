@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 
 from app.leads.api import router
+from app.leads.private_api import router as private_router
 from app.leads.products import get_product_registry
 
 
@@ -8,6 +9,7 @@ def create_leads_app() -> FastAPI:
     get_product_registry()
     application = FastAPI(title="Travel Club Website Leads", docs_url=None, redoc_url=None)
     application.include_router(router)
+    application.include_router(private_router)
 
     @application.get("/api/leads/health")
     def health():

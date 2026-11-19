@@ -25,14 +25,16 @@ describe("Field Notes carousels", () => {
 });
 
 
-it("offers six chapter indicators for China", () => {
-  render(<FieldNotesCarousel country={0} />);
-  const china = screen.getByRole("region", { name: /China ’25/i });
-  const indicators = within(china).getByRole("navigation", { name: /выбрать главу/i });
-  expect(within(indicators).getAllByRole("button")).toHaveLength(6);
-  expect(china.querySelectorAll('[data-position="after"][inert]')).toHaveLength(10);
-  fireEvent.click(within(indicators).getByRole("button", { name: /санья/i }));
-  expect(within(indicators).getByRole("button", { name: /санья/i })).toHaveAttribute("aria-current", "step");
+it.each([[0, 6], [1, 7], [2, 7]] as const)("keeps inactive chapter panels out of the reading order for trip %s", (country, chapterCount) => {
+  render(<FieldNotesCarousel country={country} />);
+  const region = screen.getByRole("region");
+  const chapters = within(within(region).getByRole("navigation", { name: /главы/i })).getAllByRole("button");
+  expect(chapters).toHaveLength(chapterCount);
+  fireEvent.click(chapters[chapterCount - 1]);
+  expect(chapters[chapterCount - 1]).toHaveAttribute("aria-current", "step");
+  expect(region.querySelectorAll('[aria-hidden="true"][inert]')).toHaveLength((chapterCount - 1) * 2);
+  expect(within(region).getAllByRole("heading", { level: 3 })).toHaveLength(1);
+  expect(region.querySelectorAll("img")).toHaveLength(1);
 });
 
 it.each([[1, "thailand"], [2, "madagascar"]] as const)("links each redesigned trip to its full story", (country, slug) => {

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Map, UserRound } from "lucide-react";
+import { Inbox, Map, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const links = [
+  { href: "/admin/leads", label: "Заявки", Icon: Inbox },
   { href: "/admin/trips", label: "Поездки", Icon: Map },
   { href: "/admin/account", label: "Аккаунт", Icon: UserRound },
 ];

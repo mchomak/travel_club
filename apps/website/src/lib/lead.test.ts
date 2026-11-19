@@ -60,6 +60,13 @@ describe("Website lead data", () => {
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ cache: "no-store", credentials: "same-origin" });
   });
 
+  it("verifies the cookie receipt without putting a token in the URL", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ lead_number: "TC-000123" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(verifyLeadReceipt("", "00112233-4455-4677-8899-aabbccddeeff")).resolves.toBe("TC-000123");
+    expect(fetchMock).toHaveBeenCalledWith("/api/leads/receipt?confirmation=00112233-4455-4677-8899-aabbccddeeff", expect.objectContaining({ credentials: "same-origin", cache: "no-store" }));
+  });
+
   it("keeps an unavailable or expired receipt neutral", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(verifyLeadReceipt("expired")).resolves.toBeNull();

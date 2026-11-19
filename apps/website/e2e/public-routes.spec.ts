@@ -89,12 +89,13 @@ test("a mocked lead submission verifies before showing the thank-you state", asy
     const url = new URL(request.url());
     if (url.pathname.endsWith("/api/leads") && request.method() === "POST") {
       submissions.push(JSON.parse(request.postData() ?? "{}") as Record<string, unknown>);
-      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123", receipt_token: "ui-test-receipt" }) });
+      await route.fulfill({ status: 201, contentType: "application/json", headers: { "set-cookie": "travel_club_receipt=11111111-1111-4111-8111-111111111111.synthetic; HttpOnly; SameSite=Strict; Path=/api/leads/receipt" }, body: JSON.stringify({ lead_number: "TC-000123", confirmation_id: "11111111-1111-4111-8111-111111111111" }) });
       return;
     }
     if (url.pathname.endsWith("/api/leads/receipt") && request.method() === "GET") {
       receiptChecks += 1;
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123" }) });
+      const valid = url.searchParams.get("confirmation") === "11111111-1111-4111-8111-111111111111" && (request.headers().cookie ?? "").includes("travel_club_receipt=11111111-1111-4111-8111-111111111111.synthetic");
+      await route.fulfill({ status: valid ? 200 : 404, contentType: "application/json", body: JSON.stringify(valid ? { lead_number: "TC-000123" } : {}) });
       return;
     }
     if (request.method() !== "GET") {
@@ -114,7 +115,7 @@ test("a mocked lead submission verifies before showing the thank-you state", asy
   await form.getByRole("checkbox", { name: /Согласен/ }).check();
 
   await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
-  await expect(page).toHaveURL(/\/thanks\?receipt=ui-test-receipt$/);
+  await expect(page).toHaveURL(/\/thanks\?confirmation=/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Спасибо");
   await expect(page.getByText("Заявка сохранена. Команда свяжется с вами выбранным способом.")).toBeVisible();
   await expect(page.getByText("TC-000123")).toBeVisible();
@@ -129,14 +130,25 @@ test("a mocked lead submission verifies before showing the thank-you state", asy
   expect(receiptChecks).toBeGreaterThanOrEqual(1);
 });
 
-test("direct thanks visits stay neutral and failed submissions remain on the form", async ({ page }) => {
+test("direct thanks visits stay neutral and a failed submission can be retried with the same key", async ({ page }) => {
   await page.goto("/thanks");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("проверить заявку");
   await expect(page.getByText(/Заявка сохранена/)).toHaveCount(0);
 
+  const attempts: { key: string | undefined; body: string | null }[] = [];
   await page.route("**/api/leads", async (route) => {
-    expect(route.request().method()).toBe("POST");
-    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Database connection failed" }) });
+    const request = route.request();
+    expect(request.method()).toBe("POST");
+    attempts.push({ key: request.headers()["idempotency-key"], body: request.postData() });
+    if (attempts.length === 1) {
+      await route.fulfill({ status: 503, json: { detail: "Database connection failed" } });
+      return;
+    }
+    await route.fulfill({ status: 200, headers: { "set-cookie": "travel_club_receipt=22222222-2222-4222-8222-222222222222.synthetic; HttpOnly; SameSite=Strict; Path=/api/leads/receipt" }, json: { lead_number: "TC-000125", confirmation_id: "22222222-2222-4222-8222-222222222222" } });
+  });
+  await page.route("**/api/leads/receipt?confirmation=22222222-2222-4222-8222-222222222222", async (route) => {
+    const valid = (route.request().headers().cookie ?? "").includes("travel_club_receipt=22222222-2222-4222-8222-222222222222.synthetic");
+    await route.fulfill({ status: valid ? 200 : 404, json: valid ? { lead_number: "TC-000125" } : {} });
   });
   await page.goto("/start");
   const form = page.getByRole("form", { name: "Заявка на поездку", exact: true });
@@ -149,6 +161,48 @@ test("direct thanks visits stay neutral and failed submissions remain on the for
   await expect(form.getByRole("alert")).toContainText("Ваши ответы остались в форме");
   await expect(form.getByLabel("Контакт")).toHaveValue("private_failure@example.test");
   await expect(page.getByText(/Заявка сохранена/)).toHaveCount(0);
+
+  await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
+  await expect(page).toHaveURL(/\/thanks\?confirmation=/);
+  await expect(page.getByText("TC-000125")).toBeVisible();
+  expect(attempts).toHaveLength(2);
+  expect(attempts[0].key).toMatch(/^[\da-f-]{36}$/i);
+  expect(attempts[1]).toEqual(attempts[0]);
+});
+
+test("a later receipt cannot make an earlier tab show the wrong lead", async ({ context, page }) => {
+  const ids = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"];
+  let submitted = 0;
+  await context.route("**/api/leads", async route => {
+    const index = submitted++;
+    const id = ids[index];
+    await route.fulfill({ status: 201, headers: { "set-cookie": `travel_club_receipt=${id}.synthetic; HttpOnly; SameSite=Strict; Path=/api/leads/receipt` }, json: { lead_number: `TC-00012${index + 3}`, confirmation_id: id } });
+  });
+  await context.route("**/api/leads/receipt?**", async route => {
+    const request = route.request();
+    const id = new URL(request.url()).searchParams.get("confirmation");
+    const index = ids.indexOf(id ?? "");
+    const valid = index >= 0 && (request.headers().cookie ?? "").includes(`travel_club_receipt=${id}.synthetic`);
+    await route.fulfill({ status: valid ? 200 : 404, json: valid ? { lead_number: `TC-00012${index + 3}` } : {} });
+  });
+  const second = await context.newPage();
+  for (const tab of [page, second]) {
+    await tab.goto("/start?format=route");
+    await expect(tab.locator('button[type="submit"]')).toBeEnabled();
+    await tab.locator("#lead-contact-method").selectOption("telegram");
+    await tab.locator("#lead-contact").fill("@synthetic_traveler");
+    await tab.locator("#lead-consent").check();
+    await tab.locator('button[type="submit"]').click();
+    await expect(tab.getByText(tab === page ? "TC-000123" : "TC-000124")).toBeVisible();
+  }
+  const cookie = (await context.cookies()).find(item => item.name === "travel_club_receipt");
+  expect(cookie).toMatchObject({ httpOnly: true, sameSite: "Strict", path: "/api/leads/receipt", value: `${ids[1]}.synthetic` });
+  await page.reload();
+  await expect(page.getByText("TC-000124")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("проверить заявку");
+  await second.reload();
+  await expect(second.getByText("TC-000124")).toBeVisible();
+  await second.close();
 });
 
 test("the home photo editor saves, reloads, and resets an IndexedDB image", async ({ page }) => {

@@ -106,12 +106,14 @@ test("lead answers go only to the API and stay out of URL, browser storage, cook
         await route.fulfill({
           status: 201,
           contentType: "application/json",
-          body: JSON.stringify({ lead_number: "TC-000123", receipt_token: "opaque-ui-test-receipt" }),
+          headers: { "set-cookie": "travel_club_receipt=11111111-1111-4111-8111-111111111111.synthetic; HttpOnly; SameSite=Strict; Path=/api/leads/receipt" },
+          body: JSON.stringify({ lead_number: "TC-000123", confirmation_id: "11111111-1111-4111-8111-111111111111" }),
         });
         return;
       }
       if (url.pathname.endsWith("/api/leads/receipt") && request.method() === "GET") {
-        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ lead_number: "TC-000123" }) });
+        const valid = url.searchParams.get("confirmation") === "11111111-1111-4111-8111-111111111111" && (request.headers().cookie ?? "").includes("travel_club_receipt=11111111-1111-4111-8111-111111111111.synthetic");
+        await route.fulfill({ status: valid ? 200 : 404, contentType: "application/json", body: JSON.stringify(valid ? { lead_number: "TC-000123" } : {}) });
         return;
       }
       if (request.method() !== "GET") {
@@ -146,7 +148,12 @@ test("lead answers go only to the API and stay out of URL, browser storage, cook
       expect(containsPersonalAnswer(consoleOutput.join("\n")), `${stage}: console must not contain answers`).toBe(false);
       expect(containsPersonalAnswer(nonSubmissionRequests.map(({ url, body }) => `${url} ${body}`).join("\n")), `${stage}: answers must not go to unrelated requests`).toBe(false);
       expect(mockedSubmissions, `${stage}: only explicit submit may create the mocked API request`).toBe(expectedSubmissions);
-      expect(cookieStateUnchanged, `${stage}: cookies must remain unchanged`).toBe(true);
+      if (expectedSubmissions === 0) expect(cookieStateUnchanged, `${stage}: cookies must remain unchanged`).toBe(true);
+      else {
+        const cookies = await context.cookies();
+        expect(cookies).toContainEqual(expect.objectContaining({ name: "travel_club_receipt", httpOnly: true, sameSite: "Strict", path: "/api/leads/receipt" }));
+        expect(containsPersonalAnswer(JSON.stringify(cookies)), `${stage}: cookies must not contain answers`).toBe(false);
+      }
     }
 
     await channel.selectOption("email");
@@ -157,7 +164,7 @@ test("lead answers go only to the API and stay out of URL, browser storage, cook
     await assertNoBrowserLeak("before submit");
 
     await form.getByRole("button", { name: "Отправить заявку", exact: true }).click();
-    await expect(page).toHaveURL(/\/thanks\?receipt=opaque-ui-test-receipt$/);
+    await expect(page).toHaveURL(/\/thanks\?confirmation=/);
     await expect(page.getByText("Заявка сохранена. Команда свяжется с вами выбранным способом.")).toBeVisible();
     await assertNoBrowserLeak("after submit", 1);
     expect(mockedSubmissions).toBe(1);

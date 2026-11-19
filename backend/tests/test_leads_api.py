@@ -1,7 +1,7 @@
 import asyncio
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -35,6 +35,7 @@ def lead_client(monkeypatch):
     )
     WebsiteBase.metadata.create_all(engine)
     settings = SimpleNamespace(
+        website_lead_form_enabled=True,
         website_allowed_origins=ORIGIN,
         allowed_origins=frozenset({ORIGIN}),
         website_trusted_proxy_cidrs="",
@@ -109,7 +110,10 @@ def test_create_persists_normalized_lead_and_notification_atomically(lead_client
         assert notice.lead_id == lead.id and notice.status == "pending"
         assert idempotency.lead_id == lead.id
 
-    receipt = client.get("/api/leads/receipt", params={"token": result["receipt_token"]})
+    receipt = client.get(
+        "/api/leads/receipt",
+        params={"token": response.cookies["travel_club_receipt"].partition(".")[2]},
+    )
     assert receipt.status_code == 200
     assert receipt.json() == {"lead_number": result["lead_number"]}
 
@@ -165,7 +169,7 @@ def test_idempotency_replays_without_duplicate_and_rejects_changed_payload(lead_
 
     assert first.status_code == 201
     assert replay.status_code == 200
-    assert replay.json() == first.json()
+    assert replay.json()["lead_number"] == first.json()["lead_number"]
     assert mismatch.status_code == 409
     with Session(engine) as session:
         assert len(session.scalars(select(Lead)).all()) == 1
@@ -406,8 +410,11 @@ def test_many_limited_attempts_do_not_grow_rate_event_table(lead_client):
 
 def test_receipt_is_signed_short_lived_and_contains_no_contact(lead_client):
     client, _ = lead_client
-    created = send(client).json()
-    valid = client.get("/api/leads/receipt", params={"token": created["receipt_token"]})
+    created = send(client)
+    valid = client.get(
+        "/api/leads/receipt",
+        params={"token": created.cookies["travel_club_receipt"].partition(".")[2]},
+    )
     forged = client.get("/api/leads/receipt", params={"token": "not-a-token"})
 
     assert valid.status_code == 200
@@ -417,6 +424,7 @@ def test_receipt_is_signed_short_lived_and_contains_no_contact(lead_client):
 
 def test_database_outage_returns_controlled_error_without_personal_data(monkeypatch):
     settings = SimpleNamespace(
+        website_lead_form_enabled=True,
         allowed_origins=frozenset({ORIGIN}),
         website_trusted_proxy_cidrs="",
         website_receipt_secret=SecretStr(RECEIPT_SECRET),
@@ -437,3 +445,105 @@ def test_database_outage_returns_controlled_error_without_personal_data(monkeypa
     assert response.status_code == 503
     assert response.json()["code"] == "LEADS_UNAVAILABLE"
     assert "private@example.test" not in response.text
+
+
+def test_submission_disabled_at_server_even_with_valid_request(lead_client):
+    client, engine = lead_client
+    original = leads_api.get_lead_settings()
+    original.website_lead_form_enabled = False
+    response = send(client)
+    assert response.status_code == 503
+    assert response.json()["message"] == "Форма временно недоступна"
+    with Session(engine) as session:
+        assert session.scalar(select(Lead)) is None
+
+
+def test_public_submission_setting_requires_exact_opt_in():
+    from app.leads.config import LeadSettings
+
+    for value in ("false", "1", "yes", "TRUE", ""):
+        assert LeadSettings(website_lead_form_enabled=value).website_lead_form_enabled is False
+    assert LeadSettings(website_lead_form_enabled="true").website_lead_form_enabled is True
+
+
+def test_receipt_cookie_restores_confirmation_without_exposing_token(lead_client):
+    client, _ = lead_client
+    response = send(client)
+    assert response.status_code == 201
+    assert "receipt_token" not in response.json()
+    cookie = response.headers["set-cookie"]
+    assert "HttpOnly" in cookie and "Secure" in cookie and "SameSite=strict" in cookie
+    assert "Path=/api/leads/receipt" in cookie and "Max-Age=" in cookie
+    token = response.cookies.get("travel_club_receipt")
+    assert token and token not in response.text
+    headers = {"Cookie": f"travel_club_receipt={token}"}
+    for _ in range(2):
+        result = client.get(
+            "/api/leads/receipt", params={"confirmation": response.json()["confirmation_id"]},
+            headers=headers,
+        )
+        assert result.status_code == 200
+        assert result.json() == {"lead_number": response.json()["lead_number"]}
+        assert result.headers["cache-control"] == "no-store"
+    invalid = client.get("/api/leads/receipt", params={"token": "forged"}, headers=headers)
+    assert invalid.status_code == 404
+    assert client.get("/api/leads/receipt", headers=headers).status_code == 404
+    assert client.get(
+        "/api/leads/receipt", params={"confirmation": "?"}, headers=headers
+    ).status_code == 404
+
+
+def test_receipt_rejects_missing_forged_and_expired_cookie(lead_client):
+    client, _ = lead_client
+    assert client.get("/api/leads/receipt").status_code == 404
+    expired = leads_api._receipt_token(
+        uuid4(), datetime.now(UTC) - timedelta(seconds=1), RECEIPT_SECRET
+    )
+    confirmation = str(uuid4())
+    for token in ("forged", expired):
+        result = client.get(
+            "/api/leads/receipt", params={"confirmation": confirmation},
+            headers={"Cookie": f"travel_club_receipt={confirmation}.{token}"},
+        )
+        assert result.status_code == 404
+
+
+def test_idempotent_retry_reissues_receipt_cookie(lead_client):
+    client, _ = lead_client
+    key = str(uuid4())
+    first = send(client, key=key)
+    retry = send(client, key=key)
+    assert retry.status_code == 200
+    assert retry.json()["lead_number"] == first.json()["lead_number"]
+    token = retry.cookies["travel_club_receipt"]
+    verified = client.get(
+        "/api/leads/receipt", params={"confirmation": retry.json()["confirmation_id"]},
+        headers={"Cookie": f"travel_club_receipt={token}"},
+    )
+    assert verified.json() == {"lead_number": first.json()["lead_number"]}
+
+
+def test_local_http_receipt_cookie_is_available_for_development(lead_client):
+    client, _ = lead_client
+    settings = leads_api.get_lead_settings()
+    settings.allowed_origins = frozenset({"http://127.0.0.1:3000"})
+    response = send(client, headers={"Origin": "http://127.0.0.1:3000"})
+    assert response.status_code == 201
+    cookie = response.headers["set-cookie"]
+    assert "Secure" not in cookie and "HttpOnly" in cookie and "SameSite=strict" in cookie
+
+
+def test_two_submissions_never_confirm_the_wrong_tab(lead_client):
+    client, _ = lead_client
+    first = send(client)
+    second = send(client)
+    first_id = first.json()["confirmation_id"]
+    second_id = second.json()["confirmation_id"]
+    assert first_id != second_id
+    cookie = second.cookies["travel_club_receipt"]
+    headers = {"Cookie": f"travel_club_receipt={cookie}"}
+    old_tab = client.get("/api/leads/receipt", params={"confirmation": first_id}, headers=headers)
+    new_tab = client.get("/api/leads/receipt", params={"confirmation": second_id}, headers=headers)
+    assert old_tab.status_code == 404
+    assert new_tab.status_code == 200
+    assert new_tab.json() == {"lead_number": second.json()["lead_number"]}

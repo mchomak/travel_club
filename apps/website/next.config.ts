@@ -14,10 +14,17 @@ const outputFileTracingRoot = isMonorepo
 
 const config: NextConfig = {
   output: "standalone",
+  experimental: { globalNotFound: true },
   ...(outputFileTracingRoot ? { outputFileTracingRoot } : {}),
   assetPrefix: "/_app/website",
   images: { path: "/_app/website/_next/image" },
   poweredByHeader: false,
+  async headers() {
+    return ["/start", "/thanks"].map(source => ({
+      source,
+      headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+    }));
+  },
   async rewrites() {
     return {
       beforeFiles: [{ source: "/_app/website/_next/:path*", destination: "/_next/:path*" }],

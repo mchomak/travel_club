@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 140" fill="none">
+  <defs>
+    <pattern id="engraving" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(29)">
+      <path d="M0 0v6" stroke="#7d3027" stroke-opacity=".23" stroke-width="1.4"/>
+    </pattern>
+    <path id="baobab" d="M-13 119c6-13 7-29 7-51 0-10-5-16-11-22l-16-10-16-1 4-5 11 1-12-11 5-3 15 15 15 8-4-14-12-13 6-2 11 12 7 17 2-12-7-16 6-1 6 13 2 17 9-21 9-8 5 2-9 10-4 18 12-7 9-15 6 1-7 13 15-6 4 4-19 8c-10 6-20 13-20 26 0 22 1 39 6 52Z"/>
+  </defs>
+  <circle cx="264" cy="42" r="28" fill="#d2a052" fill-opacity=".75"/>
+  <path d="M3 117c35-10 65-3 97-14 35-12 45-27 81-27 31 0 35 23 67 21 42-3 74 0 110 20v9H3Z" fill="#b5633f" fill-opacity=".24"/>
+  <path d="M3 117c35-10 65-3 97-14 35-12 45-27 81-27 31 0 35 23 67 21 42-3 74 0 110 20v9H3Z" fill="url(#engraving)"/>
+  <g fill="#a85f44">
+    <use href="#baobab" transform="translate(283 55) scale(.53)"/>
+    <use href="#baobab" transform="translate(211 58) scale(.48)"/>
+    <use href="#baobab" transform="translate(42 48) scale(.59)"/>
+  </g>
+  <g fill="#7d3027">
+    <use href="#baobab" transform="translate(317 34) scale(.73)"/>
+    <use href="#baobab" transform="translate(133 1)"/>
+  </g>
+  <path d="M130 114c4-14 5-32 4-49m-10 43c3-14 3-27 2-38m12 43c-1-15 2-30 3-41" stroke="#d9a780" stroke-opacity=".64" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M5 123c48-7 79-5 113-4 54 1 91-9 135-5 28 2 67 4 102 11M20 132h47m8 0h73m37 0h24m29 0h91" stroke="#7d3027" stroke-width="1.4" stroke-opacity=".8" stroke-linecap="round"/>
+  <path d="m190 34 5-4 6 3 5-3 5 4m-27 10 4-3 4 2 4-2 4 3" stroke="#7d3027" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

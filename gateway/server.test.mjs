@@ -159,6 +159,7 @@ test("routes product pages, API, and namespaced Next assets to their owners", as
     ["/api/leads", "website-leads-api"],
     ["/api/leads/receipt?token=opaque", "website-leads-api"],
     ["/api/leadsmith", "backend"],
+    ["/internal/leads", "website"],
     ["/_app/website/_next/image?url=%2Fhero.jpg&w=1920&q=75", "website"],
     ["/_app/website/_next/static/chunks/app.js", "website"],
     ["/_app/constructor/_next/static/chunks/app.js", "constructor"],

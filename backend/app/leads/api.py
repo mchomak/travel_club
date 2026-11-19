@@ -6,7 +6,8 @@ import json
 import re
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
-from uuid import UUID
+from urllib.parse import urlsplit
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -167,6 +168,26 @@ def _read_receipt_token(token: str, secret: str) -> tuple[UUID, datetime] | None
         return None
 
 
+
+def _lead_response(
+    number: int, token: str, expires_at: datetime, origin: str, status: int
+) -> JSONResponse:
+    confirmation = str(uuid4())
+    response = JSONResponse(
+        {"lead_number": f"TC-{number:06d}", "confirmation_id": confirmation}, status_code=status
+    )
+    max_age = max(0, int((expires_at - datetime.now(UTC)).total_seconds()))
+    parsed_origin = urlsplit(origin)
+    local_http = parsed_origin.scheme == "http" and parsed_origin.hostname in {
+        "localhost", "127.0.0.1", "::1"
+    }
+    response.set_cookie(
+        "travel_club_receipt", f"{confirmation}.{token}", max_age=max_age,
+        path="/api/leads/receipt",
+        secure=not local_http, httponly=True, samesite="strict",
+    )
+    return response
+
 def _advisory_lock(session: Session, digests: list[bytes]) -> None:
     if session.bind is None or session.bind.dialect.name != "postgresql":
         return
@@ -210,6 +231,8 @@ def _record_rate_attempt(session: Session, client_digest: bytes, now: datetime) 
 @router.post("")
 async def create_lead(request: Request, session: DB):
     settings = get_lead_settings()
+    if not settings.website_lead_form_enabled:
+        return public_error(503, "LEADS_UNAVAILABLE", "Форма временно недоступна")
     origin = request.headers.get("origin")
     allowed_origins = settings.allowed_origins
     if not allowed_origins or origin not in allowed_origins:
@@ -297,10 +320,7 @@ async def create_lead(request: Request, session: DB):
                 else:
                     session.rollback()
                 receipt = _receipt_token(lead.id, receipt_expiry, receipt_secret)
-                return JSONResponse(
-                    {"lead_number": f"TC-{lead.number:06d}", "receipt_token": receipt},
-                    status_code=200,
-                )
+                return _lead_response(lead.number, receipt, receipt_expiry, origin, 200)
 
         if rate_limited:
             session.rollback()
@@ -331,9 +351,7 @@ async def create_lead(request: Request, session: DB):
         )
         session.commit()
         token = _receipt_token(lead.id, now + RECEIPT_TTL, receipt_secret)
-        return JSONResponse(
-            {"lead_number": f"TC-{lead.number:06d}", "receipt_token": token}, status_code=201
-        )
+        return _lead_response(lead.number, token, now + RECEIPT_TTL, origin, 201)
     except SQLAlchemyError:
         session.rollback()
         return public_error(
@@ -342,7 +360,21 @@ async def create_lead(request: Request, session: DB):
 
 
 @router.get("/receipt")
-def get_receipt(token: str, session: DB):
+def get_receipt(
+    request: Request, session: DB, token: str | None = None, confirmation: str | None = None
+):
+    # Explicit legacy tokens take precedence, including invalid ones.
+    if token is None:
+        cookie_confirmation, separator, cookie_token = request.cookies.get(
+            "travel_club_receipt", ""
+        ).partition(".")
+        if (
+            not separator or not confirmation or not IDEMPOTENCY_KEY.fullmatch(confirmation)
+            or not IDEMPOTENCY_KEY.fullmatch(cookie_confirmation)
+            or not hmac.compare_digest(confirmation, cookie_confirmation)
+        ):
+            return public_error(404, "RECEIPT_NOT_FOUND", "Подтверждение не найдено")
+        token = cookie_token
     if len(token) > 256:
         return public_error(404, "RECEIPT_NOT_FOUND", "Подтверждение не найдено")
     secret = get_lead_settings().website_receipt_secret.get_secret_value()

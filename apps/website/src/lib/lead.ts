@@ -85,7 +85,7 @@ export function validateLeadSubmission(input: {
   return errors;
 }
 
-export type CreatedLead = { lead_number: string; receipt_token: string };
+export type CreatedLead = { lead_number: string; confirmation_id: string };
 
 function validationInstruction(field: keyof LeadErrors, method: ContactMethod): string {
   if (field === "contact_method") return "Выберите удобный способ связи из списка.";
@@ -162,19 +162,19 @@ export async function createLead(submission: LeadSubmission, idempotencyKey: str
   } catch {
     throw new Error("Сервис вернул неполный ответ. Ответьте на форму ещё раз чуть позже.");
   }
-  if (!payload || typeof payload !== "object" || !("lead_number" in payload) || !("receipt_token" in payload)) {
+  if (!payload || typeof payload !== "object" || !("lead_number" in payload) || !("confirmation_id" in payload)) {
     throw new Error("Сервис вернул неполный ответ. Ответьте на форму ещё раз чуть позже.");
   }
-  const result = payload as { lead_number: unknown; receipt_token: unknown };
-  if (typeof result.lead_number !== "string" || typeof result.receipt_token !== "string") {
+  const result = payload as { lead_number: unknown; confirmation_id: unknown };
+  if (typeof result.lead_number !== "string" || typeof result.confirmation_id !== "string" || !/^[0-9a-f-]{36}$/iu.test(result.confirmation_id)) {
     throw new Error("Сервис вернул неполный ответ. Ответьте на форму ещё раз чуть позже.");
   }
-  return { lead_number: result.lead_number, receipt_token: result.receipt_token };
+  return { lead_number: result.lead_number, confirmation_id: result.confirmation_id };
 }
 
-export async function verifyLeadReceipt(token: string): Promise<string | null> {
+export async function verifyLeadReceipt(token: string, confirmation = ""): Promise<string | null> {
   try {
-    const response = await fetch(`/api/leads/receipt?token=${encodeURIComponent(token)}`, {
+    const response = await fetch(token ? `/api/leads/receipt?token=${encodeURIComponent(token)}` : `/api/leads/receipt?confirmation=${encodeURIComponent(confirmation)}`, {
       method: "GET",
       credentials: "same-origin",
       cache: "no-store",

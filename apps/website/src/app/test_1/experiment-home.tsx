@@ -62,12 +62,15 @@ export function ExperimentHome() {
 
       <section className={s.fieldNotesIntro} id="field-notes" aria-labelledby="field-notes-title">
         <div className={s.wrap}>
-          <div className={s.sectionBar}><span>TRAVEL CLUB / FIELD NOTES</span><span>До публичного запуска</span></div>
           <div className={s.fieldNotesGrid}>
-            <h2 id="field-notes-title"><EditorialSymbol name="note" />FIELD<br />NOTES.</h2>
+            <h2 id="field-notes-title">Наши<br /><em>поездки.</em></h2>
             <div><p className={s.serifLead}>Сначала мы просто ездили сами.</p><p>С друзьями строили маршруты, исследовали новые места и учились находить баланс между планом и спонтанностью. Из этих путешествий постепенно вырос Travel Club.</p></div>
           </div>
-          <div className={s.fieldNotesFooter}><span>Поездки друзей до запуска TC</span><span>CHINA ’25 ↓</span></div>
+          <nav className={experiment.tripIndex} aria-label="Истории поездок">
+            <a href="#field-note-china">Китай <Arrow /></a>
+            <a href="#field-note-thailand">Таиланд <Arrow /></a>
+            <a href="#field-note-madagascar">Мадагаскар <Arrow /></a>
+          </nav>
         </div>
       </section>
 

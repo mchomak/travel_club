@@ -8,28 +8,28 @@ import { EditorialLabel } from "./primitives";
 
 type ReceiptState = { kind: "checking" } | { kind: "confirmed"; number: string } | { kind: "unverified" };
 
-export function ThanksConfirmation({ token }: { token: string }) {
-  const [receiptState, setReceiptState] = useState<{ token: string; receipt: ReceiptState }>(() => ({
+export function ThanksConfirmation({ token, confirmation = "" }: { token: string; confirmation?: string }) {
+  const [receiptState, setReceiptState] = useState<{ token: string; confirmation: string; receipt: ReceiptState }>(() => ({
     token,
-    receipt: token ? { kind: "checking" } : { kind: "unverified" },
+    confirmation,
+    receipt: { kind: "checking" },
   }));
-  const receipt = receiptState.token === token
+  const receipt = receiptState.token === token && receiptState.confirmation === confirmation
     ? receiptState.receipt
-    : token ? { kind: "checking" as const } : { kind: "unverified" as const };
+    : { kind: "checking" as const };
 
   useEffect(() => {
     let active = true;
-    if (!token) return () => { active = false; };
-    void verifyLeadReceipt(token).then((number) => {
-      if (active) setReceiptState({ token, receipt: number ? { kind: "confirmed", number } : { kind: "unverified" } });
+    void verifyLeadReceipt(token, confirmation).then((number) => {
+      if (active) setReceiptState({ token, confirmation, receipt: number ? { kind: "confirmed", number } : { kind: "unverified" } });
     });
     return () => { active = false; };
-  }, [token]);
+  }, [token, confirmation]);
 
   const isConfirmed = receipt.kind === "confirmed";
   const isChecking = receipt.kind === "checking";
 
-  return <div className={`${s.container} ${s.noticePage}`}>
+  return <div className={`${s.container} ${s.noticePage} ym-hide-content`}>
     <div className={s.noticeMark} aria-hidden="true">↗</div>
     <div className={s.noticeCopy} aria-live="polite" aria-busy={isChecking}>
       <EditorialLabel>{isConfirmed ? "ЗАЯВКА / ПРИНЯТА" : isChecking ? "ЗАЯВКА / ПРОВЕРКА" : "ЗАЯВКА / СТАТУС НЕИЗВЕСТЕН"}</EditorialLabel>

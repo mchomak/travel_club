@@ -4,7 +4,7 @@ This document describes the public `/start` submission path, isolated Website le
 
 ## Architecture and data boundaries
 
-The Website form sends JSON to `POST /api/leads` through the gateway. The gateway forwards `/api/leads/**` to a Website-only FastAPI process built from the existing backend image and codebase. That process validates and normalizes the request, writes to the Website leads database, and queues a Telegram notification in the same database transaction. A separate Compose worker polls and sends queued notifications. The public success page verifies a short-lived signed receipt through `GET /api/leads/receipt?token=...`; the token contains no contact information. If the database write fails, the API does not issue a receipt. Telegram delivery failure does not remove the saved lead.
+The Website form sends JSON to `POST /api/leads` through the gateway. The gateway forwards `/api/leads/**` to a Website-only FastAPI process built from the existing backend image and codebase. That process validates and normalizes the request, writes to the Website leads database, and queues a Telegram notification in the same database transaction. A separate Compose worker polls and sends queued notifications. The public success page verifies a short-lived signed receipt through `GET /api/leads/receipt?confirmation=...`, matching the opaque confirmation ID to an HttpOnly cookie; the token contains no contact information. Legacy links with `?token=...` remain supported. If the database write fails, the API does not issue a receipt. Telegram delivery failure does not remove the saved lead.
 
 Lead records live in the `travel_club_website` database on a dedicated PostgreSQL service named `website-postgres` with its own `website_postgres_data` volume. It has no published host port. This is a separate PostgreSQL instance from the shared Constructor and Interviews database service. It has three isolated roles:
 
@@ -22,7 +22,7 @@ The Website database schema is managed by the separate `backend/website_alembic.
 
 The public form and Website API use the shared product catalogue in `shared/website-products.json`, so the browser and server accept the same IDs and labels. Product IDs become durable references as soon as a lead is saved: never delete or rename a saved ID. To stop offering a product, retain its ID and label and mark it `available: false`; older leads and notifications still need the original product identity.
 
-`POST /api/leads` accepts `application/json` with the fields `product_id`, `contact_method`, `contact_value`, optional `name`, optional `message`, `source`, consent, and the honeypot field. The browser sends a UUID `Idempotency-Key` header. A successful response contains a lead number and a short-lived receipt token. The receipt endpoint returns only the lead number after validating that token.
+`POST /api/leads` accepts `application/json` with the fields `product_id`, `contact_method`, `contact_value`, optional `name`, optional `message`, `source`, consent, and the honeypot field. The browser sends a UUID `Idempotency-Key` header. A successful response contains a lead number and an opaque confirmation ID, and sets the short-lived `travel_club_receipt` HttpOnly, SameSite=Strict cookie scoped to `/api/leads/receipt` (Secure for HTTPS, at most 30 minutes). The receipt endpoint returns only the lead number after matching the confirmation ID to that cookie; a valid receipt remains available after reloading `/thanks?confirmation=...` until expiry. A later submission replaces the cookie; reloading an earlier confirmation cannot show the newer lead. Legacy `?token=...` links remain supported.
 
 The server accepts only configured product identifiers and the supported contact methods. It rejects unexpected fields, invalid types, overlong values, malformed JSON, non-JSON content types, disallowed origins, bodies above 16 KiB, missing consent, and invalid contacts. It limits requests to three per minute and twenty per day per HMAC-derived network identity. For the Website leads route, the gateway replaces `X-Forwarded-For` with the socket peer address unless that immediate peer belongs to `GATEWAY_TRUSTED_PROXY_CIDRS`. For a trusted proxy, it walks the forwarded chain from right to left and skips configured proxies before choosing the client address. The Website API then accepts that canonical address only when its immediate peer matches `WEBSITE_TRUSTED_PROXY_CIDRS` (the gateway's exact source range). Leave either setting blank unless the corresponding proxy source is known and controlled. Other application routes retain their existing forwarding headers.
 
@@ -80,7 +80,7 @@ docker compose -p travel-club-leads-check-run2 -f compose.yaml -f compose.websit
 
 Do not add `down -v` to these commands; the check project's volume is independent from the developer and preview volumes.
 
-The private API access log is disabled so the signed receipt token in the query string is not written to container logs. The gateway also does not log request URLs or bodies.
+The private API access log is disabled so legacy signed receipt tokens in query strings are not written to container logs. The gateway also does not log request URLs or bodies.
 
 The CLI runs inside the backend container using the application role. Access to Docker and the backend container is privileged. The `status` command accepts `new`, `in_progress`, or `closed`; `retry` requeues notification delivery without creating a new lead.
 
@@ -123,3 +123,26 @@ Confirm the restored schema and records using the CLI against that isolated data
 - Verify API validation, idempotent retry, unauthorized lead access, database outage behavior, Telegram outage/retry, and receipt expiration.
 - Create a backup and successfully restore it into a disposable database before launch.
 - Review application and proxy logs to confirm contact values, messages, tokens, and database credentials are absent.
+
+## Website analytics: prepared, not approved for activation
+
+The Website contains a disabled-by-default Yandex Metrika integration for counter `114346486`. `NEXT_PUBLIC_YANDEX_METRIKA_ENABLED` is a build-time setting. Setting it to `true` loads the provider on a clean public entry when the referrer is empty or a clean same-origin non-private URL. **Do not enable it yet**: draft legal documents and the privacy limitations below block launch. It is independent of the form publication switch; neither switch implies approval of the other.
+
+The local Compose Website build and separately built preview image receive this build argument, defaulting to `false`. Setting an environment variable on an already built container does not change the compiled flag.
+
+The `/start` and `/thanks` routes have a separate layout without the provider. Public-to-private navigation performs a full document load, and lead events are not sent to analytics. Public entries with a query, hash, external referrer, or private or parameterized referrer do not initialize it. Private responses use `Referrer-Policy: no-referrer`; after following a clean link from a private page, the referrer is empty and the public page may initialize the counter. These measures do not prevent a script already running on a public page from reading later URL or document changes.
+
+**Privacy blocker:** the real vendor script has been observed reading the actual URL independently of sanitized hit arguments. It can continue running through client-side navigation and access URL, history and document state. Do not activate until the architecture protects sensitive information across all entry and navigation paths and browser tests using the real provider and decoded active replay payloads establish the required protection. The opt-in real-tag diagnostic intercepts external traffic and uses synthetic values; it cannot verify compressed or binary replay payloads or prove an active Webvisor recording. Consult the [SPA tag documentation](https://yandex.com/support/metrica/en/code/counter-spa-setup) and [Webvisor privacy controls](https://yandex.com/support/metrica/en/webvisor/settings).
+
+The integration does not retrieve visit counts for the admin area; view actual statistics in the authorized Metrika account. Ad blockers, disabled JavaScript, storage restrictions, and unsupported routes can reduce or omit measured visits and events.
+
+
+## Internal lead dashboard
+
+`/admin/leads` requires an active administrator session. Constructor validates that session on every read and status update, then calls the isolated Website API over the private network. The Website API requires `WEBSITE_ADMIN_SECRET` on every private request; `/internal/leads` is not routed to the Website API by the public gateway. The internal backend never receives Website database credentials.
+
+`python scripts/init_env.py` generates an independent random `WEBSITE_ADMIN_SECRET` in the local ignored `.env` without printing or replacing an existing value. Compose passes that value to both services and clears it from the internal backend. For deployment, provide the same independently generated random secret (at least 32 characters) through the deployment secret manager or protected Compose environment. Keep it out of source control, images, client-side variables and logs. Both Compose manifests inject it only into Constructor and Website API. Leave it empty to disable the dashboard; rotate it in both services together. Restart those services after a change. The dashboard also requires the `website-leads` profile. For standalone development set `WEBSITE_LEADS_API_URL` to the private Website API address and provide the same secret to both processes. Protect the private network and use TLS when traffic crosses a host boundary.
+
+The list is paginated in groups of 50. Counts cover all persisted leads; notification state reflects the outbox and does not prove receipt by a person. Sources are the existing fixed categories `home`, `formats`, `service`, and `unknown`; no campaign attribution is collected.
+
+Public submission is disabled by default at the Website API as well as the form. After documents are approved and the launch is authorized, set `WEBSITE_LEAD_FORM_ENABLED=true` for both Website and Website API and restart them. A direct POST cannot bypass the API gate; disabling it does not prevent access to existing receipts or the internal dashboard.

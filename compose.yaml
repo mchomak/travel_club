@@ -43,6 +43,7 @@ services:
         shared: ./shared
     env_file: .env
     environment:
+      WEBSITE_ADMIN_SECRET: ""
       POSTGRES_HOST: postgres
       WEBSITE_DATABASE_URL: ""
       WEBSITE_MIGRATION_DATABASE_URL: ""
@@ -131,6 +132,8 @@ services:
       - path: .env.website
         required: false
     environment:
+      WEBSITE_LEAD_FORM_ENABLED: ${WEBSITE_LEAD_FORM_ENABLED:-false}
+      WEBSITE_ADMIN_SECRET: ${WEBSITE_ADMIN_SECRET:-}
       POSTGRES_USER: ""
       POSTGRES_DB: ""
       POSTGRES_PASSWORD: ""
@@ -161,8 +164,10 @@ services:
         APP: website
         BACKEND_URL: http://backend:8000
         WEBSITE_LEADS_API_URL: http://website-api:8001
+        NEXT_PUBLIC_YANDEX_METRIKA_ENABLED: ${NEXT_PUBLIC_YANDEX_METRIKA_ENABLED:-false}
         NEXT_ASSET_PREFIX: /_app/website/_next
     environment:
+      WEBSITE_LEAD_FORM_ENABLED: ${WEBSITE_LEAD_FORM_ENABLED:-false}
       BACKEND_URL: http://backend:8000
       WEBSITE_LEADS_API_URL: http://website-api:8001
       HOSTNAME: 0.0.0.0
@@ -188,6 +193,8 @@ services:
         NEXT_ASSET_PREFIX: /_app/constructor/_next
         NEXT_PUBLIC_INTERVIEWS_URL: ""
     environment:
+      WEBSITE_ADMIN_SECRET: ${WEBSITE_ADMIN_SECRET:-}
+      WEBSITE_LEADS_API_URL: http://website-api:8001
       BACKEND_URL: http://backend:8000
       HOSTNAME: 0.0.0.0
       NEXT_ASSET_PREFIX: /_app/constructor/_next

@@ -1,0 +1,213 @@
+.story {
+  --section-bg: var(--tc-china-bg);
+  --section-text: var(--tc-china-text);
+  --section-heading: var(--tc-china-heading);
+  --section-link: var(--tc-china-link);
+  --section-accent: var(--tc-china-accent);
+  --journal-rule: color-mix(in srgb, var(--section-accent) 28%, transparent);
+  --journal-muted: color-mix(in srgb, var(--section-text) 78%, var(--section-bg));
+  --journal-gutter: var(--tc-container-gutter-wide);
+  --journal-art: url("/website/assets/brand/journal-china.svg");
+  padding-block: clamp(var(--tc-space-8), 5.5vw, 80px);
+  background-color: var(--section-bg);
+  color: var(--section-text);
+}
+
+.story[data-country="thailand"] {
+  --section-bg: var(--tc-thailand-bg);
+  --section-text: var(--tc-thailand-text);
+  --section-heading: var(--tc-thailand-heading);
+  --section-link: var(--tc-thailand-link);
+  --section-accent: var(--tc-thailand-accent);
+  --journal-art: url("/website/assets/brand/journal-thailand.svg");
+}
+
+.story[data-country="madagascar"] {
+  --section-bg: var(--tc-madagascar-bg);
+  --section-text: var(--tc-madagascar-text);
+  --section-heading: var(--tc-madagascar-heading);
+  --section-link: var(--tc-madagascar-link);
+  --section-accent: var(--tc-madagascar-accent);
+  --journal-art: url("/website/assets/brand/journal-madagascar.svg");
+}
+
+.wrap {
+  width: min(calc(100% - var(--journal-gutter)), var(--tc-container-max));
+  margin-inline: auto;
+}
+
+.masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .46fr);
+  align-items: center;
+  gap: var(--tc-space-6);
+  margin-bottom: clamp(var(--tc-space-6), 4vw, var(--tc-space-12));
+}
+
+.story .masthead h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 .22em;
+  color: var(--section-heading);
+  font: var(--tc-weight-medium) clamp(2.5rem, 6.3vw, 6rem)/1 var(--tc-font-display);
+  letter-spacing: -.04em;
+}
+
+.masthead h2 span {
+  font-size: .38em;
+  letter-spacing: -.02em;
+}
+
+.masthead p {
+  margin-top: var(--tc-space-3);
+  color: var(--journal-muted);
+  font-size: var(--tc-size-subheading);
+}
+
+.illustration {
+  justify-self: end;
+  width: min(100%, 350px);
+  aspect-ratio: 360 / 140;
+  background: var(--journal-art) center / contain no-repeat;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tc-space-2) var(--tc-space-6);
+  border-block: var(--tc-border-width) solid var(--journal-rule);
+  margin-bottom: clamp(var(--tc-space-5), 3vw, var(--tc-space-10));
+  padding-block: var(--tc-space-2);
+}
+
+.chapters, .controls {
+  display: flex;
+  align-items: center;
+  column-gap: var(--tc-space-2);
+}
+
+.chapters { flex-wrap: wrap; }
+.controls { flex: none; }
+
+.story .navigation button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--tc-space-2);
+  color: var(--section-text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.story .chapters button {
+  text-align: start;
+  font-size: var(--tc-size-caption);
+  font-weight: var(--tc-weight-bold);
+  border-bottom: 2px solid transparent;
+}
+
+.story .chapters button[aria-current] {
+  border-color: var(--section-accent);
+  color: var(--section-heading);
+}
+
+.story .navigation button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--section-accent) 12%, transparent);
+}
+
+.story .controls button {
+  width: 44px;
+  border: var(--tc-border-width) solid var(--journal-rule);
+  border-radius: 50%;
+}
+
+.controls button:disabled { opacity: .4; cursor: default; }
+.controls svg { width: 19px; height: 19px; }
+.controls span { white-space: nowrap; font-size: var(--tc-size-metadata); font-variant-numeric: tabular-nums; }
+
+.slide {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  grid-template-areas: "copy photo";
+  gap: clamp(var(--tc-space-6), 5vw, 88px);
+  align-items: start;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* All panels share one grid cell so the longest chapter sets the height. */
+.figureStack, .copyStack { display: grid; min-width: 0; }
+.figureStack { grid-area: photo; }
+.copyStack { grid-area: copy; }
+.panel { grid-area: 1 / 1; min-width: 0; }
+.panel[aria-hidden="true"] { visibility: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel[aria-hidden="false"] { animation: reveal 240ms ease-out; }
+  @keyframes reveal {
+    from { opacity: .55; }
+    to { opacity: 1; }
+  }
+}
+
+.story .copyStack h3 {
+  color: var(--section-heading);
+  margin-bottom: var(--tc-space-5);
+  text-wrap: pretty;
+}
+
+.copyStack p + p { margin-top: var(--tc-space-3); }
+
+.story .facts {
+  display: grid;
+  gap: var(--tc-space-3);
+  padding-top: var(--tc-space-4);
+  border-top: var(--tc-border-width) solid var(--journal-rule);
+  margin-top: var(--tc-space-6);
+  font-size: var(--tc-size-caption);
+}
+
+.facts dt { font-weight: var(--tc-weight-bold); }
+.facts dd { margin-top: var(--tc-space-1); color: var(--journal-muted); }
+
+.photo {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--section-accent) 14%, var(--section-bg));
+}
+
+.story .figure figcaption { color: var(--journal-muted); text-wrap: pretty; }
+.story .figure a { text-decoration: underline; }
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tc-space-2) var(--tc-space-6);
+  border-top: var(--tc-border-width) solid var(--journal-rule);
+  margin-top: clamp(var(--tc-space-6), 4vw, var(--tc-space-12));
+  padding-top: var(--tc-space-3);
+}
+
+.footer p { color: var(--journal-muted); font-size: var(--tc-size-caption); }
+.footer a { display: inline-flex; gap: var(--tc-space-2); align-items: center; min-height: 44px; font-weight: var(--tc-weight-bold); }
+.story .footer a svg { width: 17px; height: 17px; }
+
+@media (max-width: 1024px) {
+  .story { --journal-gutter: var(--tc-container-gutter-tablet); }
+}
+
+@media (max-width: 760px) {
+  .story { --journal-gutter: var(--tc-container-gutter-mobile); }
+  .masthead { grid-template-columns: minmax(0, 1fr); gap: var(--tc-space-3); }
+  .illustration { grid-row: 1; width: clamp(150px, 47%, 225px); }
+  .story .masthead h2 { font-size: clamp(2rem, 8.4vw, 4rem); }
+  .navigation { flex-wrap: wrap; }
+  .controls { margin-inline-start: auto; }
+  .slide { grid-template-columns: minmax(0, 1fr); grid-template-areas: "photo" "copy"; }
+  .footer { flex-wrap: wrap; }
+}

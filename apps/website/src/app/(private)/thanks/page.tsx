@@ -8,8 +8,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default async function ThanksPage({ searchParams }: { searchParams: Promise<{ receipt?: string | string[] }> }) {
+export default async function ThanksPage({ searchParams }: { searchParams: Promise<{ receipt?: string | string[]; confirmation?: string | string[] }> }) {
   const params = await searchParams;
   const token = typeof params.receipt === "string" ? params.receipt : "";
-  return <ThanksConfirmation token={token} />;
+  const confirmation = typeof params.confirmation === "string" ? params.confirmation : "";
+  return <ThanksConfirmation token={token} confirmation={confirmation} />;
 }

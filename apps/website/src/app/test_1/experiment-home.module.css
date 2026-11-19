@@ -16,6 +16,21 @@
   background: transparent;
 }
 
+.tripIndex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tc-space-8);
+  border-top: var(--tc-border-width) solid var(--tc-field-notes-line);
+  padding-top: var(--tc-space-2);
+}
+
+.tripIndex a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tc-space-2);
+  min-height: 44px;
+}
+
 @media (max-width: 820px) {
   .hero > div:last-child { padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
 }

@@ -38,6 +38,7 @@ def test_simultaneous_same_idempotency_key_creates_one_lead_and_one_outbox(monke
         "TestLeadSettings",
         (),
         {
+            "website_lead_form_enabled": True,
             "website_receipt_secret": SecretStr(receipt_secret),
             "website_rate_limit_secret": SecretStr(rate_secret),
             "website_trusted_proxy_cidrs": "127.0.0.1/32",

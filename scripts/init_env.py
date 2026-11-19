@@ -1,7 +1,7 @@
 """Generate local database credentials without printing or overwriting existing files."""
 import argparse
-from pathlib import Path
 import secrets
+from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 
@@ -20,7 +20,7 @@ def create_if_missing(target: Path, contents: str, message: str) -> bool:
 
 def extend_missing_settings(target: Path, contents: str) -> None:
     # Keep prior values intact while adding settings introduced by newer releases.
-    # Environment files are never printed and root .env is never read here.
+    # Environment file contents are never printed.
     existing = target.read_text(encoding="utf-8")
     existing_keys = {
         line.split("=", 1)[0]
@@ -73,11 +73,15 @@ def main() -> None:
 
     env_target = root / ".env"
     env_template = (root / ".env.example").read_text(encoding="utf-8")
-    create_if_missing(
+    admin_setting = "WEBSITE_ADMIN_SECRET=" + secrets.token_urlsafe(48) + "\n"
+    created_env = create_if_missing(
         env_target,
-        env_template.replace("replace-locally", secrets.token_urlsafe(48)),
+        env_template.replace("replace-locally", secrets.token_urlsafe(48)) + "\n" + admin_setting,
         "Created local .env. No administrator account has been created.",
     )
+
+    if not created_env:
+        extend_missing_settings(env_target, admin_setting)
 
     website_target = root / ".env.website"
     website_template = (root / ".env.website.example").read_text(encoding="utf-8")

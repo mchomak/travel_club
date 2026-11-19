@@ -5,11 +5,12 @@ import { StartForm } from "./start-form";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
-afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe("Start form", () => {
   it("starts without a product on the general CTA and accepts the full product list", async () => {
     render(<StartForm source="home" />);
+    expect(screen.getByRole("form")).toHaveClass("ym-hide-content", "ym-disable-keys");
     const product = screen.getByLabelText("Что вам интересно?");
     expect(product).toHaveValue("");
     expect(product.querySelectorAll("option")).toHaveLength(6);
@@ -44,12 +45,12 @@ describe("Start form", () => {
     expect(screen.getByLabelText("Контакт")).toHaveAttribute("placeholder", "name@example.com");
   });
 
-  it("submits a validated application and navigates only with the opaque receipt token", async () => {
+  it("submits a validated application and navigates without putting a receipt token in the URL", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 201,
-      json: async () => ({ lead_number: "TC-000123", receipt_token: "opaque-signed-token" }),
+      json: async () => ({ lead_number: "TC-000123", confirmation_id: "00112233-4455-4677-8899-aabbccddeeff" }),
     });
     vi.stubGlobal("fetch", fetchMock);
     render(<StartForm source="formats" initialProduct="route" />);
@@ -61,7 +62,7 @@ describe("Start form", () => {
     await user.click(screen.getByRole("checkbox", { name: /Согласен/ }));
     await user.click(screen.getByRole("button", { name: "Отправить заявку" }));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/thanks?receipt=opaque-signed-token"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/thanks?confirmation=00112233-4455-4677-8899-aabbccddeeff"));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("/api/leads");
@@ -94,6 +95,20 @@ describe("Start form", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Ваши ответы остались в форме");
     expect(screen.getByLabelText("Контакт")).toHaveValue("@traveler");
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("uses the new receipt even when storage is unavailable", async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem("travel-club-lead-receipt", "old-receipt");
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage full"); });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({ lead_number: "TC-000124", confirmation_id: "00112233-4455-4677-8899-aabbccddeeff" }) }));
+    render(<StartForm source="home" initialProduct="route" />);
+    await user.selectOptions(screen.getByLabelText("Предпочтительный способ связи"), "email");
+    await user.type(screen.getByLabelText("Контакт"), "person@example.com");
+    await user.click(screen.getByRole("checkbox", { name: /Согласен/ }));
+    await user.click(screen.getByRole("button", { name: "Отправить заявку" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/thanks?confirmation=00112233-4455-4677-8899-aabbccddeeff"));
+    setItem.mockRestore();
   });
 
   it("shows actionable server email validation and keeps the entered address", async () => {

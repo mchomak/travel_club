@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +9,8 @@ class LeadSettings(BaseSettings):
 
     model_config = SettingsConfigDict(extra="ignore")
 
+    website_lead_form_enabled: bool = False
+    website_admin_secret: SecretStr = SecretStr("")
     website_database_url: SecretStr = SecretStr("")
     website_receipt_secret: SecretStr = SecretStr("")
     website_rate_limit_secret: SecretStr = SecretStr("")
@@ -16,6 +18,11 @@ class LeadSettings(BaseSettings):
     website_trusted_proxy_cidrs: str = ""
     telegram_bot_token: SecretStr = SecretStr("")
     telegram_leads_chat_id: str = ""
+
+    @field_validator("website_lead_form_enabled", mode="before")
+    @classmethod
+    def exact_opt_in(cls, value):
+        return value is True or value == "true"
 
     @property
     def allowed_origins(self) -> frozenset[str]:
