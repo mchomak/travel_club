@@ -19,11 +19,20 @@ const config: NextConfig = {
   assetPrefix: "/_app/website",
   images: { path: "/_app/website/_next/image" },
   poweredByHeader: false,
+  logging: { incomingRequests: { ignore: [/^\/(?:api\/public\/trips|trip)(?:\/|$)/] } },
   async headers() {
-    return ["/start", "/thanks"].map(source => ({
+    const privateHeaders = ["/start", "/thanks"].map(source => ({
       source,
       headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
     }));
+    return [...privateHeaders, {
+      source: "/trip/:path*",
+      headers: [
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Cache-Control", value: "private, no-store" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+      ],
+    }];
   },
   async rewrites() {
     return {

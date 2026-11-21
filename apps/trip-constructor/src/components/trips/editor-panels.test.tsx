@@ -7,6 +7,17 @@ import { calculateTrip } from "@/lib/pricing";
 
 afterEach(cleanup);
 
+test("reopens the selected day photo and allows removing it", async () => {
+  const onSave = vi.fn(), user = userEvent.setup();
+  const day = { ...emptyDay("2026-10-01"), photo_id: "thai-train" };
+  render(<DayForm day={day} onSave={onSave} onCancel={() => {}} />);
+  const photo = screen.getByRole("combobox", { name: "Фото дня" });
+  expect(photo).toHaveValue("thai-train");
+  await user.selectOptions(photo, "");
+  await user.click(screen.getByRole("button", { name: "Сохранить день" }));
+  expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ photo_id: null }));
+});
+
 test('pending transfer cost marks the estimate incomplete and opens the normal price editor',async()=>{
  const day=emptyDay('2026-10-01'),item={...newItem('transfer',day,'RUB',day.date),title:'Такси 1',included:false,price_pending:true};
  const trip={...newTrip(),start_date:day.date,end_date:day.date,days:[day],items:[item],rates:[]},open=vi.fn();

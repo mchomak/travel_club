@@ -1,7 +1,9 @@
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 
-const standalone = ".next/standalone";
+const output = ".next/standalone";
+const standalone = existsSync(`${output}/apps/trip-constructor/server.js`)
+  ? `${output}/apps/trip-constructor` : output;
 const staticAssets = ".next/static";
 if (existsSync(staticAssets)) {
   mkdirSync(`${standalone}/.next`, { recursive: true });

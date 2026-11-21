@@ -10,6 +10,13 @@ server {
         try_files $uri =404;
     }
 
+    # Capability URLs must stay out of access logs and request context in errors.
+    location ~* ^/(?:trip|api/public/trips)(?:/|$) {
+        access_log off;
+        error_log /dev/null;
+        return 308 https://@SERVER_NAME@:@HTTPS_PORT@$request_uri;
+    }
+
     location / {
         return 308 https://@SERVER_NAME@:@HTTPS_PORT@$request_uri;
     }

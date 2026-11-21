@@ -6,6 +6,10 @@ Public Next.js application for the company website. Its source, routes, approved
 
 Current application routes include `/`, `/formats`, `/services/route`, `/services/turnkey`, `/tours`, `/payment`, `/archive`, `/start`, `/thanks`, `/legal`, `/privacy`, and `/personal-data`. There are no `/archive/[slug]` or `/tours/[slug]` detail routes in this app at this revision.
 
+The unlisted `/trip/[token]` route displays a client's current saved itinerary. It reads the public FastAPI projection from `BACKEND_URL` on each request. The route lives in the analytics-free private layout and serves no-store, noindex and no-referrer response headers.
+
+The overview and the signed-in preview use the same guide. Cover and day photos appear when the organizer selects a catalogue image in the Constructor. Days without a photo use a text layout. Each day opens with up to three events, giving priority to excursions, activities and meals. Additional events can be expanded, and events without a day are listed at the end. The practical plan is marked unavailable.
+
 Every Website route uses the shared `SiteShell`, applied once by `src/app/layout.tsx`. The shell, shared `SiteHeader`, `SiteFooter`, navigation, and their styles are in `src/components/public-site/`; both `(publication)` and `(public)` layouts are transparent route-group layouts. There are no `/about`, `/archive/[slug]`, or `/tours/[slug]` routes at this revision.
 
 ## Run independently

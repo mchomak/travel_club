@@ -171,7 +171,7 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
                 getattr(day, key)
                 for key in (
                     "country", "city", "place", "title", "status", "internal_note", "client_note",
-                    "map_start", "map_end", "map_leg_modes",
+                    "map_start", "map_end", "map_leg_modes", "photo_id",
                 )
             )
         )
@@ -338,9 +338,17 @@ def update_trip(
                 "details": {"current_version": trip.version},
             },
         )
+    original = read_input(trip)
+    # Older editors omit photo fields. Only an explicit null removes a selection.
+    if "cover_photo_id" not in payload.model_fields_set:
+        payload.cover_photo_id = original.cover_photo_id
+    previous_photos = {day.id: day.photo_id for day in original.days}
+    for day in payload.days:
+        if "photo_id" not in day.model_fields_set:
+            day.photo_id = previous_photos.get(day.id)
     editable = TripInput(**payload.model_dump(exclude={"version"}))
     validate_ownership(db, trip.id, editable)
-    editable = reconcile_dates(editable, read_input(trip), confirm_date_removal)
+    editable = reconcile_dates(editable, original, confirm_date_removal)
     return persist(db, trip, editable, increment_version=True)
 
 

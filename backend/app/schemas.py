@@ -16,6 +16,8 @@ from pydantic import (
     model_validator,
 )
 
+from app.trip_photos import PhotoId
+
 ItemType = Literal[
     "flight",
     "train_bus",
@@ -208,6 +210,7 @@ class MapLegMode(DTO):
 class DayInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     date: date
+    photo_id: PhotoId | None = None
     country: str = Field(default="", max_length=120)
     city: str = Field(default="", max_length=120)
     place: str = Field(default="", max_length=200)
@@ -268,6 +271,7 @@ class ItemInput(DTO):
     departure_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
     arrival_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
     external_url: str | None = Field(default=None, max_length=2048)
+    publish_external_url: bool = Field(default=False, strict=True)
     internal_note: Note = ""
     client_note: Note = ""
     included: bool = True
@@ -348,6 +352,7 @@ class CurrencyRateInput(DTO):
 
 class TripCreate(DTO):
     internal_title: Title
+    cover_photo_id: PhotoId | None = None
     client_title: str = Field(default="", max_length=200)
     start_date: date
     end_date: date

@@ -1,7 +1,19 @@
 import { expect, test } from "vitest";
 import type { TripDocument } from "./contracts";
+import { calculateTrip } from "./pricing";
 import { emptyDay, newItem, newTrip } from "./trip-ui";
 import { tripInput } from "./trips";
+
+test("the editable draft retains the chosen cover and day photo", () => {
+  const trip = newTrip();
+  const day = { ...emptyDay(trip.start_date), photo_id: "thai-train" };
+  const input = { ...trip, cover_photo_id: "tropical-coast", days: [day], items: [], rates: [] };
+  const saved = { ...input, id: "trip", version: 2, created_at: "", updated_at: "",
+    created_by: "user", calculation: calculateTrip(input) };
+  expect(tripInput(saved)).toMatchObject({
+    cover_photo_id: "tropical-coast", days: [{ photo_id: "thai-train" }],
+  });
+});
 
 test("a saved flight and subtype survive reopening as an editable trip", () => {
   const input = newTrip();
@@ -43,4 +55,14 @@ test("places and day route choices survive the editable draft roundtrip", () => 
   const repeated = { ...saved, ...draft,
     items: draft.items.map(item => ({ ...item, original_amount: "0", rate_used: "1", normalized_amount: "0" })) };
   expect(tripInput(repeated).items[0]).toEqual(item);
+});
+
+
+test("editable draft preserves explicit link sharing and defaults legacy links to private", () => {
+  const input = newTrip(), day = emptyDay(input.start_date);
+  const item = { ...newItem("flight", day, "RUB", day.date), external_url: "https://example.com", publish_external_url: true };
+  const saved = { ...input, days: [day], rates: [], items: [item] } as unknown as TripDocument;
+  expect(tripInput(saved).items[0].publish_external_url).toBe(true);
+  const legacy = { ...saved, items: [{ ...item, publish_external_url: undefined }] } as unknown as TripDocument;
+  expect(tripInput(legacy).items[0].publish_external_url).toBe(false);
 });

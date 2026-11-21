@@ -422,3 +422,28 @@ test("hotel calculation is unavailable to other types and legacy values require 
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ calculation_mode: "per_person" }), undefined);
 });
+
+
+test("client link sharing requires an explicit choice", async () => {
+  const user = userEvent.setup();
+  const day = emptyDay("2026-10-01");
+  const item = newItem("flight", day, "RUB", day.date);
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  const onSubmit = vi.fn();
+  const { unmount } = render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  const share = screen.getByRole("checkbox", { name: "Показывать клиенту" });
+  expect(share).not.toBeChecked();
+  await user.type(screen.getByLabelText("Ссылка"), "https://example.com/ticket");
+  await user.click(share);
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ publish_external_url: true }), undefined);
+
+  unmount();
+  onSubmit.mockClear();
+  render(<ItemForm initial={{ ...item, external_url: "https://example.com/ticket", publish_external_url: true }} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  const reopened = screen.getByRole("checkbox", { name: "Показывать клиенту" });
+  expect(reopened).toBeChecked();
+  await user.click(reopened);
+  await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ publish_external_url: false }), undefined);
+});

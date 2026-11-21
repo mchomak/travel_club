@@ -59,6 +59,49 @@ async function updateFixture(page: Page, trip: TripDocument) {
   return await response.json() as TripDocument;
 }
 
+test("a client can read saved updates anonymously until their link is replaced or disabled", async ({ page, browser }) => {
+  const trip = await fixtureTrip(page);
+  const firstTitle = "Маршрут выходного дня";
+  const initial = await updateFixture(page, { ...trip, client_title: firstTitle, internal_note: "PRIVATE_E2E_NOTES" });
+  await page.goto(`/admin/trips/${trip.id}`);
+  await page.getByRole("button", { name: "Клиентский вид" }).click();
+  await page.getByRole("button", { name: "Создать ссылку" }).click();
+  const address = page.getByLabel("Ссылка для клиента", { exact: true });
+  const original = await address.inputValue();
+  await page.reload();
+  await expect(address).toHaveValue(original);
+
+  const anonymous = await browser.newContext();
+  try {
+    const reader = await anonymous.newPage();
+    const response = await reader.goto(original);
+    await expect(reader.getByRole("heading", { name: firstTitle })).toBeVisible();
+    expect(response?.headers()["cache-control"]).toContain("no-store");
+    expect(response?.headers()["referrer-policy"]).toBe("no-referrer");
+    expect(response?.headers()["x-robots-tag"]).toContain("noindex");
+    expect(await reader.content()).not.toContain("PRIVATE_E2E_NOTES");
+    const updated = "Обновлённый маршрут";
+    await updateFixture(page, { ...initial, client_title: updated });
+    await reader.reload();
+    await expect(reader.getByRole("heading", { name: updated })).toBeVisible();
+
+    await page.getByRole("button", { name: "Заменить ссылку" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Заменить", exact: true }).click();
+    await expect(address).not.toHaveValue(original);
+    await reader.reload();
+    await expect(reader.getByRole("heading", { name: "Программа недоступна" })).toBeVisible();
+    await reader.goto(await address.inputValue());
+    await expect(reader.getByRole("heading", { name: updated })).toBeVisible();
+    await page.getByRole("button", { name: "Отключить ссылку" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Отключить", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Создать ссылку" })).toBeVisible();
+    await reader.reload();
+    await expect(reader.getByRole("heading", { name: "Программа недоступна" })).toBeVisible();
+  } finally {
+    await anonymous.close();
+  }
+});
+
 test("calendar creates a timed event and closes its editor by clicking outside", async ({ page }) => {
   const trip = await fixtureTrip(page);
   await page.goto(`/admin/trips/${trip.id}`);
@@ -686,12 +729,18 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   expect(persisted.items.find(item => item.type === "hotel")?.normalized_amount).toBe("200000.00");
   await page.getByRole("button", { name: "Клиентский вид" }).click();
   await expect(page).toHaveURL(/\/preview$/);
-  await expect(page.getByRole("heading", { name: "Пять дней в Японии", exact: true })).toBeVisible();
-  for (const text of ["Клиентская заметка поездки", "Клиентская заметка дня", "Клиентская заметка элемента"]) await expect(page.getByText(text, { exact: true })).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("PRIVATE_");
-  const preview = await (await page.request.get(`/api/trips/${tripId}/preview`)).json();
+  await page.getByRole("button", { name: "Создать ссылку" }).click();
+  const clientTab = page.waitForEvent("popup");
+  await page.getByRole("link", { name: "Открыть клиентский вид" }).click();
+  const publicPage = await clientTab;
+  await expect(publicPage.getByRole("heading", { name: "Пять дней в Японии", exact: true })).toBeVisible();
+  for (const text of ["Клиентская заметка поездки", "Клиентская заметка дня", "Клиентская заметка элемента"]) await expect(publicPage.getByText(text, { exact: true })).toBeVisible();
+  await expect(publicPage.locator("body")).not.toContainText("PRIVATE_");
+  const token = new URL(publicPage.url()).pathname.split("/").at(-1);
+  const preview = await (await page.request.get(`/api/public/trips/${token}`)).json();
   for (const privateField of ["internal_note", "unit_price", "rates", "pricing_percent", "cost_total", "profit", "normalized_amount"]) expect(JSON.stringify(preview)).not.toContain(`"${privateField}"`);
-  await expect(page.locator(".client-preview")).not.toContainText("561");
+  await expect(publicPage.getByRole("article").first()).not.toContainText("561");
+  await publicPage.close();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);
   await expect(page.locator(".finance-total")).toHaveText("561 174,00 RUB");

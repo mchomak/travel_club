@@ -7,14 +7,22 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     server_tokens off;
 
+    proxy_http_version 1.1;
+    proxy_set_header Host @SERVER_NAME@:@HTTPS_PORT@;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host @SERVER_NAME@:@HTTPS_PORT@;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Port @HTTPS_PORT@;
+
+    # Nginx's error format can include the raw request and upstream URI.
+    location ~* ^/(?:trip|api/public/trips)(?:/|$) {
+        access_log off;
+        error_log /dev/null;
+        proxy_pass http://@FRONTEND_UPSTREAM@;
+    }
+
     location / {
         proxy_pass http://@FRONTEND_UPSTREAM@;
-        proxy_http_version 1.1;
-        proxy_set_header Host @SERVER_NAME@:@HTTPS_PORT@;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host @SERVER_NAME@:@HTTPS_PORT@;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header X-Forwarded-Port @HTTPS_PORT@;
     }
 }

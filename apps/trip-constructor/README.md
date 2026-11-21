@@ -8,6 +8,12 @@ From the repository root, install dependencies for this app with `npm ci --prefi
 
 When the shared-origin router is not running, set `NEXT_PUBLIC_INTERVIEWS_URL=http://localhost:3102` in `apps/trip-constructor/.env.local` to open Interviews from `/home`. Behind the shared-origin router, leave that variable empty so `/research` stays on the common origin.
 
+**Клиентский вид** saves the trip and opens link management. Create a link, open the client page, copy its address, replace it or disable it. Reopening the screen preserves the current address. To open client links when running the two apps on separate development ports, set `NEXT_PUBLIC_WEBSITE_URL=http://localhost:3100` before starting Constructor. The shared gateway uses the current origin by default.
+
+For private preview on separate development ports, open both apps with the same hostname because the session cookie is scoped to that host. Use `localhost` for both apps or `127.0.0.1` for both apps.
+
+Choose a cover under «Параметры поездки» and a day photo under «Детали и заметки дня». Both fields start empty. After saving the trip, the existing client link shows the selected illustrations. Select «Без фотографии» and save to remove one.
+
 ## Checks
 
 From the repository root: `npm run lint:constructor`, `npm run typecheck:constructor`, `npm run test:constructor`, `npm run build:constructor`. E2E tests for the builder and map are in `e2e/`.

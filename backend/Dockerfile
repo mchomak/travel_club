@@ -6,4 +6,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 COPY --from=shared /pricing-vectors.json /shared/pricing-vectors.json
 COPY --from=shared /website-products.json /shared/website-products.json
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers"]
+COPY --from=shared /trip-photos.json /shared/trip-photos.json
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers --no-access-log"]

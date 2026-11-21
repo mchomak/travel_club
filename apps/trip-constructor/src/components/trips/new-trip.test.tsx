@@ -7,6 +7,19 @@ import type { TripDocument } from "@/lib/contracts";
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); navigation.replace.mockReset(); });
+test("creates a trip with an explicitly chosen cover photo", async () => {
+  const create = vi.spyOn(tripApi, "create").mockResolvedValue({ id: "created" } as TripDocument);
+  const user = userEvent.setup(); render(<NewTrip />);
+  await user.type(screen.getByLabelText("Название поездки"), "Поездка");
+  await user.click(screen.getByText("Дополнительные параметры"));
+  const cover = screen.getByRole("combobox", { name: "Фото обложки" });
+  expect(cover).toHaveValue("");
+  await user.selectOptions(cover, "tropical-coast");
+  await user.click(screen.getByRole("button", { name: "Создать поездку" }));
+  await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({
+    cover_photo_id: "tropical-coast",
+  })));
+});
 test("basic creation hides advanced fields, always creates a draft and resumes at transport", async () => {
   const create = vi.spyOn(tripApi, "create").mockResolvedValue({ id: "created" } as TripDocument);
   const user = userEvent.setup(); render(<NewTrip />);

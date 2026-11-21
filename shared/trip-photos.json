@@ -1,0 +1,27 @@
+{
+  "shanghai-night": {
+    "src": "/website/assets/photos/china-shanghai-night-stock.jpg",
+    "alt": "Ночная панорама Шанхая с реки",
+    "credit": "隔壁光头老王 WangMing'Photo / Pexels"
+  },
+  "suzhou-canal": {
+    "src": "/website/assets/photos/china-suzhou-canals-stock.jpg",
+    "alt": "Лодки и дома у канала",
+    "credit": "Jumbo Jin / Pexels"
+  },
+  "tropical-coast": {
+    "src": "/website/assets/photos/test1-samui-stock.jpg",
+    "alt": "Тропическое побережье с высоты",
+    "credit": "Mikhail Nilov / Pexels"
+  },
+  "thai-train": {
+    "src": "/website/assets/photos/test1-thailand-train-32259208.jpg",
+    "alt": "Жёлтый поезд на станции Бан Пхай",
+    "credit": "Ahmad Anafee / Pexels"
+  },
+  "baobab-road": {
+    "src": "/website/assets/photos/test1-baobabs-stock.jpg",
+    "alt": "Баобабы вдоль грунтовой дороги",
+    "credit": "Herve Meftah / Pexels"
+  }
+}

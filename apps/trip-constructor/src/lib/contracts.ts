@@ -21,6 +21,7 @@ export interface AutoTransfer {
   duration_seconds: number; source_signature: string;
 }
 export interface DayInput {
+  photo_id?: string | null;
   id: UUID; date: string; country: string; city: string; place: string; title: string;
   status: string; internal_note: string; client_note: string;
   map_start?: MapPlace | null; map_end?: MapPlace | null; map_leg_modes?: MapLegMode[];
@@ -35,13 +36,14 @@ export interface ItemInput {
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
   departure_utc_offset_minutes?: number | null; arrival_utc_offset_minutes?: number | null;
   map_place?: MapPlace | null; map_end_place?: MapPlace | null;
-  external_url: string | null; internal_note: string; client_note: string; included: boolean; currency: string;
+  external_url: string | null; publish_external_url: boolean; internal_note: string; client_note: string; included: boolean; currency: string;
   unit_price: DecimalString; quantity: DecimalString; participants_override: number | null;
   capacity: number | null; rooms_override: number | null; duration_days: number;
   check_in: string | null; check_out: string | null; check_in_time: string | null; check_out_time: string | null;
 }
 export interface CurrencyRateInput { currency: string; rate: DecimalString }
 export interface TripCreate {
+  cover_photo_id?: string | null;
   internal_title: string; client_title: string; start_date: string; end_date: string;
   participants: number; base_currency: string; internal_note: string; client_note: string;
   status: TripStatus; pricing_mode: PricingMode; pricing_percent: DecimalString;

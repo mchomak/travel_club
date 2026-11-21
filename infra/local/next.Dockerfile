@@ -21,6 +21,7 @@ COPY apps/${APP}/package.json apps/${APP}/package-lock.json ./
 RUN --mount=type=cache,id=travel_club_app_npm,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund --maxsockets=5
 COPY apps/${APP}/ ./
 COPY shared/website-products.json ./shared/website-products.json
+COPY shared/trip-photos.json ./shared/trip-photos.json
 RUN ln -s /app/shared /shared
 RUN mkdir -p public && npm run build
 

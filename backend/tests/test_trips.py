@@ -346,7 +346,7 @@ def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(
             "end_day_id": trip["days"][1]["id"], "type": "flight",
             "calculation_mode": "fixed", "title": "Ночной рейс", "currency": "RUB",
             "unit_price": "120", "start_time": "23:00", "end_time": "02:00",
-            "external_url": "https://example.com/ticket",
+            "external_url": "https://example.com/ticket", "publish_external_url": True,
         },
         {
             "id": str(uuid4()), "day_id": trip["days"][1]["id"],
@@ -365,6 +365,8 @@ def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(
     hotel = next(item for item in saved["items"] if item["type"] == "hotel")
     assert flight["end_day_id"] == trip["days"][1]["id"]
     assert flight["external_url"] == "https://example.com/ticket"
+    assert flight["publish_external_url"] is True
+    assert hotel["publish_external_url"] is False
     assert hotel["check_in_time"] == "15:00:00"
     assert hotel["check_out_time"] == "11:00:00"
     assert saved["calculation"]["cost_total"] == "720.00"
@@ -381,6 +383,8 @@ def test_schedule_fields_survive_save_reopen_duplicate_and_keep_preview_private(
     assert copied_flight["start_time"] == "23:00:00"
     assert copied_flight["end_time"] == "02:00:00"
     assert copied_flight["external_url"] == "https://example.com/ticket"
+    assert copied_flight["publish_external_url"] is True
+    assert copied_hotel["publish_external_url"] is False
     assert copied_hotel["check_in_time"] == "15:00:00"
     assert copied_hotel["check_out_time"] == "11:00:00"
     assert copied_hotel["external_url"] == "https://example.com/hotel"

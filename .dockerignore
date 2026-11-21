@@ -12,6 +12,7 @@ frontend
 backend
 shared/*
 !shared/website-products.json
+!shared/trip-photos.json
 docs
 deploy
 scripts

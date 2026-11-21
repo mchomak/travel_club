@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 RENDERER = Path(__file__).resolve().parents[1] / "nginx" / "render.py"
 
@@ -104,3 +106,36 @@ def test_renderer_rejects_server_name_injection() -> None:
     assert result.returncode != 0
     assert result.stdout == ""
     assert "--server-name" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("kind", "options", "routing"),
+    [
+        (
+            "http",
+            ("--acme-webroot", "/var/www/acme"),
+            "return 308 https://192.0.2.24:9443$request_uri;",
+        ),
+        (
+            "https",
+            ("--cert-dir", "/etc/letsencrypt/live/travel-club"),
+            "proxy_pass http://172.19.0.4:3000;",
+        ),
+    ],
+)
+def test_share_link_requests_keep_routing_without_logging_the_token(
+    kind: str, options: tuple[str, ...], routing: str
+) -> None:
+    result = run_renderer(
+        kind, "--public-ip", "192.0.2.24", "--https-port", "9443", *options
+    )
+
+    assert result.returncode == 0, result.stderr
+    location = "location ~* ^/(?:trip|api/public/trips)(?:/|$) {"
+    assert location in result.stdout
+    share_location = result.stdout.split(location, 1)[1].split("}", 1)[0]
+    assert "access_log off;" in share_location
+    assert "error_log /dev/null;" in share_location
+    assert routing in share_location
+    assert "access_log off;" not in result.stdout.replace(share_location, "")
+    assert "error_log /dev/null;" not in result.stdout.replace(share_location, "")

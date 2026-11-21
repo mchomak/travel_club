@@ -57,8 +57,10 @@ class LoginAttempt(Base):
 class Trip(Base):
     __tablename__ = "trips"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    public_link_token: Mapped[str | None] = mapped_column(String(43), unique=True, deferred=True)
     internal_title: Mapped[str] = mapped_column(String(200))
     client_title: Mapped[str] = mapped_column(String(200), default="")
+    cover_photo_id: Mapped[str | None] = mapped_column(String(80))
     start_date: Mapped[date]
     end_date: Mapped[date]
     participants: Mapped[int]
@@ -104,6 +106,7 @@ class TripDay(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id", ondelete="CASCADE"), index=True)
     date: Mapped[date]
+    photo_id: Mapped[str | None] = mapped_column(String(80))
     country: Mapped[str] = mapped_column(String(120), default="")
     city: Mapped[str] = mapped_column(String(120), default="")
     place: Mapped[str] = mapped_column(String(200), default="")
@@ -150,6 +153,7 @@ class TripItem(Base):
     departure_utc_offset_minutes: Mapped[int | None]
     arrival_utc_offset_minutes: Mapped[int | None]
     external_url: Mapped[str | None] = mapped_column(String(2048))
+    publish_external_url: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")
     included: Mapped[bool] = mapped_column(Boolean, default=True)

@@ -258,6 +258,8 @@ sudo systemctl reload nginx
 
 If `nginx -t` fails, do not reload. Remove only the new Travel Club TLS vhost, preserve all existing Nginx configuration, report the error, and stop.
 
+Before distributing trip preview links on an existing preview deployment, render and reload both the HTTP and HTTPS vhosts from the current templates. Both vhosts suppress access and request-level error logs for `/trip/…` and `/api/public/trips/…` because their paths carry bearer tokens. If an additional proxy, CDN, or monitoring service handles these requests, configure it to omit the token-bearing paths from logs and disable response caching for both routes. Keep real links out of diagnostic commands, monitoring probes, and deployment records.
+
 ## 8. Enable renewal and verify the live site
 
 Install the deploy hook so a renewed Travel Club certificate is applied through a graceful Nginx reload. It ignores other certificate lineages and validates Nginx before reload:
