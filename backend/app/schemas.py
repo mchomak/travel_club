@@ -381,6 +381,12 @@ class TripInput(TripCreate):
     rates: list[CurrencyRateInput] = Field(default_factory=list, max_length=1000)
 
 
+class TripExchange(DTO):
+    format: Literal["travel-club-trip"]
+    version: Literal[1]
+    trip: TripInput
+
+
 class TripUpdate(TripInput):
     version: int = Field(gt=0, strict=True)
 

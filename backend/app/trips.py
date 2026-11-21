@@ -22,6 +22,7 @@ from app.schemas import (
     PreviewItem,
     TripCreate,
     TripDocument,
+    TripExchange,
     TripInput,
     TripSummary,
     TripUpdate,
@@ -315,6 +316,11 @@ def create_trip(payload: TripCreate, user: Admin, db: Database):
     return persist(db, trip, editable)
 
 
+@router.post("/import", response_model=TripDocument, status_code=201)
+def import_trip(payload: TripExchange, user: Admin, db: Database):
+    return persist(db, Trip(created_by=user.id, version=1), prepare_import(payload.trip))
+
+
 @router.get("/{trip_id}", response_model=TripDocument)
 def retrieve_trip(trip_id: UUID, user: Admin, db: Database):
     return document(get_trip(db, trip_id))
@@ -360,10 +366,23 @@ def remove_trip(trip_id: UUID, user: Admin, db: Database):
     return Response(status_code=204)
 
 
-@router.post("/{trip_id}/duplicate", response_model=TripDocument, status_code=201)
-def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
-    original = get_trip(db, trip_id, lock=True)
-    payload = read_input(original)
+def prepare_import(payload: TripInput) -> TripInput:
+    day_ids_list = [day.id for day in payload.days]
+    dates = [day.date for day in payload.days]
+    item_ids_list = [item.id for item in payload.items]
+    if (len(set(day_ids_list)) != len(day_ids_list) or len(set(dates)) != len(dates)
+            or len(set(item_ids_list)) != len(item_ids_list)):
+        raise PricingError("Дни и элементы поездки не должны повторяться")
+    if any(not payload.start_date <= date <= payload.end_date for date in dates):
+        raise PricingError("Дата дня находится за пределами поездки")
+    if any(day_id is not None and day_id not in day_ids_list for item in payload.items
+           for day_id in (item.day_id, item.end_day_id)):
+        raise PricingError("Элемент ссылается на отсутствующий день")
+    payload = calendar(payload)
+    return remap_trip_ids(payload)
+
+
+def remap_trip_ids(payload: TripInput) -> TripInput:
     day_ids = {day.id: uuid4() for day in payload.days}
     item_ids = {item.id: uuid4() for item in payload.items}
 
@@ -376,7 +395,6 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
 
     payload = payload.model_copy(
         update={
-            "internal_title": payload.internal_title[:192] + " — копия",
             "days": [
                 day.model_copy(update={
                     "id": day_ids[day.id],
@@ -415,7 +433,17 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
             ],
         }
     )
-    return persist(db, Trip(created_by=user.id, version=1), payload)
+    return payload
+
+
+@router.post("/{trip_id}/duplicate", response_model=TripDocument, status_code=201)
+def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
+    original = get_trip(db, trip_id, lock=True)
+    payload = read_input(original)
+    payload = payload.model_copy(
+        update={"internal_title": payload.internal_title[:192] + " — копия"}
+    )
+    return persist(db, Trip(created_by=user.id, version=1), remap_trip_ids(payload))
 
 
 @router.get("/{trip_id}/preview", response_model=ClientPreview)

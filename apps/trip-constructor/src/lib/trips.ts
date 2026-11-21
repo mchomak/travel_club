@@ -5,6 +5,7 @@ export const tripApi = {
   list: () => apiRequest<TripSummary[]>("/trips"),
   get: (id: string) => apiRequest<TripDocument>(`/trips/${id}`),
   create: (input: TripCreate) => apiRequest<TripDocument>("/trips", { method: "POST", body: JSON.stringify(input) }),
+  import: (input: unknown) => apiRequest<TripDocument>("/trips/import", { method: "POST", body: JSON.stringify(input) }),
   save: (id: string, input: TripUpdate, confirm = false) => apiRequest<TripDocument>(`/trips/${id}?confirm_date_removal=${confirm}`, { method: "PUT", body: JSON.stringify(input) }),
   duplicate: (id: string) => apiRequest<TripDocument>(`/trips/${id}/duplicate`, { method: "POST" }),
   remove: (id: string) => apiRequest<void>(`/trips/${id}`, { method: "DELETE" }),
