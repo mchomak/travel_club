@@ -1,15 +1,19 @@
 """Transactional trip aggregate API. Calculation snapshots are server owned."""
 
+import base64
+import binascii
 import re
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Response
-from sqlalchemy import delete, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
 
 from app.auth import Admin, Database
 from app.models import Trip, TripCurrencyRate, TripDay, TripItem
+from app.photo_storage import uploaded_photos
+from app.photo_uploads import MAX_UPLOAD, normalize_image
 from app.pricing import PricingError, calculate_trip
 from app.schemas import (
     Calculation,
@@ -222,6 +226,18 @@ def reconcile_dates(payload: TripInput, original: TripInput, confirmed: bool) ->
 
 
 def validate_ownership(db, trip_id: UUID, payload: TripInput) -> None:
+    if payload.cover_photo_id and payload.cover_photo_id.startswith("upload-"):
+        raise PricingError("Загруженные фотографии можно использовать только для дней")
+    ids = {
+        day.photo_id for day in payload.days
+        if day.photo_id and day.photo_id.startswith("upload-")
+    }
+    if ids:
+        owned = set(db.scalars(select(uploaded_photos.c.id).where(
+            uploaded_photos.c.trip_id == trip_id, uploaded_photos.c.id.in_(ids)
+        )))
+        if owned != ids:
+            raise PricingError("Фотография недоступна для этой поездки")
     for model, ids in (
         (TripDay, [day.id for day in payload.days]),
         (TripItem, [item.id for item in payload.items]),
@@ -266,9 +282,9 @@ def _persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> 
         db.add(TripDay(trip_id=trip.id, **day.model_dump()))
     db.flush()
     for item, snapshot in zip(payload.items, calculation.items, strict=True):
-        db.add(
-            TripItem(trip_id=trip.id, **item.model_dump(), **snapshot.model_dump(exclude={"id"}))
-        )
+        item_data = item.model_dump()
+        item_data["stages"] = [stage.model_dump(mode="json") for stage in item.stages]
+        db.add(TripItem(trip_id=trip.id, **item_data, **snapshot.model_dump(exclude={"id"})))
     for rate in payload.rates:
         db.add(TripCurrencyRate(trip_id=trip.id, **rate.model_dump()))
     db.flush()
@@ -311,6 +327,8 @@ def list_trips(user: Admin, db: Database):
 
 @router.post("", response_model=TripDocument, status_code=201)
 def create_trip(payload: TripCreate, user: Admin, db: Database):
+    if payload.cover_photo_id and payload.cover_photo_id.startswith("upload-"):
+        raise PricingError("Загруженные фотографии можно использовать только для дней")
     editable = calendar(TripInput(**payload.model_dump()))
     trip = Trip(created_by=user.id, version=1)
     return persist(db, trip, editable)
@@ -318,7 +336,40 @@ def create_trip(payload: TripCreate, user: Admin, db: Database):
 
 @router.post("/import", response_model=TripDocument, status_code=201)
 def import_trip(payload: TripExchange, user: Admin, db: Database):
-    return persist(db, Trip(created_by=user.id, version=1), prepare_import(payload.trip))
+    if payload.trip.cover_photo_id and payload.trip.cover_photo_id.startswith("upload-"):
+        raise PricingError("Загруженные фотографии можно использовать только для дней")
+    ids = {
+        day.photo_id for day in payload.trip.days
+        if day.photo_id and day.photo_id.startswith("upload-")
+    }
+    if ids != set(payload.photos):
+        raise PricingError("В файле отсутствуют фотографии поездки или есть лишние фотографии")
+    if sum(len(value) for value in payload.photos.values()) > 10 * 1024 * 1024:
+        raise PricingError("Файл фотографий слишком большой")
+    copies = {}
+    for photo_id, encoded in payload.photos.items():
+        try:
+            content = base64.b64decode(encoded, validate=True)
+            if len(content) > MAX_UPLOAD:
+                raise ValueError("Image too large")
+            copies[photo_id] = ("upload-" + uuid4().hex, normalize_image(content))
+        except (ValueError, binascii.Error):
+            raise PricingError("Не удалось прочитать фотографию в файле") from None
+    for day in payload.trip.days:
+        if day.photo_id in copies:
+            day.photo_id = copies[day.photo_id][0]
+    prepared = prepare_import(payload.trip)
+    trip = Trip(created_by=user.id, version=1, id=uuid4())
+    if copies:
+        for key in TripCreate.model_fields:
+            setattr(trip, key, getattr(prepared, key))
+        db.add(trip)
+        db.flush()
+        for photo_id, content in copies.values():
+            db.execute(insert(uploaded_photos).values(
+                id=photo_id, trip_id=trip.id, content=content
+            ))
+    return persist(db, trip, prepared)
 
 
 @router.get("/{trip_id}", response_model=TripDocument)
@@ -443,7 +494,29 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
     payload = payload.model_copy(
         update={"internal_title": payload.internal_title[:192] + " — копия"}
     )
-    return persist(db, Trip(created_by=user.id, version=1), remap_trip_ids(payload))
+    new_trip = Trip(created_by=user.id, version=1, id=uuid4())
+    copies = {}
+    for day in payload.days:
+        if day.photo_id and day.photo_id.startswith("upload-"):
+            if day.photo_id not in copies:
+                content = db.scalar(select(uploaded_photos.c.content).where(
+                    uploaded_photos.c.id == day.photo_id, uploaded_photos.c.trip_id == trip_id
+                ))
+                if content is None:
+                    raise PricingError("Фотография недоступна для этой поездки")
+                copies[day.photo_id] = ("upload-" + uuid4().hex, content)
+            day.photo_id = copies[day.photo_id][0]
+    # Flush the new trip before inserting its photo rows; the aggregate remains transactional.
+    if copies:
+        for key in TripCreate.model_fields:
+            setattr(new_trip, key, getattr(payload, key))
+        db.add(new_trip)
+        db.flush()
+        for photo_id, content in copies.values():
+            db.execute(insert(uploaded_photos).values(
+                id=photo_id, trip_id=new_trip.id, content=content
+            ))
+    return persist(db, new_trip, remap_trip_ids(payload))
 
 
 @router.get("/{trip_id}/preview", response_model=ClientPreview)

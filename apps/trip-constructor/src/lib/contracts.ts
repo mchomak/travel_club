@@ -26,6 +26,7 @@ export interface DayInput {
   status: string; internal_note: string; client_note: string;
   map_start?: MapPlace | null; map_end?: MapPlace | null; map_leg_modes?: MapLegMode[];
 }
+export interface EventStage { id: UUID; title: string; start_time: string | null; end_time: string | null; notes: string }
 export interface ItemInput {
   id: UUID; day_id: UUID | null; end_day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
   subtype?: ItemSubtype | null; airport_before_minutes?: number; airport_after_minutes?: number;
@@ -33,10 +34,12 @@ export interface ItemInput {
   arrival_country_code?: string | null; arrival_city?: string;
   departure_label?: string; arrival_label?: string;
   price_pending?: boolean; auto_transfer?: AutoTransfer | null;
+  stages?: EventStage[];
   title: string; description: string; location: string; start_time: string | null; end_time: string | null;
   departure_utc_offset_minutes?: number | null; arrival_utc_offset_minutes?: number | null;
   map_place?: MapPlace | null; map_end_place?: MapPlace | null;
   external_url: string | null; publish_external_url: boolean; internal_note: string; client_note: string; included: boolean; currency: string;
+  map_url?: string | null; booking_url?: string | null;
   unit_price: DecimalString; quantity: DecimalString; participants_override: number | null;
   capacity: number | null; rooms_override: number | null; duration_days: number;
   check_in: string | null; check_out: string | null; check_in_time: string | null; check_out_time: string | null;

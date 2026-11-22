@@ -49,7 +49,10 @@ def test_import_creates_independent_trip_and_rejects_invalid_data(authenticated)
     source.pop("version")
     source["items"] = [{"day_id": source["days"][0]["id"], "type": "activity",
                         "title": "Museum", "calculation_mode": "per_person",
-                        "currency": "RUB", "unit_price": "120"}]
+                        "currency": "RUB", "unit_price": "120",
+                        "map_url": "https://example.org/map",
+                        "booking_url": "https://example.org/book",
+                        "stages": [{"title": "Gallery", "start_time": "10:00"}]}]
     envelope = {"format": "travel-club-trip", "version": 1, "trip": source}
     response = authenticated.post("/api/trips/import", headers=HEADERS, json=envelope)
     assert response.status_code == 201, response.text
@@ -58,6 +61,9 @@ def test_import_creates_independent_trip_and_rejects_invalid_data(authenticated)
     assert imported["days"][0]["id"] != original["days"][0]["id"]
     assert imported["items"][0]["day_id"] == imported["days"][0]["id"]
     assert imported["calculation"]["cost_total"] == "600.00"
+    assert imported["items"][0]["map_url"] == "https://example.org/map"
+    assert imported["items"][0]["booking_url"] == "https://example.org/book"
+    assert imported["items"][0]["stages"][0]["title"] == "Gallery"
     assert authenticated.get(f"/api/trips/{imported['id']}").json() == imported
     before = len(authenticated.get("/api/trips").json())
     envelope["trip"]["items"][0]["currency"] = "USD"

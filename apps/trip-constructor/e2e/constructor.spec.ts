@@ -234,12 +234,12 @@ test("day form protects entered notes and clears the warning on cancel or saved 
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).first().click();
   const modal = page.getByRole("dialog");
   expect(await unloadWouldWarn(page)).toBe(false);
-  await modal.getByLabel("Заметка для клиента").fill("Заполненная заметка дня");
+  await modal.getByLabel("Описание для клиента").fill("Заполненная заметка дня");
   await expect.poll(() => unloadWouldWarn(page)).toBe(true);
   await modal.getByRole("button", { name: "Отмена", exact: true }).click();
   expect(await unloadWouldWarn(page)).toBe(false);
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).first().click();
-  await page.getByRole("dialog").getByLabel("Заметка для клиента").fill("Сохранённая заметка дня");
+  await page.getByRole("dialog").getByLabel("Описание для клиента").fill("Сохранённая заметка дня");
   await page.getByRole("dialog").getByRole("button", { name: "Сохранить день" }).click();
   await saved(page);
   expect(await unloadWouldWarn(page)).toBe(false);
@@ -249,7 +249,7 @@ test("builder to editor keeps the current trip version", async ({ page }) => {
   const trip = await fixtureTrip(page);
   await page.goto(`/admin/trips/${trip.id}/builder?step=4&day=${trip.days[0].id}`);
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).first().click();
-  await page.getByRole("dialog").getByLabel("Заметка для клиента").fill("Сохранённая заметка Builder");
+  await page.getByRole("dialog").getByLabel("Описание для клиента").fill("Сохранённая заметка Builder");
   await page.getByRole("dialog").getByRole("button", { name: "Сохранить день" }).click();
   await saved(page);
   await page.getByRole("button", { name: "Полный редактор", exact: true }).click();
@@ -446,10 +446,10 @@ test("date shrink lists the removed days and cancel retains their contents", asy
   await saved(page);
   await page.goto(`/admin/trips/${trip.id}/builder?step=4&day=${trip.days[4].id}`);
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).nth(4).click();
-  await expect(page.getByRole("dialog").getByLabel("Заметка для клиента")).toHaveValue("Не потерять пятый день");
+  await expect(page.getByRole("dialog").getByLabel("Описание для клиента")).toHaveValue("Не потерять пятый день");
   await page.getByRole("dialog").getByRole("button", { name: "Отмена" }).click();
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).nth(3).click();
-  await expect(page.getByRole("dialog").getByLabel("Заметка для клиента")).toHaveValue("Не потерять четвёртый день");
+  await expect(page.getByRole("dialog").getByLabel("Описание для клиента")).toHaveValue("Не потерять четвёртый день");
 });
 
 test("hotel date shrink can be cancelled or confirmed without losing other edits", async ({ page }) => {
@@ -642,7 +642,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   let modal = page.getByRole("dialog");
   await modal.getByLabel("Страна", { exact: true }).fill("Япония");
   await modal.getByLabel("Город", { exact: true }).fill("Токио");
-  await modal.getByLabel("Заметка для клиента", { exact: true }).fill("Клиентская заметка дня");
+  await modal.getByLabel("Описание для клиента", { exact: true }).fill("Клиентская заметка дня");
   await modal.getByLabel("Внутренняя заметка", { exact: false }).fill("PRIVATE_DAY_SECRET");
   await modal.getByRole("button", { name: "Сохранить день" }).click();
   await page.locator(".trip-calendar-dates").getByRole("button", { name: /Изменить день/ }).nth(2).click();

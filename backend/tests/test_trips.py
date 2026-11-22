@@ -942,3 +942,23 @@ def test_shared_examples_persist_through_http_and_postgres(authenticated, case):
     assert sum(Decimal(day["total"]) for day in saved["calculation"]["days"]) + Decimal(
         saved["calculation"]["general_total"]
     ) == Decimal(saved["calculation"]["cost_total"])
+
+
+def test_event_stages_roundtrip_and_cost(authenticated):
+    trip = create_trip(authenticated)
+    path = f"/api/trips/{trip['id']}"
+    payload = editable(trip)
+    stages = [{"id": str(uuid4()), "title": "Island", "start_time": "10:00",
+               "end_time": "11:00", "notes": "Swim"}]
+    payload["items"] = [{"id": str(uuid4()), "day_id": trip["days"][0]["id"],
+                         "type": "excursion", "title": "Boat trip", "calculation_mode": "fixed",
+                         "currency": "RUB", "unit_price": "100", "stages": stages}]
+    response = authenticated.put(path, headers=HEADERS, json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["items"][0]["stages"] == stages
+    assert saved["calculation"]["cost_total"] == "100.00"
+    assert authenticated.get(path).json()["items"][0]["stages"] == stages
+    copied = authenticated.post(path + "/duplicate", headers=HEADERS).json()
+    assert copied["items"][0]["stages"] == stages
+    assert authenticated.get(path + "/preview").json()["days"][0]["items"][0]["stages"] == stages

@@ -6,6 +6,7 @@ from starlette.exceptions import HTTPException
 from app.auth import router as auth_router
 from app.config import get_settings
 from app.maps import router as maps_router
+from app.photo_uploads import router as photo_uploads_router
 from app.pricing import PricingError
 from app.public_trips import router as public_trips_router
 from app.research import router as research_router
@@ -20,6 +21,7 @@ def create_app() -> FastAPI:
     application.include_router(public_trips_router)
     application.include_router(research_router)
     application.include_router(maps_router)
+    application.include_router(photo_uploads_router)
 
     @application.exception_handler(PricingError)
     async def pricing_error(request: Request, exc: PricingError):

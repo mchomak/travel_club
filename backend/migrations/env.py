@@ -1,6 +1,7 @@
 from alembic import context
 
 from app import models  # noqa: F401
+from app import photo_storage  # noqa: F401
 from app.db import Base, engine
 
 with engine.connect() as connection:

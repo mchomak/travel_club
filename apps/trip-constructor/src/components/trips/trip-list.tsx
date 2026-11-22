@@ -7,6 +7,7 @@ import { ArrowUpRight, Archive, Copy, Download, Map, Plus, Trash2, Upload } from
 import { ApiError } from "@/lib/api";
 import type { TripSummary } from "@/lib/contracts";
 import { tripApi, tripInput } from "@/lib/trips";
+import { serializeTripExport } from "@/lib/trip-export";
 import { formatDate, formatMoney, statusLabels } from "@/lib/trip-ui";
 import { Confirm, ErrorNotice, Loading } from "./ui";
 
@@ -36,7 +37,7 @@ export function TripList() {
     setBusy(trip.id); setError(null);
     try {
       const document = await tripApi.get(trip.id);
-      const blob = new Blob([JSON.stringify({ format: "travel-club-trip", version: 1, trip: tripInput(document) }, null, 2)], { type: "application/json;charset=utf-8" });
+      const blob = await serializeTripExport(document);
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement("a"); link.href = url; link.download = `travel-club-${trip.id}.json`; link.click(); URL.revokeObjectURL(url);
     } catch (e) { setError(e); } finally { setBusy(null); }

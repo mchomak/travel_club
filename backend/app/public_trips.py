@@ -14,7 +14,7 @@ from sqlalchemy import func, select, update
 
 from app.auth import Admin, Database
 from app.models import Trip, TripDay, TripItem
-from app.schemas import DTO, AutoTransfer, ItemInput, ItemSubtype, ItemType
+from app.schemas import DTO, AutoTransfer, EventStage, ItemInput, ItemSubtype, ItemType
 from app.trip_photos import PhotoId
 
 router = APIRouter(tags=["trip sharing"])
@@ -69,6 +69,7 @@ class PublicMovement(DTO):
 
 
 class PublicItem(DTO):
+    stages: list[EventStage] = []
     movement: PublicMovement | None = None
     type: ItemType
     subtype: ItemSubtype | None
@@ -83,6 +84,8 @@ class PublicItem(DTO):
     map_place: PublicPoint | None
     map_end_place: PublicPoint | None
     external_url: str | None
+    map_url: str | None
+    booking_url: str | None
     start_time: time | None
     end_time: time | None
     end_date: date | None = None
@@ -161,14 +164,15 @@ def public_item(row, dates: dict[UUID, date]) -> PublicItem:
     values = dict(row._mapping)
     values["map_place"] = public_point(values["map_place"])
     values["map_end_place"] = public_point(values["map_end_place"])
-    try:
-        values["external_url"] = (
-            ItemInput.valid_external_url(values["external_url"])
-            if values["publish_external_url"]
-            else None
-        )
-    except (ValueError, TypeError):
-        values["external_url"] = None
+    for field in ("external_url", "map_url", "booking_url"):
+        try:
+            values[field] = (
+                ItemInput.valid_external_url(values[field])
+                if values["publish_external_url"]
+                else None
+            )
+        except (ValueError, TypeError):
+            values[field] = None
     item = PublicItem.model_validate({key: values.get(key) for key in PublicItem.model_fields})
     # The editor can retain the previous type's hidden fields in the saved item.
     if item.type == "flight":

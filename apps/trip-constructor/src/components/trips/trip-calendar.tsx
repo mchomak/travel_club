@@ -7,18 +7,41 @@ import type { Calculation, DayInput, ItemInput, ItemType } from "@/lib/contracts
 import { buildCalendarEntries, type AirportKind } from "@/lib/calendar";
 import { minuteOfTime, moveEvent, moveHotel, selectionRange, timeOfMinute } from "@/lib/calendar-interaction";
 
-const HOUR_HEIGHT = 56;
+const HOUR_HEIGHT = 96;
+const CARD_HEIGHT = 54;
+const DAY_HEIGHT = 24 * HOUR_HEIGHT;
+const cardTop = (minute: number) => Math.min(minute / 60 * HOUR_HEIGHT + 2, DAY_HEIGHT - CARD_HEIGHT);
+const cardHeight = (start: number, end: number) => Math.min(Math.max(CARD_HEIGHT, (end - start) / 60 * HOUR_HEIGHT - 4), DAY_HEIGHT - cardTop(start));
+
+// Short intervals still need enough room for complete lines of text.
+function visualLanes<T extends { date: string; startMinute: number; endMinute: number; lane: number; laneCount: number }>(entries: T[]): T[] {
+  const result = entries.map(entry => ({ ...entry })).sort((a, b) => a.date.localeCompare(b.date) || a.startMinute - b.startMinute || b.endMinute - a.endMinute);
+  let group: T[] = [], active: T[] = [], date = "";
+  const finish = () => { const count = Math.max(1, ...group.map(entry => entry.lane + 1)); group.forEach(entry => { entry.laneCount = count; }); group = []; };
+  for (const entry of result) {
+    if (entry.date !== date) { finish(); active = []; date = entry.date; }
+    active = active.filter(previous => cardTop(previous.startMinute) + cardHeight(previous.startMinute, previous.endMinute) + 4 > cardTop(entry.startMinute));
+    if (!active.length && group.length) finish();
+    const occupied = new Set(active.map(previous => previous.lane));
+    entry.lane = 0;
+    while (occupied.has(entry.lane)) entry.lane++;
+    active.push(entry); group.push(entry);
+  }
+  finish();
+  return result;
+}
+const priority = (type: ItemType) => type === "transfer" || type === "meal" ? "secondary" : type === "insurance" || type === "other" ? "tertiary" : "primary";
 const labels: Record<ItemType, string> = {
   flight: "Перелёт", train_bus: "Поезд или автобус", transfer: "Трансфер", hotel: "Отель",
   excursion: "Экскурсия", activity: "Занятие", rental: "Аренда", insurance: "Страхование", meal: "Еда", other: "Событие",
 };
 const colors: Record<ItemType, { background: string; border: string }> = {
   flight: { background: "#254f77", border: "#70b9ef" }, train_bus: { background: "#35536d", border: "#8db7d6" },
-  transfer: { background: "#504672", border: "#b7a1e9" }, hotel: { background: "#255d58", border: "#80d9c6" },
+  transfer: { background: "#354958", border: "#8199a9" }, hotel: { background: "#255d58", border: "#80d9c6" },
   excursion: { background: "#70523b", border: "#e9b786" }, activity: { background: "#66506b", border: "#d9a5dd" },
   rental: { background: "#555d39", border: "#c5d681" }, insurance: { background: "#4d5763", border: "#b2bfcd" },
-  meal: { background: "#76543c", border: "#ebbd8e" },
-  other: { background: "#5d5262", border: "#c9b4d2" },
+  meal: { background: "#354958", border: "#8199a9" },
+  other: { background: "#2b3c4b", border: "#647988" },
 };
 
 function pageSizeForWidth(width: number): number { return width < 640 ? 1 : width < 1024 ? 3 : 7; }
@@ -70,7 +93,8 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
   const safeStart = Math.min(pageStart, Math.max(0, Math.floor((orderedDays.length - 1) / pageSize) * pageSize));
   const visibleDays = visibleDayId ? orderedDays.filter(day => day.id === visibleDayId) : orderedDays.slice(safeStart, safeStart + pageSize);
   const entries = useMemo(() => buildCalendarEntries(orderedDays, items, visibleDays.map(day => day.date)), [orderedDays, items, visibleDays]);
-  const gridStyle: CSSProperties = { display: "grid", gridTemplateColumns: `48px repeat(${visibleDays.length}, minmax(128px, 1fr))` };
+  const visualEntries = useMemo(() => visualLanes([...entries.events, ...entries.airportBlocks]), [entries]);
+  const gridStyle: CSSProperties = { display: "grid", gridTemplateColumns: `48px repeat(${visibleDays.length}, minmax(180px, 1fr))` };
   const itemById = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
   const summaries = useMemo(() => visibleDays.map(day => {
     const ids = new Set([...entries.events.filter(event => event.date === day.date).map(event => event.itemId),
@@ -186,7 +210,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
       {(onCreateRange || onMoveItem || onMoveHotel) && <button type="button" aria-pressed={touchSelect} onClick={() => setTouchSelect(value => !value)}>{touchSelect ? "Редактирование касанием включено" : "Выбирать и переносить касанием"}</button>}
     </div>
     <div className="trip-calendar-scroll" style={{ overflowX: "auto", overflowY: "auto", maxHeight: "90vh", minHeight: 740 }}>
-      <div ref={surfaceRef} className="trip-calendar-surface" onPointerMove={updateGesture} onPointerUp={finishGesture} onPointerCancel={() => { gestureRef.current = null; setGesture(null); }} style={{ minWidth: 48 + visibleDays.length * 128 }}>
+      <div ref={surfaceRef} className="trip-calendar-surface" onPointerMove={updateGesture} onPointerUp={finishGesture} onPointerCancel={() => { gestureRef.current = null; setGesture(null); }} style={{ minWidth: 48 + visibleDays.length * 180 }}>
         <div className="trip-calendar-header">
         <div className="trip-calendar-dates" style={gridStyle}>
           <span aria-hidden="true" />
@@ -224,7 +248,7 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
           {visibleDays.map(day => <div className="trip-calendar-day" key={day.id} data-date={day.date} onPointerDown={event => {
             if (event.target !== event.currentTarget || !onCreateRange) return;
             begin(event, { kind: "create", dayId: day.id, anchorMinute: minuteAt(day.id, event.clientY) });
-          }} style={{ position: "relative", height: 24 * HOUR_HEIGHT, borderLeft: "1px solid #395064", background: "repeating-linear-gradient(to bottom, transparent 0, transparent 55px, #395064 55px, #395064 56px)", touchAction: touchSelect ? "none" : "auto", cursor: onCreateRange ? "crosshair" : undefined }}>
+          }} style={{ position: "relative", height: 24 * HOUR_HEIGHT, borderLeft: "1px solid #395064", background: `repeating-linear-gradient(to bottom, transparent 0, transparent ${HOUR_HEIGHT - 1}px, #395064 ${HOUR_HEIGHT - 1}px, #395064 ${HOUR_HEIGHT}px)`, touchAction: touchSelect ? "none" : "auto", cursor: onCreateRange ? "crosshair" : undefined }}>
             {gesture?.kind === "create" && gesture.dayId === day.id && (() => {
               const range = selectionRange(gesture.anchorMinute, gesture.currentMinute, gesture.dragged);
               const start = minuteOfTime(range.start) ?? 0, end = minuteOfTime(range.end) ?? start + 15;
@@ -234,19 +258,21 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
               const segment = previewSegments.get(day.id)!;
               return <div role="status" aria-label={`Новое положение ${eventPreview.start}–${eventPreview.end}`} style={{ position: "absolute", top: segment.start / 60 * HOUR_HEIGHT, height: Math.max(18, (segment.end - segment.start) / 60 * HOUR_HEIGHT), left: 0, right: 0, zIndex: 3, border: "2px dashed #f7d179", background: "#f7d17955", pointerEvents: "none" }}>{eventPreview.start}–{eventPreview.end}</div>;
             })()}
-            {entries.events.filter(event => event.date === day.date).map(event => {
+            {visualEntries.filter(event => event.kind === "event" && event.date === day.date).map(event => {
+              if (event.kind !== "event") return null;
               const color = colors[event.itemType];
               const displayTime = event.endpoint ? `${event.endpoint === "departure" ? "Отправление" : "Прибытие"} ${timeOf(event.startMinute)}` : `${timeOf(event.startMinute)} — ${timeOf(event.endMinute)}`;
-              return <button type="button" key={`${event.itemId}-${event.date}-${event.endpoint ?? "interval"}`} className={`trip-calendar-event trip-calendar-${event.itemType}`} onPointerDown={pointer => {
+              return <button type="button" key={`${event.itemId}-${event.date}-${event.endpoint ?? "interval"}`} className={`trip-calendar-event trip-calendar-${event.itemType} trip-calendar-${priority(event.itemType)}`} onPointerDown={pointer => {
                 pointer.stopPropagation();
                 begin(pointer, { kind: "event", dayId: day.id, anchorMinute: minuteAt(day.id, pointer.clientY), itemId: event.itemId, segmentDate: event.date });
-              }} aria-pressed={selectedItemId == null ? undefined : selectedItemId === event.itemId} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: event.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (event.endMinute - event.startMinute) / 60 * HOUR_HEIGHT), left: `${event.lane / event.laneCount * 100}%`, width: `${100 / event.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, outline: selectedItemId === event.itemId ? "2px solid #f7d179" : undefined, outlineOffset: -2, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
+              }} aria-pressed={selectedItemId == null ? undefined : selectedItemId === event.itemId} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: cardTop(event.startMinute), height: cardHeight(event.startMinute, event.endMinute), left: `calc(${event.lane / event.laneCount * 100}% + 2px)`, width: `calc(${100 / event.laneCount}% - 4px)`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, outline: selectedItemId === event.itemId ? "2px solid #f7d179" : undefined, outlineOffset: -2, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
                 <strong>{event.title}</strong><span style={{ display: "block" }}>{displayTime} · {labels[event.itemType]}</span>
               </button>;
             })}
-            {entries.airportBlocks.filter(block => block.date === day.date).map(block => {
+            {visualEntries.filter(block => block.kind === "airport" && block.date === day.date).map(block => {
+              if (block.kind !== "airport") return null;
               const name = block.airportKind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта";
-              return <button type="button" key={`${block.itemId}-${block.airportKind}-${block.date}`} className="trip-calendar-airport" onPointerDown={pointer => pointer.stopPropagation()} onClick={() => { onSelectItem?.(block.itemId); onOpenAirport?.(block.itemId, block.airportKind); }} aria-label={`Настроить ${name.toLowerCase()}: ${block.title}, ${block.date}, ${timeOf(block.startMinute)} — ${timeOf(block.endMinute)}`} style={{ position: "absolute", top: block.startMinute / 60 * HOUR_HEIGHT, height: Math.max(18, (block.endMinute - block.startMinute) / 60 * HOUR_HEIGHT), left: `${block.lane / block.laneCount * 100}%`, width: `${100 / block.laneCount}%`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#e6f3ff", background: "#24405b", border: "1px dashed #8bb9dc", borderRadius: 5, fontSize: 11 }}>
+              return <button type="button" key={`${block.itemId}-${block.airportKind}-${block.date}`} className="trip-calendar-airport" onPointerDown={pointer => pointer.stopPropagation()} onClick={() => { onSelectItem?.(block.itemId); onOpenAirport?.(block.itemId, block.airportKind); }} aria-label={`Настроить ${name.toLowerCase()}: ${block.title}, ${block.date}, ${timeOf(block.startMinute)} — ${timeOf(block.endMinute)}`} style={{ position: "absolute", top: cardTop(block.startMinute), height: cardHeight(block.startMinute, block.endMinute), left: `calc(${block.lane / block.laneCount * 100}% + 2px)`, width: `calc(${100 / block.laneCount}% - 4px)`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#e6f3ff", background: "#24405b", border: "1px dashed #8bb9dc", borderRadius: 5, fontSize: 11 }}>
                 <strong>{name}</strong><span style={{ display: "block" }}>{timeOf(block.startMinute)}–{timeOf(block.endMinute)} · {block.title}</span>
               </button>;
             })}

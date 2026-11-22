@@ -447,3 +447,26 @@ test("client link sharing requires an explicit choice", async () => {
   await user.click(screen.getByRole("button", { name: "Сохранить элемент" }));
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ publish_external_url: false }), undefined);
 });
+
+test('event stages can be added and saved within an excursion', async () => {
+ const day=emptyDay('2026-10-01'), onSubmit=vi.fn(), user=userEvent.setup();
+ const trip={...newTrip(), start_date:day.date, end_date:day.date, days:[day], items:[], rates:[]};
+ render(<ItemForm initial={newItem('excursion',day,'RUB',day.date)} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ await user.click(screen.getByRole('button',{name:'Добавить этап'}));
+ await user.type(screen.getByLabelText('Название этапа 1'), 'Остров');
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({stages:[expect.objectContaining({title:'Остров'})]}),undefined);
+});
+
+test('typed links survive form submission and editable document conversion', async () => {
+ const day=emptyDay('2026-10-01'), onSubmit=vi.fn(), user=userEvent.setup();
+ const trip={...newTrip(), start_date:day.date, end_date:day.date, days:[day], items:[], rates:[]};
+ render(<ItemForm initial={newItem('excursion',day,'RUB',day.date)} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ await user.type(screen.getByLabelText('Ссылка на карту'), 'https://example.com/map');
+ await user.type(screen.getByLabelText('Ссылка на бронирование или оплату'), 'https://example.com/book');
+ await user.click(screen.getByRole('button',{name:'Сохранить элемент'}));
+ const saved=onSubmit.mock.calls[0][0];
+ expect(saved).toMatchObject({map_url:'https://example.com/map',booking_url:'https://example.com/book'});
+ const doc={...trip,items:[saved]} as unknown as TripDocument;
+ expect(tripInput(doc).items[0]).toMatchObject({map_url:saved.map_url,booking_url:saved.booking_url});
+});

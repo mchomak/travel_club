@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
 import { currencies, defaultModes, displaySubtype, eventCategories, eventCategory, formatDate, formatMoney, isAutomaticItemTitle, itemLabels, modeLabels, nextItemTitle, subtypeOptions, timeLabel } from "@/lib/trip-ui";
@@ -30,6 +30,9 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     ? trip.days.find(day => day.date === nextDate(initialStartDate))?.id ?? null : null;
   const defaults = {
     ...initial,
+    stages: initial.stages ?? [],
+    map_url: initial.map_url ?? null,
+    booking_url: initial.booking_url ?? null,
     title: isNew ? nextItemTitle(trip,initial) : initial.title,
     departure_country_code: initial.departure_country_code ?? null,
     arrival_country_code: initial.arrival_country_code ?? null,
@@ -45,6 +48,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
     check_out_time: isNew && initial.type === "hotel" ? "11:00" : initial.check_out_time,
   };
   const { register, handleSubmit, setValue, setError: setFieldError, clearErrors, control, formState: { errors, isDirty } } = useForm<ItemInput>({ defaultValues: defaults });
+  const { fields: stageFields, append: addStage, remove: removeStage } = useFieldArray({ control, name: "stages", keyName: "formKey" });
   const item = useWatch({ control }) as ItemInput;
   const usesUtcOffsets = hasUtcOffsets(item);
   const manualTitle = useRef(!isAutomaticItemTitle(initial.title));
@@ -127,7 +131,7 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
   function save(values: ItemInput) {
     if (!typeChosen) return;
     setError(null);
-    clearErrors(["end_day_id", "end_time", "check_out", "external_url", "airport_before_minutes", "airport_after_minutes", "departure_utc_offset_minutes", "arrival_utc_offset_minutes"]);
+    clearErrors(["end_day_id", "end_time", "check_out", "external_url", "map_url", "booking_url", "airport_before_minutes", "airport_after_minutes", "departure_utc_offset_minutes", "arrival_utc_offset_minutes"]);
     const departureOffset = values.departure_utc_offset_minutes, arrivalOffset = values.arrival_utc_offset_minutes;
     if ((departureOffset == null) !== (arrivalOffset == null)) {
       setFieldError("arrival_utc_offset_minutes", { message: "Укажите оба смещения UTC на даты отправления и прибытия" });
@@ -175,9 +179,11 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       setFieldError("check_out", { message: "Выезд должен быть позже заезда" });
       return;
     }
-    const urlResult = validUrl(values.external_url);
-    if (urlResult !== true) { setFieldError("external_url", { message: urlResult }); return; }
-    const normalized = { ...values, unit_price: values.price_pending ? '0' : values.unit_price, included:values.price_pending ? false : values.included, external_url: values.external_url || null,
+    for (const field of ["external_url", "map_url", "booking_url"] as const) {
+      const urlResult = validUrl(values[field] ?? null);
+      if (urlResult !== true) { setFieldError(field, { message: urlResult }); return; }
+    }
+    const normalized = { ...values, unit_price: values.price_pending ? '0' : values.unit_price, included:values.price_pending ? false : values.included, external_url: values.external_url || null, map_url: values.map_url || null, booking_url: values.booking_url || null,
       end_day_id: values.type === "hotel" ? null : values.end_day_id,
       start_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.start_time : values.start_time,
       end_time: values.type === "hotel" ? null : unchangedLegacyOvernight ? initial.end_time : values.end_time };
@@ -210,8 +216,10 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       {item.type !== "flight" && <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { maxLength: 200 })} /></Field>}
       {category==='transfer'?<TransportEndpoints item={item} trip={trip} isNew={isNew} onChange={patch=>{for(const field of Object.keys(patch) as (keyof ItemInput)[])setValue(field,patch[field],{shouldDirty:true});}}/>:<div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||item.type==='flight'||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>}
       <Field label="Описание для клиента" wide><textarea rows={2} {...register("description", { maxLength: 10000 })} /></Field>
-      <Field label="Ссылка" error={errors.external_url?.message} hint="Необязательно. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
-      <label className="check-field field-wide"><input type="checkbox" {...register("publish_external_url")} /><span>Показывать клиенту</span></label>
+      <Field label="Ссылка" error={errors.external_url?.message} hint="Ознакомительный ресурс. Полный адрес http:// или https://" wide><input type="text" inputMode="url" maxLength={2048} {...register("external_url", { setValueAs: v => v || null, validate: validUrl })} /></Field>
+      <Field label="Ссылка на карту" error={errors.map_url?.message} wide><input type="text" inputMode="url" maxLength={2048} {...register("map_url", { setValueAs: v => v || null, validate: value => validUrl(value ?? null) })} /></Field>
+      <Field label="Ссылка на бронирование или оплату" error={errors.booking_url?.message} wide><input type="text" inputMode="url" maxLength={2048} {...register("booking_url", { setValueAs: v => v || null, validate: value => validUrl(value ?? null) })} /></Field>
+      <label className="check-field field-wide"><input type="checkbox" {...register("publish_external_url")} /><span>Показывать клиенту</span></label><p className="field-hint field-wide">Настройка применяется ко всем трём ссылкам.</p>
       {item.external_url && validUrl(item.external_url) === true && <a className="text-link field-wide" href={item.external_url} target="_blank" rel="noopener noreferrer">Открыть ссылку в новой вкладке</a>}
     </div></fieldset>
     {!expenseWithoutSchedule && <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Время" disabled={!typeChosen}><h3>Время</h3><div className="form-grid">
@@ -242,6 +250,16 @@ export function ItemForm({ initial, trip, onSubmit, onCancel, onDirtyChange, req
       <label className="check-field field-wide"><input type="checkbox" disabled={!!item.price_pending} {...register("included")} /><span>Учитывать в стоимости поездки</span></label>
     </div><p className="field-hint mt-3">{mode === "hotel" ? "Сумма распределяется по ночам. Остаток округления относится к последней ночи." : mode === "per_day" || mode === "per_person_per_day" ? "Итог элемента учитывается один раз; в дневной смете он разделён между днями." : "Вся сумма в выбранный день или в общие расходы."}</p><div className="item-estimate"><span>{item.included ? "Стоимость элемента" : "Исключён из итоговой стоимости"}</span><strong>{amount ? formatMoney(amount, trip.base_currency) : "Заполните условия расчёта"}</strong></div></fieldset>
     <fieldset className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Заметки" disabled={!typeChosen}><h3>Заметки</h3><div className="form-grid"><Field label="Заметка для клиента" wide><textarea rows={3} {...register("client_note", { maxLength: 10000 })} /></Field><Field label="Внутренняя заметка" hint="Видна только команде" wide><textarea rows={3} {...register("internal_note", { maxLength: 10000 })} /></Field></div></fieldset>
+    <fieldset className="form-section" disabled={!typeChosen} aria-label="Этапы события"><h3>Этапы события</h3><p className="field-hint">Части одного события показываются внутри него и не добавляют стоимость.</p>
+      {stageFields.map((stage, index) => <div className="form-grid" key={stage.formKey}>
+        <Field label={`Название этапа ${index + 1}`} error={errors.stages?.[index]?.title?.message} wide><input {...register(`stages.${index}.title`, { required: "Укажите название этапа", maxLength: 200, validate: value => !!value?.trim() || "Укажите название этапа" })} /></Field>
+        <Field label={`Начало этапа ${index + 1}`}><input type="time" {...register(`stages.${index}.start_time`, { setValueAs: value => value || null })} /></Field>
+        <Field label={`Окончание этапа ${index + 1}`}><input type="time" {...register(`stages.${index}.end_time`, { setValueAs: value => value || null })} /></Field>
+        <Field label={`Описание этапа ${index + 1}`} wide><textarea rows={2} {...register(`stages.${index}.notes`, { maxLength: 10000 })} /></Field>
+        <button type="button" className="secondary-button" onClick={() => removeStage(index)}>Удалить этап {index + 1}</button>
+      </div>)}
+      <button type="button" className="secondary-button" disabled={stageFields.length >= 100} onClick={() => addStage({ id: crypto.randomUUID(), title: "", start_time: null, end_time: null, notes: "" })}>Добавить этап</button>
+    </fieldset>
     {!!error && <ErrorNotice error={error} />}<span className="sr-only">{timeLabel(item)}</span><div className="form-actions"><button type="button" className="secondary-button" onClick={onCancel}>Отмена</button><button className="primary-button" disabled={!typeChosen}>Сохранить элемент</button></div>
   </form>;
 }

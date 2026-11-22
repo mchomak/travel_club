@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { date, localTime, schedule, transportRoute, type PublicDay, type PublicItem, type PublicItinerary, type PublicPlace } from "./trip-itinerary";
+import { date, localTime, sameFlightOffset, schedule, transportRoute, type PublicDay, type PublicItem, type PublicItinerary, type PublicPlace } from "./trip-itinerary";
 import s from "./trip.module.css";
 
 type Point = PublicPlace & { number: number; item: number | null; source: PublicItem };
@@ -130,6 +130,8 @@ function Event({ item, day, numbers, showPlaces = false, selected = false, selec
   const timing = schedule(item, day);
   const route = transportRoute(item);
   const link = safeUrl(item.external_url);
+  const mapLink = safeUrl(item.map_url);
+  const bookingLink = safeUrl(item.booking_url);
   const transportModes: Record<string, string> = { bus: "Автобус", train: "Поезд", taxi: "Такси", car: "Автомобиль", walk: "Пеший переход", rental: "Аренда", water: "Водный транспорт", other: "Другой транспорт" };
   const mode = ["transfer", "train_bus", "rental"].includes(item.type) && item.subtype ? transportModes[item.subtype] : null;
   const seconds = item.movement?.duration_seconds;
@@ -144,7 +146,16 @@ function Event({ item, day, numbers, showPlaces = false, selected = false, selec
       {route && <p>{route}</p>}
       {item.type !== "flight" && item.location && <p>{item.location}</p>}
       {(item.description || item.client_note) && <details className={s.eventDetails}><summary>Подробнее</summary>{item.description && <p>{item.description}</p>}{item.client_note && <p>{item.client_note}</p>}</details>}
-      {link && <a href={link} target="_blank" rel="noopener noreferrer">Открыть ресурс ↗</a>}
+      {item.stages && item.stages.length > 0 && <ol className={s.stages}>{item.stages.map(stage => <li key={stage.id}>
+        <strong>{stage.title}</strong>
+        {(stage.start_time || stage.end_time) && <p>{[stage.start_time?.slice(0, 5), stage.end_time?.slice(0, 5)].filter(Boolean).join(" — ")}</p>}
+        {stage.notes && <p>{stage.notes}</p>}
+      </li>)}</ol>}
+      {(mapLink || link || bookingLink) && <div className={s.eventLinks}>
+        {mapLink && <a href={mapLink} target="_blank" rel="noopener noreferrer">Карта ↗</a>}
+        {link && <a href={link} target="_blank" rel="noopener noreferrer">Открыть ресурс ↗</a>}
+        {bookingLink && <a href={bookingLink} target="_blank" rel="noopener noreferrer">Бронирование / оплата ↗</a>}
+      </div>}
       {showPlaces && [item.map_place, item.map_end_place].filter(validPlace).map((place, index) => <p key={index}><a href={`https://www.google.com/maps/search/?api=1&query=${place.latitude}%2C${place.longitude}`} target="_blank" rel="noopener noreferrer" aria-label={`Открыть ${place.name} в Google Maps`}>{place.name} · Google Maps ↗</a></p>)}
     </div>
   </li>;
@@ -173,7 +184,7 @@ function PracticalDay({ day, days, generalItems, number }: { day: PublicDay; day
     <div className={s.practicalGrid}>
       <DayMap points={points} selected={selected} select={setSelected} />
       {events.length ? <ol className={s.practicalEvents}>{events.map((event, index) => event.arrival
-        ? <li key={index} className={s.practicalEvent} data-selected={selected === event.item}><div className={s.eventNumbers}>{points.filter(point => point.item === null && point.source === event.item).map(point => <span key={point.number}>{point.number}</span>)}</div><div><h4><button type="button" className={s.eventSelect} aria-pressed={selected === event.item} onClick={() => setSelected(event.item)}>Прибытие: {event.item.title}</button></h4>{event.item.end_time && <p className={s.eventTime}>{localTime(event.item.end_time, event.item.arrival_utc_offset_minutes)}</p>}{event.item.map_end_place?.name && <p>{event.item.map_end_place.name}</p>}</div></li>
+        ? <li key={index} className={s.practicalEvent} data-selected={selected === event.item}><div className={s.eventNumbers}>{points.filter(point => point.item === null && point.source === event.item).map(point => <span key={point.number}>{point.number}</span>)}</div><div><h4><button type="button" className={s.eventSelect} aria-pressed={selected === event.item} onClick={() => setSelected(event.item)}>Прибытие: {event.item.title}</button></h4>{event.item.end_time && <p className={s.eventTime}>{localTime(event.item.end_time, sameFlightOffset(event.item) ? null : event.item.arrival_utc_offset_minutes)}</p>}{event.item.map_end_place?.name && <p>{event.item.map_end_place.name}</p>}</div></li>
         : <Event key={index} item={event.item} day={day.date} numbers={points.filter(point => point.item === event.index).map(point => point.number)} selected={selected === event.item} select={() => setSelected(event.item)} />)}</ol> : <p className={s.empty}>Программа этого дня пока не заполнена.</p>}
     </div>
   </section>;

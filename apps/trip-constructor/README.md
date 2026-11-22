@@ -14,6 +14,8 @@ For private preview on separate development ports, open both apps with the same 
 
 Choose a cover under «Параметры поездки» and a day photo under «Детали и заметки дня». Both fields start empty. After saving the trip, the existing client link shows the selected illustrations. Select «Без фотографии» and save to remove one.
 
+For a day you can also upload your own JPEG, PNG or WebP image up to 5 MB. The server validates and re-encodes it without its original metadata and stores it in PostgreSQL. Save the day and then the trip to publish the selection. Uploaded day photos are included in JSON exports; exports exceeding the 10 MB import limit are refused with a message. Unselected uploads remain stored until their trip is deleted.
+
 ## Checks
 
 From the repository root: `npm run lint:constructor`, `npm run typecheck:constructor`, `npm run test:constructor`, `npm run build:constructor`. E2E tests for the builder and map are in `e2e/`.

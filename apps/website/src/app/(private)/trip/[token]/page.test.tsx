@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import Page from "./page";
 
@@ -21,7 +21,7 @@ test("shows an inclusive duration, guide navigation and an honest empty day", as
   expect(view.getByRole("button", { name: /Практический план/ })).toBeEnabled();
   expect(view.getByRole("heading", { name: "О путешествии" })).toBeVisible();
   expect(view.getByRole("heading", { name: "Программа по дням" })).toBeVisible();
-  expect(view.getByText("Программа этого дня пока не заполнена.")).toBeVisible();
+  expect(view.getByText("Описание этого дня пока не добавлено.")).toBeVisible();
   expect(container).not.toHaveTextContent(/Свободное время|Рабочий черновик/);
   expect(container.querySelector('img[src*="/photos/"]')).toBeNull();
 });
@@ -37,13 +37,13 @@ test("normalizes locale-specific spaces in the date range for hydration", async 
   } finally { formatter.mockRestore(); }
 });
 
-test("uses only assigned catalogue photos and keeps every saved event reachable", async () => {
+test("uses assigned catalogue photos and keeps day events in the practical plan", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
     client_title: "Путешествие по Китаю", cover_photo_id: "shanghai-night",
     start_date: "2026-11-20", end_date: "2026-11-21", participants: 2, client_note: "",
     days: [
       { date: "2026-11-20", title: "Вдоль канала", city: "Сучжоу", photo_id: "suzhou-canal",
-        items: Array.from({ length: 5 }, (_, i) => ({ type: "excursion", title: `Прогулка ${i + 1}` })) },
+        client_note: "Day description", items: Array.from({ length: 5 }, (_, i) => ({ type: "excursion", title: `Прогулка ${i + 1}` })) },
       { date: "2026-11-21", title: "В Шанхае", city: "Шанхай", photo_id: "https://untrusted.example/photo", items: [] },
     ],
     general_items: [{ title: "Общее событие", type: "activity" }],
@@ -55,9 +55,10 @@ test("uses only assigned catalogue photos and keeps every saved event reachable"
   expect(view.getAllByRole("img")).toHaveLength(2);
   expect(container.innerHTML).not.toContain("untrusted.example");
   const day = within(view.getByRole("region", { name: "День 1" }));
-  expect(day.getByRole("heading", { name: "Прогулка 3" })).toBeVisible();
-  day.getByText("Ещё 2 события").click();
-  expect(day.getByRole("heading", { name: "Прогулка 5" })).toBeVisible();
+  expect(day.getByText("Day description")).toBeVisible();
+  expect(day.queryByRole("heading", { name: /3$/ })).not.toBeInTheDocument();
+  fireEvent.click(view.getByRole("button", { name: "Практический план" }));
+  expect(view.getByRole("heading", { name: /5$/ })).toBeVisible();
   expect(view.getByRole("heading", { name: "Общее событие" })).toBeVisible();
 });
 
@@ -85,18 +86,21 @@ test("reads the public itinerary anonymously and renders client fields, dated tr
     general_items: [{ type: "hotel", title: "Гостиница", check_in: "2026-11-21", check_out: "2026-11-23", check_in_time: "14:00:00", check_out_time: "11:00:00" }],
   }));
   vi.stubGlobal("fetch", fetcher);
-  render(await Page({ params }));
+  const { container } = render(await Page({ params }));
+  const view = within(container);
   const [url, options] = fetcher.mock.calls[0];
   expect(new URL(url).pathname).toBe(`/api/public/trips/${token}`);
   expect(options).toMatchObject({ cache: "no-store", credentials: "omit", redirect: "error" });
-  for (const name of ["Поездка в Японию", "Ночной рейс", "Гостиница"]) expect(screen.getByRole("heading", { name })).toBeVisible();
-  for (const note of ["Возьмите паспорт", "Встречаемся у выхода", "Ручная кладь"]) expect(screen.getByText(note)).toBeVisible();
-  expect(document.body).toHaveTextContent(/23:20 UTC\+03:00.*21 ноября.*06:30 UTC\+09:00/);
-  expect(document.body).toHaveTextContent(/Заезд.*21 ноября.*14:00.*Выезд.*23 ноября.*11:00/);
-  expect(document.body).toHaveTextContent("Москва → Осака");
-  expect(document.body).toHaveTextContent("Терминал 2 → Отель у реки");
-  expect(document.body).not.toHaveTextContent("Секретный комментарий");
-  expect(document.body.innerHTML).not.toContain("private.example");
+  fireEvent.click(view.getByRole("button", { name: "Практический план" }));
+  for (const name of ["Поездка в Японию", "Ночной рейс", "Гостиница"]) expect(view.getByRole("heading", { name })).toBeVisible();
+  fireEvent.click(view.getByText("Подробнее"));
+  for (const note of ["Возьмите паспорт", "Встречаемся у выхода", "Ручная кладь"]) expect(view.getByText(note)).toBeVisible();
+  expect(container).toHaveTextContent(/23:20 UTC\+03:00.*21 ноября.*06:30 UTC\+09:00/);
+  expect(container).toHaveTextContent(/Заезд.*21 ноября.*14:00.*Выезд.*23 ноября.*11:00/);
+  expect(container).toHaveTextContent("Москва → Осака");
+  expect(container).toHaveTextContent("Терминал 2 → Отель у реки");
+  expect(container).not.toHaveTextContent("Секретный комментарий");
+  expect(container.innerHTML).not.toContain("private.example");
 });
 
 test("uses flight cities and hides unstructured locations even when cities are missing", async () => {
@@ -163,7 +167,7 @@ test("practical plan shows ordered events, both places and copy failure", async 
       { type: "flight", title: "Рейс", start_time: "10:00:00", departure_city: "Токио", arrival_city: "Осака",
         map_place: { name: "Аэропорт отправления", latitude: 35.55, longitude: 139.78 },
         map_end_place: { name: "Аэропорт прибытия", latitude: 34.43, longitude: 135.24 }, external_url: "https://example.com/ticket" },
-      { type: "meal", title: "Обед", description: "Без точки" }
+      { type: "meal", title: "Обед", description: "Без точки", stages: [{ id: "stage-1", title: "First stage", start_time: "12:00:00", end_time: "13:00:00", notes: "Stage note" }] }
     ] }], general_items: []
   })));
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) } });
@@ -173,6 +177,9 @@ test("practical plan shows ordered events, both places and copy failure", async 
   expect(view.queryByRole("heading", { name: "Программа по дням" })).not.toBeInTheDocument();
   expect(view.getByRole("heading", { name: "Рейс" })).toBeVisible();
   expect(view.getByRole("heading", { name: "Обед" })).toBeVisible();
+  expect(view.getByText("First stage")).toBeVisible();
+  expect(view.getByText("12:00 — 13:00")).toBeVisible();
+  expect(view.getByText("Stage note")).toBeVisible();
   expect(view.getByRole("link", { name: /Открыть ресурс/ })).toHaveAttribute("href", "https://example.com/ticket");
   fireEvent.click(view.getByText(/Карта дня/));
   expect(view.getByText(/Прямые линии/)).toBeVisible();
@@ -184,7 +191,7 @@ test("places an overnight arrival on the next day and copies its coordinates", a
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
     client_title: "Маршрут", start_date: "2026-11-20", end_date: "2026-11-21", participants: 1,
     days: [
-      { date: "2026-11-20", items: [{ type: "flight", title: "Ночной рейс", start_time: "23:00", end_time: "06:00", end_date: "2026-11-21", map_place: { name: "Вылет", latitude: 35, longitude: 139 }, map_end_place: { name: "Прилёт", latitude: 34, longitude: 135 } }] },
+      { date: "2026-11-20", items: [{ type: "flight", title: "Ночной рейс", start_time: "23:00", end_time: "06:00", end_date: "2026-11-21", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: 180, map_place: { name: "Вылет", latitude: 35, longitude: 139 }, map_end_place: { name: "Прилёт", latitude: 34, longitude: 135 } }] },
       { date: "2026-11-21", items: [{ type: "meal", title: "Завтрак", external_url: "javascript:alert(1)" }] },
     ], general_items: [],
   })));
@@ -199,6 +206,8 @@ test("places an overnight arrival on the next day and copies its coordinates", a
   expect(second.getByRole("link", { name: /Открыть Прилёт/ })).toBeVisible();
   expect(second.getByRole("heading", { name: "Завтрак" })).toBeVisible();
   expect(second.getByRole("heading", { name: "Прибытие: Ночной рейс" })).toBeVisible();
+  expect(second.getByText("06:00")).toBeVisible();
+  expect(second.queryByText(/UTC/)).not.toBeInTheDocument();
   expect(second.queryByRole("link", { name: /Открыть ресурс/ })).not.toBeInTheDocument();
   fireEvent.click(second.getAllByRole("button", { name: /Скопировать ссылку: Прилёт/ })[0]);
   expect(await second.findByText(/скопирована/)).toBeVisible();
@@ -290,4 +299,47 @@ test("connects map selection to events and groups unique public resources", asyn
   expect(resources.getByRole("heading", { name: "Экскурсии и активности" })).toBeVisible();
   expect(resources.getAllByRole("link")).toHaveLength(1);
   expect(resources.queryByRole("heading", { name: "Проживание" })).not.toBeInTheDocument();
+});
+
+
+test("omits matching flight UTC offsets but retains differing and partial offsets", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+    client_title: "Flights", start_date: "2026-11-20", end_date: "2026-11-20", participants: 1, days: [],
+    general_items: [
+      { type: "flight", title: "Same zone", start_time: "10:00", end_time: "12:00", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: 180 },
+      { type: "flight", title: "Different zones", start_time: "10:00", end_time: "12:00", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: 540 },
+      { type: "flight", title: "Partial zone", start_time: "10:00", end_time: "12:00", departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: null },
+    ],
+  })));
+  const { container } = render(await Page({ params }));
+  const [same, different, partial] = within(container).getAllByRole("listitem");
+  expect(same).toHaveTextContent("10:00 — 12:00");
+  expect(same).not.toHaveTextContent("UTC");
+  expect(different).toHaveTextContent("10:00 UTC+03:00 — 12:00 UTC+09:00");
+  expect(partial).toHaveTextContent("10:00 UTC+03:00 — 12:00");
+});
+
+
+test("renders uploaded day photos through the token-scoped endpoint", async () => {
+  const photoId = `upload-${"a".repeat(32)}`;
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+    client_title: "Trip", start_date: "2026-11-20", end_date: "2026-11-20", participants: 1,
+    days: [{ date: "2026-11-20", title: "Day", photo_id: photoId, items: [] }], general_items: [],
+  })));
+  const { container } = render(await Page({ params }));
+  expect(container.querySelector("img")).toHaveAttribute("src", `/api/public/trips/${token}/photos/${photoId}`);
+});
+
+
+test("shows published map, information and booking links in the practical event", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+    client_title: "Trip", start_date: "2026-11-20", end_date: "2026-11-20", participants: 1,
+    days: [{ date: "2026-11-20", items: [{ type: "activity", title: "Visit", map_url: "https://example.com/map", external_url: "https://example.com/info", booking_url: "https://example.com/booking" }] }], general_items: [],
+  })));
+  const { container } = render(await Page({ params }));
+  const view = within(container);
+  fireEvent.click(view.getByRole("button", { name: "Практический план" }));
+  expect(view.getByRole("link", { name: /Карта/ })).toHaveAttribute("href", "https://example.com/map");
+  expect(view.getByRole("link", { name: /Открыть ресурс/ })).toHaveAttribute("href", "https://example.com/info");
+  expect(view.getByRole("link", { name: /Бронирование/ })).toHaveAttribute("href", "https://example.com/booking");
 });

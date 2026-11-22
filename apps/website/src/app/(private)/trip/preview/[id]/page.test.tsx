@@ -50,3 +50,15 @@ test.each([401, 404])("returns not found when the protected endpoint responds wi
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("backend detail", { status })));
   await expect(Page({ params })).rejects.toMatchObject(notFound);
 });
+
+
+test("loads uploaded day photos through the authenticated preview endpoint", async () => {
+  getCookie.mockReturnValue({ name: "travel_session", value: "preview-test-session" });
+  const photoId = `upload-${"b".repeat(32)}`;
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+    client_title: "Trip", start_date: "2026-11-20", end_date: "2026-11-20", participants: 1,
+    days: [{ date: "2026-11-20", photo_id: photoId, items: [] }], general_items: [],
+  })));
+  const { container } = render(await Page({ params }));
+  expect(container.querySelector("img")).toHaveAttribute("src", `/api/trips/${id}/photos/${photoId}`);
+});

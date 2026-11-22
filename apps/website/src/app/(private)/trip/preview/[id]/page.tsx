@@ -26,5 +26,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     return <ItineraryUnavailable />;
   }
   if (!trip) notFound();
-  return <TripItinerary trip={trip} />;
+  return <TripItinerary trip={trip} photoBase={`/api/trips/${id}/photos`} />;
 }

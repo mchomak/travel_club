@@ -36,11 +36,11 @@ test("single-day viewport keeps overnight source days for editing, selection, cr
   expect(open).toHaveBeenCalledWith("night"); expect(select).toHaveBeenCalledWith("night");
   positionDays();
   fireEvent.pointerDown(arrival, { pointerId: 70, pointerType: "mouse", button: 0, clientX: 100, clientY: 108 });
-  fireEvent.pointerUp(arrival, { pointerId: 70, pointerType: "mouse", clientX: 100, clientY: 164 });
+  fireEvent.pointerUp(arrival, { pointerId: 70, pointerType: "mouse", clientX: 100, clientY: 204 });
   expect(move).toHaveBeenCalledWith("night", "day-0", "23:00", "03:00", "day-1");
   const cell = document.querySelector<HTMLElement>(".trip-calendar-day")!;
-  fireEvent.pointerDown(cell, { pointerId: 71, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 12 * 56 });
-  fireEvent.pointerUp(cell, { pointerId: 71, pointerType: "mouse", clientX: 100, clientY: 100 + 12 * 56 });
+  fireEvent.pointerDown(cell, { pointerId: 71, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 12 * 96 });
+  fireEvent.pointerUp(cell, { pointerId: 71, pointerType: "mouse", clientX: 100, clientY: 100 + 12 * 96 });
   expect(create).toHaveBeenCalledWith("day-1", "12:00", "13:00");
 });
 
@@ -54,7 +54,7 @@ test("westbound endpoint markers state departure and arrival without inventing a
 
 function positionDays() {
   document.querySelectorAll<HTMLElement>(".trip-calendar-day").forEach((day, index) => {
-    vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ left: 48 + index * 200, right: 248 + index * 200, top: 100, bottom: 1444, width: 200, height: 1344 } as DOMRect);
+    vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ left: 48 + index * 200, right: 248 + index * 200, top: 100, bottom: 2404, width: 200, height: 2304 } as DOMRect);
   });
 }
 
@@ -64,13 +64,13 @@ test("mouse drag selects a quarter-hour range and a touch tap creates an hour", 
   render(<TripCalendar days={[day]} items={[]} onOpenItem={vi.fn()} onCreateRange={create} />);
   positionDays();
   const cell = document.querySelector<HTMLElement>(".trip-calendar-day")!;
-  fireEvent.pointerDown(cell, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 9 * 56 + 8 });
-  fireEvent.pointerMove(cell, { pointerId: 1, pointerType: "mouse", clientX: 100, clientY: 100 + 10 * 56 + 8 });
+  fireEvent.pointerDown(cell, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 9 * 96 + 8 });
+  fireEvent.pointerMove(cell, { pointerId: 1, pointerType: "mouse", clientX: 100, clientY: 100 + 10 * 96 + 8 });
   expect(screen.getByRole("status", { name: /Выбран интервал/ })).toBeVisible();
-  fireEvent.pointerUp(cell, { pointerId: 1, pointerType: "mouse", clientX: 100, clientY: 100 + 10 * 56 + 8 });
+  fireEvent.pointerUp(cell, { pointerId: 1, pointerType: "mouse", clientX: 100, clientY: 100 + 10 * 96 + 8 });
   expect(create).toHaveBeenCalledWith("day-0", "09:00", "10:15");
-  fireEvent.pointerDown(cell, { pointerId: 2, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 12 * 56 });
-  fireEvent.pointerUp(cell, { pointerId: 2, pointerType: "touch", clientX: 100, clientY: 100 + 12 * 56 });
+  fireEvent.pointerDown(cell, { pointerId: 2, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 12 * 96 });
+  fireEvent.pointerUp(cell, { pointerId: 2, pointerType: "touch", clientX: 100, clientY: 100 + 12 * 96 });
   expect(create).toHaveBeenLastCalledWith("day-0", "12:00", "13:00");
 });
 
@@ -80,14 +80,14 @@ test("touch drag selects time only in the explicit selection mode", () => {
   render(<TripCalendar days={[day]} items={[]} onOpenItem={vi.fn()} onCreateRange={create} />);
   positionDays();
   const cell = document.querySelector<HTMLElement>(".trip-calendar-day")!;
-  fireEvent.pointerDown(cell, { pointerId: 5, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 56 });
-  fireEvent.pointerMove(cell, { pointerId: 5, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
-  fireEvent.pointerUp(cell, { pointerId: 5, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
+  fireEvent.pointerDown(cell, { pointerId: 5, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 96 });
+  fireEvent.pointerMove(cell, { pointerId: 5, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
+  fireEvent.pointerUp(cell, { pointerId: 5, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
   expect(create).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Выбирать и переносить касанием" }));
-  fireEvent.pointerDown(cell, { pointerId: 6, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 56 });
-  fireEvent.pointerMove(cell, { pointerId: 6, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
-  fireEvent.pointerUp(cell, { pointerId: 6, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
+  fireEvent.pointerDown(cell, { pointerId: 6, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 96 });
+  fireEvent.pointerMove(cell, { pointerId: 6, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
+  fireEvent.pointerUp(cell, { pointerId: 6, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
   expect(create).toHaveBeenCalledWith("day-0", "09:00", "10:15");
 });
 
@@ -100,10 +100,10 @@ test("dragging a timed event moves it across days, while click still opens it", 
   const button = screen.getByRole("button", { name: /Открыть занятие Прогулка/ });
   fireEvent.click(button);
   expect(open).toHaveBeenCalledWith("event");
-  fireEvent.pointerDown(button, { pointerId: 3, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 9 * 56 + 8 });
-  fireEvent.pointerMove(button, { pointerId: 3, pointerType: "mouse", clientX: 350, clientY: 100 + 11 * 56 + 8 });
+  fireEvent.pointerDown(button, { pointerId: 3, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 9 * 96 + 8 });
+  fireEvent.pointerMove(button, { pointerId: 3, pointerType: "mouse", clientX: 350, clientY: 100 + 11 * 96 + 8 });
   expect(screen.getByRole("status", { name: /Новое положение/ })).toBeVisible();
-  fireEvent.pointerUp(button, { pointerId: 3, pointerType: "mouse", clientX: 350, clientY: 100 + 11 * 56 + 8 });
+  fireEvent.pointerUp(button, { pointerId: 3, pointerType: "mouse", clientX: 350, clientY: 100 + 11 * 96 + 8 });
   fireEvent.click(button);
   expect(move).toHaveBeenCalledWith("event", "day-1", "11:00", "12:00", null);
   expect(open).toHaveBeenCalledTimes(1);
@@ -117,17 +117,17 @@ test("ordinary touch on an event keeps scrolling available and drag requires sel
   positionDays();
   const button = screen.getByRole("button", { name: /Открыть занятие Прогулка/ });
   expect(button.style.touchAction).toBe("auto");
-  fireEvent.pointerDown(button, { pointerId: 10, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 56 });
-  fireEvent.pointerMove(button, { pointerId: 10, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
-  fireEvent.pointerUp(button, { pointerId: 10, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
+  fireEvent.pointerDown(button, { pointerId: 10, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 96 });
+  fireEvent.pointerMove(button, { pointerId: 10, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
+  fireEvent.pointerUp(button, { pointerId: 10, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
   expect(move).not.toHaveBeenCalled();
   fireEvent.click(button);
   expect(open).toHaveBeenCalledWith("event");
   fireEvent.click(screen.getByRole("button", { name: "Выбирать и переносить касанием" }));
   expect(button.style.touchAction).toBe("none");
-  fireEvent.pointerDown(button, { pointerId: 11, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 56 });
-  fireEvent.pointerMove(button, { pointerId: 11, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
-  fireEvent.pointerUp(button, { pointerId: 11, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 56 });
+  fireEvent.pointerDown(button, { pointerId: 11, pointerType: "touch", button: 0, clientX: 100, clientY: 100 + 9 * 96 });
+  fireEvent.pointerMove(button, { pointerId: 11, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
+  fireEvent.pointerUp(button, { pointerId: 11, pointerType: "touch", clientX: 100, clientY: 100 + 10 * 96 });
   expect(move).toHaveBeenCalledWith("event", "day-0", "10:00", "11:00", null);
 });
 
@@ -139,8 +139,8 @@ test("dragging the continuation of an overnight event can move its start past mi
   positionDays();
   const continuation = screen.getAllByRole("button", { name: /Открыть перелёт Ночной рейс/ })[1];
   fireEvent.pointerDown(continuation, { pointerId: 7, pointerType: "mouse", button: 0, clientX: 350, clientY: 108 });
-  fireEvent.pointerMove(continuation, { pointerId: 7, pointerType: "mouse", clientX: 550, clientY: 100 + 2 * 56 + 8 });
-  fireEvent.pointerUp(continuation, { pointerId: 7, pointerType: "mouse", clientX: 550, clientY: 100 + 2 * 56 + 8 });
+  fireEvent.pointerMove(continuation, { pointerId: 7, pointerType: "mouse", clientX: 550, clientY: 100 + 2 * 96 + 8 });
+  fireEvent.pointerUp(continuation, { pointerId: 7, pointerType: "mouse", clientX: 550, clientY: 100 + 2 * 96 + 8 });
   expect(move).toHaveBeenCalledWith("flight", "day-2", "00:00", "03:00", null);
 });
 
@@ -150,8 +150,8 @@ test("overnight move preview covers both occupied dates", () => {
   render(<TripCalendar days={days} items={[flight]} onOpenItem={vi.fn()} onMoveItem={vi.fn()} />);
   positionDays();
   const first = screen.getAllByRole("button", { name: /Открыть перелёт Ночной рейс/ })[0];
-  fireEvent.pointerDown(first, { pointerId: 8, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 21 * 56 + 8 });
-  fireEvent.pointerMove(first, { pointerId: 8, pointerType: "mouse", clientX: 100, clientY: 100 + 22 * 56 + 8 });
+  fireEvent.pointerDown(first, { pointerId: 8, pointerType: "mouse", button: 0, clientX: 100, clientY: 100 + 21 * 96 + 8 });
+  fireEvent.pointerMove(first, { pointerId: 8, pointerType: "mouse", clientX: 100, clientY: 100 + 22 * 96 + 8 });
   expect(screen.getAllByRole("status", { name: /Новое положение/ })).toHaveLength(2);
 });
 
@@ -277,4 +277,21 @@ test("calendar buttons open both overnight segments and navigate to later dates"
   await user.click(screen.getByRole("button", { name: "Следующие дни" }));
   expect(screen.getByText(/8 окт/, { selector: ".trip-calendar-day-heading strong" })).toBeVisible();
   expect(screen.queryByRole("button", { name: /Открыть перелёт Ночной рейс/ })).toBeNull();
+});
+
+
+test("short neighboring events have separate visual lanes and retain their details", () => {
+  const day = { id: "day-0", date: "2026-10-01" } as DayInput;
+  const items = [
+    { id: "a", day_id: day.id, type: "activity", title: "Museum", start_time: "09:00", end_time: "09:15" },
+    { id: "b", day_id: day.id, type: "meal", title: "Lunch", start_time: "09:15", end_time: "09:30" },
+  ] as ItemInput[];
+  render(<TripCalendar days={[day]} items={items} onOpenItem={vi.fn()} />);
+  const activity = screen.getByRole("button", { name: /Museum/ });
+  const meal = screen.getByRole("button", { name: /Lunch/ });
+  expect(activity).toHaveTextContent("09:00");
+  expect(meal).toHaveTextContent("09:15");
+  expect(activity.style.left).not.toBe(meal.style.left);
+  expect(activity).toHaveClass("trip-calendar-primary");
+  expect(meal).toHaveClass("trip-calendar-secondary");
 });

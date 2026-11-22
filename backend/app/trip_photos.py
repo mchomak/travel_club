@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from typing import Annotated
 
@@ -10,7 +11,7 @@ _photo_ids = frozenset(json.loads(_catalog.read_text(encoding="utf-8")))
 
 
 def validate_photo_id(value: str) -> str:
-    if value not in _photo_ids:
+    if value not in _photo_ids and not re.fullmatch(r"upload-[0-9a-f]{32}", value):
         raise ValueError("Выберите фотографию из каталога")
     return value
 

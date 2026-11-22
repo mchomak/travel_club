@@ -165,7 +165,9 @@ button.trip-calendar-day-heading:hover { box-shadow: inset 0 0 0 2px #79a8c6; }
 .trip-calendar-day:nth-of-type(even) { background-color: #172a3b; }
 .trip-calendar-event { box-shadow: 0 1px 5px rgb(0 0 0 / .28); line-height: 1.25; }
 .trip-calendar-event:hover { filter: brightness(1.25); box-shadow: 0 3px 14px rgb(0 0 0 / .45); z-index: 3 !important; }
-.trip-calendar-event strong { display: block; overflow-wrap: anywhere; }
+.trip-calendar-event strong, .trip-calendar-event span, .trip-calendar-airport strong, .trip-calendar-airport span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 15px; }
+.trip-calendar-secondary { box-shadow: none; }
+.trip-calendar-tertiary { box-shadow: none; font-weight: 400; }
 .trip-calendar-event span { opacity: .92; }
 .trip-calendar-event:focus-visible, .trip-calendar-airport:focus-visible, .trip-calendar-marker:focus-visible, .trip-calendar-hotel-bar:focus-visible, .trip-calendar-day-heading:focus-visible, .trip-calendar-navigation button:focus-visible { outline: 3px solid #f7d179; outline-offset: -3px; z-index: 6 !important; }
 .trip-calendar-airport:hover { filter: brightness(1.2); z-index: 3 !important; }

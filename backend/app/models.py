@@ -145,6 +145,7 @@ class TripItem(Base):
     calculation_mode: Mapped[str] = mapped_column(String(30))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text, default="")
+    stages: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
     location: Mapped[str] = mapped_column(String(200), default="")
     map_place: Mapped[dict | None] = mapped_column(JSONB)
     map_end_place: Mapped[dict | None] = mapped_column(JSONB)
@@ -153,6 +154,8 @@ class TripItem(Base):
     departure_utc_offset_minutes: Mapped[int | None]
     arrival_utc_offset_minutes: Mapped[int | None]
     external_url: Mapped[str | None] = mapped_column(String(2048))
+    map_url: Mapped[str | None] = mapped_column(String(2048))
+    booking_url: Mapped[str | None] = mapped_column(String(2048))
     publish_external_url: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     internal_note: Mapped[str] = mapped_column(Text, default="")
     client_note: Mapped[str] = mapped_column(Text, default="")

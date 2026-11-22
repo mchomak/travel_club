@@ -224,6 +224,9 @@ def test_anonymous_itinerary_is_live_and_allowlisted(authenticated):
             "map_place": None,
             "map_end_place": None,
             "external_url": None,
+            "map_url": None,
+            "booking_url": None,
+            "stages": [],
         }
     ]
     assert [item["title"] for item in public["general_items"]] == ["Travel pack"]
@@ -569,6 +572,8 @@ def test_public_points_and_resource_are_safe_and_live(authenticated, db):
             "map_place": point,
             "map_end_place": {**point, "name": "Hotel", "latitude": 56},
             "external_url": "https://example.org/ticket",
+            "map_url": "https://example.org/map",
+            "booking_url": "https://example.org/book",
             "internal_note": "PRIVATE note",
         }
     ]
@@ -589,6 +594,7 @@ def test_public_points_and_resource_are_safe_and_live(authenticated, db):
     assert item["map_place"] == {"name": "Station", "latitude": 55.75, "longitude": 37.61}
     assert item["map_end_place"] == {"name": "Hotel", "latitude": 56, "longitude": 37.61}
     assert item["external_url"] is None
+    assert item["map_url"] is None and item["booking_url"] is None
     assert item["subtype"] == "taxi" and "auto_transfer" not in item
     assert "duration_seconds" not in response.text
     assert "PRIVATE" not in response.text
@@ -600,6 +606,8 @@ def test_public_points_and_resource_are_safe_and_live(authenticated, db):
     item = client.get(url).json()["days"][0]["items"][0]
     assert item["map_place"]["name"] == "Updated"
     assert item["external_url"] == "https://example.org/ticket"
+    assert item["map_url"] == "https://example.org/map"
+    assert item["booking_url"] == "https://example.org/book"
 
     # Legacy or corrupted persisted values must not make the public endpoint unsafe or fail.
     stored = db.get(TripItem, UUID(edit["items"][0]["id"]))

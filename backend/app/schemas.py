@@ -243,6 +243,14 @@ class AutoTransfer(MapLegMode):
         return value
 
 
+class EventStage(DTO):
+    id: UUID = Field(default_factory=uuid4)
+    title: Title
+    start_time: str | None = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+    end_time: str | None = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+    notes: Note = ""
+
+
 class ItemInput(DTO):
     id: UUID = Field(default_factory=uuid4)
     day_id: UUID | None = None
@@ -263,6 +271,7 @@ class ItemInput(DTO):
     calculation_mode: CalculationMode
     title: Title
     description: Note = ""
+    stages: list[EventStage] = Field(default_factory=list, max_length=100)
     location: str = Field(default="", max_length=200)
     map_place: MapPlace | None = None
     map_end_place: MapPlace | None = None
@@ -271,6 +280,8 @@ class ItemInput(DTO):
     departure_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
     arrival_utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840, strict=True)
     external_url: str | None = Field(default=None, max_length=2048)
+    map_url: str | None = Field(default=None, max_length=2048)
+    booking_url: str | None = Field(default=None, max_length=2048)
     publish_external_url: bool = Field(default=False, strict=True)
     internal_note: Note = ""
     client_note: Note = ""
@@ -324,7 +335,7 @@ class ItemInput(DTO):
             raise ValueError("Название города содержит недопустимый символ")
         return value
 
-    @field_validator("external_url")
+    @field_validator("external_url", "map_url", "booking_url")
     @classmethod
     def valid_external_url(cls, value: str | None) -> str | None:
         if value is None or value == "":
@@ -385,6 +396,7 @@ class TripExchange(DTO):
     format: Literal["travel-club-trip"]
     version: Literal[1]
     trip: TripInput
+    photos: dict[str, str] = Field(default_factory=dict, max_length=3660)
 
 
 class TripUpdate(TripInput):
@@ -462,6 +474,7 @@ class TripSummary(DTO):
 
 
 class PreviewItem(DTO):
+    stages: list[EventStage] = Field(default_factory=list)
     id: UUID
     type: ItemType
     subtype: ItemSubtype | None

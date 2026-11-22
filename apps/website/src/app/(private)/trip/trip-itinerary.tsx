@@ -32,6 +32,9 @@ export interface PublicItem {
   map_place?: PublicPlace | null;
   map_end_place?: PublicPlace | null;
   external_url?: string | null;
+  map_url?: string | null;
+  booking_url?: string | null;
+  stages?: { id: string; title: string; start_time: string | null; end_time: string | null; notes: string }[];
   movement?: { mode: "drive" | "walk"; duration_seconds: number } | null;
 }
 
@@ -68,17 +71,19 @@ function counted(n: number, one: string, few: string, many: string) {
   return `${n} ${form === "one" ? one : form === "few" ? few : many}`;
 }
 
-function photoFor(id?: string | null) {
-  return id && Object.hasOwn(photos, id) ? photos[id as keyof typeof photos] : null;
+function photoFor(id?: string | null, photoBase?: string) {
+  if (id && Object.hasOwn(photos, id)) return { ...photos[id as keyof typeof photos], uploaded: false };
+  if (id && photoBase && /^upload-[0-9a-f]{32}$/.test(id)) return { src: `${photoBase}/${id}`, alt: "Фотография дня", credit: "", uploaded: true };
+  return null;
 }
 
 function TripPhoto({ photo, cover = false }: { photo: NonNullable<ReturnType<typeof photoFor>>; cover?: boolean }) {
   return <figure className={cover ? s.coverPhoto : s.dayPhoto}>
     <div className={s.imageFrame}>
       <Image src={photo.src} alt={photo.alt} fill preload={cover}
-        sizes={cover ? "(max-width: 720px) 100vw, 52vw" : "(max-width: 720px) 100vw, 44vw"} />
+        unoptimized={photo.uploaded} sizes={cover ? "(max-width: 720px) 100vw, 52vw" : "(max-width: 720px) 100vw, 44vw"} />
     </div>
-    <figcaption>{photo.credit}</figcaption>
+    {photo.credit && <figcaption>{photo.credit}</figcaption>}
   </figure>;
 }
 
@@ -92,6 +97,10 @@ export function localTime(time: string | null, offset: number | null) {
   return `${clock} UTC${offset < 0 ? "−" : "+"}${hoursPart}:${minutesPart}`;
 }
 
+export function sameFlightOffset(item: PublicItem) {
+  return item.type === "flight" && item.departure_utc_offset_minutes != null && item.departure_utc_offset_minutes === item.arrival_utc_offset_minutes;
+}
+
 export function schedule(item: PublicItem, day?: string) {
   if (item.type === "hotel" && (item.check_in || item.check_out)) {
     return [
@@ -99,8 +108,9 @@ export function schedule(item: PublicItem, day?: string) {
       item.check_out && `Выезд ${date(item.check_out)} ${localTime(item.check_out_time, null)}`.trim(),
     ].filter(Boolean).join(" · ");
   }
-  const arrival = [item.end_date && item.end_date !== day ? date(item.end_date) : "", localTime(item.end_time, item.arrival_utc_offset_minutes)].filter(Boolean).join(" ");
-  return [localTime(item.start_time, item.departure_utc_offset_minutes), arrival].filter(Boolean).join(" — ");
+  const hideOffset = sameFlightOffset(item);
+  const arrival = [item.end_date && item.end_date !== day ? date(item.end_date) : "", localTime(item.end_time, hideOffset ? null : item.arrival_utc_offset_minutes)].filter(Boolean).join(" ");
+  return [localTime(item.start_time, hideOffset ? null : item.departure_utc_offset_minutes), arrival].filter(Boolean).join(" — ");
 }
 
 export function transportRoute(item: PublicItem) {
@@ -138,15 +148,10 @@ export function ItineraryUnavailable() {
   </section>;
 }
 
-function DayChapter({ day, number }: { day: PublicDay; number: number }) {
-  const photo = photoFor(day.photo_id);
+function DayChapter({ day, number, photoBase }: { day: PublicDay; number: number; photoBase?: string }) {
+  const photo = photoFor(day.photo_id, photoBase);
   const title = day.title?.trim() || day.city?.trim() || day.place?.trim() || "Программа дня";
   const places = [...new Set([day.country, day.city, day.place].filter(place => place?.trim() && place !== title))];
-  const experiences = day.items.filter(item => ["excursion", "activity", "meal"].includes(item.type));
-  const ordered = new Set([...experiences, ...day.items]);
-  const highlights = new Set([...ordered].slice(0, 3));
-  const visibleItems = day.items.filter(item => highlights.has(item));
-  const remaining = day.items.filter(item => !highlights.has(item));
   return <section className={s.day} aria-label={`День ${number}`}>
     <div className={s.chapterHead}>
       <span className={s.dayNumber}>День <b>{String(number).padStart(2, "0")}</b></span>
@@ -157,21 +162,13 @@ function DayChapter({ day, number }: { day: PublicDay; number: number }) {
       <div className={s.chapterIntro}>
         <h3>{title}</h3>
         {places.length > 0 && <p className={s.place}>{places.join(" · ")}</p>}
-        {day.client_note?.trim() && <p className={s.dayNote}>{day.client_note}</p>}
-      </div>
-      <div className={s.chapterItems}>
-        {visibleItems.length > 0 && <Items items={visibleItems} day={day.date} />}
-        {remaining.length > 0 && <details className={s.more}>
-          <summary>Ещё {counted(remaining.length, "событие", "события", "событий")}</summary>
-          <Items items={remaining} day={day.date} />
-        </details>}
-        {!day.items.length && !day.client_note?.trim() && <p className={s.empty}>Программа этого дня пока не заполнена.</p>}
+        {day.client_note?.trim() ? <p className={s.dayNote}>{day.client_note}</p> : <p className={s.empty}>Описание этого дня пока не добавлено.</p>}
       </div>
     </div>
   </section>;
 }
 
-export function TripItinerary({ trip }: { trip: PublicItinerary }) {
+export function TripItinerary({ trip, photoBase }: { trip: PublicItinerary; photoBase?: string }) {
   const [mode, setMode] = useState<"overview" | "practical">("overview");
   const start = utc(trip.start_date);
   const end = utc(trip.end_date);
@@ -226,7 +223,7 @@ export function TripItinerary({ trip }: { trip: PublicItinerary }) {
     </section>
     <section id="programme" className={s.programme}>
       <h2>Программа по дням</h2>
-      {trip.days.map((day, index) => <DayChapter key={day.date} day={day} number={index + 1} />)}
+      {trip.days.map((day, index) => <DayChapter key={day.date} day={day} number={index + 1} photoBase={photoBase} />)}
       {!trip.days.length && <p className={s.empty}>Программа по дням пока не заполнена.</p>}
       {trip.general_items.length > 0 && <section className={s.general}><h3>В течение поездки</h3><Items items={trip.general_items} /></section>}
     </section>

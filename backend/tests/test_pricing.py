@@ -7,9 +7,36 @@ import pytest
 from pydantic import ValidationError
 
 from app.pricing import PricingError, calculate_trip
-from app.schemas import Calculation, TripInput
+from app.schemas import Calculation, ItemInput, TripInput
 
 VECTORS = Path(__file__).resolve().parents[2] / "shared" / "pricing-vectors.json"
+
+
+def test_event_stages_validate_and_do_not_change_item_cost():
+    data = {"type": "excursion", "title": "Boat trip", "calculation_mode": "fixed",
+            "currency": "RUB", "unit_price": "100"}
+    stage = {"title": "Island", "start_time": "10:00", "notes": "Swim"}
+    item = ItemInput.model_validate({**data, "stages": [stage]})
+    assert item.stages[0].title == "Island"
+    assert ItemInput.model_validate(data).stages == []
+    with pytest.raises(ValidationError):
+        ItemInput.model_validate({**data, "stages": [{**stage, "start_time": "25:00"}]})
+    trip = {"internal_title": "Trip", "start_date": "2026-10-01", "end_date": "2026-10-01",
+            "participants": 2, "days": [{"date": "2026-10-01"}],
+            "items": [{**data, "stages": [stage]}]}
+    assert calculate_trip(TripInput.model_validate(trip)).cost_total == Decimal("100.00")
+
+
+def test_typed_event_links_require_safe_http_urls():
+    data = {"type": "excursion", "title": "Boat trip", "calculation_mode": "fixed",
+            "currency": "RUB", "map_url": "https://example.com/map",
+            "booking_url": "https://example.com/book"}
+    item = ItemInput.model_validate(data)
+    assert item.map_url == data["map_url"]
+    assert item.booking_url == data["booking_url"]
+    for field in ("map_url", "booking_url"):
+        with pytest.raises(ValidationError):
+            ItemInput.model_validate({**data, field: "javascript:alert(1)"})
 
 
 def test_calculation_contract_requires_complete_category_and_type_totals():

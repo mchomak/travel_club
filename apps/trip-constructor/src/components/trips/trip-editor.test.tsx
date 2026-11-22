@@ -35,6 +35,20 @@ vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, b
   <button onClick={() => onOpenItem(items[0].id)}>Открыть первый пункт</button>
 </div> }));
 
+test("day photo upload uses the open trip in the builder", async () => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  input.days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];
+  input.start_date = input.days[0].date; input.end_date = input.days[1].date; input.items = [];
+  const doc = { ...input, id: "photo-trip", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(doc);
+  const upload = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ id: "upload-0123456789abcdef0123456789abcdef" }), { status: 201 }));
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id="photo-trip" mode="builder" initialStep={4} /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: "Детали и заметки дня" }));
+  await user.upload(screen.getByLabelText(/JPEG/), new File(["image"], "photo.jpg", { type: "image/jpeg" }));
+  await waitFor(() => expect(upload).toHaveBeenCalledWith("/api/trips/photo-trip/photos", expect.objectContaining({ method: "POST" })));
+});
+
 test('day map immediately follows the calendar and changes date with its selection',async()=>{
  const input=structuredClone(vectors.cases[0].input) as TripInput;
  input.days=[emptyDay('2026-10-01'),emptyDay('2026-10-02')];input.start_date=input.days[0].date;input.end_date=input.days[1].date;input.items=[];
