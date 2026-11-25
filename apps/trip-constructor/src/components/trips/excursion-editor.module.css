@@ -5,7 +5,7 @@
 .stage > summary::-webkit-details-marker { display: none; }
 .stage > summary:focus-visible { outline: 3px solid #3266a3; outline-offset: 2px; }
 .stage > summary::after { content: "+"; margin-left: auto; font-size: 1.25rem; }
-.stage[open] > summary::after { content: "?"; }
+.stage[open] > summary::after { content: "−"; }
 .number { font-variant-numeric: tabular-nums; color: var(--color-muted); }
 .stageSummary { display: grid; gap: 0.125rem; min-width: 0; overflow-wrap: anywhere; }
 .stageSummary > span, .stageSummary > small { color: var(--color-muted); }

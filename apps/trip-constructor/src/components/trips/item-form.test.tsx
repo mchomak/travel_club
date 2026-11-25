@@ -596,16 +596,45 @@ test('validator opens a collapsed excursion stage and focuses its field', async 
   expect(screen.getByText('Проверьте время')).toBeVisible();
 });
 
-test('opening an excursion stage closes the previously opened stage', async () => {
-  const day = emptyDay('2026-10-01'), user = userEvent.setup();
+test('excursion stages can all be expanded and collapsed without losing edits', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
   const stage = (title: string) => ({ id: crypto.randomUUID(), title, start_time: null, end_time: null, notes: '' });
   const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage('Причал'), stage('Остров')] };
   const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
-  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
-  await user.click(screen.getByText('Причал'));
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.click(screen.getByRole('button', { name: 'Раскрыть все этапы' }));
   expect(screen.getByLabelText('Название этапа 1')).toBeVisible();
-  await user.click(screen.getByText('Остров'));
-  await waitFor(() => expect(screen.getByLabelText('Название этапа 1')).not.toBeVisible());
+  expect(screen.getByLabelText('Название этапа 2')).toBeVisible();
+  await user.type(screen.getByLabelText('Описание этапа 1'), 'Встреча');
+  await user.click(screen.getByRole('button', { name: 'Свернуть все этапы' }));
+  expect(screen.getByLabelText('Название этапа 1')).not.toBeVisible();
+  expect(screen.getByLabelText('Название этапа 2')).not.toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ stages: [expect.objectContaining({ notes: 'Встреча' }), item.stages[1]] }), undefined);
+});
+
+test('excursion warns when a stage falls outside the event and opens it from the warning', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup();
+  const stage = { id: crypto.randomUUID(), title: 'Причал', start_time: '08:30', end_time: '10:30', notes: '' };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), start_time: '09:00', end_time: '10:00', stages: [stage] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
+  await user.click(screen.getByText('За пределами времени экскурсии'));
+  expect(screen.getByLabelText('Начало этапа 1')).toBeVisible();
+});
+
+test('expanding all keeps newly added stages open', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup();
+  const item = newItem('excursion', day, 'RUB', day.date);
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
+  await user.click(screen.getByRole('button', { name: 'Добавить этап' }));
+  await user.type(screen.getByLabelText('Название этапа 1'), 'Причал');
+  await user.click(screen.getByRole('button', { name: 'Добавить этап' }));
+  expect(screen.getByLabelText('Название этапа 1')).toBeVisible();
+  expect(screen.getByLabelText('Название этапа 2')).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Раскрыть все этапы' }));
+  expect(screen.getByLabelText('Название этапа 1')).toBeVisible();
   expect(screen.getByLabelText('Название этапа 2')).toBeVisible();
 });
 

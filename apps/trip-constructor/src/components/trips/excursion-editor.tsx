@@ -21,6 +21,12 @@ const sections = [
   { id: "notes", title: "Описание и заметки", fields: ["description", "client_note", "internal_note"] },
 ] as const satisfies readonly EventSectionDefinition[];
 
+function costSummary(item: ItemInput, trip: TripInput, calculation: ItemCalculation | null) {
+  if (!item.included) return "Исключена из сметы";
+  if (item.price_pending) return "Цена не указана";
+  return calculation ? formatMoney(calculation.normalized_amount, trip.base_currency) : "Стоимость не рассчитана";
+}
+
 export function ExcursionHeader({ item, trip, calculation, isNew, typeSelector, onDelete, onClose, useDialogHeading }: {
   item: ItemInput; trip: TripInput; calculation: ItemCalculation | null; isNew: boolean; typeSelector: ReactNode; onDelete?: () => void; onClose: () => void; useDialogHeading?: boolean;
 }) {
@@ -30,7 +36,7 @@ export function ExcursionHeader({ item, trip, calculation, isNew, typeSelector, 
   return <header className={styles.header}>
     <div className={styles.headerRow}><div className={styles.heading}><MapPin size={20} aria-hidden /><div>{!useDialogHeading && <h2>{isNew ? "Новая экскурсия" : "Редактирование экскурсии"}</h2>}<p>{day ? formatDate(day.date) : "День маршрута не выбран"}</p></div></div>{!useDialogHeading && <button type="button" className="icon-button" aria-label="Закрыть редактор экскурсии" onClick={onClose}><X size={20} aria-hidden /></button>}</div>
     <details className={styles.moreActions}><summary><Ellipsis size={20} aria-hidden />Дополнительные действия</summary><div className={styles.moreControls}>{typeSelector}{onDelete && <button type="button" className={`subtle-button ${styles.deleteAction}`} onClick={onDelete}><Trash2 size={16} aria-hidden />Удалить экскурсию</button>}</div></details>
-    <div role="group" aria-label="Сводка экскурсии" className={styles.summary}><strong>{item.title || "Экскурсия"}</strong><ul className={styles.summaryMeta}><li>Этапов: {stages.length}</li>{first && last && <li>Программа: {first.slice(0, 5)} — {last.slice(0, 5)}</li>}<li>{item.participants_override == null ? `Все ${trip.participants} участников` : `Участников: ${item.participants_override}`}</li><li>{item.price_pending ? "Цена не указана" : !item.included ? "Исключена из сметы" : calculation ? formatMoney(calculation.normalized_amount, trip.base_currency) : "Стоимость не рассчитана"}</li></ul></div>
+    <div role="group" aria-label="Сводка экскурсии" className={styles.summary}><strong>{item.title || "Экскурсия"}</strong><ul className={styles.summaryMeta}><li>Этапов: {stages.length}</li>{first && last && <li>Программа: {first.slice(0, 5)} — {last.slice(0, 5)}</li>}<li>{item.participants_override == null ? `Все ${trip.participants} участников` : `Участников: ${item.participants_override}`}</li><li>{costSummary(item, trip, calculation)}</li></ul></div>
   </header>;
 }
 
@@ -39,7 +45,7 @@ export function ExcursionEditor(props: ItineraryEditorProps & { cost: Omit<CostS
   const contents: Record<typeof sections[number]["id"], { summary: ReactNode; content: ReactNode }> = {
     route: { summary: item.location || item.map_place?.name || "Место не указано", content: <><EventRouteSection {...props} routeFields={<ExcursionPlaces item={item} trip={props.trip} />} geographyFields={null} showDetails={false} /><EventScheduleSection {...props} /></> },
     stages: { summary: `Этапов: ${item.stages?.length ?? 0}`, content: <ExcursionStages persistedStages={props.isNew ? undefined : cost.initial.stages} /> },
-    cost: { summary: cost.calculation ? formatMoney(cost.calculation.normalized_amount, props.trip.base_currency) : "Стоимость не рассчитана", content: <CostSection {...cost} config={{ priceLabel: "Цена на человека", basicModes: ["per_person", "fixed"], pendingPrice: true }} /> },
+    cost: { summary: costSummary(item, props.trip, cost.calculation), content: <CostSection {...cost} config={{ priceLabel: "Цена на человека", basicModes: ["per_person", "fixed"], pendingPrice: true }} /> },
     links: { summary: [item.external_url, item.map_url, item.booking_url].filter(Boolean).length ? "Добавлены" : "Не заполнены", content: <div className="form-grid"><LinksFields item={item} /></div> },
     notes: { summary: item.description || item.client_note || item.internal_note ? "Добавлены" : "Не заполнено", content: <NotesSection typeChosen={props.typeChosen} embedded /> },
   };

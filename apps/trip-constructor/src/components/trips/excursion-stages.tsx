@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import type { ItemInput } from "@/lib/contracts";
 import { localClockMicroseconds } from "@/lib/transport-schedule";
@@ -19,11 +19,16 @@ export function ExcursionStages({ persistedStages }: { persistedStages?: ItemInp
   const eventEndClock = eventEnd ? localClockMicroseconds(eventEnd) : null;
   const ambiguousDays = (!!endDayId && endDayId !== dayId) || (eventStartClock !== null && eventEndClock !== null && eventEndClock <= eventStartClock);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [newStage, setNewStage] = useState<string | null>(null);
+  const newStage = useRef<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const setAllOpen = (open: boolean) => {
+    timelineRef.current?.querySelectorAll<HTMLDetailsElement>(":scope > details").forEach(stage => { stage.open = open; });
+  };
   return <fieldset className={`form-section ${styles.program}`} aria-label="Программа экскурсии">
     <p className="field-hint">Этапы входят в одну экскурсию и не добавляют стоимость.</p>
     {!fields.length && <p className="field-hint">Добавьте этапы, чтобы составить программу экскурсии.</p>}
-    <div className={styles.timeline}>{fields.map((field, index) => {
+    {fields.length > 0 && <div className={styles.stageActions}><button type="button" className="text-link" onClick={() => setAllOpen(true)}>Раскрыть все этапы</button><button type="button" className="text-link" onClick={() => setAllOpen(false)}>Свернуть все этапы</button></div>}
+    <div ref={timelineRef} className={styles.timeline}>{fields.map((field, index) => {
       const stage = stages[index] ?? field;
       const previous = stages[index - 1];
       const start = stage.start_time ? localClockMicroseconds(stage.start_time) : null;
@@ -34,22 +39,23 @@ export function ExcursionStages({ persistedStages }: { persistedStages?: ItemInp
       const outOfOrder = !ambiguousDays && previousStart !== null && start !== null && start < previousStart;
       const overlap = !ambiguousDays && previousEnd !== null && start !== null && start < previousEnd;
       const gap = !ambiguousDays && previousStart !== null && previousEnd !== null && start !== null && end !== null && previousEnd > previousStart && end > start && start > previousEnd;
-      return <details key={field.formKey} data-editor-stage={field.id} className={styles.stage} open={newStage === field.id ? true : undefined} onToggle={event => {
-        const current = event.currentTarget;
-        if (current.open) current.parentElement?.querySelectorAll<HTMLDetailsElement>(":scope > details[open]").forEach(other => { if (other !== current) other.open = false; });
-        else if (newStage === field.id) setNewStage(null);
+      const outsideEvent = !ambiguousDays && [start, end].some(clock => clock !== null && ((eventStartClock !== null && clock < eventStartClock) || (eventEndClock !== null && clock > eventEndClock)));
+      return <details key={field.formKey} data-editor-stage={field.id} className={styles.stage} ref={element => {
+        if (element && newStage.current === field.id) { element.open = true; newStage.current = null; }
       }}>
         <summary><span className={styles.number}>{index + 1}</span><span className={styles.stageSummary}>
           <strong>{stage.title?.trim() || "Новый этап"}</strong>
           <span>{[stage.start_time?.slice(0, 5), stage.end_time?.slice(0, 5)].filter(Boolean).join(" — ") || "Время не указано"}</span>
-          {(stage.location || stage.notes) && <small>{stage.location || stage.notes}</small>}
-          {(invalidInterval || outOfOrder || overlap || errors.stages?.[index]) && <small className={styles.warning}>{overlap ? "Время этапов пересекается" : "Проверьте этап"}</small>}
+          {stage.location && <small>{stage.location}</small>}
+          {stage.notes && <small>{stage.notes}</small>}
+          {(invalidInterval || outOfOrder || overlap || outsideEvent || errors.stages?.[index]) && <small className={styles.warning}>{outsideEvent ? "За пределами времени экскурсии" : overlap ? "Время этапов пересекается" : "Проверьте этап"}</small>}
           {gap && <small>Между этапами есть свободное время</small>}
         </span></summary>
         <div className={`form-grid ${styles.stageFields}`}>
           {invalidInterval && <p className={`field-wide ${styles.warning}`}>Окончание этапа не позже начала. Проверьте время; переход через полночь не определяется автоматически.</p>}
           {outOfOrder && <p className={`field-wide ${styles.warning}`}>Этап начинается раньше предыдущего.</p>}
           {overlap && <p className={`field-wide ${styles.warning}`}>Время этапов пересекается.</p>}
+          {outsideEvent && <p className={`field-wide ${styles.warning}`}>Этап выходит за пределы времени экскурсии.</p>}
           <Field label={`Название этапа ${index + 1}`} error={errors.stages?.[index]?.title?.message} wide><input {...register(`stages.${index}.title`, { required: "Укажите название этапа", validate: { length: maxTextLength(200), title: value => !!value?.trim() || persistedStages?.some(saved => saved.id === field.id && saved.title === value) || "Укажите название этапа" } })} /></Field>
           {(["start_time", "end_time"] as const).map(name => {
             const original = persistedStages?.find(saved => saved.id === field.id)?.[name];
@@ -65,13 +71,13 @@ export function ExcursionStages({ persistedStages }: { persistedStages?: ItemInp
           <div className={styles.stageActions}>
             <button type="button" className="secondary-button" disabled={index === 0} onClick={() => move(index, index - 1)}>Поднять этап {index + 1}</button>
             <button type="button" className="secondary-button" disabled={index === fields.length - 1} onClick={() => move(index, index + 1)}>Опустить этап {index + 1}</button>
-            <button type="button" className="secondary-button" disabled={fields.length >= 100} onClick={() => { const id = crypto.randomUUID(); setNewStage(id); insert(index + 1, { ...getValues(`stages.${index}`), id } as Stage); }}>Дублировать этап {index + 1}</button>
+            <button type="button" className="secondary-button" disabled={fields.length >= 100} onClick={() => { const id = crypto.randomUUID(); newStage.current = id; insert(index + 1, { ...getValues(`stages.${index}`), id } as Stage); }}>Дублировать этап {index + 1}</button>
             <button type="button" className="secondary-button" onClick={() => setRemoving(field.id)}>Удалить этап {index + 1}</button>
           </div>
           {removing === field.id && <div className={`field-wide ${styles.confirm}`} role="group" aria-label={`Удаление этапа ${index + 1}`}><p>Удалить этот этап и его данные?</p><button type="button" className="danger-button" onClick={() => { remove(index); setRemoving(null); }}>Подтвердить удаление</button> <button type="button" className="secondary-button" onClick={() => setRemoving(null)}>Отмена удаления</button></div>}
         </div>
       </details>;
     })}</div>
-    <button type="button" className="secondary-button" disabled={fields.length >= 100} onClick={() => { const id = crypto.randomUUID(); setNewStage(id); append({ id, title: "", start_time: null, end_time: null, notes: "" }); }}>Добавить этап</button>
+    <button type="button" className="secondary-button" disabled={fields.length >= 100} onClick={() => { const id = crypto.randomUUID(); newStage.current = id; append({ id, title: "", start_time: null, end_time: null, notes: "" }); }}>Добавить этап</button>
   </fieldset>;
 }
