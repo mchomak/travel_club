@@ -26,13 +26,14 @@ export function EventTitleField({ item, autoFocus, onManualTitle }: Pick<Itinera
   </Field>;
 }
 
-export function EventRouteSection({ item, trip, isNew, typeChosen, requireTypeChoice, labels, onManualTitle, routeFields, showEndPlace = false, showDetails = true }: ItineraryEditorProps & { routeFields?: ReactNode; showEndPlace?: boolean; showDetails?: boolean }) {
+export function EventRouteSection({ item, trip, isNew, typeChosen, requireTypeChoice, labels, onManualTitle, routeFields, geographyFields, showEndPlace = false, showDetails = true }: ItineraryEditorProps & { routeFields?: ReactNode; geographyFields?: ReactNode; showEndPlace?: boolean; showDetails?: boolean }) {
   const { register, setValue } = useFormContext<ItemInput>();
   const category = eventCategory(item.type);
-  return <fieldset data-editor-section={item.type === "flight" ? undefined : "route"} className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Общие данные" disabled={!typeChosen}><h3>Общие данные</h3><div className="form-grid">
+  const heading = item.type === "hotel" ? "Объект проживания" : "Общие данные";
+  return <fieldset data-editor-section={item.type === "flight" ? undefined : "route"} className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label={heading} disabled={!typeChosen}><h3>{heading}</h3><div className="form-grid">
       <EventTitleField item={item} autoFocus={!requireTypeChoice} onManualTitle={onManualTitle} />
       {routeFields ?? <Field label={labels.location} wide><input placeholder={labels.placeholder} {...register("location", { validate: maxTextLength(200) })} /></Field>}
-      {category==='transfer'?<TransportEndpoints item={item} trip={trip} isNew={isNew} onChange={patch=>{for(const field of Object.keys(patch) as (keyof ItemInput)[])setValue(field,patch[field],{shouldDirty:true});}}/>:<div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||showEndPlace||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>}
+      {geographyFields !== undefined ? geographyFields : category==='transfer'?<TransportEndpoints item={item} trip={trip} isNew={isNew} onChange={patch=>{for(const field of Object.keys(patch) as (keyof ItemInput)[])setValue(field,patch[field],{shouldDirty:true});}}/>:<div className="field-wide"><LocationPicker label="Место посещения / отправления" value={item.map_place??null} onChange={value=>setValue('map_place',value,{shouldDirty:true})}/><details open={!!item.map_end_place||showEndPlace||!!item.end_day_id}><summary>Окончание в другом месте</summary><LocationPicker label="Место окончания / прибытия" value={item.map_end_place??null} onChange={value=>setValue('map_end_place',value,{shouldDirty:true})}/></details></div>}
       {showDetails && <LinksFields item={item} />}
     </div></fieldset>;
 }
@@ -55,7 +56,7 @@ export function ScheduleTimeField({ name, label, hint }: {
   </Field>;
 }
 
-export function EventScheduleSection({ item, trip, typeChosen, labels, onChooseEndDay, children }: ItineraryEditorProps & { children?: ReactNode }) {
+export function EventScheduleSection({ item, trip, isNew, typeChosen, labels, onChooseEndDay, children }: ItineraryEditorProps & { children?: ReactNode }) {
   const { register, setValue, formState: { errors } } = useFormContext<ItemInput>();
   const endDayField = register("end_day_id", { setValueAs: v => v || null });
   const checkInField = register("check_in", { setValueAs: v => v || null });
@@ -65,7 +66,8 @@ export function EventScheduleSection({ item, trip, typeChosen, labels, onChooseE
   const expenseWithoutSchedule = (item.type === "other" || item.type === "insurance") && !item.day_id && !item.start_time && !item.end_time;
   return <>{!expenseWithoutSchedule && <fieldset data-editor-section="schedule" className={`form-section${!typeChosen ? " form-section-disabled" : ""}`} aria-label="Время" disabled={!typeChosen}><h3>Время</h3><div className="form-grid">
       {item.type === "hotel" ? <>
-        <Field label="Заезд — дата"><input type="date" min={trip.start_date} max={trip.end_date} {...checkInField} onChange={event => { void checkInField.onChange(event); setValue("day_id", trip.days.find(day => day.date === event.target.value)?.id ?? null, { shouldDirty: true }); }} /></Field>
+        <p className="field-hint field-wide">{item.check_in && item.check_out && item.check_out > item.check_in ? `Ночей: ${(Date.parse(`${item.check_out}T00:00:00Z`) - Date.parse(`${item.check_in}T00:00:00Z`)) / 86400000}` : "Укажите даты заезда и выезда"}</p>
+        <Field label="Заезд — дата"><input type="date" min={trip.start_date} max={trip.end_date} {...checkInField} onChange={event => { void checkInField.onChange(event); if (isNew || item.day_id != null) setValue("day_id", trip.days.find(day => day.date === event.target.value)?.id ?? null, { shouldDirty: true }); }} /></Field>
         <ScheduleTimeField name="check_in_time" label="Время заселения" hint={!item.check_in_time ? "Не указано. Рекомендуем 15:00" : undefined} />
         <Field label="Выезд — дата" error={errors.check_out?.message} hint="День выезда не оплачивается"><input type="date" min={trip.start_date} max={nextDate(trip.end_date)} {...register("check_out", { setValueAs: v => v || null })} /></Field>
         <ScheduleTimeField name="check_out_time" label="Время выселения" hint={!item.check_out_time ? "Не указано. Рекомендуем 11:00" : undefined} />

@@ -53,6 +53,10 @@ def _issue(
     }
 
 
+def _is_excursion(item) -> bool:
+    return item.type == "excursion" or (item.type == "activity" and item.subtype == "excursion")
+
+
 def _completeness(trip: TripInput, profile: str) -> Iterable[dict]:
     if not trip.client_title.strip():
         yield _issue(
@@ -122,11 +126,22 @@ def _completeness(trip: TripInput, profile: str) -> Iterable[dict]:
             )
         if profile in {"detailed", "organized"}:
             if (item.type in {"hotel", "activity", "excursion", "meal"}
-                    and not item.location.strip()):
+                    and not item.location.strip()
+                    and not (_is_excursion(item) and item.map_place)):
                 yield _issue(
                     "missing_location", "completeness", "warning", path + "/location",
                     "Не указано место проведения или адрес.", **context,
                     expected="Уточните местоположение услуги.",
+                )
+            if (_is_excursion(item) and item.stages and not any(
+                stage.location.strip() or stage.address.strip() or stage.map_url
+                for stage in item.stages
+            )):
+                yield _issue(
+                    "stage_places_missing", "completeness", "info", path + "/stages/0",
+                    "В программе не указаны места этапов.", **context,
+                    stage_id=item.stages[0].id,
+                    expected="Добавьте места или адреса этапов, если они полезны для программы.",
                 )
             if item.type != "hotel" and item.day_id and not item.start_time:
                 yield _issue(
@@ -317,9 +332,13 @@ def _schedule(trip: TripInput, profile: str) -> Iterable[dict]:
 
 def _stages(trip: TripInput, profile: str) -> Iterable[dict]:
     for index, item in enumerate(trip.items):
+        if _is_excursion(item):
+            yield from _excursion_stage_schedule(index, item)
         # Overnight and multi-day parents do not have enough stage date information
         # to establish an unambiguous interval.
-        if item.end_day_id and item.end_day_id != item.day_id:
+        if (item.end_day_id and item.end_day_id != item.day_id) or (
+            item.start_time and item.end_time and item.end_time <= item.start_time
+        ):
             continue
         previous = []
         for stage_index, stage in enumerate(item.stages):
@@ -335,16 +354,83 @@ def _stages(trip: TripInput, profile: str) -> Iterable[dict]:
                     item_id=item.id, stage_id=stage.id,
                     expected="Проверьте время этапа и события.",
                 )
-            for other in previous:
+            for other_index, other in previous:
                 if stage.start_time < other.end_time and other.start_time < stage.end_time:
                     pair = sorted((str(stage.id), str(other.id)))
+                    primary_index = stage_index if str(stage.id) == pair[0] else other_index
                     yield _issue(
-                        "stage_overlap", "schedule", "warning", path,
+                        "stage_overlap", "schedule", "warning",
+                        f"/trip/items/{index}/stages/{primary_index}",
                         "Время этапов пересекается.", day_id=item.day_id,
                         item_id=item.id, stage_id=pair[0], related_id=pair[1],
                         expected="Проверьте последовательность программы.",
                     )
-            previous.append(stage)
+            previous.append((stage_index, stage))
+
+
+def _excursion_stage_schedule(index, item) -> Iterable[dict]:
+    """Compare stage clocks only when their dates can be interpreted safely."""
+    timed = bool(item.start_time or item.end_time) or any(
+        stage.start_time or stage.end_time for stage in item.stages
+    )
+
+    def issue(code, stage_index, message, expected, severity="warning"):
+        stage = item.stages[stage_index]
+        return _issue(
+            code, "schedule", severity, f"/trip/items/{index}/stages/{stage_index}",
+            message, day_id=item.day_id, item_id=item.id, stage_id=stage.id,
+            expected=expected,
+        )
+
+    for stage_index, stage in enumerate(item.stages):
+        if timed and (not stage.start_time or not stage.end_time):
+            yield issue(
+                "stage_missing_time", stage_index, "Время этапа указано не полностью.",
+                "Уточните время начала и окончания, если оно известно.", "info",
+            )
+
+    if (item.end_day_id and item.end_day_id != item.day_id) or (
+        item.start_time and item.end_time and item.end_time <= item.start_time
+    ):
+        return
+
+    for stage_index, stage in enumerate(item.stages):
+        if stage.start_time and stage.end_time and stage.end_time <= stage.start_time:
+            yield issue(
+                "stage_invalid_time", stage_index, "Окончание этапа не позже его начала.",
+                "Проверьте время этапа; для ночной программы уточните даты события.",
+            )
+        if stage_index == 0:
+            continue
+        previous = item.stages[stage_index - 1]
+        if not (previous.start_time and previous.end_time and stage.start_time and stage.end_time
+                and previous.end_time > previous.start_time and stage.end_time > stage.start_time):
+            continue
+        if stage.start_time < previous.start_time:
+            yield issue(
+                "stage_out_of_order", stage_index, "Этап начинается раньше предыдущего.",
+                "Проверьте порядок этапов и их время.",
+            )
+        elif stage.start_time > previous.end_time:
+            yield issue(
+                "stage_gap", stage_index, "Между этапами есть свободное время.",
+                "Проверьте, предусмотрены ли ожидание или свободное время.", "info",
+            )
+
+    stages = item.stages
+    if (stages and item.start_time and item.end_time
+            and all(stage.start_time and stage.end_time and stage.end_time > stage.start_time
+                    for stage in stages)
+            and all(a.start_time <= b.start_time for a, b in zip(stages, stages[1:]))):
+        start, end = item.start_time.strftime("%H:%M"), item.end_time.strftime("%H:%M")
+        if stages[0].start_time > start or max(stage.end_time for stage in stages) < end:
+            yield issue(
+                "stage_parent_mismatch", 0,
+                "Расписание программы не совпадает со временем экскурсии.",
+                "Проверьте границы экскурсии и программы; свободное время может быть "
+                "запланировано.",
+                "info",
+            )
 
 
 RULES: tuple[Callable[[TripInput, str], Iterable[dict]], ...] = (

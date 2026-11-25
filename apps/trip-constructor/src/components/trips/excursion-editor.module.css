@@ -1,0 +1,17 @@
+.program { display: grid; gap: 0.75rem; min-width: 0; }
+.timeline { display: grid; gap: 0.5rem; min-width: 0; }
+.stage { border: 1px solid var(--color-line); border-radius: 8px; min-width: 0; }
+.stage > summary { display: flex; align-items: start; gap: 0.75rem; padding: 0.75rem; cursor: pointer; list-style: none; }
+.stage > summary::-webkit-details-marker { display: none; }
+.stage > summary:focus-visible { outline: 3px solid #3266a3; outline-offset: 2px; }
+.stage > summary::after { content: "+"; margin-left: auto; font-size: 1.25rem; }
+.stage[open] > summary::after { content: "?"; }
+.number { font-variant-numeric: tabular-nums; color: var(--color-muted); }
+.stageSummary { display: grid; gap: 0.125rem; min-width: 0; overflow-wrap: anywhere; }
+.stageSummary > span, .stageSummary > small { color: var(--color-muted); }
+.stageSummary > span { font-variant-numeric: tabular-nums; }
+.stageSummary > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stageSummary > .warning, .warning { color: var(--warning); }
+.stageFields { padding: 0 0.75rem 0.75rem; }
+.stageActions { display: flex; flex-wrap: wrap; gap: 0.5rem; grid-column: 1 / -1; }
+.confirm p { margin: 0 0 0.5rem; }

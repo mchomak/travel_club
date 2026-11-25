@@ -26,7 +26,7 @@ export interface DayInput {
   status: string; internal_note: string; client_note: string;
   map_start?: MapPlace | null; map_end?: MapPlace | null; map_leg_modes?: MapLegMode[];
 }
-export interface EventStage { id: UUID; title: string; start_time: string | null; end_time: string | null; notes: string }
+export interface EventStage { id: UUID; title: string; start_time: string | null; end_time: string | null; notes: string; location?: string; address?: string; map_url?: string | null }
 export interface ItemInput {
   id: UUID; day_id: UUID | null; end_day_id: UUID | null; position: number; type: ItemType; calculation_mode: CalculationMode;
   subtype?: ItemSubtype | null; airport_before_minutes?: number; airport_after_minutes?: number;

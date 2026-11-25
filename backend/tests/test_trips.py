@@ -949,7 +949,10 @@ def test_event_stages_roundtrip_and_cost(authenticated):
     path = f"/api/trips/{trip['id']}"
     payload = editable(trip)
     stages = [{"id": str(uuid4()), "title": "Island", "start_time": "10:00",
-               "end_time": "11:00", "notes": "Swim"}]
+               "end_time": "11:00", "notes": "Swim", "location": "Maya Bay",
+               "address": "Krabi, Thailand", "map_url": "https://example.org/bay"},
+              {"id": str(uuid4()), "title": "Legacy", "start_time": None,
+               "end_time": None, "notes": ""}]
     payload["items"] = [{"id": str(uuid4()), "day_id": trip["days"][0]["id"],
                          "type": "excursion", "title": "Boat trip", "calculation_mode": "fixed",
                          "currency": "RUB", "unit_price": "100", "stages": stages}]

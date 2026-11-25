@@ -133,3 +133,158 @@ def test_overlap_identity_and_path_follow_same_item_after_reordering():
     assert first["item_id"] == second["item_id"] == a["id"]
     assert first["path"] == "/trip/items/0"
     assert second["path"] == "/trip/items/1"
+
+
+def test_excursion_stage_schedule_issues_are_actionable_and_nonblocking():
+    stages = [
+        {
+            "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "title": "First",
+            "start_time": "10:00",
+            "end_time": "11:00",
+        },
+        {
+            "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            "title": "Second",
+            "start_time": "09:30",
+            "end_time": "10:30",
+        },
+        {
+            "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            "title": "Third",
+            "start_time": "12:00",
+            "end_time": "12:30",
+        },
+        {
+            "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+            "title": "Fourth",
+            "start_time": "13:00",
+            "end_time": "13:00",
+        },
+        {"id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", "title": "Fifth"},
+    ]
+    excursion = item(
+        "22222222-2222-4222-8222-222222222222",
+        type="excursion",
+        start_time="09:00",
+        end_time="14:00",
+        stages=stages,
+    )
+    issues = validate_business_rules(trip([excursion]))
+    for code, stage in [
+        ("stage_out_of_order", stages[1]),
+        ("stage_gap", stages[2]),
+        ("stage_invalid_time", stages[3]),
+        ("stage_missing_time", stages[4]),
+    ]:
+        issue = next(x for x in issues if x["code"] == code)
+        assert issue["stage_id"] == stage["id"]
+        assert issue["path"] == f"/trip/items/0/stages/{stages.index(stage)}"
+        assert issue["severity"] in {"info", "warning"}
+        assert not issue["affects_import"] and not issue["affects_calculation"]
+    overlap = next(x for x in issues if x["code"] == "stage_overlap")
+    assert overlap["stage_id"] == stages[0]["id"]
+    assert overlap["path"] == "/trip/items/0/stages/0"
+
+
+def test_excursion_schedule_boundaries_and_ambiguous_multiday():
+    stages = [
+        {"title": "First", "start_time": "10:00", "end_time": "11:00"},
+        {"title": "Second", "start_time": "11:00", "end_time": "12:00"},
+    ]
+    excursion = item(
+        "22222222-2222-4222-8222-222222222222",
+        type="excursion",
+        start_time="09:00",
+        end_time="13:00",
+        stages=stages,
+    )
+    codes = {x["code"] for x in validate_business_rules(trip([excursion]))}
+    assert "stage_parent_mismatch" in codes
+    assert "stage_gap" not in codes
+    excursion.update(start_time="10:00", end_time="12:00")
+    assert "stage_parent_mismatch" not in {
+        x["code"] for x in validate_business_rules(trip([excursion]))
+    }
+    excursion.update(
+        end_day_id="99999999-9999-4999-8999-999999999999",
+        stages=[{"title": "Night", "start_time": "23:00", "end_time": "01:00"}],
+    )
+    # Stage dates are absent, so a multi-day interval cannot be interpreted safely.
+    codes = {x["code"] for x in validate_business_rules(trip([excursion]))}
+    assert not codes.intersection(
+        {"stage_invalid_time", "stage_out_of_order", "stage_gap", "stage_parent_mismatch"}
+    )
+
+
+def test_stage_overlap_identity_and_path_follow_same_stage_after_reordering():
+    stages = [
+        {"id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "title": "A",
+         "start_time": "10:00", "end_time": "11:00"},
+        {"id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "title": "B",
+         "start_time": "10:30", "end_time": "11:30"},
+    ]
+    excursion = item("22222222-2222-4222-8222-222222222222", type="excursion", stages=stages)
+    first = next(
+        x for x in validate_business_rules(trip([excursion])) if x["code"] == "stage_overlap"
+    )
+    excursion["stages"] = list(reversed(stages))
+    second = next(
+        x for x in validate_business_rules(trip([excursion])) if x["code"] == "stage_overlap"
+    )
+    assert first["id"] == second["id"]
+    assert first["stage_id"] == second["stage_id"] == stages[0]["id"]
+    assert first["path"] == "/trip/items/0/stages/0"
+    assert second["path"] == "/trip/items/0/stages/1"
+
+
+def test_excursion_meeting_point_accepts_map_place():
+    excursion = item(
+        "22222222-2222-4222-8222-222222222222", type="excursion", location="",
+        map_place={"name": "Pier", "address": "Port", "latitude": 7.0, "longitude": 98.0,
+                   "provider": "manual"},
+    )
+    issues = validate_business_rules(trip([excursion]), profile="detailed")
+    assert not any(x["code"] == "missing_location" for x in issues)
+    excursion["map_place"] = None
+    assert any(x["code"] == "missing_location" for x in
+               validate_business_rules(trip([excursion]), profile="detailed"))
+
+
+def test_missing_stage_places_are_one_optional_advisory():
+    stages = [
+        {"id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "title": "First"},
+        {"id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "title": "Second"},
+    ]
+    excursion = item("22222222-2222-4222-8222-222222222222", type="excursion", stages=stages)
+    issues = validate_business_rules(trip([excursion]), profile="detailed")
+    warnings = [x for x in issues if x["code"] == "stage_places_missing"]
+    assert len(warnings) == 1
+    assert warnings[0]["severity"] == "info"
+    assert warnings[0]["stage_id"] == stages[0]["id"]
+    assert warnings[0]["path"] == "/trip/items/0/stages/0"
+    assert not warnings[0]["affects_import"] and not warnings[0]["affects_calculation"]
+    assert not any(x["code"] == "stage_places_missing" for x in
+                   validate_business_rules(trip([excursion]), profile="standard"))
+    stages[0]["location"] = "Bay"
+    assert not any(x["code"] == "stage_places_missing" for x in
+                   validate_business_rules(trip([excursion]), profile="detailed"))
+
+
+def test_modern_excursion_subtype_uses_excursion_rules_without_affecting_other_activities():
+    value = item(
+        "22222222-2222-4222-8222-222222222222", subtype="excursion", location="",
+        map_place={"name": "Pier", "address": "Port", "latitude": 7.0, "longitude": 98.0,
+                   "provider": "manual"},
+        stages=[{"title": "First", "start_time": "10:00", "end_time": "10:00"},
+                {"title": "Second"}],
+    )
+    codes = {x["code"] for x in validate_business_rules(trip([value]), profile="detailed")}
+    assert {"stage_invalid_time", "stage_missing_time", "stage_places_missing"} <= codes
+    assert "missing_location" not in codes
+    value["subtype"] = "activity"
+    other = {x["code"] for x in validate_business_rules(trip([value]), profile="detailed")}
+    assert not other.intersection(
+        {"stage_invalid_time", "stage_missing_time", "stage_places_missing"}
+    )
+    assert "missing_location" in other

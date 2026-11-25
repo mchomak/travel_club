@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import styles from "./flight-editor.module.css";
-import { CostSection, NotesSection, validUrl } from "./event-editor-shared";
+import { CostSection, LinksFields, NotesSection, validUrl } from "./event-editor-shared";
 import { FlightEditor, flightEditorConfig } from "./flight-editor";
+import { ExcursionEditor, ExcursionHeader } from "./excursion-editor";
 import { flightRouteTitle, useFlightUtcCheck } from "./flight-editor-fields";
 import { EventRouteSection, EventScheduleSection } from "./event-itinerary-sections";
+import { LocationPicker } from "./location-picker";
+import { PlaceCombobox } from "./place-combobox";
+import { getTripPlaceOptions } from "@/lib/trip-places";
 import { EventEditorShell } from "./event-editor-shell";
 import { EventStagesSection } from "./event-stages-section";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -104,6 +108,14 @@ export function ItemForm({
     setValue("end_time", timedSchedule.current.end, { shouldDirty: true });
     setValue("end_day_id", timedSchedule.current.endDayId, { shouldDirty: true });
   }, [item.type, setValue]);
+  const nights = item.type === "hotel" && item.check_in && item.check_out
+    ? Math.round((Date.parse(`${item.check_out}T00:00:00Z`) - Date.parse(`${item.check_in}T00:00:00Z`)) / 86400000) : 0;
+  const syncNights = isNew || !!dirtyFields.check_in || !!dirtyFields.check_out || !!dirtyFields.calculation_mode;
+  const hotelDayId = trip.days.find(day => day.date === item.check_in)?.id ?? null;
+  const preserveGeneralHotel = !isNew && initial.day_id == null;
+  const pricedItem = item.type === "hotel" && syncNights
+    ? { ...item, day_id: preserveGeneralHotel ? null : hotelDayId, duration_days: item.calculation_mode === "per_person_per_day" && nights > 0 ? nights : item.duration_days } : item;
+  const hotelPlaces = item.type === "hotel" ? getTripPlaceOptions(trip, item.day_id ?? trip.days[0]?.id ?? "", { excludeItemId: item.id }).filter(option => option.place) : [];
   const foreign = item.currency !== trip.base_currency;
   const rates = foreign ? [
     ...trip.rates.filter(entry => entry.currency !== item.currency),
@@ -111,7 +123,7 @@ export function ItemForm({
   ] : trip.rates;
   let calculation: ItemCalculation | null = null;
   try {
-    calculation = calculateTrip({ ...trip, rates, items: [item] }).items[0];
+    calculation = calculateTrip({ ...trip, rates, items: [pricedItem] }).items[0];
   } catch { /* Incomplete inputs have no trustworthy estimate. */ }
   function changeType(type: ItemType) {
     setTypeChosen(true);
@@ -170,12 +182,12 @@ export function ItemForm({
     setError(null);
     clearErrors(["end_day_id", "end_time", "check_out", "external_url", "map_url", "booking_url", "airport_before_minutes", "airport_after_minutes", "departure_utc_offset_minutes", "arrival_utc_offset_minutes"]);
     const departureOffset = values.departure_utc_offset_minutes, arrivalOffset = values.arrival_utc_offset_minutes;
-    if ((departureOffset == null) !== (arrivalOffset == null)) {
+    if (values.type !== "hotel" && (departureOffset == null) !== (arrivalOffset == null)) {
       setFieldError("arrival_utc_offset_minutes", { message: "Укажите оба смещения UTC на даты отправления и прибытия" });
       return;
     }
     for (const field of ["departure_utc_offset_minutes", "arrival_utc_offset_minutes"] as const) {
-      if (values[field] != null && (!Number.isInteger(values[field]) || values[field]! < -840 || values[field]! > 840)) {
+      if (values.type !== "hotel" && values[field] != null && (!Number.isInteger(values[field]) || values[field]! < -840 || values[field]! > 840)) {
         setFieldError(field, { message: "Смещение UTC должно быть от −14:00 до +14:00" });
         return;
       }
@@ -198,7 +210,7 @@ export function ItemForm({
     }
     const startDate = trip.days.find(day => day.id === values.day_id)?.date;
     const endDate = trip.days.find(day => day.id === values.end_day_id)?.date;
-    if (hasUtcOffsets(values) && (!startDate || (values.end_day_id && !endDate) || (values.start_time && values.end_time && !resolveItemSchedule(trip.days, values)))) {
+    if (values.type !== "hotel" && hasUtcOffsets(values) && (!startDate || (values.end_day_id && !endDate) || (values.start_time && values.end_time && !resolveItemSchedule(trip.days, values)))) {
       setFieldError("end_time", { message: "Прибытие по UTC должно быть позже отправления. Проверьте даты и смещения." });
       return;
     }
@@ -213,7 +225,7 @@ export function ItemForm({
       setFieldError("end_time", { message: "Выберите дату окончания после даты начала" });
       return;
     }
-    if (values.calculation_mode === "hotel" && (!values.check_in || !values.check_out || values.check_out <= values.check_in)) {
+    if ((values.type === "hotel" || values.calculation_mode === "hotel") && (!values.check_in || !values.check_out || values.check_out <= values.check_in)) {
       setFieldError("check_out", { message: "Выезд должен быть позже заезда" });
       return;
     }
@@ -221,16 +233,28 @@ export function ItemForm({
       const urlResult = validUrl(values[field] ?? null);
       if (urlResult !== true) { setFieldError(field, { message: urlResult }); return; }
     }
-    const normalized = { ...values, unit_price: values.price_pending && !values.unit_price ? '0' : values.unit_price, included:values.price_pending ? false : values.included, external_url: values.external_url || null, map_url: values.map_url || null, booking_url: values.booking_url || null,
-      end_day_id: values.type === "hotel" ? null : values.end_day_id,
-      start_time: values.type === "hotel" ? null : values.start_time,
-      end_time: values.type === "hotel" ? null : values.end_time };
+    const stages = excursion ? values.stages?.map(stage => {
+      const original = initial.stages?.find(entry => entry.id === stage.id);
+      const cleaned = Object.fromEntries(Object.entries(stage).filter(([, value]) => value !== undefined)) as typeof stage;
+      if (stage.map_url === undefined && original?.map_url === null) cleaned.map_url = null;
+      return cleaned;
+    }) : values.stages;
+    if (values.type === "hotel" && values.check_in && values.check_out && (values.check_in < trip.start_date || values.check_out > nextDate(trip.end_date))) {
+      setFieldError("check_out", { message: "Даты проживания должны быть в пределах поездки" });
+      return;
+    }
+    const normalized = { ...values, stages, unit_price: values.price_pending && !values.unit_price ? '0' : values.unit_price, included:values.price_pending ? false : values.included, external_url: values.external_url || null, map_url: values.map_url || null, booking_url: values.booking_url || null,
+      duration_days: values.type === "hotel" && values.calculation_mode === "per_person_per_day" ? nights : values.duration_days };
     // Optional legacy fields may be absent, and native inputs can normalize stored strings.
     // Apply only edited fields to a persisted item so opening the form is lossless.
     const saved = isNew ? normalized : {
       ...initial,
       ...Object.fromEntries(Object.entries(normalized).filter(([key]) => dirtyFields[key as keyof ItemInput])),
     };
+    if (values.type === "hotel" && (isNew || dirtyFields.check_in || dirtyFields.check_out || dirtyFields.calculation_mode)) {
+      if (values.calculation_mode === "per_person_per_day") saved.duration_days = nights;
+      saved.day_id = preserveGeneralHotel ? null : trip.days.find(day => day.date === values.check_in)?.id ?? null;
+    }
     try {
       calculateTrip({ ...trip, rates, items: [...trip.items.filter(existing => existing.id !== saved.id), saved] });
       const storedRate = trip.rates.find(entry => entry.currency === saved.currency)?.rate;
@@ -263,6 +287,8 @@ export function ItemForm({
   const selectedSubtype = displaySubtype(item);
   const legacySubtype = item.type === "train_bus" && !selectedSubtype;
   const flight = item.type === "flight" && typeChosen;
+  const excursion = typeChosen && (item.type === "excursion" || (item.type === "activity" && item.subtype === "excursion"));
+  const specialized = flight || excursion;
   const itineraryProps = {
     item, trip, isNew, typeChosen, requireTypeChoice, labels,
     onManualTitle: () => { manualTitle.current = true; },
@@ -286,29 +312,40 @@ export function ItemForm({
       {category === "other" && typeChosen && <option value="other">Допрасход</option>}
     </select>
   </Field>;
-  const actions = <div className={`form-actions ${flight ? styles.actions : ""}`}>
-    {flight && !!error && <div className={styles.saveError}><ErrorNotice error={error} /></div>}
+  const actions = <div className={`form-actions ${specialized ? styles.actions : ""}`}>
+    {specialized && !!error && <div className={styles.saveError}><ErrorNotice error={error} /></div>}
     <button type="button" className="secondary-button" onClick={onCancel}>Отмена</button>
-    <button className="primary-button" disabled={!typeChosen || isSubmitting}>{isSubmitting ? "Сохраняем…" : flight ? "Сохранить перелёт" : "Сохранить элемент"}</button>
+    <button className="primary-button" disabled={!typeChosen || isSubmitting}>{isSubmitting ? "Сохраняем…" : flight ? "Сохранить перелёт" : excursion ? "Сохранить экскурсию" : "Сохранить элемент"}</button>
   </div>;
   return <FormProvider {...form}><EventEditorShell
     onSubmit={submit}
     aria-busy={isSubmitting}
-    className={`trip-form ${flight ? styles.editor : ""}`}
+    className={`trip-form ${specialized ? styles.editor : ""}`}
     data-editor-item={item.id}
     header={flight && <flightEditorConfig.Summary item={item} trip={trip} calculation={calculation} isNew={isNew}
-      typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} utcOutdated={utcCheck.outdated} />}
-    feedback={!flight && error ? <ErrorNotice error={error} /> : null}
+      typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} utcOutdated={utcCheck.outdated} /> || excursion && <ExcursionHeader item={item} trip={trip} calculation={calculation} isNew={isNew} typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} />}
+    feedback={!specialized && error ? <ErrorNotice error={error} /> : null}
     actions={actions}
   >
-    {!flight && typeSelector}
+    {!specialized && typeSelector}
     {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
-    {flight ? <FlightEditor {...itineraryProps} cost={cost} flightHistory={flightHistory} utcCheck={utcCheck} /> : <>
-      <EventRouteSection {...itineraryProps} />
+    {flight ? <FlightEditor {...itineraryProps} cost={cost} flightHistory={flightHistory} utcCheck={utcCheck} /> : excursion ? <ExcursionEditor {...itineraryProps} cost={cost} /> : <>
+      {item.type === "hotel" ? <EventRouteSection {...itineraryProps} showDetails={false} geographyFields={<div className="field-wide">
+        <PlaceCombobox label="Объект из поездки" value={null} options={hotelPlaces} onChange={key => { const place = hotelPlaces.find(option => option.key === key)?.place; if (place) setValue("map_place", place, { shouldDirty: true }); }} />
+        <LocationPicker label="Объект проживания на карте" value={item.map_place ?? null} onChange={value => setValue("map_place", value, { shouldDirty: true })} />
+        {item.map_place?.name && <button type="button" className="text-link" onClick={() => {
+          const rooms = item.rooms_override ?? (item.capacity && item.capacity > 0 ? Math.ceil((item.participants_override ?? trip.participants) / item.capacity) : null);
+          const suffix = [rooms != null ? `номеров: ${rooms}` : null, nights > 0 ? `ночей: ${nights}` : null].filter(Boolean).join(" · ");
+          manualTitle.current = true;
+          setValue("title", `${item.map_place!.name}${suffix ? ` · ${suffix}` : ""}`.slice(0, 200), { shouldDirty: true, shouldValidate: true });
+        }}>Использовать название объекта</button>}
+      </div>} /> : <EventRouteSection {...itineraryProps} />}
       <EventScheduleSection {...itineraryProps} />
-      <CostSection {...cost} config={{ priceLabel: labels.price }} />
+      {item.type === "hotel" && item.calculation_mode === "per_person_per_day" && !syncNights && nights > 0 && item.duration_days !== nights && <p className="field-hint">В сохранённом расчёте указано {item.duration_days} дней. Измените даты проживания, чтобы пересчитать стоимость по числу ночей.</p>}
+      <CostSection {...cost} item={pricedItem} config={item.type === "hotel" ? { priceLabel: labels.price, basicModes: ["hotel", "per_person_per_day", "manual"], pendingPrice: true } : { priceLabel: labels.price }} />
+      {item.type === "hotel" && <fieldset className="form-section" aria-label="Ссылки и бронирование"><h3>Ссылки и бронирование</h3><div className="form-grid"><LinksFields item={item} /></div></fieldset>}
       <NotesSection typeChosen={typeChosen} />
-      <EventStagesSection typeChosen={typeChosen} persistedStages={isNew ? undefined : initial.stages} />
+      {item.type !== "hotel" && <EventStagesSection typeChosen={typeChosen} persistedStages={isNew ? undefined : initial.stages} />}
     </>}
     {pendingType && <Confirm title="Изменить тип события?" action="Изменить тип" onClose={() => setPendingType(null)} onConfirm={() => { const next = pendingType; setPendingType(null); changeType(next); }}>Поля перелёта станут недоступны. Правило расчёта и расписание могут измениться; для нетранспортных событий смещения UTC будут удалены.</Confirm>}
     <span className="sr-only">{timeLabel(item)}</span>

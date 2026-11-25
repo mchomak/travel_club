@@ -25,6 +25,12 @@ The calendar keeps the entered local dates and clock times. Elapsed time is calc
 
 The columns are nullable, so existing items keep their prior local schedule and legacy overnight inference. The additive Alembic migration is `e82b73ac51d9`; it leaves old offset values null. Editing an old item does not assign a guessed time zone.
 
+## Excursion program
+
+The excursion editor uses the shared event shell, cost, links, notes, schedule, and map controls. Its meeting and ending points can be selected from existing trip places or linked through Google Maps. The program is a compact list of nested stages; opening a stage closes the previously open one. Stages remain part of the excursion and do not add a separate cost.
+
+Stage times are optional local clock times stored to the minute; stages have no date of their own. For a single-day program the editor and Trip Validator can identify schedule inconsistencies, while gaps can represent planned free time. For overnight or multi-day excursions, clock times alone cannot reliably establish stage dates or order, so those comparisons are omitted. The program does not automatically overwrite the event's schedule.
+
 ## Saving, map, and pricing behavior
 
 Authentication, trip reads/writes, optimistic versions, and PostgreSQL persistence remain real. The builder and full editor share the same trip and stable item/day UUIDs. An error or version conflict keeps the local draft available; a save is shown as complete only after the server acknowledges that revision.

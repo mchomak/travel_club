@@ -7,6 +7,7 @@ import { emptyDay, newItem, newTrip } from "@/lib/trip-ui";
 import {tripInput} from '@/lib/trips';
 import type {TripDocument} from '@/lib/contracts';
 import {calculateTrip} from '@/lib/pricing';
+import { ValidationIssueContext } from './trip-validation-panel';
 
 afterEach(cleanup);
 
@@ -529,8 +530,157 @@ test('event stages can be added and saved within an excursion', async () => {
  render(<ItemForm initial={newItem('excursion',day,'RUB',day.date)} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
  await user.click(screen.getByRole('button',{name:'Добавить этап'}));
  await user.type(screen.getByLabelText('Название этапа 1'), 'Остров');
- await user.click(screen.getByRole('button',{name:/Сохранить (элемент|перелёт)/}));
+ await user.click(screen.getByRole('button',{name:'Сохранить экскурсию'}));
  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({stages:[expect.objectContaining({title:'Остров'})]}),undefined);
+});
+
+test('choosing excursion under activities opens its editor and saves the activity subtype', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const item = newItem('activity', day, 'RUB', day.date);
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Подвид' }), 'excursion');
+  expect(screen.getByRole('group', { name: 'Сводка экскурсии' })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Добавить этап' }));
+  await user.type(screen.getByLabelText('Название этапа 1'), 'Остров');
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: 'activity', subtype: 'excursion', stages: [expect.objectContaining({ title: 'Остров' })] }), undefined);
+});
+
+test('opening and saving a legacy excursion does not change its type', async () => {
+  const day = emptyDay('2026-10-01'), onSubmit = vi.fn();
+  const item = newItem('excursion', day, 'RUB', day.date);
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(item, undefined);
+});
+
+test('excursion program collapses stages, duplicates and reorders without losing data', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const first = { id: crypto.randomUUID(), title: 'Пристань', start_time: '09:00', end_time: '10:00', notes: 'Встреча' };
+  const second = { id: crypto.randomUUID(), title: 'Остров', start_time: '09:30', end_time: '11:00', notes: '' };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [first, second] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByText('Пристань')).toBeVisible();
+  expect(screen.getByLabelText('Название этапа 1')).not.toBeVisible();
+  expect(screen.getAllByText(/пересека/iu)[0]).toBeVisible();
+  await user.click(screen.getByText('Пристань'));
+  await user.click(screen.getByRole('button', { name: 'Дублировать этап 1' }));
+  await user.click(screen.getByRole('button', { name: 'Опустить этап 2' }));
+  await user.click(screen.getByRole('button', { name: 'Удалить этап 3' }));
+  await user.click(screen.getByRole('button', { name: 'Подтвердить удаление' }));
+  await user.click(screen.getByRole('button', { name: /Сохранить (элемент|экскурсию)/ }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ stages: [first, second] }), undefined);
+});
+
+test('overnight excursion does not claim stage clocks are in the wrong order', () => {
+  const day = emptyDay('2026-10-01'), next = emptyDay('2026-10-02');
+  const item = { ...newItem('excursion', day, 'RUB', day.date), end_day_id: next.id, start_time: '22:00', end_time: '02:00', stages: [
+    { id: crypto.randomUUID(), title: 'Ночью', start_time: '23:00', end_time: '01:00', notes: '' },
+    { id: crypto.randomUUID(), title: 'Утром', start_time: '01:00', end_time: '02:00', notes: '' },
+  ] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: next.date, days: [day, next], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
+  expect(screen.queryByText(/этапов пересекается|раньше предыдущего|не позже начала/i)).not.toBeInTheDocument();
+});
+
+test('validator opens a collapsed excursion stage and focuses its field', async () => {
+  const day = emptyDay('2026-10-01'), stage = { id: crypto.randomUUID(), title: 'Причал', start_time: '09:00', end_time: '10:00', notes: '' };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  const issue = { id: 'issue', code: 'stage_overlap', category: 'schedule', severity: 'warning', title: 'Время', message: 'Проверьте время', path: '/trip/items/0/stages/0/start_time' };
+  render(<ValidationIssueContext issue={issue} location={{ section: 'stages', stageId: stage.id, field: 'stages.0.start_time' }} stale={false}><ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} /></ValidationIssueContext>);
+  await waitFor(() => expect(screen.getByLabelText('Начало этапа 1')).toHaveFocus());
+  expect(screen.getByText('Проверьте время')).toBeVisible();
+});
+
+test('opening an excursion stage closes the previously opened stage', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup();
+  const stage = (title: string) => ({ id: crypto.randomUUID(), title, start_time: null, end_time: null, notes: '' });
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage('Причал'), stage('Остров')] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={() => {}} onCancel={() => {}} />);
+  await user.click(screen.getByText('Причал'));
+  expect(screen.getByLabelText('Название этапа 1')).toBeVisible();
+  await user.click(screen.getByText('Остров'));
+  await waitFor(() => expect(screen.getByLabelText('Название этапа 1')).not.toBeVisible());
+  expect(screen.getByLabelText('Название этапа 2')).toBeVisible();
+});
+
+test('stage time accepts minutes and retains an imported seconds value until edited', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const stage = { id: crypto.randomUUID(), title: 'Причал', start_time: '09:00:15', end_time: '10:00', notes: '' };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.click(screen.getByText('Причал'));
+  const start = screen.getByLabelText('Начало этапа 1');
+  expect(start).toHaveValue('09:00:15');
+  await user.type(screen.getByLabelText('Описание этапа 1'), 'Заметка');
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ ...stage, notes: 'Заметка' }] }), undefined);
+  fireEvent.change(start, { target: { value: '09:00:30' } });
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('Укажите время в формате ЧЧ:ММ.')).toBeVisible();
+});
+
+test('excursion stage location fields survive editing and saving', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const stage = { id: crypto.randomUUID(), title: 'Причал', start_time: '09:00', end_time: '10:00', notes: 'Встреча', location: 'Марина', address: 'Улица 1', map_url: 'https://example.com/map' };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.click(screen.getByText('Причал'));
+  await user.clear(screen.getByLabelText('Описание этапа 1'));
+  await user.type(screen.getByLabelText('Описание этапа 1'), 'Новая заметка');
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ ...stage, notes: 'Новая заметка' }] }), undefined);
+});
+
+test('editing an old stage preserves its explicit empty map link', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const stage = { id: crypto.randomUUID(), title: 'Причал', start_time: '09:00', end_time: '10:00', notes: '', map_url: null };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), stages: [stage] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.click(screen.getByText('Причал'));
+  await user.type(screen.getByLabelText('Описание этапа 1'), 'Новая заметка');
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ ...stage, notes: 'Новая заметка' }] }), undefined);
+});
+
+test('excursion selects existing trip places for meeting and ending and preserves them on reopening', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const meeting = { name: 'Причал', address: 'Набережная', latitude: 10, longitude: 20, provider: 'manual' as const };
+  const ending = { name: 'Музей', address: 'Площадь', latitude: 11, longitude: 21, provider: 'manual' as const };
+  const first = { ...newItem('activity', day, 'RUB', day.date), title: 'Прогулка', map_place: meeting };
+  const second = { ...newItem('activity', day, 'RUB', day.date), title: 'Осмотр музея', map_place: ending };
+  const item = { ...newItem('excursion', day, 'RUB', day.date), location: 'Старое место' };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [first, second, item], rates: [] };
+  const view = render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.click(screen.getByRole('combobox', { name: 'Место встречи' }));
+  await user.click(screen.getByRole('option', { name: /Прогулка.*Причал/ }));
+  await user.click(screen.getByRole('combobox', { name: 'Место окончания' }));
+  await user.click(screen.getByRole('option', { name: /Осмотр музея.*Музей/ }));
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ location: 'Причал', map_place: meeting, map_end_place: ending }), undefined);
+  const saved = onSubmit.mock.calls[0][0];
+  view.rerender(<ItemForm key="reopened-excursion" initial={saved} trip={{ ...trip, items: [first, second, saved] }} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByRole('combobox', { name: 'Место встречи' })).toHaveValue('Причал');
+  expect(screen.getByRole('combobox', { name: 'Место окончания' })).toHaveValue('Музей');
+});
+
+test('typing a meeting place saves it without requiring an option selection', async () => {
+  const day = emptyDay('2026-10-01'), user = userEvent.setup(), onSubmit = vi.fn();
+  const item = newItem('excursion', day, 'RUB', day.date);
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] };
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.type(screen.getByRole('combobox', { name: 'Место встречи' }), 'У маяка');
+  await user.click(screen.getByRole('button', { name: 'Сохранить экскурсию' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ location: 'У маяка', map_place: null }), undefined);
 });
 
 test("flight stages describe a single booking and keep their values and order on submit", async () => {
@@ -565,11 +715,12 @@ test('typed links survive form submission and editable document conversion', asy
  const day=emptyDay('2026-10-01'), onSubmit=vi.fn(), user=userEvent.setup();
  const trip={...newTrip(), start_date:day.date, end_date:day.date, days:[day], items:[], rates:[]};
  render(<ItemForm initial={newItem('excursion',day,'RUB',day.date)} trip={trip} onSubmit={onSubmit} onCancel={()=>{}}/>);
+ await user.click(screen.getByText('Ссылки и бронирование', { selector: 'summary span' }));
  await user.click(screen.getByText('Добавить ссылку на карту'));
  await user.type(screen.getByLabelText('Ссылка на карту'), 'https://example.com/map');
  await user.click(screen.getByText('Добавить ссылку на бронирование или оплату'));
  await user.type(screen.getByLabelText('Ссылка на бронирование или оплату'), 'https://example.com/book');
- await user.click(screen.getByRole('button',{name:/Сохранить (элемент|перелёт)/}));
+ await user.click(screen.getByRole('button',{name:'Сохранить экскурсию'}));
  const saved=onSubmit.mock.calls[0][0];
  expect(saved).toMatchObject({map_url:'https://example.com/map',booking_url:'https://example.com/book'});
  const doc={...trip,items:[saved]} as unknown as TripDocument;
@@ -868,4 +1019,91 @@ test('returning to flight before saving restores incompatible UTC offsets', asyn
  expect(screen.getByLabelText('UTC при отправлении')).toHaveValue('180');
  expect(screen.getByLabelText('UTC при прибытии')).toHaveValue('240');
  expect(screen.getByLabelText('Вылет по местному времени')).toHaveValue('09:00');
+});
+
+test('hotel dates drive per-person nightly pricing and invalid stays cannot be saved', async () => {
+  const user = userEvent.setup(), days = [emptyDay('2026-10-01'), emptyDay('2026-10-02'), emptyDay('2026-10-03')];
+  const trip = { ...newTrip(), participants: 3, start_date: days[0].date, end_date: days[2].date, days, items: [], rates: [] };
+  const onSubmit = vi.fn();
+  render(<ItemForm initial={newItem('hotel', days[0], 'RUB', days[0].date)} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  await user.selectOptions(screen.getByLabelText('Правило расчёта'), 'per_person_per_day');
+  fireEvent.change(screen.getByLabelText('Выезд — дата'), { target: { value: '2026-10-03' } });
+  fireEvent.change(screen.getByLabelText('Цена за человека за ночь'), { target: { value: '100' } });
+  await user.click(screen.getByRole('button', { name: /Сохранить элемент/ }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ duration_days: 2, calculation_mode: 'per_person_per_day' }), undefined);
+  expect(calculateTrip({ ...trip, items: [onSubmit.mock.calls[0][0]] }).cost_total).toBe('600.00');
+  fireEvent.change(screen.getByLabelText('Выезд — дата'), { target: { value: '2026-10-01' } });
+  await user.click(screen.getByRole('button', { name: /Сохранить элемент/ }));
+  expect(onSubmit).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('Выезд должен быть позже заезда')).toBeVisible();
+});
+
+test('existing hotel retains hidden schedule offsets and stages when edited', async () => {
+  const day = emptyDay('2026-10-01');
+  const item = { ...newItem('hotel', day, 'RUB', day.date), start_time: '08:00', end_time: '09:00', departure_utc_offset_minutes: 180, arrival_utc_offset_minutes: 180, stages: [{ id: crypto.randomUUID(), title: 'Старый этап', start_time: null, end_time: null, notes: '' }] };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [item], rates: [] }, onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.queryByText('Этапы события')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Описание события'), { target: { value: 'Описание' } });
+  await userEvent.click(screen.getByRole('button', { name: /Сохранить элемент/ }));
+  expect(onSubmit).toHaveBeenCalledWith({ ...item, description: 'Описание' }, undefined);
+});
+
+test('hotel room count switches between automatic and remembered manual values', async () => {
+  const user = userEvent.setup(), day = emptyDay('2026-10-01');
+  const trip = { ...newTrip(), participants: 5, start_date: day.date, end_date: day.date, days: [day], items: [], rates: [] }, onSubmit = vi.fn();
+  render(<ItemForm initial={newItem('hotel', day, 'RUB', day.date)} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByText('Автоматически: 3 номеров')).toBeVisible();
+  await user.selectOptions(screen.getByLabelText('Расчёт числа номеров'), 'manual');
+  fireEvent.change(screen.getByLabelText('Число номеров вручную'), { target: { value: '4' } });
+  await user.selectOptions(screen.getByLabelText('Расчёт числа номеров'), 'auto');
+  expect(screen.getByText('Автоматически: 3 номеров')).toBeVisible();
+  await user.selectOptions(screen.getByLabelText('Расчёт числа номеров'), 'manual');
+  expect(screen.getByLabelText('Число номеров вручную')).toHaveValue(4);
+  await user.click(screen.getByRole('button', { name: 'Сохранить элемент' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ rooms_override: 4 }), undefined);
+});
+
+test('hotel can reuse a trip place and explicitly apply its name', async () => {
+  const user = userEvent.setup(), day = emptyDay('2026-10-01');
+  const place = { name: 'Отель Море', address: 'Набережная 1', latitude: 45, longitude: 20, provider: 'manual' as const };
+  const other = { ...newItem('hotel', day, 'RUB', day.date), title: 'Старый отель', map_place: place };
+  const trip = { ...newTrip(), start_date: day.date, end_date: day.date, days: [day], items: [other], rates: [] }, onSubmit = vi.fn();
+  render(<ItemForm initial={newItem('hotel', day, 'RUB', day.date)} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  const title = screen.getByLabelText('Название элемента');
+  fireEvent.change(title, { target: { value: 'Моё название' } });
+  await user.click(screen.getByRole('combobox', { name: 'Объект из поездки' }));
+  await user.click(screen.getByRole('option', { name: /Старый отель/ }));
+  expect(title).toHaveValue('Моё название');
+  await user.click(screen.getByRole('button', { name: 'Использовать название объекта' }));
+  expect(title).toHaveValue('Отель Море · номеров: 1 · ночей: 1');
+  await user.click(screen.getByRole('button', { name: 'Сохранить элемент' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Отель Море · номеров: 1 · ночей: 1', map_place: place }), undefined);
+});
+
+test('hotel occupancy remains editable for a total stay price and preserves general expenses', async () => {
+  const user = userEvent.setup(), days = [emptyDay('2026-10-01'), emptyDay('2026-10-02')];
+  const item = { ...newItem('hotel', days[0], 'RUB', days[0].date), day_id: null, calculation_mode: 'manual' as const };
+  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[1].date, days, items: [item], rates: [] }, onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  expect(screen.getByLabelText('Гостей в номере')).toBeVisible();
+  expect(screen.getByLabelText('Участники элемента')).toBeVisible();
+  await user.selectOptions(screen.getByLabelText('Расчёт числа номеров'), 'manual');
+  fireEvent.change(screen.getByLabelText('Число номеров вручную'), { target: { value: '3' } });
+  fireEvent.change(screen.getByLabelText('Выезд — дата'), { target: { value: '2026-10-03' } });
+  fireEvent.change(screen.getByLabelText('Заезд — дата'), { target: { value: '2026-10-02' } });
+  await user.click(screen.getByRole('button', { name: 'Сохранить элемент' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ day_id: null, rooms_override: 3 }), undefined);
+});
+
+test('changing a legacy hotel mode keeps its original option and aligns the pricing day with check-in', async () => {
+  const user = userEvent.setup(), days = [emptyDay('2026-10-01'), emptyDay('2026-10-02')];
+  const item = { ...newItem('hotel', days[0], 'RUB', days[0].date), check_in: days[1].date, check_out: '2026-10-03', calculation_mode: 'fixed' as const };
+  const trip = { ...newTrip(), start_date: days[0].date, end_date: days[1].date, days, items: [item], rates: [] }, onSubmit = vi.fn();
+  render(<ItemForm initial={item} trip={trip} onSubmit={onSubmit} onCancel={() => {}} />);
+  const mode = screen.getByLabelText('Правило расчёта');
+  await user.selectOptions(mode, 'per_person_per_day');
+  expect(within(mode).getByRole('option', { name: /За всю группу \(сохранённое правило\)/ })).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Сохранить элемент' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ calculation_mode: 'per_person_per_day', day_id: days[1].id, duration_days: 1 }), undefined);
 });

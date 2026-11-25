@@ -1,5 +1,5 @@
 "use client";
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { LockKeyhole } from "lucide-react";
 import type { CalculationMode, ItemCalculation, ItemInput, TripInput } from "@/lib/contracts";
@@ -139,11 +139,15 @@ export function CostSection({ item, initial, trip, typeChosen, calculation, rate
   const amount = calculation?.normalized_amount;
   const { register, setValue, clearErrors, formState: { errors } } = useFormContext<ItemInput>();
   const includedBeforePending = useRef<boolean | undefined>(undefined);
+  const lastManualRooms = useRef<number | null>(item.rooms_override);
+  const [manualRooms, setManualRooms] = useState(item.rooms_override != null);
   const currencyListId = useId();
   const priceField = register("unit_price", { required: !item.price_pending });
   const modeField = register("calculation_mode");
   const mode = item.calculation_mode;
   const basicModes = config.basicModes ?? [];
+  const hotelModeLabels: Partial<Record<CalculationMode, string>> = { hotel: "За номер за ночь", per_person_per_day: "За человека за ночь", manual: "За всё проживание" };
+  const labelForMode = (value: CalculationMode) => item.type === "hotel" ? hotelModeLabels[value] ?? modeLabels[value] : modeLabels[value];
   const modes = [...basicModes, ...(Object.keys(modeLabels) as CalculationMode[]).filter(value => !basicModes.includes(value))];
   const selectedDay = trip.days.find(day => day.id === item.day_id);
   const availableDays = selectedDay ? trip.days.filter(day => day.date >= selectedDay.date && day.date <= trip.end_date).length : 3660;
@@ -165,7 +169,7 @@ export function CostSection({ item, initial, trip, typeChosen, calculation, rate
     data-editor-section={item.type === "flight" ? undefined : "cost"}
     aria-label="Стоимость"
     disabled={!typeChosen}
-  ><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" error={errors.calculation_mode?.message} wide><select {...modeField} onChange={event => { void modeField.onChange(event); clearErrors("calculation_mode"); }}>{item.type !== "hotel" && mode === "hotel" && <option value="hotel" disabled>{initial.calculation_mode === "hotel" && trip.items.some(existing => existing.id === initial.id) ? "Номер за ночь (сохранённое правило)" : "Номер за ночь — недоступен для этого типа"}</option>}{basicModes.length ? <><optgroup label="Основные правила">{basicModes.map(value => <option key={value} value={value}>{modeLabels[value]}</option>)}</optgroup><optgroup label="Дополнительные правила">{modes.filter(value => !basicModes.includes(value) && (item.type === "hotel" || value !== "hotel")).map(value => <option key={value} value={value}>{modeLabels[value]}</option>)}</optgroup></> : modes.filter(value => item.type === "hotel" || value !== "hotel").map(value => <option key={value} value={value}>{modeLabels[value]}</option>)}</select></Field>
+  ><h3>Стоимость</h3><div className="form-grid"><Field label="Правило расчёта" error={errors.calculation_mode?.message} wide><select {...modeField} onChange={event => { void modeField.onChange(event); clearErrors("calculation_mode"); }}>{item.type !== "hotel" && mode === "hotel" && <option value="hotel" disabled>{initial.calculation_mode === "hotel" && trip.items.some(existing => existing.id === initial.id) ? "Номер за ночь (сохранённое правило)" : "Номер за ночь — недоступен для этого типа"}</option>}{item.type === "hotel" ? <>{basicModes.map(value => <option key={value} value={value}>{labelForMode(value)}</option>)}{initial.type === "hotel" && trip.items.some(existing => existing.id === initial.id) && !basicModes.includes(initial.calculation_mode) && <option value={initial.calculation_mode}>{labelForMode(initial.calculation_mode)} (сохранённое правило)</option>}</> : basicModes.length ? <><optgroup label="Основные правила">{basicModes.map(value => <option key={value} value={value}>{labelForMode(value)}</option>)}</optgroup><optgroup label="Дополнительные правила">{modes.filter(value => !basicModes.includes(value) && value !== "hotel").map(value => <option key={value} value={value}>{labelForMode(value)}</option>)}</optgroup></> : modes.filter(value => value !== "hotel").map(value => <option key={value} value={value}>{labelForMode(value)}</option>)}</select></Field>
       {config.pendingPrice && <Field label="Статус стоимости" wide>
         <select value={item.price_pending ? "pending" : /^0+(?:\.0+)?$/.test(item.unit_price) ? "free" : "known"} onChange={event => {
           const status = event.target.value;
@@ -184,7 +188,7 @@ export function CostSection({ item, initial, trip, typeChosen, calculation, rate
         </select>
       </Field>}
       {item.price_pending&&<p role="status" className="field-hint field-wide">Стоимость не указана</p>}
-      <Field label={mode === "manual" ? "Итоговая сумма" : mode === "hotel" ? "Цена номера за ночь" : mode === defaultModes[item.type] ? config.priceLabel : "Цена за единицу"} hint={item.price_pending ? "Смета неполная. Введите цену, включая 0 для бесплатного переезда." : undefined}>
+      <Field label={mode === "manual" ? "Итоговая сумма" : item.type === "hotel" && mode === "per_person_per_day" ? "Цена за человека за ночь" : mode === "hotel" ? "Цена номера за ночь" : mode === defaultModes[item.type] ? config.priceLabel : "Цена за единицу"} hint={item.price_pending ? "Смета неполная. Введите цену, включая 0 для бесплатной услуги." : undefined}>
         <input inputMode="decimal" {...priceField} onChange={event => {
           void priceField.onChange(event);
           if (!item.price_pending) return;
@@ -197,10 +201,16 @@ export function CostSection({ item, initial, trip, typeChosen, calculation, rate
       <Field label="Валюта цены"><input list={currencyListId} maxLength={3} {...register("currency", { setValueAs: (v: string) => v.toUpperCase() })} onChange={e => { const code = e.target.value.toUpperCase(); setValue("currency", code, { shouldDirty: true }); setRate(trip.rates.find(r => r.currency === code)?.rate ?? ""); }} /><datalist id={currencyListId}>{currencies.map(c => <option key={c}>{c}</option>)}</datalist></Field>
       {foreign && <Field label={`Курс ${item.currency || "валюты"}`} hint={`1 ${item.currency || "единица"} = указанная сумма в ${trip.base_currency}. Курс применяется ко всей поездке.`} wide><input name="exchange_rate" value={rate} onChange={e => setRate(e.target.value)} inputMode="decimal" required /></Field>}
       {mode !== "manual" && mode !== "hotel" && (config.basicModes ? <details className="field-wide"><summary>Дополнительные параметры</summary><Field label="Количество" hint="Например, число билетов на человека или повторений услуги"><input inputMode="decimal" {...register("quantity")} value={/^1\.0+$/.test(item.quantity) ? "1" : item.quantity} /></Field></details> : <Field label="Количество" hint="Например, число билетов на человека или повторений услуги"><input inputMode="decimal" {...register("quantity")} /></Field>)}
-      {(mode === "capacity" || mode === "hotel") && <Field label={mode === "hotel" ? "Гостей в номере" : "Вместимость одной машины / группы"} hint="Количество единиц округляем вверх"><input type="number" min="1" {...register("capacity", { setValueAs: nullableInteger })} /></Field>}
-      {(mode === "per_day" || mode === "per_person_per_day") && <Field label="Число дней" hint={selectedDay ? `Стоимость распределится с ${formatDate(selectedDay.date)} по дням поездки (доступно ${availableDays}).` : "Без дня маршрута вся стоимость относится к общим расходам."}><input type="number" min="1" max={availableDays} {...register("duration_days", { valueAsNumber: true })} /></Field>}
-      {mode === "hotel" && <Field label="Число номеров вручную" hint="Пусто — рассчитаем по числу гостей"><input type="number" min="1" {...register("rooms_override", { setValueAs: nullableInteger })} /></Field>}
-      {["per_person", "capacity", "hotel", "per_person_per_day"].includes(mode) && <Field label="Участники элемента" hint={`Пусто — все ${trip.participants} участников поездки`}><input type="number" min="1" max={trip.participants} placeholder={`Все ${trip.participants}`} {...register("participants_override", { setValueAs: nullableInteger })} /></Field>}
+      {(mode === "capacity" || mode === "hotel" || item.type === "hotel") && <Field label={item.type === "hotel" || mode === "hotel" ? "Гостей в номере" : "Вместимость одной машины / группы"} hint="Количество единиц округляем вверх"><input type="number" min="1" {...register("capacity", { setValueAs: nullableInteger })} /></Field>}
+      {(mode === "hotel" || item.type === "hotel") && item.capacity && item.capacity > 0 && <p className="field-hint field-wide">{item.rooms_override == null ? `Автоматически: ${Math.ceil((item.participants_override ?? trip.participants) / item.capacity)} номеров` : `Вручную: ${item.rooms_override} номеров`}</p>}
+      {(mode === "per_day" || mode === "per_person_per_day") && !(item.type === "hotel" && mode === "per_person_per_day") && <Field label="Число дней" hint={selectedDay ? `Стоимость распределится с ${formatDate(selectedDay.date)} по дням поездки (доступно ${availableDays}).` : "Без дня маршрута вся стоимость относится к общим расходам."}><input type="number" min="1" max={availableDays} {...register("duration_days", { valueAsNumber: true })} /></Field>}
+      {(mode === "hotel" || item.type === "hotel") && <Field label="Расчёт числа номеров"><select value={manualRooms ? "manual" : "auto"} onChange={event => {
+        setManualRooms(event.target.value === "manual");
+        if (event.target.value === "auto") { lastManualRooms.current = item.rooms_override; setValue("rooms_override", null, { shouldDirty: true }); }
+        else setValue("rooms_override", lastManualRooms.current ?? Math.ceil((item.participants_override ?? trip.participants) / (item.capacity || 1)), { shouldDirty: true });
+      }}><option value="auto">Автоматически</option><option value="manual">Вручную</option></select></Field>}
+      {(mode === "hotel" || item.type === "hotel") && manualRooms && <Field label="Число номеров вручную" error={errors.rooms_override?.message}><input type="number" min="1" {...register("rooms_override", { setValueAs: nullableInteger, validate: value => value != null && Number.isInteger(value) && value > 0 || "Укажите число номеров" })} /></Field>}
+      {(item.type === "hotel" || ["per_person", "capacity", "hotel", "per_person_per_day"].includes(mode)) && <Field label="Участники элемента" hint={`Пусто — все ${trip.participants} участников поездки`}><input type="number" min="1" max={trip.participants} placeholder={`Все ${trip.participants}`} {...register("participants_override", { setValueAs: nullableInteger })} /></Field>}
       <label className="check-field field-wide"><input type="checkbox" disabled={!!item.price_pending} {...register("included")} /><span>Учитывать в стоимости поездки</span></label>
     </div><p className="field-hint mt-3">{mode === "hotel" ? "Сумма распределяется по ночам. Остаток округления относится к последней ночи." : mode === "per_day" || mode === "per_person_per_day" ? "Итог элемента учитывается один раз; в дневной смете он разделён между днями." : "Вся сумма в выбранный день или в общие расходы."}</p>{!item.price_pending && calculation && <p className="field-hint">Расчёт: {formula[mode]} = {formatMoney(calculation.original_amount, item.currency)}</p>}<div className="item-estimate"><span>{item.price_pending ? "Стоимость неизвестна" : item.included ? "Стоимость элемента" : "Исключён из итоговой стоимости"}</span><strong>{item.price_pending ? "Укажите цену" : amount && calculation ? formatMoney(calculation.original_amount, item.currency) : foreign && !rate ? "Укажите курс валюты" : "Заполните условия расчёта"}</strong></div>{!item.price_pending && foreign && calculation && <p className="field-hint">В валюте поездки: {formatMoney(calculation.normalized_amount, trip.base_currency)}</p>}</fieldset>;
 }

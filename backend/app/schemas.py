@@ -243,12 +243,49 @@ class AutoTransfer(MapLegMode):
         return value
 
 
+def validate_external_url(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    try:
+        parsed = TypeAdapter(AnyHttpUrl).validate_python(value)
+    except ValidationError:
+        raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта") from None
+    parts = urlsplit(value)
+    if (
+        not parts.netloc
+        or not parts.hostname
+        or "\x00" in value
+        or any(char.isspace() for char in value)
+        or parsed.username
+        or parsed.password
+    ):
+        raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта")
+    return value
+
+
 class EventStage(DTO):
     id: UUID = Field(default_factory=uuid4)
     title: Title
     start_time: str | None = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
     end_time: str | None = Field(default=None, pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
     notes: Note = ""
+    location: str = Field(default="", max_length=200, exclude_if=lambda value: value == "")
+    address: str = Field(default="", max_length=500, exclude_if=lambda value: value == "")
+    map_url: str | None = Field(
+        default=None, max_length=2048, exclude_if=lambda value: value is None
+    )
+
+    @field_validator("location", "address")
+    @classmethod
+    def valid_place_text(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("Текст места содержит недопустимый символ")
+        return value
+
+    @field_validator("map_url")
+    @classmethod
+    def valid_map_url(cls, value: str | None) -> str | None:
+        return validate_external_url(value)
 
 
 class ItemInput(DTO):
@@ -338,22 +375,7 @@ class ItemInput(DTO):
     @field_validator("external_url", "map_url", "booking_url")
     @classmethod
     def valid_external_url(cls, value: str | None) -> str | None:
-        if value is None or value == "":
-            return None
-        try:
-            parsed = TypeAdapter(AnyHttpUrl).validate_python(value)
-        except ValidationError:
-            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта") from None
-        parts = urlsplit(value)
-        if (
-            not parts.netloc
-            or not parts.hostname
-            or any(char.isspace() for char in value)
-            or parsed.username
-            or parsed.password
-        ):
-            raise ValueError("Введите полную ссылку http:// или https:// с адресом сайта")
-        return value
+        return validate_external_url(value)
 
 
 class CurrencyRateInput(DTO):
