@@ -32,7 +32,7 @@ export function TransportEndpoints({item,trip,isNew,onChange}:{item:ItemInput;tr
   const origin=side==='start',place=origin?from:to,label=origin?item.departure_label:item.arrival_label,options=origin?starts:ends;
   const selected=place?{key:'selected',label:place.name,description:place.address}:label?{key:'selected',label,description:'Место без адреса'}:null;
   function change(place:MapPlace|null,label:string){manual.current[side]=true;onChange(origin?{map_place:place,departure_label:label}:{map_end_place:place,arrival_label:label});}
-  return <div style={{minWidth:0}}><PlaceCombobox label={origin?'Откуда':'Куда'} value={selected?'selected':null} options={[...(selected?[selected]:[]),...options]} allowCustom onCustomValue={value=>change(null,value.slice(0,200))} onChange={key=>{const option=options.find(option=>option.key===key);if(option)change(option.place,option.place?.name??option.label);}}/>
+  return <div style={{minWidth:0}}><PlaceCombobox label={origin?'Откуда':'Куда'} name={origin?'departure_label':'arrival_label'} value={selected?'selected':null} options={[...(selected?[selected]:[]),...options]} allowCustom onCustomValue={value=>change(null,value.slice(0,200))} onChange={key=>{const option=options.find(option=>option.key===key);if(option)change(option.place,option.place?.name??option.label);}}/>
    <details><summary>{place?'Изменить привязку на карте':'Добавить адрес по ссылке'}</summary><LocationPicker label={origin?'Место отправления транспорта':'Место прибытия транспорта'} value={place??null} onChange={value=>change(value,value?.name??label??'')}/></details>
   </div>;
  }

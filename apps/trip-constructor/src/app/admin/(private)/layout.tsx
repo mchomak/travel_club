@@ -12,8 +12,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <Link href="/admin/trips" className="flex items-center gap-2 text-lg font-semibold"><Compass className="text-accent" aria-hidden />Travel Club</Link>
       <AdminNavigation />
     </aside>
-    <div className="min-w-0"><header className="flex items-center justify-between gap-4 border-b border-line px-6 py-3 lg:px-10">
-      <span className="text-sm text-muted">Кабинет команды</span><div className="flex items-center gap-4"><span className="max-w-40 truncate text-sm">{user.login}</span><LogoutButton /></div>
+    <div className="min-w-0"><header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-3 lg:px-10">
+      <span className="text-sm text-muted">Кабинет команды</span><div className="flex min-w-0 items-center gap-4"><span className="max-w-40 truncate text-sm">{user.login}</span><LogoutButton /></div>
     </header><main className="admin-main"><TripProvider>{children}</TripProvider></main></div>
   </div>;
 }

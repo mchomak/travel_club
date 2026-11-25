@@ -261,12 +261,14 @@ export function TripCalendar({ days, items, calculation, baseCurrency, onOpenIte
             {visualEntries.filter(event => event.kind === "event" && event.date === day.date).map(event => {
               if (event.kind !== "event") return null;
               const color = colors[event.itemType];
+              const stages = items.find(item => item.id === event.itemId)?.stages ?? [];
               const displayTime = event.endpoint ? `${event.endpoint === "departure" ? "Отправление" : "Прибытие"} ${timeOf(event.startMinute)}` : `${timeOf(event.startMinute)} — ${timeOf(event.endMinute)}`;
               return <button type="button" key={`${event.itemId}-${event.date}-${event.endpoint ?? "interval"}`} className={`trip-calendar-event trip-calendar-${event.itemType} trip-calendar-${priority(event.itemType)}`} onPointerDown={pointer => {
                 pointer.stopPropagation();
                 begin(pointer, { kind: "event", dayId: day.id, anchorMinute: minuteAt(day.id, pointer.clientY), itemId: event.itemId, segmentDate: event.date });
               }} aria-pressed={selectedItemId == null ? undefined : selectedItemId === event.itemId} onClick={() => open(event.itemId)} aria-label={`Открыть ${labels[event.itemType].toLowerCase()} ${event.title}, ${event.date}, ${displayTime}`} style={{ position: "absolute", top: cardTop(event.startMinute), height: cardHeight(event.startMinute, event.endMinute), left: `calc(${event.lane / event.laneCount * 100}% + 2px)`, width: `calc(${100 / event.laneCount}% - 4px)`, zIndex: 1, overflow: "hidden", padding: "2px 4px", textAlign: "left", color: "#fff", background: color.background, border: `1px solid ${color.border}`, outline: selectedItemId === event.itemId ? "2px solid #f7d179" : undefined, outlineOffset: -2, borderRadius: 5, fontSize: 11, touchAction: touchSelect ? "none" : "auto", opacity: gesture?.kind === "event" && gesture.itemId === event.itemId && gesture.dragged ? .55 : 1 }}>
                 <strong>{event.title}</strong><span style={{ display: "block" }}>{displayTime} · {labels[event.itemType]}</span>
+                {stages.length > 0 && <div className="trip-calendar-stages">{stages.map(stage => <div className="trip-calendar-stage" key={stage.id}><strong>{stage.title}</strong>{(stage.start_time || stage.end_time) && <span>{[stage.start_time, stage.end_time].filter(Boolean).join(" — ")}</span>}{stage.notes && <span>{stage.notes}</span>}</div>)}</div>}
               </button>;
             })}
             {visualEntries.filter(block => block.kind === "airport" && block.date === day.date).map(block => {

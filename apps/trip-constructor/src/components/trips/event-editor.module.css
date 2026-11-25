@@ -1,0 +1,26 @@
+.section { min-width: 0; border: 1px solid #cbd5df; border-radius: 12px; background: #fff; }
+.section > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 1rem; padding: 1rem; cursor: pointer; font-weight: 700; list-style: none; }
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary::after { content: "+"; font-size: 1.25rem; }
+.section[open] > summary::after { content: "−"; }
+.section > summary:focus-visible { outline: 3px solid #3266a3; outline-offset: 2px; }
+.section > summary small { margin-left: auto; color: #526070; font-weight: 400; overflow-wrap: anywhere; }
+.section > fieldset { border: 0; margin: 0; }
+.section > fieldset > h3 { display: none; }
+.section > :global(.form-grid) { padding: 0 1rem 1rem; }
+
+.links { display: grid; gap: 0.75rem; }
+.linkRow { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.75rem; min-width: 0; }
+.linkSummary { display: flex; flex-wrap: wrap; gap: 0.125rem 0.5rem; overflow-wrap: anywhere; min-width: 0; }
+.linkEditor { min-width: 0; }
+.linkEditor[open] { flex-basis: 100%; }
+.linkEditor > summary { width: fit-content; cursor: pointer; padding-block: 0.25rem; }
+.linkInput { display: grid; gap: 0.375rem; margin-block: 0.25rem; }
+.linkActions { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.75rem; }
+.linkActions :is(a, button) { padding-block: 0.25rem; text-align: start; }
+
+.notes { gap: 0.75rem; }
+.notes textarea { field-sizing: content; min-height: 2.5rem; max-height: 14rem; }
+.privateNote { position: relative; padding: 0.75rem; border-radius: 8px; background: #f1f5f9; }
+.privateNoteLock { position: absolute; inset-block-start: 0.875rem; inset-inline-end: 0.75rem; color: var(--color-muted); }
+.privateNote :global(.field-label) { padding-inline-end: 1.5rem; }

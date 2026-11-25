@@ -4,14 +4,16 @@ import base64
 import binascii
 import re
 from datetime import UTC, datetime, timedelta
-from uuid import UUID, uuid4
+from typing import Literal
+from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from fastapi import APIRouter, HTTPException, Response
 from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import object_session
 
 from app.auth import Admin, Database
-from app.models import Trip, TripCurrencyRate, TripDay, TripItem
+from app.models import Trip, TripCurrencyRate, TripDay, TripImportDraft, TripItem
 from app.photo_storage import uploaded_photos
 from app.photo_uploads import MAX_UPLOAD, normalize_image
 from app.pricing import PricingError, calculate_trip
@@ -31,6 +33,7 @@ from app.schemas import (
     TripSummary,
     TripUpdate,
 )
+from app.trip_business_validation import validate_business_rules
 
 router = APIRouter(prefix="/api/trips", tags=["trips"])
 
@@ -71,6 +74,10 @@ def document(trip: Trip) -> TripDocument:
     calculation = calculate_trip(payload, allow_legacy_overflow=True)
     snapshots = {item.id: item for item in trip.items}
     fields = payload.model_dump(exclude={"items"})
+    db = object_session(trip)
+    source_id = db.scalar(select(TripImportDraft.id).where(
+        TripImportDraft.trip_id == trip.id, TripImportDraft.unapplied != []
+    ).limit(1)) if db else None
     return TripDocument(
         **fields,
         id=trip.id,
@@ -78,6 +85,7 @@ def document(trip: Trip) -> TripDocument:
         created_by=trip.created_by,
         created_at=trip.created_at,
         updated_at=trip.updated_at,
+        unapplied_import_id=source_id,
         calculation=calculation,
         items=[
             ItemDocument(
@@ -253,15 +261,19 @@ def validate_ownership(db, trip_id: UUID, payload: TripInput) -> None:
             raise PricingError("Нельзя использовать день или элемент другой поездки")
 
 
-def persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> TripDocument:
+def persist(
+    db, trip: Trip, payload: TripInput, *, increment_version=False, commit=True
+) -> TripDocument:
     try:
-        return _persist(db, trip, payload, increment_version=increment_version)
+        return _persist(db, trip, payload, increment_version=increment_version, commit=commit)
     except IntegrityError:
         db.rollback()
         raise HTTPException(422, "Проверьте дни и элементы поездки") from None
 
 
-def _persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> TripDocument:
+def _persist(
+    db, trip: Trip, payload: TripInput, *, increment_version=False, commit=True
+) -> TripDocument:
     validate_schedule(payload)
     calculation = calculate_trip(payload)
     if increment_version:
@@ -290,7 +302,8 @@ def _persist(db, trip: Trip, payload: TripInput, *, increment_version=False) -> 
     db.flush()
     db.refresh(trip)
     result = document(trip)
-    db.commit()
+    if commit:
+        db.commit()
     return result
 
 
@@ -305,6 +318,9 @@ def list_trips(user: Admin, db: Database):
     trips = db.scalars(
         select(Trip).order_by(Trip.updated_at.desc(), Trip.id).with_for_update(read=True)
     ).all()
+    incomplete_ids = set(db.scalars(select(TripImportDraft.trip_id).where(
+        TripImportDraft.trip_id.is_not(None), TripImportDraft.unapplied != []
+    )))
     return [
         TripSummary(
             id=trip.id,
@@ -318,6 +334,9 @@ def list_trips(user: Admin, db: Database):
             cities=list(dict.fromkeys(day.city for day in trip.days if day.city)),
             cost_total=trip.cost_total,
             client_price=trip.client_price,
+            estimate_incomplete=(trip.id in incomplete_ids or any(
+                item.price_pending for item in trip.items
+            )),
             updated_at=trip.updated_at,
             version=trip.version,
         )
@@ -336,6 +355,13 @@ def create_trip(payload: TripCreate, user: Admin, db: Database):
 
 @router.post("/import", response_model=TripDocument, status_code=201)
 def import_trip(payload: TripExchange, user: Admin, db: Database):
+    return import_trip_document(payload, user, db)
+
+
+def import_trip_document(payload: TripExchange, user, db, *, commit=True):
+    if any("unit_price" not in item.model_fields_set and not item.price_pending
+           for item in payload.trip.items):
+        raise PricingError("Укажите стоимость или отметьте, что цена уточняется")
     if payload.trip.cover_photo_id and payload.trip.cover_photo_id.startswith("upload-"):
         raise PricingError("Загруженные фотографии можно использовать только для дней")
     ids = {
@@ -369,12 +395,42 @@ def import_trip(payload: TripExchange, user: Admin, db: Database):
             db.execute(insert(uploaded_photos).values(
                 id=photo_id, trip_id=trip.id, content=content
             ))
-    return persist(db, trip, prepared)
+    return persist(db, trip, prepared, commit=commit)
 
 
 @router.get("/{trip_id}", response_model=TripDocument)
 def retrieve_trip(trip_id: UUID, user: Admin, db: Database):
     return document(get_trip(db, trip_id))
+
+
+@router.get("/{trip_id}/validation")
+def validate_saved_trip(
+    trip_id: UUID, user: Admin, db: Database,
+    profile: Literal["standard", "draft", "detailed", "organized", "test"] = "standard",
+):
+    trip = get_trip(db, trip_id)
+    from app.validation_ignores import annotate_ignored
+
+    issues = annotate_ignored(db, trip.id, validate_business_rules(read_input(trip), profile))
+    source = db.scalar(select(TripImportDraft).where(
+        TripImportDraft.trip_id == trip.id, TripImportDraft.unapplied != []
+    ).limit(1))
+    if source:
+        for entry in source.unapplied:
+            path, code = entry["path"], entry["code"]
+            issues.append({
+                "id": str(uuid5(NAMESPACE_URL, f"import:{source.id}:{path}:{code}")),
+                "code": "unapplied_" + code, "category": "import", "severity": "error",
+                "title": "Данные не применены при импорте",
+                "message": "Исходное значение сохранено в черновике импорта.",
+                "path": path, "day_id": None, "item_id": None, "stage_id": None,
+                "recommendation": "Откройте исходный JSON и перенесите данные в поездку.",
+                "ignored": False, "ignore_reason": None, "can_ignore": False,
+                "affects_import": False, "affects_calculation": True,
+                "affects_publication": True,
+            })
+    return {"trip_id": str(trip.id), "version": trip.version,
+            "profile": profile, "issues": issues}
 
 
 @router.put("/{trip_id}", response_model=TripDocument)
@@ -395,6 +451,10 @@ def update_trip(
                 "details": {"current_version": trip.version},
             },
         )
+    if payload.status == "ready" and db.scalar(select(TripImportDraft.id).where(
+        TripImportDraft.trip_id == trip.id, TripImportDraft.unapplied != []
+    ).limit(1)):
+        raise HTTPException(422, "Сначала исправьте неприменённые данные импорта")
     original = read_input(trip)
     # Older editors omit photo fields. Only an explicit null removes a selection.
     if "cover_photo_id" not in payload.model_fields_set:
@@ -490,6 +550,9 @@ def remap_trip_ids(payload: TripInput) -> TripInput:
 @router.post("/{trip_id}/duplicate", response_model=TripDocument, status_code=201)
 def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
     original = get_trip(db, trip_id, lock=True)
+    original_source = db.scalar(select(TripImportDraft).where(
+        TripImportDraft.trip_id == trip_id, TripImportDraft.unapplied != []
+    ).limit(1))
     payload = read_input(original)
     payload = payload.model_copy(
         update={"internal_title": payload.internal_title[:192] + " — копия"}
@@ -516,7 +579,24 @@ def duplicate_trip(trip_id: UUID, user: Admin, db: Database):
             db.execute(insert(uploaded_photos).values(
                 id=photo_id, trip_id=new_trip.id, content=content
             ))
-    return persist(db, new_trip, remap_trip_ids(payload))
+    if original_source is None:
+        return persist(db, new_trip, remap_trip_ids(payload))
+    try:
+        result = persist(db, new_trip, remap_trip_ids(payload), commit=False)
+        source_copy = TripImportDraft(
+            created_by=user.id, source=original_source.source,
+            original_source=original_source.original_source, trip_id=new_trip.id, version=1,
+            unapplied=list(original_source.unapplied), normalized=list(original_source.normalized),
+            resolved=list(original_source.resolved),
+        )
+        db.add(source_copy)
+        db.flush()
+        result = result.model_copy(update={"unapplied_import_id": source_copy.id})
+        db.commit()
+        return result
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{trip_id}/preview", response_model=ClientPreview)

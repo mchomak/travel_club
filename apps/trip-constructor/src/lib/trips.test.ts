@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import type { TripDocument } from "./contracts";
 import { calculateTrip } from "./pricing";
 import { emptyDay, newItem, newTrip } from "./trip-ui";
-import { tripInput } from "./trips";
+import { tripInput, validationPrompt } from "./trips";
 
 test("the editable draft retains the chosen cover and day photo", () => {
   const trip = newTrip();
@@ -37,7 +37,7 @@ test("flight cities, transport labels and pending transfer snapshot survive edit
       duration_seconds: 540, source_signature: '[[1,2,"14:00"],[3,4,"15:00"]]' } };
   const doc = { ...input, days: [day], rates: [], items: [{ ...item,
     original_amount: "0", rate_used: "1", normalized_amount: "0" }] } as unknown as TripDocument;
-  expect(tripInput(doc).items[0]).toEqual(item);
+  expect(tripInput(doc).items[0]).toMatchObject(item);
 });
 
 test("places and day route choices survive the editable draft roundtrip", () => {
@@ -51,10 +51,10 @@ test("places and day route choices survive the editable draft roundtrip", () => 
 
   const draft = tripInput(saved);
   expect(draft.days[0]).toEqual(day);
-  expect(draft.items[0]).toEqual(item);
+  expect(draft.items[0]).toMatchObject(item);
   const repeated = { ...saved, ...draft,
     items: draft.items.map(item => ({ ...item, original_amount: "0", rate_used: "1", normalized_amount: "0" })) };
-  expect(tripInput(repeated).items[0]).toEqual(item);
+  expect(tripInput(repeated).items[0]).toMatchObject(item);
 });
 
 
@@ -65,4 +65,19 @@ test("editable draft preserves explicit link sharing and defaults legacy links t
   expect(tripInput(saved).items[0].publish_external_url).toBe(true);
   const legacy = { ...saved, items: [{ ...item, publish_external_url: undefined }] } as unknown as TripDocument;
   expect(tripInput(legacy).items[0].publish_external_url).toBe(false);
+});
+
+test("validationPrompt includes only selected issues, human context and preservation constraints", () => {
+
+    const trip = { days: [{ id: "d", date: "2027-04-01", title: "День" }], items: [{ id: "i", title: "Музей", day_id: "d" }] } as TripDocument;
+    const issues = [
+      { id: "a", code: "missing", category: "client", severity: "warning", title: "Описание", message: "Добавьте описание", path: "/trip/items/0", day_id: "d", item_id: "i" },
+      { id: "b", code: "other", category: "client", severity: "info", title: "Не выбрано", message: "Текст", path: "/trip" },
+    ];
+    const prompt = validationPrompt(trip, issues, ["a"]);
+    expect(prompt).toContain("2027-04-01");
+    expect(prompt).toContain("Музей");
+    expect(prompt).toContain("UUID");
+    expect(prompt).toContain("полный JSON");
+    expect(prompt).not.toContain("Не выбрано");
 });

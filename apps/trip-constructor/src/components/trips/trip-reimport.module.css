@@ -1,0 +1,13 @@
+﻿.panel { display: grid; gap: 1rem; min-width: 0; }
+.panel h2 { font-size: 1.25rem; font-weight: 600; }
+.panel h3 { font-weight: 600; font-size: 1.05rem; margin-bottom: .35rem; }
+.panel h4 { font-weight: 600; margin-top: .75rem; }
+.file { display: grid; gap: .5rem; font-weight: 500; }
+.changes { display: grid; gap: .75rem; padding: 0; margin: 0; list-style: none; }
+.change { min-width: 0; border: 1px solid #aeb9af; border-radius: .75rem; padding: 1rem; }
+.change label { display: flex; gap: .5rem; align-items: baseline; overflow-wrap: anywhere; }
+.change p { margin: .5rem 0; }
+.values { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: .75rem; }
+.values > div { min-width: 0; }
+.change pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 18rem; overflow: auto; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }

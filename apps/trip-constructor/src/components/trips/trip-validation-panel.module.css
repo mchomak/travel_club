@@ -1,0 +1,21 @@
+﻿.panel { display: grid; gap: 1rem; min-width: 0; }
+.header { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 1rem; }
+.header h2 { font-size: 1.25rem; font-weight: 600; }
+.header p { color: #64748b; margin-top: .25rem; }
+.counts { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .875rem; color: #475569; }
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: .75rem; }
+.filters label { display: grid; gap: .3rem; font-size: .875rem; font-weight: 500; }
+.filters select { width: 100%; min-width: 0; border: 1px solid #cbd5e1; border-radius: .5rem; background: white; padding: .55rem; font: inherit; }
+.selectAll { display: flex; align-items: center; gap: .5rem; font-size: .875rem; }
+.list { display: grid; gap: .75rem; list-style: none; padding: 0; margin: 0; }
+.issue { min-width: 0; border: 1px solid #e2e8f0; border-radius: .75rem; padding: 1rem; }
+.issueHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.issueHeading label { display: flex; align-items: center; gap: .5rem; }
+.issueHeading span, .recommendation { color: #64748b; font-size: .875rem; }
+.issue p { margin-top: .5rem; }
+.issueFooter { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; }
+.issueFooter code { overflow-wrap: anywhere; color: #64748b; font-size: .75rem; }
+.empty { color: #64748b; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.issueContext { grid-column: 1 / -1; margin: .5rem 0; }
+.issueIndicator { padding: .2rem .45rem; border-radius: .375rem; background: #fff2d9; color: #735017; font-size: .8125rem; }

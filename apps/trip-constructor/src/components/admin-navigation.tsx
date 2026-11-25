@@ -13,7 +13,7 @@ const links = [
 export function AdminNavigation() {
   const pathname = usePathname() ?? "";
 
-  return <nav aria-label="Основная навигация" className="mt-6 flex gap-2 lg:flex-col">
+  return <nav aria-label="Основная навигация" className="mt-6 flex flex-wrap gap-2 lg:flex-col">
     {links.map(({ href, label, Icon }) => {
       const active = pathname === href || pathname.startsWith(`${href}/`);
       return <Link

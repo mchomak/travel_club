@@ -63,12 +63,13 @@ export interface Calculation {
 export interface ItemDocument extends ItemInput, ItemCalculation {}
 export interface TripDocument extends TripInput {
   id: UUID; version: number; created_by: UUID; created_at: string; updated_at: string;
+  unapplied_import_id?: UUID | null;
   items: ItemDocument[]; calculation: Calculation;
 }
 export interface TripSummary {
   id: UUID; internal_title: string; start_date: string; end_date: string; participants: number;
   base_currency: string; status: TripStatus; countries: string[]; cities: string[];
-  cost_total: DecimalString; client_price: DecimalString; updated_at: string; version: number;
+  cost_total: DecimalString; client_price: DecimalString; estimate_incomplete?: boolean; updated_at: string; version: number;
 }
 export interface PreviewItem {
   id: UUID; type: ItemType; title: string; description: string; location: string;

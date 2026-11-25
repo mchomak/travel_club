@@ -15,6 +15,13 @@ export class DraftSession {
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
   private emit(next: Partial<DraftState>) { this.state = { ...this.state, ...next }; this.listeners.forEach(fn => fn()); }
   change(draft: TripInput) { this.revision += 1; this.emit({ draft, dirty: true, status: this.inFlight ? "saving" : "dirty", error: null }); }
+  acceptExternal(document: TripDocument) {
+    if (this.state.dirty || this.inFlight || document.id !== this.document.id || document.version <= this.document.version) {
+      throw new Error("Нельзя заменить несохранённый или устаревший черновик.");
+    }
+    this.revision += 1;
+    this.emit({ document, draft: tripInput(document), dirty: false, status: "saved", error: null });
+  }
   async save(confirm = false): Promise<TripDocument> {
     if (this.inFlight) {
       await this.inFlight;

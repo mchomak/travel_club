@@ -392,11 +392,17 @@ class TripInput(TripCreate):
     rates: list[CurrencyRateInput] = Field(default_factory=list, max_length=1000)
 
 
+class ReimportLineage(DTO):
+    trip_id: UUID
+    snapshot_id: UUID
+
+
 class TripExchange(DTO):
     format: Literal["travel-club-trip"]
     version: Literal[1]
     trip: TripInput
     photos: dict[str, str] = Field(default_factory=dict, max_length=3660)
+    reimport: ReimportLineage | None = None
 
 
 class TripUpdate(TripInput):
@@ -455,6 +461,7 @@ class TripDocument(TripInput):
     updated_at: datetime
     items: list[ItemDocument]
     calculation: Calculation
+    unapplied_import_id: UUID | None = None
 
 
 class TripSummary(DTO):
@@ -469,6 +476,7 @@ class TripSummary(DTO):
     cities: list[str]
     cost_total: Money
     client_price: Money
+    estimate_incomplete: bool = False
     updated_at: datetime
     version: int
 

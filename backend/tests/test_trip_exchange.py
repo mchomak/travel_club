@@ -3,10 +3,23 @@ from uuid import UUID
 import pytest
 
 from app.pricing import PricingError, calculate_trip
-from app.schemas import TripInput
+from app.schemas import TripExchange, TripInput
 from app.trips import prepare_import
 from tests.test_auth import HEADERS
 from tests.test_trips import authenticated, create_trip, editable  # noqa: F401, F811
+
+
+def test_exchange_accepts_optional_reimport_lineage_without_changing_v1():
+    payload = {"format": "travel-club-trip", "version": 1,
+               "trip": {"internal_title": "Trip", "start_date": "2027-04-01",
+                        "end_date": "2027-04-01", "participants": 1},
+               "reimport": {"trip_id": "11111111-1111-4111-8111-111111111111",
+                            "snapshot_id": "22222222-2222-4222-8222-222222222222"}}
+    assert str(TripExchange.model_validate(payload).reimport.snapshot_id) == (
+        "22222222-2222-4222-8222-222222222222"
+    )
+    del payload["reimport"]
+    assert TripExchange.model_validate(payload).reimport is None
 
 
 def test_import_remaps_ids_and_preserves_data():

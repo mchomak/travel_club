@@ -110,22 +110,28 @@ test("calendar creates a timed event and closes its editor by clicking outside",
   const box = await firstDay.boundingBox();
   expect(box).not.toBeNull();
   const x = box!.x + Math.min(box!.width / 2, 35);
-  await page.mouse.move(x, box!.y + 60);
+  const hourHeight = box!.height / 24;
+  // Drag across the quarter-hour cells from 01:00 through 01:45.
+  await page.mouse.move(x, box!.y + hourHeight * 1.125);
   await page.mouse.down();
-  await page.mouse.move(x, box!.y + 102, { steps: 6 });
+  await page.mouse.move(x, box!.y + hourHeight * 1.875, { steps: 6 });
   await page.mouse.up();
 
   const panel = page.getByRole("dialog");
   await expect(panel.getByLabel("Тип события")).toHaveValue("");
-  await expect(panel.getByRole("button", { name: "Сохранить элемент" })).toBeDisabled();
+  await expect(panel.getByRole("button", { name: /Сохранить (элемент|перелёт)/ })).toBeDisabled();
   await panel.getByLabel("Тип события").selectOption("flight");
   await expect(panel.getByLabel("Вылет по местному времени")).toHaveValue("01:00");
   await expect(panel.getByLabel("Прилёт по местному времени")).toHaveValue("02:00");
-  await panel.getByLabel("Название элемента").fill("Рейс из календаря");
-  await panel.getByLabel("Описание для клиента").fill("Вылет утром");
-  await panel.getByLabel("Ссылка", { exact: true }).fill("https://example.com/ticket");
+  await panel.getByLabel("Название перелёта").fill("Рейс из календаря");
+  await panel.getByText("Описание и заметки", { exact: true }).click();
+  await panel.getByLabel("Описание события").fill("Вылет утром");
+  await panel.getByText("Ссылки и бронирование", { exact: true }).click();
+  await panel.getByText("Добавить сайт или информацию о рейсе", { exact: true }).click();
+  await panel.getByLabel("Сайт авиакомпании или информация о рейсе").fill("https://example.com/ticket");
+  await panel.locator("summary").filter({ hasText: "Стоимость" }).click();
   await panel.getByLabel("Цена билета").fill("100");
-  await panel.getByRole("button", { name: "Сохранить элемент" }).click();
+  await panel.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await saved(page);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
@@ -140,7 +146,7 @@ test("calendar creates a timed event and closes its editor by clicking outside",
   expect(eventBox).not.toBeNull();
   await page.mouse.move(eventBox!.x + eventBox!.width / 2, eventBox!.y + eventBox!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(eventBox!.x + eventBox!.width / 2, eventBox!.y + eventBox!.height / 2 + 112, { steps: 6 });
+  await page.mouse.move(eventBox!.x + eventBox!.width / 2, eventBox!.y + eventBox!.height / 2 + hourHeight * 2, { steps: 6 });
   await expect(page.getByRole("status", { name: /Новое положение/ })).toBeVisible();
   await page.mouse.up();
   await expect.poll(async () => {
@@ -180,10 +186,10 @@ test("airport blocks keep a changed boundary after reload, follow the flight, an
   await expect(firstDay.getByRole("button", { name: /Настроить приезд в аэропорт/ })).toContainText("23:30–24:00");
   await calendar.getByRole("button", { name: /Открыть перелёт Рейс с пересадкой/ }).click();
   await expect(panel.getByLabel("До вылета в аэропорту, минут")).toHaveValue("90");
-  await panel.getByLabel("День маршрута").selectOption(trip.days[2].id);
+  await panel.getByLabel("Дата вылета").selectOption(trip.days[2].id);
   await panel.getByLabel("Вылет по местному времени").fill("02:00");
   await panel.getByLabel("Прилёт по местному времени").fill("04:00");
-  await panel.getByRole("button", { name: "Сохранить элемент" }).click();
+  await panel.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await expect(panel).toHaveCount(0);
   await expect(thirdDay.getByRole("button", { name: /Настроить приезд в аэропорт/ })).toContainText("00:30–02:00");
   await expect(thirdDay.getByRole("button", { name: /Настроить выход из аэропорта/ })).toContainText("04:00–05:00");
@@ -197,7 +203,8 @@ test("airport blocks keep a changed boundary after reload, follow the flight, an
   expect(await page.locator(".finance-total").textContent()).toBe(originalCost);
 
   await thirdDay.getByRole("button", { name: /Открыть перелёт Рейс с пересадкой/ }).click();
-  await panel.getByRole("button", { name: "Удалить элемент" }).click();
+  await panel.getByText("Дополнительные действия", { exact: true }).click();
+  await panel.getByRole("button", { name: "Удалить перелёт" }).click();
   await page.getByRole("dialog", { name: "Удалить элемент?" }).getByRole("button", { name: "Удалить элемент" }).click();
   await expect.poll(async () => (await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument).items.length).toBe(0);
   await expect(calendar.getByRole("button", { name: /Настроить .* аэропорта/ })).toHaveCount(0);
@@ -384,11 +391,12 @@ test("unchanged item does not warn; edits warn until reverted, cancelled or save
   await expect.poll(() => unloadWouldWarn(page)).toBe(false);
   await modal.getByLabel("Название элемента").fill("Ещё одна правка");
   await modal.getByRole("button", { name: "Отмена", exact: true }).click();
+  await page.getByRole("dialog", { name: "Закрыть без сохранения?" }).getByRole("button", { name: "Не сохранять", exact: true }).click();
   expect(await unloadWouldWarn(page)).toBe(false);
   await page.locator(".unscheduled-section").getByRole("button", { name: /Проверка элемента/ }).click();
   modal = page.getByRole("dialog");
   await modal.getByLabel("Название элемента").fill("Сохранённый элемент");
-  await modal.getByRole("button", { name: "Сохранить элемент" }).click();
+  await modal.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await saved(page);
   expect(await unloadWouldWarn(page)).toBe(false);
   await expect(page.locator(".unscheduled-section").getByRole("button", { name: /Сохранённый элемент/ })).toBeVisible();
@@ -582,7 +590,7 @@ test("two separate transfers persist in order and each contributes once", async 
   await form.getByLabel("Название элемента").fill("Трансфер из аэропорта");
   await form.getByLabel("Цена машины").fill("4000");
   await form.getByLabel("Вместимость одной машины / группы").fill("4");
-  await form.getByRole("button", { name: "Сохранить элемент" }).click();
+  await form.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await saved(page);
   await page.getByRole("region", { name: "Добавить в маршрут" }).getByRole("button", { name: "Транспорт" }).click();
   await form.getByLabel("Подвид").selectOption("taxi");
@@ -590,7 +598,7 @@ test("two separate transfers persist in order and each contributes once", async 
   await form.getByLabel("Название элемента").fill("Трансфер от вокзала");
   await form.getByLabel("Цена машины").fill("6000");
   await form.getByLabel("Вместимость одной машины / группы").fill("4");
-  await form.getByRole("button", { name: "Сохранить элемент" }).click();
+  await form.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await expect(page.locator(".unscheduled-item")).toHaveCount(2);
   await saved(page);
   await expect.poll(async () => (await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument).calculation.cost_total).toBe("20000.00");
@@ -673,6 +681,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
     await page.getByRole("region", { name: section }).getByRole("button", { name: item.category, exact: true }).click();
     modal = page.getByRole("dialog");
     if (item.subtype) await modal.getByLabel("Подвид").selectOption(item.subtype);
+    if (item.label === "Перелёт") await modal.getByText("Стоимость", { exact: true }).click();
     await modal.getByLabel("Правило расчёта").selectOption(item.mode);
     await modal.getByLabel(item.priceLabel, { exact: true }).fill(item.price);
     if (item.mode === "hotel") await modal.getByLabel("Выезд", { exact: false }).fill("2026-10-05");
@@ -683,12 +692,12 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
     if (item.label === "Перелёт") {
       await modal.getByLabel("Вылет по местному времени").fill("23:00");
       await modal.getByLabel("Прилёт по местному времени", { exact: false }).fill("02:00");
-      await expect(modal.getByLabel("Дата окончания")).toHaveValue(nextDay!.id);
-      await modal.getByText("Заметки", { exact: true }).click();
-      await modal.getByLabel("Заметка для клиента", { exact: true }).fill("Клиентская заметка элемента");
+      await expect(modal.getByLabel("Дата прилёта")).toHaveValue(nextDay!.id);
+      await modal.getByText("Описание и заметки", { exact: true }).click();
+      await modal.getByLabel("Важная информация для клиента", { exact: true }).fill("Клиентская заметка элемента");
       await modal.getByLabel("Внутренняя заметка", { exact: false }).fill("PRIVATE_ITEM_SECRET");
     }
-    await modal.getByRole("button", { name: "Сохранить элемент" }).click();
+    await modal.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
     await expect(modal, `${item.label}: ${await modal.getByRole("alert").allTextContents()}`).not.toBeVisible();
   }
   await expect(page.locator(".finance-total")).toHaveText("335 174,00 RUB");
@@ -746,7 +755,7 @@ test("real constructor saves all seven formulas, reopens, and prints a safe clie
   await expect(page.locator(".finance-total")).toHaveText("561 174,00 RUB");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("region", { name: "Добавить в маршрут" }).getByRole("button", { name: "Транспорт" }).click();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Сохранить элемент" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Сохранить (элемент|перелёт)/ })).toBeVisible();
   await page.screenshot({ path: "test-results/constructor-mobile-form.png", fullPage: true });
   await page.getByRole("dialog").getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toBeVisible();
@@ -793,16 +802,17 @@ test("calendar opens overnight travel and hotel from a tablet without page overf
   await departure.click();
   const panel = page.getByRole("dialog");
   await expect(panel).toHaveClass(/modal-panel/);
-  await expect(panel.getByLabel("Название элемента")).toHaveValue("Ночной рейс");
-  const ticketLink = panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" });
+  await expect(panel.getByLabel("Название перелёта")).toHaveValue("Ночной рейс");
+  await panel.getByText("Ссылки и бронирование", { exact: true }).click();
+  const ticketLink = panel.getByRole("link", { name: "Открыть ссылку «Сайт авиакомпании или информация о рейсе»" });
   await expect(ticketLink).toHaveAttribute("href", "https://example.com/ticket");
   await expect(ticketLink).toHaveAttribute("target", "_blank");
   await expect(ticketLink).toHaveAttribute("rel", "noopener noreferrer");
   await panel.getByRole("button", { name: "Отмена", exact: true }).click();
   await arrival.click();
-  await expect(panel.getByLabel("Название элемента")).toHaveValue("Ночной рейс");
-  await panel.getByLabel("Название элемента").fill("Рейс после полуночи");
-  await panel.getByRole("button", { name: "Сохранить элемент" }).click();
+  await expect(panel.getByLabel("Название перелёта")).toHaveValue("Ночной рейс");
+  await panel.getByLabel("Название перелёта").fill("Рейс после полуночи");
+  await panel.getByRole("button", { name: /Сохранить (элемент|перелёт)/ }).click();
   await saved(page);
   await expect(firstDay.getByRole("button", { name: /Рейс после полуночи, 2026-10-01, 23:00 — 24:00/ })).toBeVisible();
   await hotelBar.click();
@@ -817,8 +827,9 @@ test("calendar opens overnight travel and hotel from a tablet without page overf
   await panel.getByRole("button", { name: "Отмена", exact: true }).click();
   await page.reload();
   await secondDay.getByRole("button", { name: "Открыть перелёт Рейс после полуночи, 2026-10-02, 00:00 — 01:00" }).click();
-  await expect(panel.getByLabel("Дата окончания")).toHaveValue(trip.days[1].id);
-  await expect(panel.getByRole("link", { name: "Открыть ссылку в новой вкладке" })).toHaveAttribute("href", "https://example.com/ticket");
+  await expect(panel.getByLabel("Дата прилёта")).toHaveValue(trip.days[1].id);
+  await panel.getByText("Ссылки и бронирование", { exact: true }).click();
+  await expect(ticketLink).toHaveAttribute("href", "https://example.com/ticket");
   await panel.getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(page.getByRole("region", { name: "Дополнительные расходы" })).toContainText("Общий сбор");
   await expect(page.locator(".finance-total")).toHaveText("6 300,00 RUB");
@@ -869,7 +880,7 @@ test("empty calendar, date navigation and item panel fit tablet and phone", asyn
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.locator(".item-type-buttons").getByRole("button", { name: "Перелёт", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveClass(/modal-panel/);
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Сохранить элемент" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Сохранить (элемент|перелёт)/ })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/calendar-phone-panel.png", fullPage: true });
 });

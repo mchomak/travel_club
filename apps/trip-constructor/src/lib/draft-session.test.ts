@@ -4,6 +4,17 @@ import type { TripDocument, TripInput } from "./contracts";
 import { calculateTrip } from "./pricing";
 import { DraftSession } from "./draft-session";
 
+test("external reimport replaces only a clean draft and preserves unsaved edits", () => {
+  const input = vectors.cases[0].input as TripInput;
+  const doc = { ...input, id: "trip", version: 1, created_by: "user", created_at: "", updated_at: "", calculation: calculateTrip(input), items: [] } as TripDocument;
+  const session = new DraftSession(doc, vi.fn());
+  session.acceptExternal({ ...doc, version: 2, internal_title: "Импорт" });
+  expect(session.getSnapshot()).toMatchObject({ document: { version: 2 }, draft: { internal_title: "Импорт" }, dirty: false });
+  session.change({ ...session.draft, internal_title: "Ручное изменение" });
+  expect(() => session.acceptExternal({ ...doc, version: 3 })).toThrow();
+  expect(session.draft.internal_title).toBe("Ручное изменение");
+});
+
 test("save serializes changes made in flight and waits for the latest draft", async () => {
   const input = vectors.cases[0].input as TripInput;
   const doc = { ...input, id: "trip", version: 1, created_by: "user", created_at: "", updated_at: "", calculation: calculateTrip(input), items: [] } as TripDocument;

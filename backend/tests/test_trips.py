@@ -41,7 +41,7 @@ def create_trip(client, **fields):
 
 
 def editable(document):
-    fields = {"id", "created_by", "created_at", "updated_at", "calculation"}
+    fields = {"id", "created_by", "created_at", "updated_at", "calculation", "unapplied_import_id"}
     payload = {key: deepcopy(value) for key, value in document.items() if key not in fields}
     payload["items"] = [
         {

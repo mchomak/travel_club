@@ -13,7 +13,7 @@ from pydantic import Field, ValidationError, field_validator
 from sqlalchemy import func, select, update
 
 from app.auth import Admin, Database
-from app.models import Trip, TripDay, TripItem
+from app.models import Trip, TripDay, TripImportDraft, TripItem
 from app.schemas import DTO, AutoTransfer, EventStage, ItemInput, ItemSubtype, ItemType
 from app.trip_photos import PhotoId
 
@@ -128,6 +128,10 @@ def link_status(trip_id: UUID, user: Admin, db: Database) -> PublicLinkStatus:
 
 
 def save_link(db: Database, trip_id: UUID, value) -> str | None:
+    if value is not None and db.scalar(select(TripImportDraft.id).where(
+        TripImportDraft.trip_id == trip_id, TripImportDraft.unapplied != []
+    ).limit(1)):
+        raise HTTPException(422, "Сначала исправьте неприменённые данные импорта")
     row = db.execute(
         update(Trip)
         .where(Trip.id == trip_id)

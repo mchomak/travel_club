@@ -13,7 +13,7 @@ export function Field({ label, hint, error, children, wide }: { label: string; h
   const described = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
   return <div className={`field${wide ? " field-wide" : ""}`}><label htmlFor={id} className="field-label">{label}</label>{Children.map(children, child => isValidElement<{ id?: string; "aria-describedby"?: string; "aria-invalid"?: boolean }>(child) && ["input", "select", "textarea"].includes(String(child.type)) ? cloneElement(child, { id, "aria-describedby": described, "aria-invalid": !!error }) : child)}{hint && <span id={`${id}-hint`} className="field-hint">{hint}</span>}{error && <span id={`${id}-error`} className="field-error" role="alert">{error}</span>}</div>;
 }
-export function Modal({ title, description, open = true, variant = "dialog", onClose, children }: { title: string; description?: string; open?: boolean; variant?: "dialog" | "panel"; onClose: () => void; children: ReactNode }) {
+export function Modal({ title, description, open = true, variant = "dialog", onClose, onRequestClose, children }: { title: string; description?: string; open?: boolean; variant?: "dialog" | "panel"; onClose: () => void; onRequestClose?: () => boolean; children: ReactNode }) {
   const [returnFocus] = useState(() => typeof document === "undefined" ? null : document.activeElement as HTMLElement | null);
   const [exiting, setExiting] = useState(false);
   const closing = useRef(false);
@@ -27,6 +27,10 @@ export function Modal({ title, description, open = true, variant = "dialog", onC
       timer.current = setTimeout(onClose, 220);
     } else onClose();
   }, [onClose, variant]);
+  const dismiss = () => {
+    if (closing.current || onRequestClose?.() === false) return;
+    requestClose();
+  };
   useEffect(() => {
     if (previousOpen.current && !open) requestClose();
     else if (!previousOpen.current && open && closing.current) {
@@ -38,7 +42,7 @@ export function Modal({ title, description, open = true, variant = "dialog", onC
     previousOpen.current = open;
   }, [open, requestClose]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  return <Dialog.Root open={open && !exiting} onOpenChange={value => { if (!value) requestClose(); }}><Dialog.Portal forceMount={variant === "panel" ? true : undefined}><Dialog.Overlay forceMount={variant === "panel" ? true : undefined} className="modal-overlay" onClick={event => { if (event.target === event.currentTarget) requestClose(); }} /><Dialog.Content forceMount={variant === "panel" ? true : undefined} className={`modal-content${variant === "panel" ? " modal-panel" : ""}`} aria-describedby={undefined} onCloseAutoFocus={e => { e.preventDefault(); returnFocus?.focus(); }} onInteractOutside={e => e.preventDefault()}><header className="modal-header"><div><Dialog.Title className="text-2xl font-semibold">{title}</Dialog.Title>{description && <Dialog.Description className="mt-2 text-sm text-muted">{description}</Dialog.Description>}</div><Dialog.Close className="icon-button" aria-label="Закрыть"><X size={20} /></Dialog.Close></header>{children}</Dialog.Content></Dialog.Portal></Dialog.Root>;
+  return <Dialog.Root open={open && !exiting} onOpenChange={value => { if (!value) dismiss(); }}><Dialog.Portal forceMount={variant === "panel" ? true : undefined}><Dialog.Overlay forceMount={variant === "panel" ? true : undefined} className="modal-overlay" onClick={event => { if (event.target === event.currentTarget) dismiss(); }} /><Dialog.Content forceMount={variant === "panel" ? true : undefined} className={`modal-content${variant === "panel" ? " modal-panel" : ""}`} aria-describedby={undefined} onCloseAutoFocus={e => { e.preventDefault(); returnFocus?.focus(); }} onInteractOutside={e => e.preventDefault()}><header className="modal-header"><div><Dialog.Title className="text-2xl font-semibold">{title}</Dialog.Title>{description && <Dialog.Description className="mt-2 text-sm text-muted">{description}</Dialog.Description>}</div><Dialog.Close className="icon-button" aria-label="Закрыть"><X size={20} /></Dialog.Close></header>{children}</Dialog.Content></Dialog.Portal></Dialog.Root>;
 }
 export function Confirm({ title, children, action, onConfirm, onClose, busy = false }: { title: string; children: ReactNode; action: string; onConfirm: () => void; onClose: () => void; busy?: boolean }) {
   return <Modal title={title} onClose={onClose}><div className="modal-body"><div className="text-muted">{children}</div><div className="form-actions"><button className="secondary-button" onClick={onClose} disabled={busy}>Отмена</button><button className="danger-button" onClick={onConfirm} disabled={busy}>{action}</button></div></div></Modal>;

@@ -54,6 +54,26 @@ class LoginAttempt(Base):
     )
 
 
+class TripImportDraft(Base):
+    """Original, still unapplied document; never substitutes values in a Trip."""
+
+    __tablename__ = "trip_import_drafts"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    created_by: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    source: Mapped[str] = mapped_column(Text)
+    original_source: Mapped[str] = mapped_column(Text)
+    trip_id: Mapped[UUID | None] = mapped_column(ForeignKey("trips.id", ondelete="SET NULL"))
+    unapplied: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+    normalized: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+    resolved: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (CheckConstraint("version > 0", name="import_draft_version"),)
+
+
 class Trip(Base):
     __tablename__ = "trips"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
@@ -98,6 +118,21 @@ class Trip(Base):
             "pricing_percent >= 0 AND (pricing_mode <> 'target_margin' OR pricing_percent < 100)",
             name="trip_pricing_percent",
         ),
+    )
+
+
+class TripRevisionSnapshot(Base):
+    __tablename__ = "trip_revision_snapshots"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    trip_id: Mapped[UUID] = mapped_column(ForeignKey("trips.id", ondelete="CASCADE"), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    trip_version: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(String(10))
+    data: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        CheckConstraint("trip_version > 0", name="revision_snapshot_version"),
+        CheckConstraint("kind IN ('export','backup')", name="revision_snapshot_kind"),
     )
 
 

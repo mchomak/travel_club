@@ -158,7 +158,7 @@ test('real Leaflet route, mode and boundaries survive save/reload/duplicate; mis
       expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
       expect(dialogBox!.x + dialogBox!.width).toBeLessThanOrEqual(width);
       await dialog.getByLabel('Название элемента', { exact: true }).fill('Форма доступна на 390px');
-      await expect(dialog.getByRole('button', { name: 'Сохранить элемент', exact: true })).toBeVisible();
+      await expect(dialog.getByRole('button', { name: /Сохранить (элемент|перелёт)/, exact: true })).toBeVisible();
       const formControls = await dialog.locator('input, select, textarea, button').evaluateAll(elements => elements
         .filter(element => {
           const style = getComputedStyle(element);
@@ -173,6 +173,9 @@ test('real Leaflet route, mode and boundaries survive save/reload/duplicate; mis
       expect(formControls.filter(control => control.left < 0 || control.right > width), JSON.stringify(formControls)).toEqual([]);
     }
     await page.getByRole('dialog').getByRole('button', { name: 'Отмена', exact: true }).click();
+    if (width === 390) {
+      await page.getByRole('dialog', { name: 'Закрыть без сохранения?' }).getByRole('button', { name: 'Не сохранять', exact: true }).click();
+    }
     await expect(page.getByRole('dialog')).toHaveCount(0);
     if (width === 390) {
       const sectionBox = await section(page).boundingBox();
@@ -255,7 +258,7 @@ test('keyless Google point selects inline, collapses, reopens and persists witho
   const end = dialog.getByRole('group', { name: 'Место окончания / прибытия', exact: true });
   await chooseLink(end, 'https://www.google.com/maps?q=31.24,121.49', /Точка из Google Maps/);
   await expect(page.getByRole('dialog')).toHaveCount(1);
-  await dialog.getByRole('button', { name: 'Сохранить элемент', exact: true }).click();
+  await dialog.getByRole('button', { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
   await saved(page); await page.reload();
   const stored = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
   expect(stored.items[0].map_place).toMatchObject({ latitude: 31.23, longitude: 121.47, provider: 'google_link' });
@@ -282,12 +285,12 @@ test('failed link opens accessible fallback search; selected place can be replac
   await expect(picker).toContainText('Тестовая точка Сад');
   await expect(picker.getByRole('combobox')).toHaveCount(0);
   await expect(picker.getByLabel('Широта')).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Сохранить элемент', exact: true }).click();
+  await dialog.getByRole('button', { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
   await saved(page); await page.reload();
   await page.locator('.unscheduled-item').filter({ hasText: 'Поиск места' }).click();
   await expect(picker).toContainText('Тестовая точка Сад');
   await picker.getByRole('button', { name: 'Удалить привязку' }).click();
-  await dialog.getByRole('button', { name: 'Сохранить элемент', exact: true }).click();
+  await dialog.getByRole('button', { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
   await saved(page);
   const removed = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
   expect(removed.items[0].map_place).toBeNull();
@@ -461,7 +464,7 @@ for (const width of [1440, 390, 320]) {
     await page.goto(`/admin/trips/${trip.id}`);
     await page.getByRole('region', {name:'Добавить в маршрут'}).getByRole('button',{name:'Перелёт',exact:true}).click();
     const dialog=page.getByRole('dialog');
-    await expect(dialog.getByLabel('Название элемента')).toHaveValue('Перелёт 4');
+    await expect(dialog.getByLabel('Название перелёта')).toHaveValue('Перелёт 4');
     await chooseOption(dialog,'Вылет — страна',/^Россия · RU$/);
     await dialog.getByRole('combobox',{name:'Вылет — город',exact:true}).fill('Мос');
     await dialog.getByRole('listbox',{name:'Вылет — город',exact:true}).getByRole('option',{name:/^Москва/}).click();
@@ -470,8 +473,8 @@ for (const width of [1440, 390, 320]) {
     await dialog.getByRole('listbox',{name:'Прилёт — город',exact:true}).getByRole('option',{name:/^Токио/}).click();
     expect(searches.some(url=>url.searchParams.get('kind')==='city'&&url.searchParams.get('country_code')==='RU')).toBe(true);
     expect(searches.some(url=>url.searchParams.get('kind')==='city'&&url.searchParams.get('country_code')==='JP')).toBe(true);
-    await dialog.getByLabel('Название элемента').fill('Мой международный рейс');
-    await dialog.getByRole('button',{name:'Сохранить элемент'}).click(); await saved(page);
+    await dialog.getByLabel('Название перелёта').fill('Мой международный рейс');
+    await dialog.getByRole('button',{name:/Сохранить (элемент|перелёт)/}).click(); await saved(page);
     await page.getByRole('region',{name:'Добавить в маршрут'}).getByRole('button',{name:'Транспорт',exact:true}).click();
     await dialog.getByLabel('Подвид').selectOption('taxi');
     await expect(dialog.getByLabel('Название элемента')).toHaveValue('Такси 1');
@@ -486,7 +489,7 @@ for (const width of [1440, 390, 320]) {
     await dialog.getByRole('combobox',{name:'Куда',exact:true}).fill('Секретный причал');
     await dialog.getByRole('option',{name:/Использовать «Секретный причал»/}).click();
     await expect(dialog).toContainText('Для оценки пути нужны два места с адресом');
-    await dialog.getByRole('button',{name:'Сохранить элемент'}).click(); await saved(page);
+    await dialog.getByRole('button',{name:/Сохранить (элемент|перелёт)/}).click(); await saved(page);
     await page.reload();
     const stored=await(await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
     expect(stored.items.find(item=>item.title==='Мой международный рейс')).toMatchObject({departure_country_code:'RU',departure_city:'Москва',arrival_country_code:'JP',arrival_city:'Токио'});
@@ -495,10 +498,11 @@ for (const width of [1440, 390, 320]) {
     await expect(dialog.getByRole('combobox',{name:'Прилёт — город',exact:true})).toHaveValue('Токио');
     await chooseOption(dialog,'Прилёт — страна',/^Китай · CN$/);
     await expect(dialog.getByRole('combobox',{name:'Прилёт — город',exact:true})).toHaveValue('');
-    await expect(dialog.getByLabel('Название элемента')).toHaveValue('Мой международный рейс');
+    await expect(dialog.getByLabel('Название перелёта')).toHaveValue('Мой международный рейс');
     await dialog.screenshot({path:path.join(qa,`flight-form-${width}.png`)});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await dialog.getByRole('button',{name:'Отмена',exact:true}).click();
+    await page.getByRole('dialog',{name:'Закрыть без сохранения?'}).getByRole('button',{name:'Не сохранять',exact:true}).click();
   });
 }
 
@@ -543,7 +547,7 @@ for (const mode of ['drive','walk'] as const) {
     if(mode==='drive'){
       await section(page).getByRole('button',{name:'Открыть трансфер',exact:true}).click();
       await dialog.getByLabel('Цена за единицу',{exact:true}).fill('0');
-      await dialog.getByRole('button',{name:'Сохранить элемент'}).click(); await saved(page);
+      await dialog.getByRole('button',{name:/Сохранить (элемент|перелёт)/}).click(); await saved(page);
       stored=await(await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
       transfer=stored.items.find(item=>item.auto_transfer)!;
       expect(transfer).toMatchObject({price_pending:false,included:true,unit_price:'0.00'});
@@ -603,5 +607,5 @@ test('Escape closes a place dropdown inside the real item dialog and keeps the t
   await combo.click();
   await picker.getByRole('option',{name:/Точка из Google Maps/}).click();
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button',{name:'Сохранить элемент'}).click(); await saved(page);
+  await dialog.getByRole('button',{name:/Сохранить (элемент|перелёт)/}).click(); await saved(page);
 });

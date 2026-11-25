@@ -10,12 +10,14 @@ export interface PreviousFlightPlace { countryCode: string; city: string }
 
 export function CountryCity({
   label,
+  fieldPrefix,
   country,
   city,
   history = [],
   onChange,
 }: {
   label: string;
+  fieldPrefix?: "departure" | "arrival";
   country: string | null;
   city: string;
   history?: PreviousFlightPlace[];
@@ -101,6 +103,7 @@ export function CountryCity({
       <div className="form-grid">
         <PlaceCombobox
           label={`${label} — страна`}
+          name={fieldPrefix && `${fieldPrefix}_country_code`}
           value={country}
           options={countryOptions}
           onChange={key => {
@@ -117,6 +120,7 @@ export function CountryCity({
         <div>
           <PlaceCombobox
             label={`${label} — город`}
+            name={fieldPrefix && `${fieldPrefix}_city`}
             value={city ? "selected" : null}
             options={cityOptions}
             inputValue={query}

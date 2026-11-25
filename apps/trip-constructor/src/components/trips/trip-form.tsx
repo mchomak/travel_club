@@ -25,7 +25,7 @@ export function TripForm({ initial, onSubmit, action, onCancel, onDirtyChange, v
       <Advanced className="field-wide">{basic && <summary>Дополнительные параметры</summary>}<div className="form-grid">
       <Field label="Название для клиента" hint="Если оставить пустым, клиент увидит «Ваше путешествие»" wide><input {...register("client_title")} /></Field>
       <Controller control={control} name="cover_photo_id" render={({ field }) =>
-        <PhotoField label="Фото обложки" value={field.value} onChange={field.onChange} />} />
+        <PhotoField label="Фото обложки" name={field.name} value={field.value} onChange={field.onChange} />} />
       {!basic && <Field label="Статус"><select {...register("status")}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>}
       <Field label="Как определяем цену"><select {...register("pricing_mode")}><option value="markup">Наценка к себестоимости</option><option value="target_margin">Целевая маржинальность</option></select></Field>
       <Field label="Процент" hint="Наценка: доля от затрат. Маржинальность: доля прибыли в цене." error={errors.pricing_percent?.message}><input inputMode="decimal" {...register("pricing_percent")} /></Field>
