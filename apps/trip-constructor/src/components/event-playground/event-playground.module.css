@@ -1,0 +1,4 @@
+.page { max-width: 48rem; margin: 3rem auto; padding: 0 1.5rem; }
+.page h1 { font-size: 1.5rem; font-weight: 700; }
+.page p { margin-top: 1rem; color: var(--color-muted); }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }

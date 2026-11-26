@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Inbox, Map, UserRound } from "lucide-react";
+import { FlaskConical, Inbox, Map, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const links = [
@@ -14,7 +14,7 @@ export function AdminNavigation() {
   const pathname = usePathname() ?? "";
 
   return <nav aria-label="Основная навигация" className="mt-6 flex flex-wrap gap-2 lg:flex-col">
-    {links.map(({ href, label, Icon }) => {
+    {[...links, ...(process.env.NODE_ENV === "development" ? [{ href: "/admin/event-playground", label: "Event Editor Playground", Icon: FlaskConical }] : [])].map(({ href, label, Icon }) => {
       const active = pathname === href || pathname.startsWith(`${href}/`);
       return <Link
         key={href}
