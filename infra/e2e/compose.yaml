@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: travel_e2e
+      POSTGRES_USER: travel_e2e
+      POSTGRES_PASSWORD: disposable-e2e-only
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  backend:
+    build:
+      context: ../../backend
+      additional_contexts:
+        shared: ../../shared
+    environment:
+      APP_ENV: test
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: travel_e2e
+      POSTGRES_USER: travel_e2e
+      POSTGRES_PASSWORD: disposable-e2e-only
+      ALLOWED_ORIGIN: http://127.0.0.1:3301
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  website:
+    build:
+      context: ../..
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: website
+        NEXT_ASSET_PREFIX: /_app/website/_next
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXT_ASSET_PREFIX: /_app/website/_next
+      PORT: 3100
+    depends_on:
+      backend:
+        condition: service_healthy
+  trip-constructor:
+    build:
+      context: ../..
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: trip-constructor
+        NEXT_ASSET_PREFIX: /_app/constructor/_next
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXT_ASSET_PREFIX: /_app/constructor/_next
+      PORT: 3101
+    depends_on:
+      backend:
+        condition: service_healthy
+  interviews:
+    build:
+      context: ../..
+      dockerfile: infra/local/next.Dockerfile
+      args:
+        APP: interviews
+        NEXT_ASSET_PREFIX: /_app/interviews
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXT_ASSET_PREFIX: /_app/interviews
+      PORT: 3102
+    depends_on:
+      backend:
+        condition: service_healthy
+  gateway:
+    build:
+      context: ../..
+      dockerfile: infra/local/gateway.Dockerfile
+    environment:
+      WEBSITE_UPSTREAM: http://website:3100
+      CONSTRUCTOR_UPSTREAM: http://trip-constructor:3101
+      INTERVIEWS_UPSTREAM: http://interviews:3102
+      BACKEND_UPSTREAM: http://backend:8000
+      WEBSITE_LEADS_UPSTREAM: http://website-api:8001
+    ports:
+      - "127.0.0.1:3301:3000"
+    depends_on:
+      - website
+      - trip-constructor
+      - interviews
+      - backend
+volumes:
+  postgres_data:

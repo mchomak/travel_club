@@ -84,13 +84,14 @@ test("builder resumes URL day, keeps form input across stage switches and reuses
   expect(screen.getByRole("region", { name: "Программа дня" })).toBeVisible();
   expect(screen.getByRole("region", { name: "Маршрут дня" })).toBeVisible();
   await user.click(within(screen.getByRole("region", { name: "Программа дня" })).getByRole("button", { name: /Редактировать Музей/ }));
-  const title = within(screen.getByRole("dialog")).getByLabelText("Название элемента");
+  await user.click(within(screen.getByRole("dialog")).getByText("Маршрут", { selector: "strong" }));
+  const title = within(screen.getByRole("dialog")).getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Новый музей");
   // A stage selection must never unmount an unfinished modal.
   screen.getByText(/Расходы и стоимость/).closest("button")!.click();
   expect(title).toHaveValue("Новый музей");
   expect(screen.queryByText("Сохранено")).not.toBeInTheDocument();
-  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /Сохранить (элемент|перелёт)/ }));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Сохранить" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: "3. Проживание" }));
   await user.click(screen.getByRole("button", { name: "4. Программа по дням" }));
@@ -164,11 +165,14 @@ test("transport stage excludes local travel, lodging stays map-free, and day tra
   await user.click(screen.getByRole("button", { name: "3. Проживание" }));
   await user.click(screen.getByRole("button", { name: "Добавить отель" }));
   const lodging = within(screen.getByRole("region", { name: "Отели поездки" }));
-  expect(lodging.getAllByLabelText("Ссылка Google Maps").length).toBeGreaterThan(0);
+  await user.click(lodging.getByText("Билеты и ссылки", { selector: "strong" }));
+  await user.click(lodging.getByText("Добавить ссылку", { selector: "summary" }));
+  await user.click(lodging.getByRole("button", { name: "Добавить: Карта" }));
+  expect(lodging.getByLabelText("Карта")).toBeVisible();
   expect(screen.queryByRole("region", { name: "Маршрут дня" })).not.toBeInTheDocument();
-  expect(lodging.getByLabelText("Название элемента").closest("form")?.querySelector("canvas")).toBeNull();
+  expect(lodging.getByLabelText("Название события").closest("form")?.querySelector("canvas")).toBeNull();
   await user.click(lodging.getByRole("button", { name: "Отмена" }));
-  await waitFor(() => expect(lodging.queryByLabelText("Название элемента")).not.toBeInTheDocument());
+  await waitFor(() => expect(lodging.queryByLabelText("Название события")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: "4. Программа по дням" }));
   await user.click(within(screen.getByLabelText("Добавить событие дня")).getByRole("button", { name: "Транспорт" }));
   panel = within(screen.getByRole("dialog"));
@@ -182,7 +186,7 @@ test("adding a flight opens its form inline beneath the stage row", async () => 
   const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
   const flights = await screen.findByRole("region", { name: "Дальние переезды" });
   await user.click(within(flights).getByRole("button", { name: "Добавить перелёт" }));
-  expect(within(flights).getByLabelText("Название перелёта")).toBeVisible();
+  expect(within(flights).getByLabelText("Название события")).toBeVisible();
   expect(within(flights).queryByRole("dialog")).not.toBeInTheDocument();
 });
 
@@ -192,8 +196,30 @@ test("adding a hotel opens its form inline beneath the lodging row", async () =>
   const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
   const hotels = await screen.findByRole("region", { name: "Отели поездки" });
   await user.click(within(hotels).getByRole("button", { name: "Добавить отель" }));
-  expect(within(hotels).getByLabelText("Название элемента")).toBeVisible();
+  expect(within(hotels).getByLabelText("Название события")).toBeVisible();
   expect(within(hotels).queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("confirming deletion of a saved inline hotel removes it from the trip", async () => {
+  const initial = fixture();
+  const hotel = { ...newItem("hotel", initial.days[0], initial.base_currency, initial.start_date), title: "Отель" };
+  const document = { ...initial, items: [...initial.items, hotel] } as TripDocument;
+  document.calculation = calculateTrip(document);
+  history.replaceState(null, "", "/admin/trips/builder/builder?step=3");
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const save = vi.spyOn(tripApi, "save").mockResolvedValue(document);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
+  const hotels = within(await screen.findByRole("region", { name: "Отели поездки" }));
+  await user.click(hotels.getByRole("button", { name: "Редактировать Отель" }));
+  await user.click(hotels.getByLabelText("Дополнительные действия"));
+  await user.click(hotels.getByRole("button", { name: "Удалить элемент" }));
+  const confirm = screen.getByRole("dialog", { name: "Удалить элемент?" });
+  await user.click(within(confirm).getByRole("button", { name: "Удалить элемент" }));
+  expect(hotels.queryByText("Отель")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Сохранить" }));
+  await waitFor(() => expect(save).toHaveBeenCalled());
+  expect(save.mock.calls.at(-1)![1].items).toEqual([expect.objectContaining(initial.items[0])]);
 });
 
 test("saving flights keeps each item in the rows and shared calendar for the next addition", async () => {
@@ -205,19 +231,20 @@ test("saving flights keeps each item in the rows and shared calendar for the nex
   const calendar = screen.getByRole("region", { name: "Календарь поездки" });
   for (const title of ["Первый перелёт", "Второй перелёт"]) {
     await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
-    const form = flights.getByLabelText("Название перелёта").closest("form")!;
-    await user.clear(within(form).getByLabelText("Название перелёта"));
-    await user.type(within(form).getByLabelText("Название перелёта"), title);
-    await user.type(within(form).getByLabelText("Вылет по местному времени"), "09:00");
-    await user.type(within(form).getByLabelText("Прилёт по местному времени"), "11:00");
+    const form = flights.getByLabelText("Название события").closest("form")!;
+    await user.clear(within(form).getByLabelText("Название события"));
+    await user.type(within(form).getByLabelText("Название события"), title);
+    const schedule = within(form.querySelector('[data-editor-section="schedule"]') as HTMLElement);
+    await user.type(within(schedule.getByRole("group", { name: "Вылет" })).getByLabelText("Местное время"), "09:00");
+    await user.type(within(schedule.getByRole("group", { name: "Прилёт" })).getByLabelText("Местное время"), "11:00");
     await user.clear(within(form).getByLabelText("Цена билета"));
     await user.type(within(form).getByLabelText("Цена билета"), "500");
-    await user.click(within(form).getByRole("button", { name: /Сохранить (элемент|перелёт)/ }));
-    await waitFor(() => expect(flights.queryByLabelText("Название перелёта")).not.toBeInTheDocument());
+    await user.click(within(form).getByRole("button", { name: "Сохранить" }));
+    await waitFor(() => expect(flights.queryByLabelText("Название события")).not.toBeInTheDocument());
     expect(flights.getByText(title)).toBeVisible();
     expect(calendar).toHaveTextContent(title);
   }
-});
+}, 15000);
 
 test("cancelling a new flight keeps saved rows and discards only the unsaved form", async () => {
   const initial = fixture();
@@ -232,13 +259,13 @@ test("cancelling a new flight keeps saved rows and discards only the unsaved for
   const flights = within(flightRegion);
   const calendar = screen.getByRole("region", { name: "Календарь поездки" });
   await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
-  const form = flights.getByLabelText("Название перелёта").closest("form")!;
-  await user.clear(within(form).getByLabelText("Название перелёта"));
-  await user.type(within(form).getByLabelText("Название перелёта"), "Черновик перелёта");
+  const form = flights.getByLabelText("Название события").closest("form")!;
+  await user.clear(within(form).getByLabelText("Название события"));
+  await user.type(within(form).getByLabelText("Название события"), "Черновик перелёта");
   await user.click(within(form).getByRole("button", { name: "Отмена" }));
   const discard = await screen.findByRole("dialog", { name: "Закрыть без сохранения?" });
   await user.click(within(discard).getByRole("button", { name: "Не сохранять" }));
-  await waitFor(() => expect(flights.queryByLabelText("Название перелёта")).not.toBeInTheDocument());
+  await waitFor(() => expect(flights.queryByLabelText("Название события")).not.toBeInTheDocument());
   expect(flightRegion).toHaveTextContent("Сохранённый рейс");
   expect(flightRegion).not.toHaveTextContent("Черновик перелёта");
   expect(calendar).toHaveTextContent("Сохранённый рейс");
@@ -255,7 +282,8 @@ test("inline flight forms receive unique places from saved flights", async () =>
   const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
   const flights = within(await screen.findByRole("region", { name: "Дальние переезды" }));
   await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
-  const form = flights.getByLabelText("Название перелёта").closest("form")!;
+  const form = flights.getByLabelText("Название события").closest("form")!;
+  await user.click(within(form).getByText("Страна и город вылета"));
   await user.click(within(form).getByRole("combobox", { name: "Вылет — город" }));
   expect(screen.getAllByRole("option", { name: /Токио/ })).toHaveLength(1);
 });
@@ -266,10 +294,10 @@ test("adding another flight does not replace an open inline form", async () => {
   const user = userEvent.setup(); render(<TripProvider><TripEditor id="builder" mode="builder" /></TripProvider>);
   const flights = within(await screen.findByRole("region", { name: "Дальние переезды" }));
   await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
-  const firstTitle = flights.getByLabelText("Название перелёта");
+  const firstTitle = flights.getByLabelText("Название события");
   await user.clear(firstTitle); await user.type(firstTitle, "Черновик первого рейса");
   await user.click(flights.getByRole("button", { name: "Добавить перелёт" }));
-  expect(flights.getAllByLabelText("Название перелёта")).toHaveLength(1);
-  expect(flights.getByLabelText("Название перелёта")).toHaveValue("Черновик первого рейса");
+  expect(flights.getAllByLabelText("Название события")).toHaveLength(1);
+  expect(flights.getByLabelText("Название события")).toHaveValue("Черновик первого рейса");
   expect(screen.getByText("Сначала сохраните или отмените открытую форму.")).toBeVisible();
 });

@@ -2,3 +2,108 @@
 .page h1 { font-size: 1.5rem; font-weight: 700; }
 .page p { margin-top: 1rem; color: var(--color-muted); }
 .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+.scrollAnchor { position: absolute; inset: 0 0 auto; height: 0; z-index: 5; }
+.scrollTrack { position: absolute; top: 0; right: 1px; width: 12px; touch-action: none; cursor: default; }
+.scrollThumb { position: absolute; top: 0; right: 3px; width: 6px; border-radius: 6px; background: #87958c; }
+.scrollTrack:hover .scrollThumb, .scrollTrack:focus-visible .scrollThumb { background: #4d6656; }
+.scrollTrack:focus-visible { outline: 2px solid #205c44; outline-offset: -2px; }
+:global(.modal-panel):has(.compact) { scrollbar-width: none; }
+:global(.modal-panel):has(.compact)::-webkit-scrollbar { display: none; }
+@media (forced-colors: active) {
+  :global(.modal-panel):has(.compact) { scrollbar-width: auto; scrollbar-gutter: stable; }
+  :global(.modal-panel):has(.compact)::-webkit-scrollbar { display: initial; }
+  .scrollAnchor { display: none; }
+}
+.compact { --editor-control-height: 44px; --editor-control-radius: 8px; --editor-control-border: #aeb9af; --editor-field-gap: 14px; --editor-group-gap: 18px; container-type: inline-size; padding: 0 1.25rem 1.5rem; color: #171d1a; }
+.category { position: absolute; top: 1.25rem; right: 4rem; z-index: 4; }
+.category > summary { cursor: pointer; color: #205c44; list-style: none; padding: .4rem; border-radius: 6px; }
+.category > summary::-webkit-details-marker { display: none; }
+.category > div { position: absolute; right: 0; top: 100%; width: min(17rem, calc(100cqw - 4rem)); padding: 1rem; background: white; border: 1px solid #d0d8d2; border-radius: 8px; box-shadow: 0 6px 20px #1a33201a; }
+.warning { display: flex; align-items: center; gap: .5rem; color: #765000; border-top: 1px solid #d5e2d8; margin-top: 1rem; padding-top: 1rem; font-size: .875rem; }
+.summary { background: #eef4ef; border: 1px solid #d5e2d8; border-radius: 12px; padding: 1.2rem; }
+.summaryTitle { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; min-width: 0; }
+.summaryTitle > div { flex: 1 1 0; min-width: 0; }
+.summaryTitle strong { font-size: 1.25rem; overflow-wrap: anywhere; }
+.summaryTitle p { margin: .25rem 0 0; color: #33443b; }
+.summaryIcon, .sectionIcon { flex: none; display: grid; place-items: center; color: #205c44; background: #dfebe1; border-radius: 10px; }
+.summaryIcon { width: 3.5rem; height: 3.5rem; }
+.routeConnection { display: flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: .8125rem; }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #d5e2d8; font-size: .875rem; }
+.metrics > div { min-width: 0; overflow-wrap: anywhere; }
+.metrics span { display: flex; align-items: center; gap: .3rem; color: #52645a; }
+.metrics strong { display: block; margin-top: .25rem; }
+.metrics svg { flex: none; }
+.sections { display: grid; gap: .65rem; margin-top: 1.5rem; }
+.section { border: 1px solid #d0d8d2; border-radius: 10px; min-width: 0; }
+.section > summary { display: flex; gap: .9rem; align-items: center; padding: .8rem; cursor: pointer; list-style: none; }
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary:focus-visible, .category > summary:focus-visible { outline: 2px solid #205c44; outline-offset: 2px; }
+.sectionIcon { width: 2.7rem; height: 2.7rem; }
+.sectionLabel { min-width: 0; flex: 1; display: grid; gap: .15rem; }
+.sectionLabel strong { font-size: 1rem; }
+.sectionLabel small { color: #48544d; font-size: .85rem; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.section[open] > summary .sectionLabel small { display: none; }
+.chevron { flex: none; transition: transform .15s; }
+.section[open] > summary .chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .chevron { transition: none; } }
+.sectionContent { padding: .25rem .9rem 1rem; min-width: 0; }
+.routeFields { display: grid; gap: var(--editor-group-gap); min-width: 0; }
+.advancedSettings { display: grid; gap: var(--editor-group-gap); min-width: 0; }
+.advancedSettings > details > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--color-accent); font-size: .875rem; list-style: none; }
+.advancedSettings > details > summary::-webkit-details-marker { display: none; }
+.advancedSettings > details > summary span:nth-child(2) { margin-left: auto; color: var(--color-muted); }
+.advancedSettings > details[open] > summary svg { transform: rotate(180deg); }
+.advancedSettings > hr { border: 0; border-top: 1px solid var(--color-line); margin: 0; }
+.advancedSettings > details[open] > :global(.field) { margin-top: 10px; }
+.textFields { display: grid; gap: var(--editor-group-gap); min-width: 0; }
+.privateNote { display: grid; gap: 10px; min-width: 0; padding: 12px; border-radius: 8px; background: #f1f4f1; }
+.privateNote > span { display: flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: .8125rem; }
+.schedule { display: grid; gap: 18px; min-width: 0; }
+.scheduleGroup { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.scheduleGroup legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
+.scheduleRow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--editor-field-gap); align-items: start; }
+.sectionContent .scheduleRow :global(.field-label) { min-height: 0; }
+.dateSelect { position: relative; display: block; min-width: 0; }
+.dateSelect > span { position: absolute; inset: 0 32px 0 12px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; pointer-events: none; font-size: .875rem; }
+.dateSelect > svg { position: absolute; z-index: 1; right: 12px; top: 50%; transform: translateY(-50%); color: #52645a; pointer-events: none; }
+.dateSelect select { color: transparent; appearance: none; }
+.dateSelect select option { color: #171d1a; }
+.scheduleNote, .scheduleWarning { margin: 0; font-size: .8125rem; color: var(--color-muted); }
+.scheduleWarning { color: var(--warning); }
+.scheduleMeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px; border-radius: 8px; background: #f1f4f1; font-size: .875rem; }
+.timezones > summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer; font-weight: 600; list-style: none; }
+.timezones > summary::-webkit-details-marker { display: none; }
+.timezones > summary span { margin-left: auto; }
+.timezones[open] > summary svg { transform: rotate(180deg); }
+.timezones > summary span { color: var(--color-muted); font-size: .875rem; font-weight: 400; }
+.timezones > :global(.form-grid) { margin-top: 14px; }
+/* Shared field layout for every category rendered inside an editor section. */
+.sectionContent :global(.form-section) { min-width: 0; margin: 0; padding: 0; border: 0; }
+.sectionContent > :global(.form-section) > h3 { display: none; }
+.sectionContent :global(.form-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--editor-field-gap); align-items: start; min-width: 0; }
+.sectionContent :global(.form-grid) > *, .sectionContent :global(.field), .sectionContent fieldset, .sectionContent details { min-width: 0; max-width: 100%; }
+.sectionContent :global(.field) { gap: 6px; }
+.sectionContent :global(.field-label) { min-height: 2.5em; line-height: 1.25; overflow-wrap: anywhere; }
+.sectionContent :global(.field-wide) > :global(.field-label), .sectionContent :global(.field-wide.field) > :global(.field-label) { min-height: 0; }
+.sectionContent :global(.form-grid) > :has(> [class*='combobox']),
+.sectionContent :global(.form-grid) > :has(input[role='combobox']),
+.sectionContent :global(.form-grid) > :global(.field):has(textarea) { grid-column: 1 / -1; }
+.sectionContent :global(.field-help) { font-size: .8125rem; color: var(--color-muted); }
+.sectionContent :global(.field-help) > summary { cursor: pointer; width: fit-content; color: var(--color-accent); }
+.sectionContent input:not([type='checkbox']):not([type='radio']), .sectionContent select, .sectionContent textarea { width: 100%; min-width: 0; max-width: 100%; min-height: var(--editor-control-height); border: 1px solid var(--editor-control-border); border-radius: var(--editor-control-radius); padding: 9px 12px; font: inherit; font-size: .875rem; }
+.sectionContent textarea { min-height: 88px; }
+.sectionContent :is(.textFields, .privateNote) textarea { min-height: 54px; }
+.sectionContent button { max-width: 100%; overflow-wrap: anywhere; }
+.sectionContent :global(.primary-button), .sectionContent :global(.secondary-button), .sectionContent :global(.danger-button) { min-height: var(--editor-control-height); border-radius: var(--editor-control-radius); padding: 9px 14px; font-size: .875rem; }
+.sectionContent :is(input, select, textarea, button, summary):focus-visible { outline: 2px solid #205c44; outline-offset: 2px; }
+.sectionContent :is(p, span, strong, a, label) { overflow-wrap: anywhere; }
+.sectionContent :global(.form-section) > :global(.field-hint), .sectionContent :global(.item-estimate) { margin-top: var(--editor-group-gap); }
+@container (max-width: 390px) {
+  .sectionContent :global(.form-grid) { grid-template-columns: minmax(0, 1fr); }
+  .sectionContent :global(.field-label) { min-height: 0; }
+}
+:global(.modal-panel):has(.compact) :global(.form-actions) { position: sticky; bottom: 0; z-index: 1; background: #fff; padding: 1rem 1.25rem; border-top: 1px solid #d0d8d2; display: flex; flex-wrap: wrap; gap: .5rem; }
+:global(.modal-panel):has(.compact) :global(.modal-header) h2 { padding-right: 2.5rem; overflow-wrap: anywhere; }
+:global(.modal-panel):has(.compact) :global(.form-actions) :is(:global(.primary-button), :global(.secondary-button)) { height: 44px; min-height: 44px; padding: 0 15px; border-radius: 8px; }
+.deleteAction { display: block; margin-top: 1rem; border: 0; background: transparent; color: #a12828; cursor: pointer; padding: .5rem 0; font: inherit; }
+@media (max-width: 400px) { .compact { padding-inline: .75rem; } .summary { padding: .8rem; } .metrics { gap: .6rem; } :global(.modal-panel):has(.compact) :global(.form-actions) { padding: .75rem; } }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Decimal from "decimal.js";
-import { ArrowLeft, ChevronRight, Eye, Plus, Save, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Eye, Plus, Save, Settings2 } from "lucide-react";
 import type { Calculation, CurrencyRateInput, ItemInput, ItemSubtype, ItemType, TripDocument, TripInput } from "@/lib/contracts";
 import { ApiError } from "@/lib/api";
 import { DraftSession, type SaveTrip } from "@/lib/draft-session";
@@ -214,8 +214,8 @@ function Editor({ document, mode, initialStep, initialDay, persist }: { document
     }
     setDeleting(item);
   }
-  function isSavedFlight(item: ItemInput) {
-    return item.type === "flight" && trip.items.some(saved => saved.id === item.id);
+  function isSavedItem(item: ItemInput) {
+    return trip.items.some(saved => saved.id === item.id);
   }
   function submitInline(item: ItemInput, rate?: CurrencyRateInput) {
     if (!inlineEditing) return;
@@ -419,8 +419,8 @@ function Editor({ document, mode, initialStep, initialDay, persist }: { document
     {error && <ErrorNotice error={error} retry={() => { void save(); }} />}{error instanceof ApiError && error.code === "VERSION_CONFLICT" && <button className="secondary-button mt-3" onClick={() => setReloadConfirm(true)}>Перечитать с сервера</button>}{!parity && <div className="error-notice" role="alert">Предварительный расчёт отличается от сервера. {state.dirty ? "До сохранения показан предварительный расчёт." : "Показана сохранённая серверная смета."} Проверьте условия расчёта.</div>}
     {datesChanged && error instanceof ApiError && error.status === 422 && <div className="mt-3 mb-6" role="status"><p className="text-muted mb-3">Новые даты ещё не сохранены. Исправьте условия элементов или верните диапазон {formatDate(state.document.start_date)} — {formatDate(state.document.end_date)}. Остальные изменения останутся в черновике.</p><button className="secondary-button" onClick={restoreDates}>Вернуть прежние даты</button></div>}
     {mode === "builder" ? <TripBuilder trip={trip} days={days} dayId={dayId} step={step} selectedItemId={selectedItemId} activeItem={inlineEditing} calculation={calculation}
-      renderItemForm={itemId => inlineEditing?.id === itemId ? <ItemForm key={inlineEditing.id} context={step === 2 ? "long-haul" : "default"} initial={inlineEditing} trip={trip} flightHistory={flightHistory}
-        onDirtyChange={updateFormDirty} onDelete={isSavedFlight(inlineEditing) ? () => requestDelete(inlineEditing) : undefined}
+      renderItemForm={itemId => inlineEditing?.id === itemId ? <ItemForm key={inlineEditing.id} context={step === 2 ? "long-haul" : "default"} initial={inlineEditing} trip={trip} flightHistory={flightHistory} playgroundCompact
+        onDirtyChange={updateFormDirty} onDelete={isSavedItem(inlineEditing) ? () => requestDelete(inlineEditing) : undefined}
         onCancel={() => { if (canCloseItemEditor("inline")) closeInlineEditor(); }} onSubmit={submitInline} /> : null}
       calendar={renderCalendar} map={dayId && <DayRouteMap trip={trip} dayId={dayId} onChange={change} onAddTransfer={applyTransfer} onOpenItem={openItem} hideBoundaries selectedItemId={selectedItemId} onSelectItem={setSelectedItemId} />}
       finances={financePanel} expenses={expensePanel} busy={previewBusy || formDirty} onStep={changeStep} onDay={selectDay} onSelectItem={setSelectedItemId} onOpenItem={openItem} onDelete={requestDelete} onAdd={add}
@@ -447,15 +447,14 @@ function Editor({ document, mode, initialStep, initialDay, persist }: { document
       title={editingSavedItem ? editingFlight ? "Редактирование авиаперелёта" : "Редактирование элемента" : editingFlight ? "Новый перелёт" : "Новый элемент"}
       onRequestClose={() => canCloseItemEditor("panel")}
       onClose={() => { closeEditor(); setEditing(null); setEditingType(null); setActiveIssue(null); }}>
-      {inIssueContext("item", <ItemForm context={mode === "builder" && step === 2 ? "long-haul" : "default"} initial={editing} trip={trip} flightHistory={flightHistory} requireTypeChoice={requireTypeChoice} onDirtyChange={updateFormDirty} onTypeChange={setEditingType} useDialogHeading
-        onDelete={editingSavedItem && editingFlight ? () => requestDelete(editing) : undefined}
+      {inIssueContext("item", <ItemForm context={mode === "builder" && step === 2 ? "long-haul" : "default"} initial={editing} trip={trip} flightHistory={flightHistory} requireTypeChoice={requireTypeChoice} onDirtyChange={updateFormDirty} onTypeChange={setEditingType} useDialogHeading playgroundCompact
+        onDelete={editingSavedItem ? () => requestDelete(editing) : undefined}
         onCancel={() => { if (canCloseItemEditor("panel")) closeEditor(); }}
         onSubmit={(item, rate) => {
           const moved = item.day_id !== editing.day_id ? { ...item, position: nextPosition(item.day_id) } : item;
           change({ items: trip.items.some(i => i.id === moved.id) ? trip.items.map(i => i.id === moved.id ? moved : i) : [...trip.items, moved], rates: rate ? [...trip.rates.filter(r => r.currency !== rate.currency), rate] : trip.rates });
           closeEditor();
         }} />)}
-      {editingSavedItem && !editingFlight && <button className="item-panel-delete" onClick={() => requestDelete(editing)}><Trash2 size={16} aria-hidden />Удалить элемент</button>}
     </Modal>}
     {discardEditor && <Confirm title="Закрыть без сохранения?" action="Не сохранять" onClose={() => setDiscardEditor(null)} onConfirm={() => { if (discardEditor === "inline") closeInlineEditor(); else closeEditor(); setDiscardEditor(null); }}>Несохранённые изменения в событии будут потеряны.</Confirm>}
     {airportEditing && airportFlight && <Modal variant="panel" open={airportPanelOpen} title={airportEditing.kind === "before" ? "Приезд в аэропорт" : "Выход из аэропорта"} onClose={() => { updateFormDirty(false); setAirportPanelOpen(false); setAirportEditing(null); }}><AirportBlockForm flight={airportFlight} days={days} kind={airportEditing.kind} onDirtyChange={updateFormDirty} onCancel={() => { updateFormDirty(false); setAirportPanelOpen(false); }} onSave={duration => { const field = airportEditing.kind === "before" ? "airport_before_minutes" : "airport_after_minutes"; change({ items: trip.items.map(item => item.id === airportFlight.id ? { ...item, [field]: duration } : item) }); updateFormDirty(false); setAirportPanelOpen(false); }} /></Modal>}

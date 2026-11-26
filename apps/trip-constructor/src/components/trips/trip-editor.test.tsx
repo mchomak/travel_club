@@ -36,6 +36,67 @@ vi.mock("./trip-calendar", () => ({ TripCalendar: ({ days, items, calculation, b
   <button onClick={() => onOpenItem(items[0].id)}>Открыть первый пункт</button>
 </div> }));
 
+test.each(["editor", "builder"] as const)("%s opens the compact editor for a saved event", async mode => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  const day = emptyDay("2026-10-01");
+  input.start_date = day.date; input.end_date = day.date; input.days = [day]; input.rates = [];
+  input.items = [{ ...newItem("flight", day, input.base_currency, day.date), title: "Рейс" }];
+  const document = { ...input, id: "compact-integration", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id={document.id} mode={mode} initialStep={2} /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: mode === "builder" ? "Редактировать Рейс" : "Открыть первый пункт" }));
+  expect(screen.getByRole("group", { name: "Сводка события" })).toHaveTextContent("Рейс");
+  expect(screen.getByText("Маршрут", { selector: "strong" }).closest("details")).not.toHaveAttribute("open");
+});
+
+test.each(["editor", "builder"] as const)("%s keeps a changed event exchange rate when saving the trip", async mode => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  const day = emptyDay("2026-10-01");
+  input.start_date = day.date; input.end_date = day.date; input.days = [day]; input.rates = [];
+  input.base_currency = "RUB";
+  input.items = [{ ...newItem("flight", day, "RUB", day.date), title: "Рейс", unit_price: "100" }];
+  const document = { ...input, id: "compact-rate", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const save = vi.spyOn(tripApi, "save").mockResolvedValue(document);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id={document.id} mode={mode} initialStep={2} /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: mode === "builder" ? "Редактировать Рейс" : "Открыть первый пункт" }));
+  await user.click(screen.getByText("Стоимость", { selector: "strong" }));
+  await user.selectOptions(screen.getByLabelText("Валюта цены"), "USD");
+  await user.type(screen.getByLabelText("Курс USD"), "90");
+  const form = screen.getByRole("group", { name: "Сводка события" }).closest("form")!;
+  await user.click(within(form).getByRole("button", { name: "Сохранить" }));
+  await user.click(screen.getByRole("button", { name: "Сохранить" }));
+  await waitFor(() => expect(save).toHaveBeenCalled());
+  expect(save.mock.calls.at(-1)![1].rates).toContainEqual({ currency: "USD", rate: "90" });
+  expect(save.mock.calls.at(-1)![1].items[0]).toMatchObject({ currency: "USD", unit_price: "100" });
+});
+
+test.each(["editor", "builder"] as const)("%s retains a dirty event when delete and discard are cancelled", async mode => {
+  const input = structuredClone(vectors.cases[0].input) as TripInput;
+  const day = emptyDay("2026-10-01");
+  input.start_date = day.date; input.end_date = day.date; input.days = [day]; input.rates = [];
+  input.items = [{ ...newItem("flight", day, input.base_currency, day.date), title: "Рейс" }];
+  const document = { ...input, id: "compact-discard", version: 1, created_at: "", updated_at: "", created_by: "user", calculation: calculateTrip(input) } as TripDocument;
+  vi.spyOn(tripApi, "get").mockResolvedValue(document);
+  const user = userEvent.setup();
+  render(<TripProvider><TripEditor id={document.id} mode={mode} initialStep={2} /></TripProvider>);
+  await user.click(await screen.findByRole("button", { name: mode === "builder" ? "Редактировать Рейс" : "Открыть первый пункт" }));
+  await user.click(screen.getByText("Маршрут", { selector: "strong" }));
+  const title = screen.getByLabelText("Название события");
+  await user.clear(title); await user.type(title, "Черновик");
+  await user.click(screen.getByLabelText("Дополнительные действия"));
+  await user.click(screen.getByRole("button", { name: "Удалить элемент" }));
+  const confirm = screen.getByRole("dialog", { name: "Удалить элемент?" });
+  expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
+  await user.click(within(confirm).getByRole("button", { name: "Отмена" }));
+  const form = title.closest("form")!;
+  await user.click(within(form).getByRole("button", { name: "Отмена" }));
+  await user.click(within(screen.getByRole("dialog", { name: "Закрыть без сохранения?" })).getByRole("button", { name: "Отмена" }));
+  expect(title).toHaveValue("Черновик");
+});
+
 test("day photo upload uses the open trip in the builder", async () => {
   const input = structuredClone(vectors.cases[0].input) as TripInput;
   input.days = [emptyDay("2026-10-01"), emptyDay("2026-10-02")];
@@ -121,10 +182,11 @@ test('map creation persists a calendar taxi and its pending price opens the stan
  const finance=screen.getByRole('complementary',{name:'Финансовая сводка'});
  await user.click(within(finance).getByRole('button',{name:'Указать стоимость: Такси 1'}));
  const editor=screen.getByRole('dialog');
- expect(within(editor).getByRole('button',{name:/Сохранить (элемент|перелёт)/})).toBeVisible();
+ expect(within(editor).getByRole('button',{name:'Сохранить'})).toBeVisible();
+ await user.click(within(editor).getByText('Стоимость', { selector: 'strong' }));
  const price=within(editor).getByLabelText('Цена за единицу');
  await user.clear(price);await user.type(price,'500');
- await user.click(within(editor).getByRole('button',{name:/Сохранить (элемент|перелёт)/}));
+ await user.click(within(editor).getByRole('button',{name:'Сохранить'}));
  await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
  await user.click(screen.getByRole('button',{name:/^Сохранить$/}));
  await waitFor(()=>expect(save.mock.calls.at(-1)![1].items.find(item=>item.auto_transfer)).toMatchObject({unit_price:'500',price_pending:false,included:true}));
@@ -156,7 +218,7 @@ test("extra expense buttons create an unscheduled per-person item and keep legac
   expect(within(panel).getByRole("combobox", { name: "Подвид" })).toHaveValue("sim");
   await user.clear(within(panel).getByLabelText("Цена за единицу"));
   await user.type(within(panel).getByLabelText("Цена за единицу"), "10");
-  await user.click(within(panel).getByRole("button", { name: /Сохранить (элемент|перелёт)/ }));
+  await user.click(within(panel).getByRole("button", { name: "Сохранить" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
   await waitFor(() => expect(save).toHaveBeenCalled());
@@ -167,8 +229,8 @@ test("extra expense buttons create an unscheduled per-person item and keep legac
 });
 
 test.each([
-  ["activity", "Новый элемент", "Начало по местному времени", "Окончание по местному времени"],
-  ["flight", "Новый перелёт", "Вылет по местному времени", "Прилёт по местному времени"],
+  ["activity", "Новый элемент", "Начало", "Окончание"],
+  ["flight", "Новый перелёт", "Вылет", "Прилёт"],
 ])("calendar creation updates the dialog title after choosing %s and leaves the draft untouched", async (type, heading, start, end) => {
   const input = structuredClone(vectors.cases[0].input) as TripInput;
   input.end_date = "2026-10-03";
@@ -183,12 +245,13 @@ test.each([
   await user.click(await screen.findByRole("button", { name: "Создать интервал" }));
   const panel = screen.getByRole("dialog");
   expect(within(panel).getByLabelText("Тип события")).toHaveValue("");
-  expect(within(panel).getByRole("button", { name: /Сохранить (элемент|перелёт)/ })).toBeDisabled();
+  expect(within(panel).getByRole("button", { name: "Сохранить" })).toBeDisabled();
   expect(save).not.toHaveBeenCalled();
   await user.selectOptions(within(panel).getByLabelText("Тип события"), type);
   expect(screen.getByRole("dialog", { name: heading })).toBe(panel);
-  expect(within(panel).getByLabelText(start)).toHaveValue("09:15");
-  expect(within(panel).getByLabelText(end)).toHaveValue("10:45");
+  const schedule = within(panel.querySelector('[data-editor-section="schedule"]') as HTMLElement);
+  expect(within(schedule.getByRole("group", { name: start })).getByLabelText("Местное время")).toHaveValue("09:15");
+  expect(within(schedule.getByRole("group", { name: end })).getByLabelText("Местное время")).toHaveValue("10:45");
   await user.click(within(panel).getByRole("button", { name: "Отмена" }));
   const discard = await screen.findByRole("dialog", { name: "Закрыть без сохранения?" });
   await user.click(within(discard).getByRole("button", { name: "Не сохранять" }));
@@ -263,8 +326,8 @@ test("airport boundary persists through reopening, follows a moved flight, and d
   expect(moved.airportBlocks.find(block => block.airportKind === "before")).toMatchObject({ date: "2026-10-02", startMinute: 570, endMinute: 660 });
   expect(moved.airportBlocks.find(block => block.airportKind === "after")).toMatchObject({ date: "2026-10-02", startMinute: 720, endMinute: 780 });
   await user.click(screen.getByRole("button", { name: "Открыть первый пункт" }));
-  await user.click(within(screen.getByRole("dialog")).getByText("Дополнительные действия"));
-  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Удалить перелёт" }));
+  await user.click(within(screen.getByRole("dialog")).getByLabelText("Дополнительные действия"));
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Удалить элемент" }));
   await user.click((await screen.findByText("Удалить элемент?")).closest("[role=dialog]")!.querySelector<HTMLButtonElement>(".danger-button")!);
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
@@ -283,14 +346,15 @@ test("flight deletion can be cancelled without losing changes in the panel", asy
   render(<TripProvider><TripEditor id={document.id} /></TripProvider>);
   await user.click(await screen.findByRole("button", { name: "Открыть первый пункт" }));
   const panel = screen.getByRole("dialog", { name: "Редактирование авиаперелёта" });
-  const title = within(panel).getByLabelText("Название перелёта");
+  await user.click(within(panel).getByText("Маршрут", { selector: "strong" }));
+  const title = within(panel).getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Изменённый рейс");
-  await user.click(within(panel).getByText("Дополнительные действия"));
-  await user.click(within(panel).getByRole("button", { name: "Удалить перелёт" }));
+  await user.click(within(panel).getByLabelText("Дополнительные действия"));
+  await user.click(within(panel).getByRole("button", { name: "Удалить элемент" }));
   const confirm = await screen.findByRole("dialog", { name: "Удалить элемент?" });
   expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
   await user.click(within(confirm).getByRole("button", { name: "Отмена" }));
-  expect(within(screen.getByRole("dialog", { name: "Редактирование авиаперелёта" })).getByLabelText("Название перелёта")).toHaveValue("Изменённый рейс");
+  expect(within(screen.getByRole("dialog", { name: "Редактирование авиаперелёта" })).getByLabelText("Название события")).toHaveValue("Изменённый рейс");
 });
 
 test("inline flight deletion asks for confirmation and retains a cancelled edit", async () => {
@@ -303,15 +367,16 @@ test("inline flight deletion asks for confirmation and retains a cancelled edit"
   const user = userEvent.setup();
   render(<TripProvider><TripEditor id={document.id} mode="builder" initialStep={2} /></TripProvider>);
   await user.click(await screen.findByRole("button", { name: "Редактировать Рейс" }));
-  expect(screen.getByRole("heading", { name: "Редактирование авиаперелёта" })).toBeVisible();
-  const title = screen.getByLabelText("Название перелёта");
+  expect(screen.getByRole("group", { name: "Сводка события" })).toHaveTextContent("Рейс");
+  await user.click(screen.getByText("Маршрут", { selector: "strong" }));
+  const title = screen.getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Изменённый рейс");
-  await user.click(screen.getByText("Дополнительные действия"));
-  await user.click(screen.getByRole("button", { name: "Удалить перелёт" }));
+  await user.click(screen.getByLabelText("Дополнительные действия"));
+  await user.click(screen.getByRole("button", { name: "Удалить элемент" }));
   const confirm = screen.getByRole("dialog", { name: "Удалить элемент?" });
   expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
   await user.click(within(confirm).getByRole("button", { name: "Отмена" }));
-  expect(screen.getByLabelText("Название перелёта")).toHaveValue("Изменённый рейс");
+  expect(screen.getByLabelText("Название события")).toHaveValue("Изменённый рейс");
 });
 
 test("settings cannot replace the dirty state of an inline event", async () => {
@@ -324,7 +389,8 @@ test("settings cannot replace the dirty state of an inline event", async () => {
   const user = userEvent.setup();
   render(<TripProvider><TripEditor id={document.id} mode="builder" initialStep={2} /></TripProvider>);
   await user.click(await screen.findByRole("button", { name: "Редактировать Рейс" }));
-  const title = screen.getByLabelText("Название перелёта");
+  await user.click(screen.getByText("Маршрут", { selector: "strong" }));
+  const title = screen.getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Черновик рейса");
   await user.click(screen.getByRole("button", { name: "Параметры" }));
   expect(screen.queryByRole("dialog", { name: "Параметры поездки" })).not.toBeInTheDocument();
@@ -348,7 +414,8 @@ test.each(["inline cancel", "inline close button", "panel cancel", "panel close 
     const inline = action.startsWith("inline");
     render(<TripProvider><TripEditor id={document.id} mode={inline ? "builder" : "editor"} initialStep={2} /></TripProvider>);
     await user.click(await screen.findByRole("button", { name: inline ? "Редактировать Рейс" : "Открыть первый пункт" }));
-    const title = screen.getByLabelText("Название перелёта");
+    await user.click(screen.getByText("Маршрут", { selector: "strong" }));
+    const title = screen.getByLabelText("Название события");
     await user.clear(title); await user.type(title, "Изменённый рейс");
     const requestClose = async () => {
       if (action === "panel Escape") await user.keyboard("{Escape}");
@@ -433,7 +500,7 @@ test("validation opens the existing item, reveals its field and displays the iss
   expect(await within(dialog).findByText(/Замечание относится к сохранённой версии/)).toBeVisible();
   expect(field).not.toHaveAccessibleDescription(/Уточните стоимость/);
   expect(within(summary).queryByText("Предупреждение проверки")).not.toBeInTheDocument();
-  await user.click(within(dialog).getByRole("button", { name: "Сохранить перелёт" }));
+  await user.click(within(dialog).getByRole("button", { name: "Сохранить" }));
   await waitFor(() => expect(dialog).not.toBeInTheDocument());
   expect(screen.getByRole("button", { name: "Проверка маршрута · устарела" })).toBeVisible();
   await user.click(screen.getByRole("button", { name: /^Сохранить$/ }));
@@ -632,7 +699,9 @@ test("validation navigation preserves an open unsaved item form", async () => {
   await user.click(await screen.findByRole("button", { name: "Проверка маршрута" }));
   const navigate = await screen.findByRole("button", { name: "Перейти к замечанию: Цена" });
   await user.click(screen.getByRole("button", { name: "Открыть первый пункт" }));
-  const title = within(await screen.findByRole("dialog")).getByLabelText("Название перелёта");
+  const panel = await screen.findByRole("dialog");
+  await user.click(within(panel).getByText("Маршрут", { selector: "strong" }));
+  const title = within(panel).getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Несохранённое название");
   fireEvent.click(navigate);
   expect(title).toHaveValue("Несохранённое название");
@@ -653,7 +722,7 @@ test("validation focuses the transport departure picker", async () => {
   await user.click(await screen.findByRole("button", { name: "Проверка маршрута" }));
   await user.click(await screen.findByRole("button", { name: "Перейти к замечанию: Точка отправления" }));
   const dialog = await screen.findByRole("dialog");
-  await waitFor(() => expect(within(dialog).getByRole("combobox", { name: "Откуда" })).toHaveFocus());
+  await waitFor(() => expect(within(dialog).getByRole("combobox", { name: "Выбрать: точка отправления" })).toHaveFocus());
   expect(within(dialog).getByText("Не указана точка отправления.")).toBeVisible();
 });
 

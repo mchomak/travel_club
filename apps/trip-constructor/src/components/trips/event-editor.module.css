@@ -8,6 +8,24 @@
 .section > fieldset { border: 0; margin: 0; }
 .section > fieldset > h3 { display: none; }
 .section > :global(.form-grid) { padding: 0 1rem 1rem; }
+.priceContents { display: contents; }
+.compactCost > :global(.field):has([data-cost-status]) { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.compactCost > :global(.field):has([data-cost-status]) :global(.field-label) { min-height: 0; }
+.compactCost > :global(.field):has([data-cost-status]) select { width: auto; max-width: 65%; }
+.compactParticipants { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, 140px); align-items: end; gap: 10px; }
+.compactParticipants > :global(.field):only-child { grid-column: 1 / -1; }
+.compactCost .compactParticipants :global(.field-label), .compactCost .compactPrice :global(.field-label) { min-height: 0; }
+.compactPrice { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 3fr) minmax(100px, 1fr); gap: 0; min-width: 0; }
+.compactPrice :global(.field) { min-width: 0; }
+.compactPrice input { border-radius: 8px 0 0 8px !important; }
+.compactPrice select { border-radius: 0 8px 8px 0 !important; margin-left: -1px; }
+.compactEstimate { display: grid; gap: 8px; margin-top: 18px; padding: 14px; border-radius: 8px; background: var(--soft-green); font-size: .875rem; overflow-wrap: anywhere; }
+.compactEstimate > span { color: var(--color-muted); }
+.compactEstimate > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.compactEstimate strong { color: var(--color-accent); font-size: 1.1rem; }
+.compactEstimateMuted { background: #f2f3f2; }
+.compactEstimateMuted strong { color: #4b5550; }
+@container (max-width: 390px) { .compactParticipants { grid-template-columns: minmax(0, 1fr) minmax(80px, 110px); } }
 
 .links { display: grid; gap: 0.75rem; }
 .linkRow { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.75rem; min-width: 0; }
@@ -18,6 +36,29 @@
 .linkInput { display: grid; gap: 0.375rem; margin-block: 0.25rem; }
 .linkActions { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 0.75rem; }
 .linkActions :is(a, button) { padding-block: 0.25rem; text-align: start; }
+.compactLinks { display: grid; min-width: 0; }
+.compactLink { min-width: 0; border-bottom: 1px solid var(--color-line); padding: 10px 0; }
+.compactLink[hidden] { display: none; }
+.compactLinkHeader { display: flex; align-items: center; min-width: 0; gap: 10px; }
+.compactLinkHeader > svg { flex: none; color: var(--color-muted); }
+.compactLinkText { display: grid; flex: 1; min-width: 0; font-size: .875rem; }
+.compactLinkText strong, .compactLinkText span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.compactLinkText span { color: var(--color-muted); }
+.linkIconButton { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; color: var(--color-accent); cursor: pointer; list-style: none; }
+.linkIconButton::-webkit-details-marker { display: none; }
+.linkIconButton:hover { background: var(--soft-green); }
+.linkMenu { position: relative; flex: none; }
+.linkMenu > div, .addLink > div { position: absolute; z-index: 5; right: 0; display: grid; min-width: 160px; padding: 4px; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 8px; box-shadow: 0 6px 18px #172b1d1a; }
+.linkMenu button, .addLink button { text-align: left; min-height: 40px; padding: 8px 10px; border-radius: 6px; }
+.linkMenu button:hover, .addLink button:hover { background: var(--soft-green); }
+.inlineLinkEditor > summary { cursor: pointer; }
+.inlineLinkEditor[open] { padding-top: 12px; }
+.addLink { position: relative; min-width: 0; border-bottom: 1px solid var(--color-line); }
+.addLink > summary { display: flex; align-items: center; width: fit-content; min-height: 44px; gap: 6px; color: var(--color-accent); cursor: pointer; list-style: none; }
+.addLink > summary::-webkit-details-marker { display: none; }
+.addLink > div { left: 0; right: auto; max-width: 100%; }
+.compactLinks > :global(.check-field) { margin-top: 10px; }
+.visibilityHint { color: var(--color-muted); font-size: .8125rem; padding-left: 27px; }
 
 .notes { gap: 0.75rem; }
 .notes textarea { field-sizing: content; min-height: 2.5rem; max-height: 14rem; }

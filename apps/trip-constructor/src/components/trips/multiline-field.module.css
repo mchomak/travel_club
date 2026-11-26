@@ -1,0 +1,5 @@
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > label { font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
+.field textarea { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 54px; max-height: 240px; resize: none; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.field textarea.expanded { max-height: none; }
+.expand { justify-self: start; color: var(--color-accent); font-size: .8125rem; min-height: 36px; text-align: left; }

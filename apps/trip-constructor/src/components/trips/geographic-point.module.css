@@ -1,0 +1,21 @@
+.point { min-width: 0; display: grid; gap: 6px; }
+.label { font-size: .875rem; font-weight: 600; }
+.body { min-width: 0; display: grid; gap: 12px; padding: 12px; border: 1px solid var(--color-line); border-radius: 8px; }
+.body strong, .body span { min-width: 0; overflow-wrap: anywhere; }
+.body span { font-size: .875rem; color: var(--color-muted); }
+.heading { display: flex; align-items: flex-start; gap: 10px; }
+.heading > svg { flex: none; color: var(--color-accent); }
+.heading > div { min-width: 0; flex: 1; display: grid; gap: 4px; }
+.menu { position: relative; flex: none; }
+.menu > summary { display: grid; place-items: center; width: 36px; height: 36px; margin: -8px -8px 0 0; cursor: pointer; list-style: none; border-radius: 6px; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary:focus-visible { outline: 2px solid var(--color-accent); }
+.menu > div { position: absolute; z-index: 5; right: 0; top: 100%; width: 190px; padding: 4px; background: white; border: 1px solid var(--color-line); border-radius: 8px; box-shadow: 0 6px 20px #1a33201a; }
+.menu button { display: block; width: 100%; padding: 10px; border: 0; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.menu button:hover { background: #eef4ef; }
+.footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid var(--color-line); }
+.body .status, .footer a { display: inline-flex; align-items: center; gap: 6px; color: var(--color-accent); font-size: .8125rem; }
+.footer a { text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.editor { display: grid; gap: 16px; min-width: 0; margin-top: 12px; }
+.editor:not([open]) { display: none; }

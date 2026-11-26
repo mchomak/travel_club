@@ -8,7 +8,7 @@ import { tripApi } from "@/lib/trips";
 import { TripForm } from "./trip-form";
 
 export function NewTrip() {
-  const router = useRouter(), [initial] = useState(newTrip);
+  const router = useRouter(), [initial] = useState(() => ({ ...newTrip(), cover_photo_id: null }));
   const [dirty, setDirty] = useState(false), created = useRef(false);
   useEffect(() => {
     if (!dirty) return;

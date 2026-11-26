@@ -5,11 +5,11 @@ import {mapsClient,mapsErrorMessage} from '@/lib/maps-client';
 import {useMapsConfig} from '@/lib/use-maps-config';
 import {PlaceCombobox} from './place-combobox';
 import styles from './day-route-map.module.css';
-export interface LocationPickerProps {value:MapPlace|null;onChange:(value:MapPlace|null)=>void;label?:string}
+export interface LocationPickerProps {value:MapPlace|null;onChange:(value:MapPlace|null)=>void;label?:string;initialEditing?:boolean}
 export function LocationPicker(props:LocationPickerProps){return <Picker key={JSON.stringify(props.value)} {...props}/>;}
-function Picker({value,onChange,label='Место на карте'}:LocationPickerProps){
+function Picker({value,onChange,label='Место на карте',initialEditing=false}:LocationPickerProps){
  const id=useId(),{config}=useMapsConfig();
- const [pointCandidate,setPointCandidate]=useState<MapPlace|null>(null),[selected,setSelected]=useState(value),[editing,setEditing]=useState(!value),[url,setUrl]=useState(value?.source_url??'');
+ const [pointCandidate,setPointCandidate]=useState<MapPlace|null>(null),[selected,setSelected]=useState(value),[editing,setEditing]=useState(initialEditing||!value),[url,setUrl]=useState(value?.source_url??'');
  const [query,setQuery]=useState(''),[fallback,setFallback]=useState(false),[results,setResults]=useState<MapPlace[]>([]);
  const [error,setError]=useState<string|null>(null),[busy,setBusy]=useState(false),[searching,setSearching]=useState(false),[searchState,setSearchState]=useState('');
  const generation=useRef(0),urlTimer=useRef<ReturnType<typeof setTimeout>|null>(null),lastResolved=useRef('');

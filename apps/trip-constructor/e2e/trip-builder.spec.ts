@@ -13,7 +13,7 @@ const password = randomBytes(32).toString("base64url");
 const project = path.resolve(import.meta.dirname, "../../..");
 const headers = { "X-Requested-With": "TravelClub" };
 const ownedTrips: string[] = [];
-const qa = path.join(project, "test-results/trip-builder");
+const qa = process.env.PLAYWRIGHT_QA_DIR ?? path.join(project, "test-results/trip-builder");
 
 test.beforeAll(() => {
   database(
@@ -69,17 +69,16 @@ async function addBuilderFlight(page: Page, trip: TripDocument, item: {
   const section = page.getByRole("region", { name: "Дальние переезды", exact: true });
   await section.getByRole("button", { name: "Добавить перелёт", exact: true }).click();
   const form = section.locator("form");
-  await form.getByLabel("Название перелёта", { exact: true }).fill(item.title);
-  await form.getByLabel("Дата вылета", { exact: true }).selectOption(item.dayId);
-  await form.getByLabel("Вылет по местному времени", { exact: true }).fill(item.start);
-  await form.getByLabel("Дата прилёта", { exact: true }).selectOption(item.endDayId);
-  await form.getByLabel("Прилёт по местному времени", { exact: true }).fill(item.end);
-  await form.getByText("Часовые пояса", { exact: true }).click();
+  await form.getByLabel("Название события", { exact: true }).fill(item.title);
+  await form.getByLabel("Дата начала", { exact: true }).selectOption(item.dayId);
+  await form.getByRole("group", { name: "Вылет" }).getByLabel("Местное время", { exact: true }).fill(item.start);
+  await form.getByLabel("Дата окончания", { exact: true }).selectOption(item.endDayId);
+  await form.getByRole("group", { name: "Прилёт" }).getByLabel("Местное время", { exact: true }).fill(item.end);
+  await form.locator("summary").filter({ hasText: "Часовые пояса" }).click();
   await form.getByLabel("UTC при отправлении", { exact: true }).selectOption(String(item.departureOffset));
   await form.getByLabel("UTC при прибытии", { exact: true }).selectOption(String(item.arrivalOffset));
-  await form.locator("summary").filter({ hasText: "Стоимость" }).click();
   await form.getByLabel("Цена билета", { exact: true }).fill(item.price);
-  await form.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await form.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(form).not.toBeVisible({ timeout: 10000 });
   await saved(page);
   const response = await page.request.get("/api/trips/" + trip.id);
@@ -91,11 +90,11 @@ async function addBuilderHotel(page: Page, trip: TripDocument, item: { title: st
   const section = page.getByRole("region", { name: "Отели поездки", exact: true });
   await section.getByRole("button", { name: "Добавить отель", exact: true }).click();
   const form = section.locator("form");
-  await form.getByLabel("Название элемента", { exact: true }).fill(item.title);
-  await form.getByLabel("Заезд — дата", { exact: true }).fill(item.checkIn);
-  await form.getByLabel("Выезд — дата", { exact: true }).fill(item.checkOut);
+  await form.getByLabel("Название события", { exact: true }).fill(item.title);
+  await form.getByRole("group", { name: "Заезд" }).getByLabel("Дата", { exact: true }).fill(item.checkIn);
+  await form.getByRole("group", { name: "Выезд" }).getByLabel("Дата", { exact: true }).fill(item.checkOut);
   await form.getByLabel("Цена номера за ночь", { exact: true }).fill(item.price);
-  await form.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await form.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(form).not.toBeVisible({ timeout: 10000 });
   await saved(page);
   const response = await page.request.get("/api/trips/" + trip.id);
@@ -208,8 +207,9 @@ test("builder round-trips an eight-day itinerary through UI, API and PostgreSQL"
   await teaEvent.scrollIntoViewIfNeeded();
   await teaEvent.click();
   let itemDialog = page.getByRole("dialog");
-  await itemDialog.getByLabel("Название элемента", { exact: true }).fill("Чайная церемония — общая сетка");
-  await itemDialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await itemDialog.locator("summary").getByText("Маршрут", { exact: true }).click();
+  await itemDialog.getByLabel("Название события", { exact: true }).fill("Чайная церемония — общая сетка");
+  await itemDialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(itemDialog).not.toBeVisible();
   await saved(page);
 
@@ -222,14 +222,16 @@ test("builder round-trips an eight-day itinerary through UI, API and PostgreSQL"
 
   await firstDay.getByRole("button", { name: "Редактировать Чайная церемония — общая сетка", exact: true }).click();
   itemDialog = page.getByRole("dialog");
-  await itemDialog.getByLabel("Название элемента", { exact: true }).fill("Чайная церемония — список дня");
-  await itemDialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await itemDialog.locator("summary").getByText("Маршрут", { exact: true }).click();
+  await itemDialog.getByLabel("Название события", { exact: true }).fill("Чайная церемония — список дня");
+  await itemDialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await saved(page);
 
   await firstDay.getByRole("button", { name: "Редактировать Чайная церемония — список дня", exact: true }).click();
   itemDialog = page.getByRole("dialog");
-  await itemDialog.getByLabel("День маршрута", { exact: true }).selectOption(seeded.days[1].id);
-  await itemDialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await itemDialog.locator("summary").getByText("Расписание", { exact: true }).click();
+  await itemDialog.getByLabel("Дата начала", { exact: true }).selectOption(seeded.days[1].id);
+  await itemDialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await saved(page);
   const moved = await (await page.request.get(`/api/trips/${created.id}`)).json() as TripDocument;
   const tea = moved.items.find(item => item.title === "Чайная церемония — список дня");
@@ -363,9 +365,10 @@ test("legacy null-offset overnight items remain editable and protected routes re
   const event = page.getByRole("button", { name: /Старый ночной рейс/ }).first();
   await event.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByLabel("Название перелёта", { exact: true })).toHaveValue("Старый ночной рейс");
-  await dialog.getByLabel("Название перелёта", { exact: true }).fill("Старый ночной рейс — сохранён");
-  await dialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await dialog.locator("summary").getByText("Маршрут", { exact: true }).click();
+  await expect(dialog.getByLabel("Название события", { exact: true })).toHaveValue("Старый ночной рейс");
+  await dialog.getByLabel("Название события", { exact: true }).fill("Старый ночной рейс — сохранён");
+  await dialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await saved(page);
   const persisted = await (await page.request.get(`/api/trips/${trip.id}`)).json() as TripDocument;
   expect(persisted.items[0]).toMatchObject({ title: "Старый ночной рейс — сохранён", start_time: "23:00:00", end_time: "02:00:00", departure_utc_offset_minutes: null, arrival_utc_offset_minutes: null });
@@ -401,12 +404,12 @@ test("editing saved flight and hotel dates updates calendar, day programs, API a
   await flightEvent.scrollIntoViewIfNeeded();
   await flightEvent.click();
   let dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Дата вылета", { exact: true }).selectOption(trip.days[2].id);
-  await dialog.getByLabel("Дата прилёта", { exact: true }).selectOption(trip.days[3].id);
-  await expect(dialog.getByRole("status")).toHaveText("Место или дата изменились. Проверьте смещения UTC.");
-  await dialog.getByText("Часовые пояса", { exact: true }).click();
-  await dialog.getByRole("button", { name: "Подтвердить текущие смещения", exact: true }).click();
-  await dialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await dialog.locator("summary").getByText("Расписание", { exact: true }).click();
+  await dialog.getByLabel("Дата начала", { exact: true }).selectOption(trip.days[2].id);
+  await dialog.getByLabel("Дата окончания", { exact: true }).selectOption(trip.days[3].id);
+  await expect(dialog.getByRole("status")).toHaveText("Место или дата изменились. Проверьте часовые пояса. Подтвердить");
+  await dialog.getByRole("button", { name: "Подтвердить", exact: true }).click();
+  await dialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await saved(page);
 
@@ -426,9 +429,10 @@ test("editing saved flight and hotel dates updates calendar, day programs, API a
   await expect(hotelBar).toHaveAttribute("aria-label", /2026-11-02 — 2026-11-04/);
   await hotelBar.click();
   dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Заезд — дата", { exact: true }).fill("2026-11-06");
-  await dialog.getByLabel("Выезд — дата", { exact: true }).fill("2026-11-08");
-  await dialog.getByRole("button", { name: /Сохранить (элемент|перелёт)/, exact: true }).click();
+  await dialog.locator("summary").getByText("Расписание", { exact: true }).click();
+  await dialog.getByRole("group", { name: "Заезд" }).getByLabel("Дата", { exact: true }).fill("2026-11-06");
+  await dialog.getByRole("group", { name: "Выезд" }).getByLabel("Дата", { exact: true }).fill("2026-11-08");
+  await dialog.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await saved(page);
 

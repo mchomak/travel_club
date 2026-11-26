@@ -18,10 +18,10 @@ export type ItineraryEditorProps = {
   onManualTitle: () => void; onChooseEndDay: () => void;
 };
 
-export function EventTitleField({ item, autoFocus, onManualTitle }: Pick<ItineraryEditorProps, "item" | "onManualTitle"> & { autoFocus: boolean }) {
+export function EventTitleField({ item, autoFocus, onManualTitle, label }: Pick<ItineraryEditorProps, "item" | "onManualTitle"> & { autoFocus: boolean; label?: string }) {
   const { register, formState: { errors } } = useFormContext<ItemInput>();
   const titleField = register("title", { required: "Укажите название", validate: maxTextLength(200) });
-  return <Field label={item.type === "flight" ? "Название перелёта" : "Название элемента"} error={errors.title?.message} wide>
+  return <Field label={label ?? (item.type === "flight" ? "Название перелёта" : "Название элемента")} error={errors.title?.message} wide>
     <input autoFocus={autoFocus} placeholder={item.type === "hotel" ? "Название отеля" : itemLabels[item.type]} {...titleField} onChange={event => { onManualTitle(); void titleField.onChange(event); }} />
   </Field>;
 }
@@ -83,9 +83,10 @@ export function EventScheduleSection({ item, trip, isNew, typeChosen, labels, on
     </div></fieldset>}</>;
 }
 
-export function TransportOffsetFields({ item, onOffsetChange }: {
+export function TransportOffsetFields({ item, onOffsetChange, compact = false }: {
   item: ItemInput;
   onOffsetChange?: (endpoint: "departure" | "arrival") => void;
+  compact?: boolean;
 }) {
   const { register, formState: { errors } } = useFormContext<ItemInput>();
   return <>{(["departure", "arrival"] as const).map(endpoint => {
@@ -93,6 +94,6 @@ export function TransportOffsetFields({ item, onOffsetChange }: {
             const options = [...new Set([...Array.from({ length: 113 }, (_, index) => index * 15 - 840), ...(value != null ? [value] : [])])].sort((a,b) => a-b);
             return <Field key={endpoint} label={endpoint === "departure" ? "UTC при отправлении" : "UTC при прибытии"} error={errors[field]?.message}><select {...register(field, { setValueAs: nullableInteger, onChange: () => onOffsetChange?.(endpoint) })}><option value="">Не указано</option>{options.map(offset => <option key={offset} value={offset}>{offsetLabel(offset)}</option>)}</select></Field>;
           })}
-          <p className="field-hint field-wide">{item.type === "flight" ? "Учитывайте летнее время на даты вылета и прилёта." : "Выберите оба смещения UTC на даты переезда с учётом летнего времени. Часы в календаре остаются местными; смещения проверяют фактическую длительность. Для старого расписания можно оставить оба поля пустыми."}</p>
+          <p className="field-hint field-wide">{compact ? "Учитывайте летнее время на даты события." : item.type === "flight" ? "Учитывайте летнее время на даты вылета и прилёта." : "Укажите оба смещения с учётом летнего времени. Время в календаре остаётся местным; для старого расписания поля можно оставить пустыми."}</p>
   </>;
 }

@@ -1,16 +1,20 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import styles from "./flight-editor.module.css";
-import { CostSection, LinksFields, NotesSection, validUrl } from "./event-editor-shared";
+import { CostSection, LinksFields, NotesSection, eventLinkDefinitions, validUrl } from "./event-editor-shared";
 import { FlightEditor, flightEditorConfig } from "./flight-editor";
 import { ExcursionEditor, ExcursionHeader } from "./excursion-editor";
-import { flightRouteTitle, useFlightUtcCheck } from "./flight-editor-fields";
+import { FlightAirportFields, flightRouteTitle, useFlightUtcCheck } from "./flight-editor-fields";
 import { EventRouteSection, EventScheduleSection } from "./event-itinerary-sections";
 import { LocationPicker } from "./location-picker";
 import { PlaceCombobox } from "./place-combobox";
 import { getTripPlaceOptions } from "@/lib/trip-places";
 import { EventEditorShell } from "./event-editor-shell";
+import { CompactEditor } from "@/components/event-playground/compact-editor";
+import { PlaygroundRoute } from "@/components/event-playground/playground-route";
+import { PlaygroundHotelSchedule, PlaygroundSchedule } from "@/components/event-playground/playground-schedule";
 import { EventStagesSection } from "./event-stages-section";
+import { CompactStages } from "./compact-stages";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import type { CurrencyRateInput, ItemCalculation, ItemInput, ItemType, TripInput } from "@/lib/contracts";
 import { calculateTrip, nextDate } from "@/lib/pricing";
@@ -33,11 +37,14 @@ type ItemFormProps = {
   onTypeChange?: (type: ItemType) => void;
   requireTypeChoice?: boolean;
   useDialogHeading?: boolean;
+  playgroundCompact?: boolean;
+  clarificationNotes?: string[];
+  onContextChange?: (type: ItemType, subtype: ItemInput["subtype"]) => void;
 };
 
 export function ItemForm({
   initial, trip, onSubmit, onCancel, onDelete, onDirtyChange, onTypeChange,
-  requireTypeChoice = false, context = "default", flightHistory = [], useDialogHeading,
+  requireTypeChoice = false, context = "default", flightHistory = [], useDialogHeading, playgroundCompact = false, onContextChange, clarificationNotes,
 }: ItemFormProps) {
   const isNew = !trip.items.some(existing => existing.id === initial.id);
   const initialStartDate = trip.days.find(day => day.id === initial.day_id)?.date;
@@ -67,6 +74,7 @@ export function ItemForm({
   const form = useForm<ItemInput>({ defaultValues: defaults });
   const { handleSubmit, setValue, setError: setFieldError, clearErrors, control, formState: { isDirty, dirtyFields, isSubmitting } } = form;
   const item = useWatch({ control }) as ItemInput;
+  useEffect(() => { onContextChange?.(item.type, item.subtype); }, [item.type, item.subtype, onContextChange]);
   const utcCheck = useFlightUtcCheck(item, trip);
   const usesUtcOffsets = hasUtcOffsets(item);
   const manualTitle = useRef(!initialAutomaticTitle || (!isNew && initial.type === "flight"));
@@ -295,6 +303,7 @@ export function ItemForm({
     onChooseEndDay: () => { chosenEndDay.current = true; },
   };
   const cost = { item, initial, trip, typeChosen, calculation, rate, setRate };
+  const hotelNightsWarning = item.type === "hotel" && item.calculation_mode === "per_person_per_day" && !syncNights && nights > 0 && item.duration_days !== nights && <p className="field-hint">В сохранённом расчёте указано {item.duration_days} дней. Измените даты проживания, чтобы пересчитать стоимость по числу ночей.</p>;
   const typeSelector = <Field label="Тип события" wide>
     <select value={typeChosen ? category : ""} onChange={event => {
       const type = event.target.value as ItemType | "";
@@ -315,18 +324,27 @@ export function ItemForm({
   const actions = <div className={`form-actions ${specialized ? styles.actions : ""}`}>
     {specialized && !!error && <div className={styles.saveError}><ErrorNotice error={error} /></div>}
     <button type="button" className="secondary-button" onClick={onCancel}>Отмена</button>
-    <button className="primary-button" disabled={!typeChosen || isSubmitting}>{isSubmitting ? "Сохраняем…" : flight ? "Сохранить перелёт" : excursion ? "Сохранить экскурсию" : "Сохранить элемент"}</button>
+    <button className="primary-button" disabled={!typeChosen || isSubmitting}>{isSubmitting ? "Сохраняем…" : playgroundCompact ? "Сохранить" : flight ? "Сохранить перелёт" : excursion ? "Сохранить экскурсию" : "Сохранить элемент"}</button>
   </div>;
   return <FormProvider {...form}><EventEditorShell
     onSubmit={submit}
     aria-busy={isSubmitting}
     className={`trip-form ${specialized ? styles.editor : ""}`}
     data-editor-item={item.id}
-    header={flight && <flightEditorConfig.Summary item={item} trip={trip} calculation={calculation} isNew={isNew}
-      typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} utcOutdated={utcCheck.outdated} /> || excursion && <ExcursionHeader item={item} trip={trip} calculation={calculation} isNew={isNew} typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} />}
+    header={!playgroundCompact && (flight && <flightEditorConfig.Summary item={item} trip={trip} calculation={calculation} isNew={isNew}
+      typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} utcOutdated={utcCheck.outdated} /> || excursion && <ExcursionHeader item={item} trip={trip} calculation={calculation} isNew={isNew} typeSelector={typeSelector} onClose={onCancel} onDelete={onDelete} useDialogHeading={useDialogHeading} />
+    )}
     feedback={!specialized && error ? <ErrorNotice error={error} /> : null}
     actions={actions}
   >
+    {playgroundCompact ? <CompactEditor item={item} trip={trip} calculation={calculation} typeSelector={typeSelector} onDelete={onDelete} onClose={!useDialogHeading ? onCancel : undefined} clarificationNotes={clarificationNotes} isNew={isNew} needsTypeChoice={!typeChosen} utcOutdated={flight && utcCheck.outdated}
+      subtype={typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
+      route={<PlaygroundRoute {...itineraryProps} flightHistory={flightHistory} />}
+      schedule={item.type === "hotel" ? <PlaygroundHotelSchedule {...itineraryProps} /> : <PlaygroundSchedule {...itineraryProps} utcOutdated={flight && utcCheck.outdated} onConfirmUtc={utcCheck.confirm} onOffsetChange={flight ? utcCheck.confirmEndpoint : undefined} extra={flight && <details data-editor-section="airport"><summary>Время в аэропорту</summary><div className="form-grid"><FlightAirportFields item={item} trip={trip} /></div></details>} />}
+      cost={<>{hotelNightsWarning}<CostSection {...cost} item={pricedItem} compact config={item.type === "hotel" ? { priceLabel: labels.price, basicModes: ["hotel", "per_person_per_day", "manual"], pendingPrice: true } : { priceLabel: labels.price }} /></>}
+      links={<div className="form-grid"><LinksFields item={item} links={eventLinkDefinitions(item)} compact /></div>}
+      advanced={(item.type !== "hotel" || !!item.stages?.length) && <CompactStages persistedStages={isNew ? undefined : initial.stages} />}
+    /> : <>
     {!specialized && typeSelector}
     {typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
     {flight ? <FlightEditor {...itineraryProps} cost={cost} flightHistory={flightHistory} utcCheck={utcCheck} /> : excursion ? <ExcursionEditor {...itineraryProps} cost={cost} /> : <>
@@ -341,11 +359,12 @@ export function ItemForm({
         }}>Использовать название объекта</button>}
       </div>} /> : <EventRouteSection {...itineraryProps} />}
       <EventScheduleSection {...itineraryProps} />
-      {item.type === "hotel" && item.calculation_mode === "per_person_per_day" && !syncNights && nights > 0 && item.duration_days !== nights && <p className="field-hint">В сохранённом расчёте указано {item.duration_days} дней. Измените даты проживания, чтобы пересчитать стоимость по числу ночей.</p>}
+      {hotelNightsWarning}
       <CostSection {...cost} item={pricedItem} config={item.type === "hotel" ? { priceLabel: labels.price, basicModes: ["hotel", "per_person_per_day", "manual"], pendingPrice: true } : { priceLabel: labels.price }} />
       {item.type === "hotel" && <fieldset className="form-section" aria-label="Ссылки и бронирование"><h3>Ссылки и бронирование</h3><div className="form-grid"><LinksFields item={item} /></div></fieldset>}
       <NotesSection typeChosen={typeChosen} />
       {item.type !== "hotel" && <EventStagesSection typeChosen={typeChosen} persistedStages={isNew ? undefined : initial.stages} />}
+    </>}
     </>}
     {pendingType && <Confirm title="Изменить тип события?" action="Изменить тип" onClose={() => setPendingType(null)} onConfirm={() => { const next = pendingType; setPendingType(null); changeType(next); }}>Поля перелёта станут недоступны. Правило расчёта и расписание могут измениться; для нетранспортных событий смещения UTC будут удалены.</Confirm>}
     <span className="sr-only">{timeLabel(item)}</span>
