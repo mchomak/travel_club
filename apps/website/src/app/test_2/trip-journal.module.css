@@ -1,0 +1,282 @@
+.story {
+  --journal-paper: #f4efe4;
+  --journal-ink: #192f40;
+  --journal-accent: var(--tc-china);
+  --journal-rule: color-mix(in srgb, var(--journal-accent) 35%, var(--journal-paper));
+  --journal-muted: color-mix(in srgb, var(--journal-ink) 78%, var(--journal-paper));
+  --journal-frame: color-mix(in srgb, var(--journal-accent) 9%, var(--journal-paper));
+  --journal-art: url("/website/assets/brand/journal-china.svg");
+  --journal-gap: clamp(30px, 5vw, 76px);
+  --section-heading: var(--journal-ink);
+  --section-link: var(--journal-accent);
+  --section-accent: var(--journal-accent);
+  padding-block: clamp(46px, 6vw, 94px);
+  color: var(--journal-ink);
+  background: var(--journal-paper);
+  caret-color: var(--journal-accent);
+}
+
+.story[data-country="thailand"] {
+  --journal-accent: var(--tc-thailand);
+  --journal-art: url("/website/assets/brand/journal-thailand.svg");
+}
+
+.story[data-country="madagascar"] {
+  --journal-accent: var(--tc-madagascar);
+  --journal-art: url("/website/assets/brand/journal-madagascar.svg");
+}
+
+.story ::selection {
+  color: var(--journal-paper);
+  background: var(--journal-accent);
+}
+
+.wrap {
+  width: min(calc(100% - clamp(32px, 8vw, 128px)), 1200px);
+  margin-inline: auto;
+}
+
+.masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .38fr);
+  align-items: end;
+  gap: clamp(12px, 3vw, 36px);
+  border-top: 1px solid var(--journal-accent);
+  padding-block: clamp(20px, 3vw, 42px) clamp(18px, 3vw, 40px);
+}
+
+.story .masthead h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 .24em;
+  color: var(--journal-accent);
+  font: var(--tc-weight-bold) clamp(2rem, 6.9vw, 6rem)/.98 var(--tc-font-display);
+  letter-spacing: -.035em;
+  overflow-wrap: normal;
+}
+
+.masthead h2 span {
+  font-size: .36em;
+  letter-spacing: 0;
+}
+
+.masthead p {
+  margin-top: .65em;
+  font-size: var(--tc-size-subheading);
+  color: var(--journal-muted);
+}
+
+.illustration {
+  justify-self: end;
+  width: min(100%, 270px);
+  aspect-ratio: 360 / 140;
+  background: var(--journal-art) right bottom / contain no-repeat;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .25rem 1.25rem;
+  margin-bottom: clamp(20px, 3.4vw, 46px);
+  border-block: 1px solid var(--journal-rule);
+  padding-block: 5px;
+}
+
+.chapters, .controls {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+.chapters { flex-wrap: wrap; }
+.controls { flex: none; }
+
+.story .navigation button {
+  min-height: 44px;
+  padding-inline: .6em;
+  border: 0;
+  border-radius: 0;
+  color: var(--journal-ink);
+  background: transparent;
+  font-size: var(--tc-size-caption);
+}
+
+.story .chapters button {
+  border-bottom: 2px solid transparent;
+  text-align: start;
+}
+
+.story .chapters button[aria-current] {
+  border-color: var(--journal-accent);
+  color: var(--journal-accent);
+  font-weight: var(--tc-weight-bold);
+}
+
+.story .navigation button:hover:not(:disabled) {
+  background: var(--journal-frame);
+}
+
+.story .controls button {
+  display: grid;
+  width: 44px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--journal-rule);
+  color: var(--journal-accent);
+}
+
+.story .controls button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.controls svg { width: 19px; height: 19px; }
+
+.controls span {
+  min-width: 6ch;
+  text-align: center;
+  white-space: nowrap;
+  font-size: var(--tc-size-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.slide {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr);
+  grid-template-areas: "photo copy";
+  align-items: start;
+  gap: var(--journal-gap);
+  touch-action: pan-y pinch-zoom;
+}
+
+.slide:focus-visible {
+  outline: 2px solid var(--journal-accent);
+  outline-offset: 7px;
+}
+
+.story[data-country="thailand"] .slide {
+  grid-template-areas: "copy photo";
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+}
+
+.story[data-country="madagascar"] .slide {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "photo" "copy";
+  gap: clamp(22px, 3.5vw, 48px);
+}
+
+.figureStack, .copyStack { display: grid; min-width: 0; }
+.figureStack { grid-area: photo; }
+.copyStack { grid-area: copy; }
+.panel { grid-area: 1 / 1; min-width: 0; }
+.panel[aria-hidden="true"] { visibility: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel[aria-hidden="false"] { animation: reveal 240ms ease-out; }
+
+  @keyframes reveal {
+    from { opacity: .65; }
+    to { opacity: 1; }
+  }
+}
+
+.copyStack { padding-block: clamp(4px, 1.25vw, 18px); }
+
+.story[data-country="madagascar"] .copyStack {
+  width: min(100%, 720px);
+  padding-block: 0;
+}
+
+.story .copyStack h3 {
+  margin: 0 0 .6em;
+  color: var(--journal-ink);
+  font: var(--tc-weight-medium) clamp(1.6rem, 3vw, 2.65rem)/1.13 var(--tc-font-h3);
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.copyStack p { line-height: 1.62; }
+.copyStack p + p { margin-top: .78em; }
+
+.story .facts {
+  display: grid;
+  gap: .55rem;
+  margin: 1.35rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--journal-rule);
+  font-size: var(--tc-size-caption);
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: minmax(5.6rem, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: .35rem;
+}
+
+.facts dt { color: var(--journal-accent); font-weight: var(--tc-weight-bold); }
+.facts dd { margin: 0; color: var(--journal-muted); }
+
+.figure { margin: 0; }
+
+.photo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border: 1px solid var(--journal-rule);
+  background: var(--journal-frame);
+}
+
+.story[data-country="thailand"] .photo { aspect-ratio: 6 / 5; }
+.story[data-country="madagascar"] .photo { aspect-ratio: 21 / 8; }
+
+.story .figure figcaption {
+  margin-top: .65rem;
+  color: var(--journal-muted);
+  font: var(--tc-weight-regular) var(--tc-size-caption)/1.45 var(--tc-font-caption);
+  text-wrap: pretty;
+}
+
+.story .figure a { text-decoration: underline; }
+
+.footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem 1.5rem;
+  margin-top: clamp(26px, 4vw, 55px);
+  padding-top: .55rem;
+  border-top: 1px solid var(--journal-rule);
+}
+
+.footer p { color: var(--journal-muted); font-size: var(--tc-size-caption); }
+.footer a { display: inline-flex; gap: .5rem; align-items: center; min-height: 44px; font-weight: var(--tc-weight-bold); }
+.story .footer a svg { flex: none; width: 17px; height: 17px; }
+
+@media (max-width: 940px) {
+  .navigation { flex-wrap: wrap; }
+  .controls { margin-inline-start: auto; }
+}
+
+@media (max-width: 760px) {
+  .masthead { grid-template-columns: minmax(0, 1fr); }
+  .story .masthead h2 { font-size: clamp(1.75rem, 8.4vw, 4rem); }
+  .illustration { display: none; }
+  .copyStack { padding-block: 0; }
+  .panel[aria-hidden="true"] { display: none; }
+  .footer, .chapters { flex-wrap: wrap; }
+
+  .slide,
+  .story[data-country="thailand"] .slide,
+  .story[data-country="madagascar"] .slide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "photo" "copy";
+    gap: 24px;
+  }
+
+  .story[data-country="thailand"] .photo { aspect-ratio: 3 / 2; }
+  .story[data-country="madagascar"] .photo { aspect-ratio: 2 / 1; }
+}

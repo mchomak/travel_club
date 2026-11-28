@@ -1,0 +1,61 @@
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .5rem;
+  padding: clamp(14px, 3vw, 36px);
+  color: var(--journal-ink);
+}
+
+.placeholder span, .placeholder small { font-size: var(--tc-size-caption); }
+.placeholder p { font-size: var(--tc-size-subheading); }
+
+.imageTrigger {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--journal-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.imageTrigger svg {
+  position: absolute;
+  inset: auto 10px 10px auto;
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+  background: var(--journal-paper);
+  opacity: 0;
+}
+
+.imageTrigger:not([aria-pressed="true"]):is(:hover, :focus-visible) svg { opacity: 1; }
+
+.imageTrigger:focus-visible {
+  outline: 2px solid var(--journal-paper);
+  outline-offset: -4px;
+  box-shadow: inset 0 0 0 6px var(--journal-ink);
+}
+
+.edit {
+  position: absolute;
+  z-index: 2;
+  inset: auto 10px 10px auto;
+  min-height: 44px;
+  padding-inline: .75rem;
+  border: 1px solid var(--journal-ink);
+  color: var(--journal-ink);
+  background: var(--journal-paper);
+  cursor: pointer;
+}
+
+.edit:focus-visible {
+  outline: 2px solid var(--journal-paper);
+  outline-offset: 2px;
+}
