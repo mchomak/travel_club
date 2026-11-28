@@ -64,3 +64,7 @@
   .actions:global(.form-actions) { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 0.5rem; }
   .actions button { min-width: 0; padding-inline: 0.5rem; }
 }
+.compactCategoryChoice { padding: 1rem 0; }
+.compactCategoryFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.compactCategoryActions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+@media (max-width: 400px) { .compactCategoryFields { grid-template-columns: 1fr; } }

@@ -40,16 +40,32 @@ test.each(['flight', 'train_bus', 'transfer', 'hotel', 'excursion', 'activity', 
   expect(onSubmit).toHaveBeenCalledWith(item, undefined);
 });
 
-test('a new event exposes required type choice and opens its main sections', async () => {
+test('a new event waits for category and subtype before showing its summary', async () => {
   const item = newItem('other', trip.days[0], trip.base_currency, trip.start_date);
   render(<ItemForm initial={item} trip={trip} requireTypeChoice playgroundCompact onCancel={() => {}} onSubmit={() => {}} />);
   expect(screen.getByLabelText('Тип события')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
-  for (const title of ['Маршрут', 'Расписание', 'Стоимость']) {
-    expect(screen.getByText(title, { selector: 'strong' }).closest('details')).toHaveAttribute('open');
-  }
   await userEvent.selectOptions(screen.getByLabelText('Тип события'), 'activity');
+  expect(screen.queryByRole('group', { name: 'Сводка события' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled();
+  await userEvent.selectOptions(screen.getByLabelText('Подкатегория'), 'excursion');
+  expect(screen.getByRole('group', { name: 'Сводка события' })).toBeVisible();
   expect(screen.getByRole('button', { name: 'Сохранить' })).toBeEnabled();
+});
+
+test('editing category applies the selection and preserves common data', async () => {
+  const item = { ...base, type: 'meal' as const, subtype: 'cafe' as const, title: 'Мой обед', internal_note: 'Важная заметка', unit_price: '120' };
+  const onSubmit = vi.fn();
+  const user = userEvent.setup();
+  render(<ItemForm initial={item} trip={{ ...trip, items: [item] }} playgroundCompact onCancel={() => {}} onSubmit={onSubmit} />);
+  await user.click(screen.getByRole('button', { name: 'Изменить категорию' }));
+  expect(screen.getByLabelText('Тип события')).toHaveValue('meal');
+  expect(screen.getByLabelText('Подкатегория')).toHaveValue('cafe');
+  await user.selectOptions(screen.getByLabelText('Тип события'), 'activity');
+  await user.selectOptions(screen.getByLabelText('Подкатегория'), 'activity');
+  await user.click(screen.getByRole('button', { name: 'Применить категорию' }));
+  await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: 'activity', subtype: 'activity', title: 'Мой обед', internal_note: 'Важная заметка', unit_price: '120' }), undefined);
 });
 
 test('hotel summaries and saved pricing warning reflect the stay', () => {

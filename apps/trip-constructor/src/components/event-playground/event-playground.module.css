@@ -23,6 +23,9 @@
 .summary { background: #eef4ef; border: 1px solid #d5e2d8; border-radius: 12px; padding: 1.2rem; }
 .summaryTitle { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; min-width: 0; }
 .summaryTitle > div { flex: 1 1 0; min-width: 0; }
+.editCategory { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border: 0; border-radius: 8px; color: #205c44; background: transparent; cursor: pointer; }
+.editCategory:hover { background: #dcebe0; }
+.editCategory:focus-visible { outline: 2px solid #205c44; outline-offset: 2px; }
 .summaryTitle strong { font-size: 1.25rem; overflow-wrap: anywhere; }
 .summaryTitle p { margin: .25rem 0 0; color: #33443b; }
 .summaryIcon, .sectionIcon { flex: none; display: grid; place-items: center; color: #205c44; background: #dfebe1; border-radius: 10px; }

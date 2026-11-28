@@ -17,6 +17,8 @@ apps/website/.next-metrika-test/
 .autopilot/__pycache__/
 .worktrees/
 test-results/
+apps/trip-constructor/test-results-*/
+/screenshots/
 playwright-report/
 .playwright-mcp
 

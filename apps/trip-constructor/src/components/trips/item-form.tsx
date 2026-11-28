@@ -87,6 +87,9 @@ export function ItemForm({
   const [error, setError] = useState<unknown>(null);
   const submitting = useRef(false);
   const [typeChosen, setTypeChosen] = useState(!requireTypeChoice || !isNew);
+  const [editingCategory, setEditingCategory] = useState(playgroundCompact && requireTypeChoice && isNew);
+  const [draftCategory, setDraftCategory] = useState<ItemType | "">(requireTypeChoice && isNew ? "" : eventCategory(initial.type));
+  const [draftSubtype, setDraftSubtype] = useState<string>(displaySubtype(initial) ?? (subtypeOptions[eventCategory(initial.type)] ? "" : "none"));
   const [pendingType, setPendingType] = useState<ItemType | null>(null);
   const [initialRate] = useState(() => trip.rates.find(r => r.currency === initial.currency)?.rate ?? "");
   const [rate, setRate] = useState(initialRate);
@@ -157,8 +160,8 @@ export function ItemForm({
       setValue("calculation_mode", flightPricing.current.calculation_mode, { shouldDirty: true });
       setValue("capacity", flightPricing.current.capacity, { shouldDirty: true });
     } else {
-      setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
-      if (type === "transfer" || type === "hotel") setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
+      if (!playgroundCompact || isNew || (item.calculation_mode === "hotel" && type !== "hotel")) setValue("calculation_mode", defaultModes[type], { shouldDirty: true });
+      if ((type === "transfer" || type === "hotel") && (!playgroundCompact || !item.capacity)) setValue("capacity", type === "hotel" ? 2 : 4, { shouldDirty: true });
     }
     if (type === "hotel") {
       const date = trip.days.find(day => day.id === item.day_id)?.date ?? trip.start_date;
@@ -179,8 +182,7 @@ export function ItemForm({
     }
     onTypeChange?.(type);
   }
-  function changeSubtype(value: ItemInput["subtype"]) {
-    const category = eventCategory(item.type);
+  function changeSubtype(value: ItemInput["subtype"], category = eventCategory(item.type)) {
     if (!manualTitle.current) setValue("title", nextItemTitle({items:trip.items.filter(existing=>existing.id!==item.id)}, {...item,type:category,subtype:value}), { shouldDirty: true });
     if (["train_bus", "rental", "excursion", "insurance"].includes(item.type)) setValue("type", category, { shouldDirty: true });
     setValue("subtype", value, { shouldDirty: true });
@@ -321,10 +323,30 @@ export function ItemForm({
       {category === "other" && typeChosen && <option value="other">Допрасход</option>}
     </select>
   </Field>;
+  const draftOptions = draftCategory ? subtypeOptions[draftCategory]?.filter(option => context !== "long-haul" || (option.value !== "taxi" && option.value !== "walk") || option.value === displaySubtype(initial)) : undefined;
+  function applyCategory(type: ItemType, subtype: string) {
+    if (type !== category) changeType(type);
+    if (subtype !== "none" && (type !== category || subtype !== selectedSubtype)) changeSubtype(subtype as ItemInput["subtype"], type);
+    setTypeChosen(true);
+    setEditingCategory(false);
+  }
+  const categorySelector = <div className={styles.compactCategoryChoice}>
+    <div className={styles.compactCategoryFields}>
+      <Field label="Тип события"><select value={draftCategory} onChange={event => {
+        const next = event.target.value as ItemType;
+        setDraftCategory(next); setDraftSubtype("");
+      }}><option value="">Выберите тип события</option>{eventCategories.filter(option => context !== "long-haul" || option.type === "flight" || option.type === "transfer").map(({ type, label }) => <option key={type} value={type}>{label}</option>)}{(category === "other" || draftCategory === "other") && <option value="other">Допрасход</option>}</select></Field>
+      <Field label="Подкатегория"><select value={draftSubtype} disabled={!draftCategory} onChange={event => {
+        const value = event.target.value; setDraftSubtype(value);
+        if (isNew && !typeChosen && draftCategory && value) applyCategory(draftCategory, value);
+      }}><option value="">Выберите подкатегорию</option>{draftOptions ? draftOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>) : draftCategory && <option value="none">Без подкатегории</option>}</select></Field>
+    </div>
+    {typeChosen && <div className={styles.compactCategoryActions}><button type="button" className="secondary-button" onClick={() => setEditingCategory(false)}>Отмена</button><button type="button" className="primary-button" disabled={!draftCategory || !draftSubtype} onClick={() => draftCategory && applyCategory(draftCategory, draftSubtype)}>Применить категорию</button></div>}
+  </div>;
   const actions = <div className={`form-actions ${specialized ? styles.actions : ""}`}>
     {specialized && !!error && <div className={styles.saveError}><ErrorNotice error={error} /></div>}
     <button type="button" className="secondary-button" onClick={onCancel}>Отмена</button>
-    <button className="primary-button" disabled={!typeChosen || isSubmitting}>{isSubmitting ? "Сохраняем…" : playgroundCompact ? "Сохранить" : flight ? "Сохранить перелёт" : excursion ? "Сохранить экскурсию" : "Сохранить элемент"}</button>
+    <button className="primary-button" disabled={!typeChosen || (playgroundCompact && editingCategory) || isSubmitting}>{isSubmitting ? "Сохраняем…" : playgroundCompact ? "Сохранить" : flight ? "Сохранить перелёт" : excursion ? "Сохранить экскурсию" : "Сохранить элемент"}</button>
   </div>;
   return <FormProvider {...form}><EventEditorShell
     onSubmit={submit}
@@ -337,8 +359,7 @@ export function ItemForm({
     feedback={!specialized && error ? <ErrorNotice error={error} /> : null}
     actions={actions}
   >
-    {playgroundCompact ? <CompactEditor item={item} trip={trip} calculation={calculation} typeSelector={typeSelector} onDelete={onDelete} onClose={!useDialogHeading ? onCancel : undefined} clarificationNotes={clarificationNotes} isNew={isNew} needsTypeChoice={!typeChosen} utcOutdated={flight && utcCheck.outdated}
-      subtype={typeChosen && subtypes && <Field label="Подвид" wide><select value={selectedSubtype ?? ""} onChange={event => changeSubtype(event.target.value ? event.target.value as ItemInput["subtype"] : null)}>{legacySubtype && <option value="">Поезд / автобус (старый тип)</option>}{!selectedSubtype && !legacySubtype && <option value="">Выберите подвид</option>}{subtypes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>}
+    {playgroundCompact ? <CompactEditor item={item} trip={trip} calculation={calculation} categorySelector={categorySelector} editingCategory={editingCategory} onEditCategory={() => { setDraftCategory(category); setDraftSubtype(selectedSubtype ?? (subtypes ? "" : "none")); setEditingCategory(true); }} onDelete={onDelete} onClose={!useDialogHeading ? onCancel : undefined} clarificationNotes={clarificationNotes} isNew={isNew} utcOutdated={flight && utcCheck.outdated}
       route={<PlaygroundRoute {...itineraryProps} flightHistory={flightHistory} />}
       schedule={item.type === "hotel" ? <PlaygroundHotelSchedule {...itineraryProps} /> : <PlaygroundSchedule {...itineraryProps} utcOutdated={flight && utcCheck.outdated} onConfirmUtc={utcCheck.confirm} onOffsetChange={flight ? utcCheck.confirmEndpoint : undefined} extra={flight && <details data-editor-section="airport"><summary>Время в аэропорту</summary><div className="form-grid"><FlightAirportFields item={item} trip={trip} /></div></details>} />}
       cost={<>{hotelNightsWarning}<CostSection {...cost} item={pricedItem} compact config={item.type === "hotel" ? { priceLabel: labels.price, basicModes: ["hotel", "per_person_per_day", "manual"], pendingPrice: true } : { priceLabel: labels.price }} /></>}

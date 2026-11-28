@@ -63,7 +63,6 @@ test("sections open independently and the summary follows edits saved locally", 
 test("deletion requires confirmation", async () => {
   render(<EventPlayground />);
   await screen.findByRole("dialog", { name: /Редактирование/ });
-  await userEvent.click(screen.getByLabelText("Дополнительные действия"));
   await userEvent.click(screen.getByRole("button", { name: "Удалить элемент" }));
   expect(screen.getByRole("dialog", { name: "Удалить элемент?" })).toBeInTheDocument();
   await userEvent.click(within(screen.getByRole("dialog", { name: "Удалить элемент?" })).getByRole("button", { name: "Отмена" }));
@@ -288,8 +287,10 @@ test("existing stages remain available and unchanged when changing category", as
   const item = { ...base, stages: [stage] };
   const save = vi.fn();
   render(<ItemForm initial={item} trip={{ ...trip, items: [item] }} playgroundCompact onCancel={() => {}} onSubmit={save} />);
-  await userEvent.click(screen.getByLabelText("Дополнительные действия"));
+  await userEvent.click(screen.getByRole("button", { name: "Изменить категорию" }));
   await userEvent.selectOptions(screen.getByLabelText("Тип события"), "meal");
+  await userEvent.selectOptions(screen.getByLabelText("Подкатегория"), "cafe");
+  await userEvent.click(screen.getByRole("button", { name: "Применить категорию" }));
   await userEvent.click(screen.getByText("Дополнительные настройки", { selector: "strong" }));
   expect(screen.getByText("Посадка", { selector: "strong" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Сохранить" }));
@@ -328,5 +329,5 @@ test("a long program starts with twenty collapsed stage summaries", async () => 
   const rows = container.querySelectorAll("[data-editor-stage]");
   expect(rows).toHaveLength(20);
   for (const row of rows) expect(row.querySelector("details")).not.toHaveAttribute("open");
-  expect(screen.getByText("Изменить подвид").parentElement).toHaveTextContent("Поезд");
+  expect(screen.getByRole("button", { name: "Изменить категорию" })).toBeVisible();
 });

@@ -86,7 +86,6 @@ test.each(["editor", "builder"] as const)("%s retains a dirty event when delete 
   await user.click(screen.getByText("Маршрут", { selector: "strong" }));
   const title = screen.getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Черновик");
-  await user.click(screen.getByLabelText("Дополнительные действия"));
   await user.click(screen.getByRole("button", { name: "Удалить элемент" }));
   const confirm = screen.getByRole("dialog", { name: "Удалить элемент?" });
   expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
@@ -248,6 +247,7 @@ test.each([
   expect(within(panel).getByRole("button", { name: "Сохранить" })).toBeDisabled();
   expect(save).not.toHaveBeenCalled();
   await user.selectOptions(within(panel).getByLabelText("Тип события"), type);
+  await user.selectOptions(within(panel).getByLabelText("Подкатегория"), type === "flight" ? "none" : "activity");
   expect(screen.getByRole("dialog", { name: heading })).toBe(panel);
   const schedule = within(panel.querySelector('[data-editor-section="schedule"]') as HTMLElement);
   expect(within(schedule.getByRole("group", { name: start })).getByLabelText("Местное время")).toHaveValue("09:15");
@@ -326,7 +326,6 @@ test("airport boundary persists through reopening, follows a moved flight, and d
   expect(moved.airportBlocks.find(block => block.airportKind === "before")).toMatchObject({ date: "2026-10-02", startMinute: 570, endMinute: 660 });
   expect(moved.airportBlocks.find(block => block.airportKind === "after")).toMatchObject({ date: "2026-10-02", startMinute: 720, endMinute: 780 });
   await user.click(screen.getByRole("button", { name: "Открыть первый пункт" }));
-  await user.click(within(screen.getByRole("dialog")).getByLabelText("Дополнительные действия"));
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Удалить элемент" }));
   await user.click((await screen.findByText("Удалить элемент?")).closest("[role=dialog]")!.querySelector<HTMLButtonElement>(".danger-button")!);
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -349,7 +348,6 @@ test("flight deletion can be cancelled without losing changes in the panel", asy
   await user.click(within(panel).getByText("Маршрут", { selector: "strong" }));
   const title = within(panel).getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Изменённый рейс");
-  await user.click(within(panel).getByLabelText("Дополнительные действия"));
   await user.click(within(panel).getByRole("button", { name: "Удалить элемент" }));
   const confirm = await screen.findByRole("dialog", { name: "Удалить элемент?" });
   expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
@@ -371,7 +369,6 @@ test("inline flight deletion asks for confirmation and retains a cancelled edit"
   await user.click(screen.getByText("Маршрут", { selector: "strong" }));
   const title = screen.getByLabelText("Название события");
   await user.clear(title); await user.type(title, "Изменённый рейс");
-  await user.click(screen.getByLabelText("Дополнительные действия"));
   await user.click(screen.getByRole("button", { name: "Удалить элемент" }));
   const confirm = screen.getByRole("dialog", { name: "Удалить элемент?" });
   expect(within(confirm).getByText(/несохранённые изменения/i)).toBeVisible();
